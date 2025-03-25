@@ -23,17 +23,17 @@ export default function Header() {
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <Link href="/" className="text-white hover:text-primary transition-colors">
+          <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
+            Home
+          </Link>
+          <Link href="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">
             Dashboard
           </Link>
-          <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/bots" className="text-muted-foreground hover:text-primary transition-colors">
             Bots
           </Link>
-          <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/markets" className="text-muted-foreground hover:text-primary transition-colors">
             Markets
-          </Link>
-          <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-            Analytics
           </Link>
           <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
             Learn
@@ -62,17 +62,17 @@ export default function Header() {
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
         <nav className="md:hidden absolute top-full left-0 right-0 bg-card border-b border-border py-4 px-6 flex flex-col space-y-4">
-          <Link href="/" className="text-white hover:text-primary transition-colors">
+          <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
+            Home
+          </Link>
+          <Link href="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">
             Dashboard
           </Link>
-          <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/bots" className="text-muted-foreground hover:text-primary transition-colors">
             Bots
           </Link>
-          <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/markets" className="text-muted-foreground hover:text-primary transition-colors">
             Markets
-          </Link>
-          <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-            Analytics
           </Link>
           <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
             Learn
