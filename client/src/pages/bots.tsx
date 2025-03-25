@@ -172,10 +172,10 @@ export default function Bots() {
                             </CardDescription>
                           </div>
                           <div className="flex items-center space-x-1">
-                            <Button variant="outline" size="icon" className="h-8 w-8">
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => window.alert(`${bot.name} is now active!`)}>
                               <Play className="h-4 w-4 text-green-500" />
                             </Button>
-                            <Button variant="outline" size="icon" className="h-8 w-8">
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => window.alert(`Settings for ${bot.name} coming soon!`)}>
                               <Settings className="h-4 w-4" />
                             </Button>
                           </div>
@@ -234,7 +234,7 @@ export default function Bots() {
                             ))}
                           </div>
                         </div>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => window.alert(`Performance analytics for ${bot.name} coming soon!`)}>
                           <span>Performance Details</span>
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
@@ -246,7 +246,7 @@ export default function Bots() {
                 <Card className="py-10">
                   <CardContent className="text-center">
                     <p className="text-muted-foreground mb-4">You don't have any active bots yet</p>
-                    <Button>
+                    <Button onClick={() => window.alert("Bot creation functionality coming soon!")}>
                       <Plus className="mr-2 h-4 w-4" />
                       Create Your First Bot
                     </Button>
@@ -313,7 +313,7 @@ export default function Bots() {
                         </div>
                       </CardContent>
                       <CardFooter>
-                        <Button className="w-full">
+                        <Button className="w-full" onClick={() => window.alert("Grid Strategy deployment coming soon!")}>
                           <Plus className="mr-2 h-4 w-4" />
                           Deploy This Strategy
                         </Button>
@@ -368,7 +368,7 @@ export default function Bots() {
                         </div>
                       </CardContent>
                       <CardFooter>
-                        <Button className="w-full">
+                        <Button className="w-full" onClick={() => window.alert("DCA Strategy deployment coming soon!")}>
                           <Plus className="mr-2 h-4 w-4" />
                           Deploy This Strategy
                         </Button>
@@ -423,7 +423,7 @@ export default function Bots() {
                         </div>
                       </CardContent>
                       <CardFooter>
-                        <Button className="w-full">
+                        <Button className="w-full" onClick={() => window.alert("MACD Strategy deployment coming soon!")}>
                           <Plus className="mr-2 h-4 w-4" />
                           Deploy This Strategy
                         </Button>
