@@ -163,7 +163,7 @@ export default function Dashboard() {
                   <CardTitle className="text-xl font-medium">Active Bots</CardTitle>
                   <CardDescription>Your automated trading strategies</CardDescription>
                 </div>
-                <Button className="flex items-center">
+                <Button className="flex items-center" onClick={() => window.location.href = "/bots"}>
                   <Plus className="w-4 h-4 mr-2" />
                   New Bot
                 </Button>
@@ -201,7 +201,7 @@ export default function Dashboard() {
                             ))}
                           </div>
                         </div>
-                        <Button variant="outline" size="sm" className="w-full">
+                        <Button variant="outline" size="sm" className="w-full" onClick={() => window.location.href = `/bots?id=${bot.id}`}>
                           <span>View Details</span>
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
@@ -212,7 +212,7 @@ export default function Dashboard() {
               ) : (
                 <div className="py-10 text-center">
                   <p className="text-muted-foreground mb-4">You don't have any active bots yet</p>
-                  <Button>
+                  <Button onClick={() => window.location.href = "/bots"}>
                     <Plus className="mr-2 h-4 w-4" />
                     Create Your First Bot
                   </Button>
@@ -251,7 +251,7 @@ export default function Dashboard() {
                   ))}
                 </div>
                 <div className="mt-4 flex justify-end">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => window.location.href = "/markets"}>
                     View All Trades
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -266,15 +266,15 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start" onClick={() => window.alert("Deposit funds functionality coming soon!")}>
                     <Wallet className="mr-2 h-4 w-4" />
                     Deposit Funds
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start" onClick={() => window.location.href = "/markets"}>
                     <BarChart4 className="mr-2 h-4 w-4" />
                     Market Analysis
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start" onClick={() => window.alert("Portfolio rebalance functionality coming soon!")}>
                     <PieChartIcon className="mr-2 h-4 w-4" />
                     Portfolio Rebalance
                   </Button>

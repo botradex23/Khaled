@@ -115,7 +115,7 @@ export default function Bots() {
                 Manage and monitor your automated crypto trading strategies
               </p>
             </div>
-            <Button className="mt-4 md:mt-0">
+            <Button className="mt-4 md:mt-0" onClick={() => window.alert("Create new bot functionality coming soon!")}>
               <Plus className="mr-2 h-4 w-4" />
               Create New Bot
             </Button>
