@@ -50,10 +50,10 @@ export class MemStorage implements IStorage {
         name: "Grid Trading Bot",
         strategy: "grid",
         description: "Automatically buys low and sells high within a price range.",
-        minInvestment: 500,
-        monthlyReturn: 5.2,
+        minInvestment: "500",
+        monthlyReturn: "5.2",
         riskLevel: 2,
-        rating: 4.5,
+        rating: "4.5",
         isPopular: true
       },
       {
@@ -61,10 +61,10 @@ export class MemStorage implements IStorage {
         name: "DCA Crypto Bot",
         strategy: "dca",
         description: "Dollar-cost averaging strategy for long-term crypto investments.",
-        minInvestment: 250,
-        monthlyReturn: 3.8,
+        minInvestment: "250",
+        monthlyReturn: "3.8",
         riskLevel: 1,
-        rating: 4.8,
+        rating: "4.8",
         isPopular: false
       },
       {
@@ -72,10 +72,10 @@ export class MemStorage implements IStorage {
         name: "MACD Trend Follower",
         strategy: "macd",
         description: "Technical analysis bot using MACD indicators for optimal entry and exit.",
-        minInvestment: 1000,
-        monthlyReturn: 7.5,
+        minInvestment: "1000",
+        monthlyReturn: "7.5",
         riskLevel: 3,
-        rating: 4.2,
+        rating: "4.2",
         isPopular: true
       }
     ];
@@ -86,7 +86,7 @@ export class MemStorage implements IStorage {
         id: this.pricingPlanId++,
         name: "Starter",
         description: "Perfect for beginners testing the waters",
-        price: 0,
+        price: "0",
         features: [
           "1 active bot", 
           "Basic strategies", 
@@ -99,7 +99,7 @@ export class MemStorage implements IStorage {
         id: this.pricingPlanId++,
         name: "Advanced",
         description: "For serious crypto investors",
-        price: 29.99,
+        price: "29.99",
         features: [
           "5 active bots", 
           "All strategies", 
@@ -113,7 +113,7 @@ export class MemStorage implements IStorage {
         id: this.pricingPlanId++,
         name: "Professional",
         description: "For professional traders and institutions",
-        price: 99.99,
+        price: "99.99",
         features: [
           "Unlimited bots", 
           "Custom strategies", 
