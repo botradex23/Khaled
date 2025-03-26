@@ -203,7 +203,9 @@ export default function Learn() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full">Join Community</Button>
+            <Link href="/learn" className="w-full">
+              <Button className="w-full">Join Community</Button>
+            </Link>
           </CardFooter>
         </Card>
       </div>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import { 
@@ -115,10 +116,12 @@ export default function Bots() {
                 Manage and monitor your automated crypto trading strategies
               </p>
             </div>
-            <Button className="mt-4 md:mt-0" onClick={() => window.alert("Create new bot functionality coming soon!")}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create New Bot
-            </Button>
+            <Link href="/bot-demo">
+              <Button className="mt-4 md:mt-0">
+                <Plus className="mr-2 h-4 w-4" />
+                Create New Bot
+              </Button>
+            </Link>
           </div>
           
           <Tabs defaultValue="active" className="space-y-4">
@@ -246,10 +249,12 @@ export default function Bots() {
                 <Card className="py-10">
                   <CardContent className="text-center">
                     <p className="text-muted-foreground mb-4">You don't have any active bots yet</p>
-                    <Button onClick={() => window.alert("Bot creation functionality coming soon!")}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create Your First Bot
-                    </Button>
+                    <Link href="/bot-demo">
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Your First Bot
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               )}
