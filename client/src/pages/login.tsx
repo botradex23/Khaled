@@ -36,11 +36,11 @@ export default function Login() {
     setIsLoading(true);
     try {
       // Call the server to login
-      const response = await apiRequest<{ message: string, user: User }>("POST", "/api/login", data);
+      const response = await apiRequest("POST", "/api/login", data);
       
       // If successful, update the auth context
       if (response && response.user) {
-        login(response.user);
+        login(response.user as User);
         
         toast({
           title: "Login Successful",

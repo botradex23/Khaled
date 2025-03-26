@@ -11,6 +11,8 @@ import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { User } from "@shared/schema";
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
@@ -30,6 +32,7 @@ export default function RegistrationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -46,7 +49,8 @@ export default function RegistrationForm() {
     try {
       setIsSubmitting(true);
       
-      const response = await apiRequest(
+      // Register user
+      const response = await apiRequest<{ message: string, user: User }>(
         "POST",
         "/api/register",
         {
@@ -57,13 +61,18 @@ export default function RegistrationForm() {
         }
       );
 
+      // Login the user if we have a user in response
+      if (response && response.user) {
+        login(response.user);
+      }
+
       toast({
         title: "Registration successful!",
-        description: "Your account has been created. You can now login.",
+        description: "Your account has been created. You're now logged in.",
         variant: "default",
       });
 
-      // Redirect to dashboard or login page after successful registration
+      // Redirect to dashboard after successful registration
       setTimeout(() => {
         navigate("/dashboard");
       }, 1500);

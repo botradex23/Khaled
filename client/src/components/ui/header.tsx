@@ -1,13 +1,49 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
-import { Link } from "wouter";
+import { Menu, X, User, LogOut } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
+  const [, navigate] = useLocation();
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user) return "U";
+    if (user.firstName && user.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    }
+    return user.email ? user.email[0].toUpperCase() : "U";
+  };
+
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (!user) return "";
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return user.email ? user.email.split("@")[0] : "";
   };
 
   return (
@@ -43,16 +79,50 @@ export default function Header() {
         </nav>
         
         <div className="flex items-center space-x-4">
-          <Link href="/register">
-            <Button variant="default" className="bg-primary hover:bg-primary/90">
-              Sign Up
-            </Button>
-          </Link>
-          <Link href="/login">
-            <Button variant="outline" className="border-border hover:border-primary">
-              Login
-            </Button>
-          </Link>
+          {isAuthenticated && user ? (
+            <div className="flex items-center">
+              <span className="mr-3 text-sm hidden sm:block">שלום, {getUserDisplayName()}</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {getUserInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel>החשבון שלי</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>פרופיל</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>התנתק</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ) : (
+            <>
+              <Link href="/register">
+                <Button variant="default" className="bg-primary hover:bg-primary/90">
+                  Sign Up
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button variant="outline" className="border-border hover:border-primary">
+                  Login
+                </Button>
+              </Link>
+            </>
+          )}
           
           {/* Mobile menu button */}
           <Button 
@@ -83,6 +153,16 @@ export default function Header() {
           <Link href="/learn" className="text-muted-foreground hover:text-primary transition-colors">
             Learn
           </Link>
+          {isAuthenticated && (
+            <Button 
+              variant="ghost" 
+              className="justify-start p-0 h-auto font-normal hover:bg-transparent text-destructive"
+              onClick={handleLogout}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              התנתק
+            </Button>
+          )}
         </nav>
       )}
     </header>
