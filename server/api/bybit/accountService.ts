@@ -63,6 +63,19 @@ export class AccountService {
         return this.getEmptyBalanceResponse();
       }
 
+      // Check for geo-restrictions first by trying a simple ping request
+      try {
+        await bybitService.ping();
+      } catch (pingError: any) {
+        // Check if the error is related to geo-restriction (CloudFront 403)
+        if (pingError.response && pingError.response.status === 403 && 
+            (pingError.response.data && typeof pingError.response.data === 'string' && 
+             pingError.response.data.includes('CloudFront'))) {
+          console.log('Detected geo-restriction from Bybit API. Using demo balances.');
+          return this.getEmptyBalanceResponse();
+        }
+      }
+      
       // Try to check for API permissions
       let status;
       try {
@@ -178,6 +191,19 @@ export class AccountService {
         return this.getDemoTradingHistory();
       }
 
+      // Check for geo-restrictions first by trying a simple ping request
+      try {
+        await bybitService.ping();
+      } catch (pingError: any) {
+        // Check if the error is related to geo-restriction (CloudFront 403)
+        if (pingError.response && pingError.response.status === 403 && 
+            (pingError.response.data && typeof pingError.response.data === 'string' && 
+             pingError.response.data.includes('CloudFront'))) {
+          console.log('Detected geo-restriction from Bybit API. Using demo trading history.');
+          return this.getDemoTradingHistory();
+        }
+      }
+      
       // Try to check for API permissions
       let status;
       try {
@@ -267,6 +293,19 @@ export class AccountService {
         return this.getDemoOpenOrders();
       }
 
+      // Check for geo-restrictions first by trying a simple ping request
+      try {
+        await bybitService.ping();
+      } catch (pingError: any) {
+        // Check if the error is related to geo-restriction (CloudFront 403)
+        if (pingError.response && pingError.response.status === 403 && 
+            (pingError.response.data && typeof pingError.response.data === 'string' && 
+             pingError.response.data.includes('CloudFront'))) {
+          console.log('Detected geo-restriction from Bybit API. Using demo open orders.');
+          return this.getDemoOpenOrders();
+        }
+      }
+      
       // Try to check for API permissions
       let status;
       try {
@@ -389,6 +428,22 @@ export class AccountService {
         };
       }
 
+      // Check for geo-restrictions first by trying a simple ping request
+      try {
+        await bybitService.ping();
+      } catch (pingError: any) {
+        // Check if the error is related to geo-restriction (CloudFront 403)
+        if (pingError.response && pingError.response.status === 403 && 
+            (pingError.response.data && typeof pingError.response.data === 'string' && 
+             pingError.response.data.includes('CloudFront'))) {
+          console.log('Detected geo-restriction from Bybit API. Order placement not available.');
+          return {
+            success: false,
+            message: 'Bybit API access is geo-restricted in your region. Order placement not available.'
+          };
+        }
+      }
+
       // Check API permissions
       try {
         const status = await this.checkConnection();
@@ -434,6 +489,22 @@ export class AccountService {
           success: false,
           message: 'Bybit API not configured. Please check your API keys.'
         };
+      }
+
+      // Check for geo-restrictions first by trying a simple ping request
+      try {
+        await bybitService.ping();
+      } catch (pingError: any) {
+        // Check if the error is related to geo-restriction (CloudFront 403)
+        if (pingError.response && pingError.response.status === 403 && 
+            (pingError.response.data && typeof pingError.response.data === 'string' && 
+             pingError.response.data.includes('CloudFront'))) {
+          console.log('Detected geo-restriction from Bybit API. Order cancellation not available.');
+          return {
+            success: false,
+            message: 'Bybit API access is geo-restricted in your region. Order cancellation not available.'
+          };
+        }
       }
 
       // Check API permissions
