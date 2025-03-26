@@ -155,25 +155,10 @@ export class MarketService {
       // Get candlestick data from Bitget
       const klineData = await bitgetService.getKlineData(symbol, mappedInterval, limit);
       
-      // Log what we received
-      console.log(`Received klineData from service, type: ${typeof klineData}, is array: ${Array.isArray(klineData)}`);
-      if (Array.isArray(klineData) && klineData.length > 0) {
-        console.log(`First candle sample:`, JSON.stringify(klineData[0]));
-      } else {
-        console.log('No candle data or empty array received');
-        return []; // Return empty array if data is missing or empty
-      }
-      
-      // Bitget's kline data format as observed from the API:
-      // Typical format: { ts, open, high, low, close, baseVol, quoteVol }
+      // Bitget's kline data has following format for each item:
+      // { open, high, low, close, quoteVol, baseVol, usdtVol, ts }
       return klineData.map((item: any): KlineData => {
         try {
-          // Check if item has required properties
-          if (!item || !item.ts || !item.open || !item.high || !item.low || !item.close) {
-            console.error('Invalid candle data structure:', JSON.stringify(item));
-            throw new Error('Invalid candle data structure');
-          }
-          
           // Convert timestamp from milliseconds to ISO string
           const timestamp = new Date(parseInt(item.ts)).toISOString();
           
@@ -183,7 +168,7 @@ export class MarketService {
             high: parseFloat(item.high),
             low: parseFloat(item.low),
             close: parseFloat(item.close),
-            volume: parseFloat(item.baseVol || item.quoteVol || '0')
+            volume: parseFloat(item.baseVol)
           };
         } catch (err) {
           console.error('Error parsing candle data:', err, 'Item:', JSON.stringify(item));
@@ -200,7 +185,7 @@ export class MarketService {
       });
     } catch (error) {
       console.error(`Error fetching candlestick data for ${symbol} from Bitget:`, error);
-      return []; // Return empty array on error
+      return this.getDemoCandlestickData(symbol, interval, limit);
     }
   }
   
