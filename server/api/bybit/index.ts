@@ -5,7 +5,7 @@ import { marketService } from './marketService';
 import { bybitService } from './bybitService';
 import { tradingBotService } from './tradingBotService';
 import { convertToBybitPair, convertFromBybitPair } from './config';
-import { testProxyConnection, VPN_CONFIG } from './proxy-config';
+import { testProxyConnection, VPN_CONFIG, createProxyInstance } from './proxy-config';
 
 const router = Router();
 
