@@ -4,7 +4,17 @@ import { marketService } from './marketService';
 import { accountService } from './accountService';
 import { bitgetService } from './bitgetService';
 import { tradingBotService } from './tradingBotService';
-import { isConfigured, TRADING_STRATEGIES, DEFAULT_PAIRS, ALWAYS_USE_DEMO } from './config';
+import { isConfigured, TRADING_STRATEGIES, DEFAULT_PAIRS, ALWAYS_USE_DEMO, DEFAULT_CURRENCIES } from './config';
+
+// Interface for candlestick data
+interface KlineData {
+  timestamp: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
 
 const router = Router();
 
@@ -194,8 +204,8 @@ router.get('/candles/:symbol', async (req: Request, res: Response) => {
                          candleData[0].hasOwnProperty('open') && candleData[0].hasOwnProperty('close') &&
                          candleData[0].hasOwnProperty('high') && candleData[0].hasOwnProperty('low') &&
                          candleData[0].hasOwnProperty('volume') && candleData[0].hasOwnProperty('timestamp') &&
-                         parseFloat(candleData[0].open) > 0 && 
-                         parseFloat(candleData[0].volume) > 0;
+                         candleData[0].open > 0 && 
+                         candleData[0].volume > 0;
     
     // לוג של דוגמת נתונים ראשונה
     if (Array.isArray(candleData) && candleData.length > 0) {

@@ -1,5 +1,5 @@
 import { bitgetService } from './bitgetService';
-import { ALWAYS_USE_DEMO } from './config';
+import { ALWAYS_USE_DEMO, DEFAULT_CURRENCIES } from './config';
 
 /**
  * Interface for standardized account balance information
@@ -67,67 +67,91 @@ export class AccountService {
       }
       
       if (assets.length === 0) {
-        console.log('No assets found in response, using demo data');
-        return this.getEmptyBalanceResponse();
+        console.log('No assets found in response, using common currencies with zero balances');
+        // Return common currencies with zero balances
+        return DEFAULT_CURRENCIES.map((currency: string) => ({
+          currency,
+          available: 0,
+          frozen: 0,
+          total: 0,
+          valueUSD: 0,
+          isRealAccount: true // Flag indicating these are real account currencies with zero balance
+        }));
       }
       
       console.log(`Processing ${assets.length} assets from account data`);
       
-      // Transform the data to our standard format - filter only assets with balances
-      return assets
-        .filter((asset: any) => {
-          // Filter out assets with zero balance - handle both possible field names
-          const available = parseFloat(asset.available || '0');
-          const frozen = parseFloat(asset.frozen || '0');
-          const locked = parseFloat(asset.locked || '0');
-          const lock = parseFloat(asset.lock || '0');
-          
-          const hasBalance = available > 0 || frozen > 0 || locked > 0 || lock > 0;
-          return hasBalance;
-        })
-        .map((asset: any): AccountBalance => {
-          // Log first few assets for debugging
-          if (assets.indexOf(asset) < 3) {
-            console.log('Processing asset:', JSON.stringify(asset));
-          }
-          
-          // Map Bitget API fields to our standard format based on actual response
-          const available = parseFloat(asset.available || '0');
-          const frozen = parseFloat(asset.frozen || '0');
-          const locked = parseFloat(asset.locked || '0'); 
-          const lock = parseFloat(asset.lock || '0');
-          const total = available + frozen + locked + lock;
-          
-          // We don't have direct USD value in API, estimate based on common prices
-          let valueUSD = 0;
-          
-          // Simple price mapping for major currencies
-          const estimatedPrices: Record<string, number> = {
-            'BTC': 67000,
-            'ETH': 3500,
-            'SOL': 140,
-            'USDT': 1,
-            'USDC': 1,
-            'BNB': 590,
-            'ADA': 0.45,
-            'XRP': 0.62,
-            'DOGE': 0.14
-          };
-          
-          // Try both coinName and coinDisplayName for price lookup
-          const currencyName = asset.coinName || asset.coinDisplayName || 'Unknown';
-          if (estimatedPrices[currencyName]) {
-            valueUSD = total * estimatedPrices[currencyName];
-          }
-          
-          return {
-            currency: currencyName,
-            available,
-            frozen: frozen + locked + lock, // Combine all frozen/locked funds
-            total,
-            valueUSD
-          };
-        });
+      // First get all assets that have non-zero balances
+      const assetsWithBalance = assets.filter((asset: any) => {
+        // Check for both possible field names
+        const available = parseFloat(asset.available || '0');
+        const frozen = parseFloat(asset.frozen || '0');
+        const locked = parseFloat(asset.locked || '0');
+        const lock = parseFloat(asset.lock || '0');
+        
+        const hasBalance = available > 0 || frozen > 0 || locked > 0 || lock > 0;
+        return hasBalance;
+      });
+      
+      // If we have assets with balances, return them
+      if (assetsWithBalance.length > 0) {
+        console.log(`Found ${assetsWithBalance.length} assets with non-zero balance`);
+        return assetsWithBalance
+          .map((asset: any): AccountBalance => {
+            // Log first few assets for debugging
+            if (assets.indexOf(asset) < 3) {
+              console.log('Processing asset:', JSON.stringify(asset));
+            }
+            
+            // Map Bitget API fields to our standard format based on actual response
+            const available = parseFloat(asset.available || '0');
+            const frozen = parseFloat(asset.frozen || '0');
+            const locked = parseFloat(asset.locked || '0'); 
+            const lock = parseFloat(asset.lock || '0');
+            const total = available + frozen + locked + lock;
+            
+            // We don't have direct USD value in API, estimate based on common prices
+            let valueUSD = 0;
+            
+            // Simple price mapping for major currencies
+            const estimatedPrices: Record<string, number> = {
+              'BTC': 67000,
+              'ETH': 3500,
+              'SOL': 140,
+              'USDT': 1,
+              'USDC': 1,
+              'BNB': 590,
+              'ADA': 0.45,
+              'XRP': 0.62,
+              'DOGE': 0.14
+            };
+            
+            // Try both coinName and coinDisplayName for price lookup
+            const currencyName = asset.coinName || asset.coinDisplayName || 'Unknown';
+            if (estimatedPrices[currencyName]) {
+              valueUSD = total * estimatedPrices[currencyName];
+            }
+            
+            return {
+              currency: currencyName,
+              available,
+              frozen: frozen + locked + lock, // Combine all frozen/locked funds
+              total,
+              valueUSD
+            };
+          });
+      }
+      
+      // If no assets with balance were found, return empty balances for common currencies
+      console.log('No assets with balance found, returning zero balances for common currencies');
+      return DEFAULT_CURRENCIES.map((currency: string) => ({
+        currency,
+        available: 0,
+        frozen: 0,
+        total: 0,
+        valueUSD: 0,
+        isRealAccount: true // Flag indicating these are real account currencies with zero balance
+      }));
     } catch (error) {
       console.error('Failed to fetch account balances:', error);
       
@@ -546,8 +570,8 @@ export class AccountService {
       
       // Determine if we failed at public endpoints or authenticated requests
       const isAuthError = error.message?.includes('API credentials') || 
-                         error.message?.includes('authentication') ||
-                         error.message?.includes('signature');
+                        error.message?.includes('authentication') ||
+                        error.message?.includes('signature');
       
       return {
         success: false,
