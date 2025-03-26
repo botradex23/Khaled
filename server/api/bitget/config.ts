@@ -1,15 +1,17 @@
 // Bitget API configuration settings
 
 // Base URLs for Bitget API
+// Note: The testnet URL doesn't seem to work directly, so we'll use the mainnet URL
+// with the demo flag in the header instead
 export const BITGET_MAINNET_URL = 'https://api.bitget.com';
-export const BITGET_TESTNET_URL = 'https://api.bitgettest.com';
+export const BITGET_TESTNET_URL = 'https://api.bitget.com'; // Changed to use main URL with demo flag
 
 // Whether to use testnet (demo environment) instead of mainnet
 // Using testnet as requested by user
 export const USE_TESTNET = true;
 
 // Base URL to use (will be set to testnet or mainnet based on USE_TESTNET)
-export const BASE_URL = USE_TESTNET ? BITGET_TESTNET_URL : BITGET_MAINNET_URL;
+export const BASE_URL = BITGET_MAINNET_URL; // Always use mainnet URL but with demo flag
 
 // Use fallback demo data if API fails or for testing purposes
 // Set to false as required by user - never use demo data
