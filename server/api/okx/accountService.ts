@@ -86,15 +86,16 @@ export class AccountService {
       }
       
       // Format the response data
-      return response.data.data[0].details.map(balance => ({
+      return response.data.data[0].details.map((balance: Balance): AccountBalance => ({
         currency: balance.ccy,
         available: parseFloat(balance.availBal),
         frozen: parseFloat(balance.frozenBal),
         total: parseFloat(balance.bal),
         valueUSD: parseFloat(balance.eq)
       }));
-    } catch (error) {
-      console.error('Failed to fetch account balances:', error.response?.data || error.message);
+    } catch (error: unknown) {
+      const err = error as Error & { response?: { data: unknown } };
+      console.error('Failed to fetch account balances:', err.response?.data || err.message);
       if (throwError) {
         throw error;
       }
@@ -139,8 +140,9 @@ export class AccountService {
       }
       
       return response.data || [];
-    } catch (error) {
-      console.error('Failed to fetch trading history:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error('Failed to fetch trading history:', err.message);
       return [];
     }
   }
@@ -168,8 +170,9 @@ export class AccountService {
       }
       
       return response.data || [];
-    } catch (error) {
-      console.error('Failed to fetch open orders:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error('Failed to fetch open orders:', err.message);
       return [];
     }
   }
