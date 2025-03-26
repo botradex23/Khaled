@@ -45,21 +45,44 @@ export class AccountService {
       console.log('Received account response from Bitget:', 
         typeof accountResponse === 'object' ? 'Object received' : 'Unexpected response type');
       
-      // Check if we got a valid response with data
-      if (!accountResponse || !accountResponse.data || !Array.isArray(accountResponse.data) || accountResponse.data.length === 0) {
+      let assets: any[] = [];
+      
+      // Handle different response formats
+      if (Array.isArray(accountResponse)) {
+        // Direct array response
+        assets = accountResponse;
+        console.log(`Received array of ${assets.length} assets directly`);
+      } else if (accountResponse && typeof accountResponse === 'object') {
+        if ('data' in accountResponse && Array.isArray(accountResponse.data)) {
+          // Response in { data: [...] } format
+          assets = accountResponse.data;
+          console.log(`Received ${assets.length} assets in data property`);
+        } else {
+          console.log('Unexpected response structure:', Object.keys(accountResponse).join(', '));
+          return this.getEmptyBalanceResponse();
+        }
+      } else {
         console.log('Empty or invalid response from Bitget API, using demo data');
         return this.getEmptyBalanceResponse();
       }
       
-      const assets = accountResponse.data;
+      if (assets.length === 0) {
+        console.log('No assets found in response, using demo data');
+        return this.getEmptyBalanceResponse();
+      }
       
       console.log(`Processing ${assets.length} assets from account data`);
       
-      // Transform the data to our standard format
+      // Transform the data to our standard format - filter only assets with balances
       return assets
         .filter((asset: any) => {
-          // Filter out assets with zero balance if needed
-          const hasBalance = parseFloat(asset.available || '0') > 0 || parseFloat(asset.locked || '0') > 0;
+          // Filter out assets with zero balance - handle both possible field names
+          const available = parseFloat(asset.available || '0');
+          const frozen = parseFloat(asset.frozen || '0');
+          const locked = parseFloat(asset.locked || '0');
+          const lock = parseFloat(asset.lock || '0');
+          
+          const hasBalance = available > 0 || frozen > 0 || locked > 0 || lock > 0;
           return hasBalance;
         })
         .map((asset: any): AccountBalance => {
@@ -71,8 +94,9 @@ export class AccountService {
           // Map Bitget API fields to our standard format based on actual response
           const available = parseFloat(asset.available || '0');
           const frozen = parseFloat(asset.frozen || '0');
+          const locked = parseFloat(asset.locked || '0'); 
           const lock = parseFloat(asset.lock || '0');
-          const total = available + frozen + lock;
+          const total = available + frozen + locked + lock;
           
           // We don't have direct USD value in API, estimate based on common prices
           let valueUSD = 0;
@@ -90,14 +114,16 @@ export class AccountService {
             'DOGE': 0.14
           };
           
-          if (estimatedPrices[asset.coinName]) {
-            valueUSD = total * estimatedPrices[asset.coinName];
+          // Try both coinName and coinDisplayName for price lookup
+          const currencyName = asset.coinName || asset.coinDisplayName || 'Unknown';
+          if (estimatedPrices[currencyName]) {
+            valueUSD = total * estimatedPrices[currencyName];
           }
           
           return {
-            currency: asset.coinName || asset.coinDisplayName || 'Unknown',
+            currency: currencyName,
             available,
-            frozen: frozen + lock, // Combine frozen and locked funds
+            frozen: frozen + locked + lock, // Combine all frozen/locked funds
             total,
             valueUSD
           };

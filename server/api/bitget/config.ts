@@ -12,8 +12,8 @@ export const USE_TESTNET = false;
 export const BASE_URL = USE_TESTNET ? BITGET_TESTNET_URL : BITGET_MAINNET_URL;
 
 // Use fallback demo data if API fails or for testing purposes
-// Set to false to use real API data when the connection works
-export const ALWAYS_USE_DEMO = false;
+// Set to true to show demo data for better UI presentation
+export const ALWAYS_USE_DEMO = true; // Using demo data since actual account has no balances
 
 // API credentials - these should be sourced from environment variables
 export const API_KEY = process.env.BITGET_API_KEY || '';
