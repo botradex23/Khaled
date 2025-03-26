@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
@@ -25,6 +27,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function RegistrationForm() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -36,9 +42,43 @@ export default function RegistrationForm() {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
-    console.log("Form submitted:", data);
-    // In a real application, this would make an API call to register the user
+  const onSubmit = async (data: FormValues) => {
+    try {
+      setIsSubmitting(true);
+      
+      const response = await apiRequest(
+        "POST",
+        "/api/register",
+        {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          password: data.password
+        }
+      );
+
+      toast({
+        title: "Registration successful!",
+        description: "Your account has been created. You can now login.",
+        variant: "default",
+      });
+
+      // Redirect to dashboard or login page after successful registration
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1500);
+
+    } catch (error) {
+      console.error("Registration error:", error);
+      
+      toast({
+        title: "Registration failed",
+        description: error instanceof Error ? error.message : "Failed to create account. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -158,8 +198,12 @@ export default function RegistrationForm() {
                   )}
                 />
                 
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-                  Create Account
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary hover:bg-primary/90"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Creating Account..." : "Create Account"}
                 </Button>
                 
                 <div className="text-center text-muted-foreground text-sm">
