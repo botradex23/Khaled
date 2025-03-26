@@ -13,6 +13,8 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
+  getUserByAppleId(appleId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
   // Bot related methods
@@ -150,18 +152,46 @@ export class MemStorage implements IStorage {
       (user) => user.email === email,
     );
   }
+  
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.googleId === googleId,
+    );
+  }
+  
+  async getUserByAppleId(appleId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.appleId === appleId,
+    );
+  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentId++;
-    // Ensure all fields are properly typed
+    
+    // Create base user object with required fields
     const user: User = {
       id,
       username: insertUser.username,
       email: insertUser.email,
       firstName: insertUser.firstName || "",
       lastName: insertUser.lastName || "",
-      password: insertUser.password
+      password: insertUser.password || "",
+      createdAt: new Date()
     };
+    
+    // Add optional OAuth fields if provided
+    if (insertUser.googleId) {
+      user.googleId = insertUser.googleId;
+    }
+    
+    if (insertUser.appleId) {
+      user.appleId = insertUser.appleId;
+    }
+    
+    if (insertUser.profilePicture) {
+      user.profilePicture = insertUser.profilePicture;
+    }
+    
     this.users.set(id, user);
     return user;
   }
