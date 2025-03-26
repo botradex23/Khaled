@@ -21,7 +21,7 @@ interface AccountBalance {
 
 export function AccountBalanceCard() {
   const { data, isLoading, error } = useQuery({
-    queryKey: ["/api/okx/account/balance"],
+    queryKey: ["/api/bitget/account/balance"],
     refetchInterval: 60000 // 1 minute refresh
   });
 
@@ -59,7 +59,7 @@ export function AccountBalanceCard() {
           <div className="flex flex-col items-center justify-center py-6">
             <BadgeInfo className="h-10 w-10 text-muted-foreground mb-2" />
             <p className="text-center text-muted-foreground mb-2">
-              Could not retrieve account balance from OKX API
+              Could not retrieve account balance from Bitget API
             </p>
             <p className="text-center text-sm text-muted-foreground">
               Please check your API connection and try again
@@ -126,7 +126,7 @@ export function AccountBalanceCard() {
 
 export function TradingHistoryCard() {
   const { data, isLoading, error } = useQuery({
-    queryKey: ["/api/okx/account/history"],
+    queryKey: ["/api/bitget/account/history"],
     refetchInterval: 60000 // 1 minute refresh
   });
 

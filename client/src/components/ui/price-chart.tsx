@@ -73,11 +73,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export function PriceChart({ symbol = "BTC-USDT" }: { symbol?: string }) {
+export function PriceChart({ symbol = "BTCUSDT" }: { symbol?: string }) {
   const [interval, setInterval] = useState("1H");
   
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: [`/api/okx/candles/${symbol}`, interval],
+    queryKey: [`/api/bitget/candles/${symbol}`, interval],
     refetchInterval: interval === "1m" ? 30000 : 60000 // More frequent updates for 1m chart
   });
   
@@ -116,7 +116,7 @@ export function PriceChart({ symbol = "BTC-USDT" }: { symbol?: string }) {
         </CardHeader>
         <CardContent>
           <div className="h-[300px] w-full flex flex-col items-center justify-center">
-            <p className="text-muted-foreground mb-4">Could not retrieve chart data from OKX API</p>
+            <p className="text-muted-foreground mb-4">Could not retrieve chart data from Bitget API</p>
             <button 
               onClick={handleRefresh}
               className="px-4 py-2 border rounded-md hover:bg-muted flex items-center gap-2"
