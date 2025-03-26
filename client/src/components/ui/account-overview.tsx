@@ -49,50 +49,20 @@ export function AccountBalanceCard() {
   }
 
   if (error || !data || !Array.isArray(data)) {
-    // Sample data for demonstration while API connection is fixed
-    const sampleBalances: AccountBalance[] = [
-      { currency: "BTC", available: 0.42, frozen: 0.0, total: 0.42, valueUSD: 25200.0 },
-      { currency: "ETH", available: 5.75, frozen: 0.0, total: 5.75, valueUSD: 11960.25 },
-      { currency: "USDT", available: 14500.0, frozen: 0.0, total: 14500.0, valueUSD: 14500.0 },
-      { currency: "SOL", available: 25.0, frozen: 0.0, total: 25.0, valueUSD: 3600.0 },
-    ];
-    
-    // Calculate total portfolio value
-    const totalValue = sampleBalances.reduce((sum, asset) => sum + asset.valueUSD, 0);
-    
     return (
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-semibold">Account Overview</CardTitle>
-          <CardDescription>Demo Portfolio (API connection pending)</CardDescription>
+          <CardDescription>Unable to load account data</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div>
-              <span className="text-3xl font-bold">${totalValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-            </div>
-            
-            <div className="space-y-3">
-              {sampleBalances.map((asset) => {
-                const percentage = (asset.valueUSD / totalValue) * 100;
-                return (
-                  <div key={asset.currency} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium">{asset.currency}</span>
-                      <span>${asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Progress value={percentage} className="h-2" />
-                      <span className="text-xs text-muted-foreground w-12 text-right">
-                        {percentage.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="text-xs text-muted-foreground text-center mt-4">
-              Demo data shown while waiting for API connection
+          <div className="flex flex-col items-center justify-center py-6">
+            <BadgeInfo className="h-10 w-10 text-muted-foreground mb-2" />
+            <p className="text-center text-muted-foreground mb-2">
+              Could not retrieve account balance from OKX API
+            </p>
+            <p className="text-center text-sm text-muted-foreground">
+              Please check your API connection and try again
             </p>
           </div>
         </CardContent>
@@ -181,40 +151,22 @@ export function TradingHistoryCard() {
   }
 
   if (error || !data) {
-    // Sample trade data for demonstration
-    const sampleTrades = [
-      { instId: "BTC-USDT", side: "buy", px: "64850.20", sz: "0.05", timestamp: "2 hours ago" },
-      { instId: "ETH-USDT", side: "sell", px: "3350.75", sz: "1.2", timestamp: "5 hours ago" },
-      { instId: "SOL-USDT", side: "buy", px: "143.50", sz: "10", timestamp: "Yesterday" },
-      { instId: "BNB-USDT", side: "buy", px: "605.30", sz: "2.5", timestamp: "Yesterday" },
-      { instId: "XRP-USDT", side: "sell", px: "0.5120", sz: "1500", timestamp: "2 days ago" },
-    ];
-    
     return (
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-semibold">Recent Trading Activity</CardTitle>
-          <CardDescription>Demo data (API connection pending)</CardDescription>
+          <CardDescription>Unable to load trading history</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {sampleTrades.map((trade, index) => (
-            <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
-              <div className="flex justify-between">
-                <div className="font-medium">{trade.instId}</div>
-                <div className={trade.side === 'buy' ? 'text-green-500' : 'text-red-500'}>
-                  {trade.side.toUpperCase()}
-                </div>
-              </div>
-              <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                <div>Price: ${parseFloat(trade.px).toFixed(2)}</div>
-                <div>Size: {parseFloat(trade.sz).toFixed(4)}</div>
-                <div>{trade.timestamp}</div>
-              </div>
-            </div>
-          ))}
-          <p className="text-xs text-muted-foreground text-center mt-4">
-            Demo data shown while waiting for API connection
-          </p>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-6">
+            <BadgeInfo className="h-10 w-10 text-muted-foreground mb-2" />
+            <p className="text-center text-muted-foreground mb-2">
+              Could not retrieve trading history from OKX API
+            </p>
+            <p className="text-center text-sm text-muted-foreground">
+              Please check your API connection and try again
+            </p>
+          </div>
         </CardContent>
       </Card>
     );
