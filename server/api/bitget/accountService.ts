@@ -45,29 +45,51 @@ export class AccountService {
       console.log('Received account response from Bitget:', 
         typeof accountResponse === 'object' ? 'Object received' : 'Unexpected response type');
       
-      // Check if we got a valid response
-      if (!accountResponse || (Array.isArray(accountResponse) && accountResponse.length === 0)) {
-        console.log('Empty response from Bitget API, using demo data');
+      // Check if we got a valid response with data
+      if (!accountResponse || !accountResponse.data || !Array.isArray(accountResponse.data) || accountResponse.data.length === 0) {
+        console.log('Empty or invalid response from Bitget API, using demo data');
         return this.getEmptyBalanceResponse();
       }
       
-      const response = accountResponse as any[];
+      const assets = accountResponse.data;
       
-      console.log(`Processing ${response.length} assets from account data`);
+      console.log(`Processing ${assets.length} assets from account data`);
       
       // Transform the data to our standard format
-      return response.map((asset: any): AccountBalance => {
-        // Log the asset structure to debug
-        console.log('Processing asset:', JSON.stringify(asset));
-        
-        return {
-          currency: asset.coinName || asset.coin || asset.currency || 'Unknown',
-          available: parseFloat(asset.available || asset.free || '0'),
-          frozen: parseFloat(asset.locked || asset.frozen || '0'),
-          total: parseFloat(asset.available || asset.free || '0') + parseFloat(asset.locked || asset.frozen || '0'),
-          valueUSD: parseFloat(asset.usdValue || asset.valueUSD || '0')
-        };
-      });
+      return assets
+        .filter((asset: any) => {
+          // Filter out assets with zero balance if needed
+          const hasBalance = parseFloat(asset.available || '0') > 0 || parseFloat(asset.locked || '0') > 0;
+          return hasBalance;
+        })
+        .map((asset: any): AccountBalance => {
+          // Log first few assets for debugging
+          if (assets.indexOf(asset) < 3) {
+            console.log('Processing asset:', JSON.stringify(asset));
+          }
+          
+          // Map Bitget API fields to our standard format
+          const available = parseFloat(asset.available || '0');
+          const frozen = parseFloat(asset.locked || '0');
+          const total = available + frozen;
+          
+          // Calculate USD value if not provided directly
+          let valueUSD = 0;
+          if (asset.usdValue) {
+            valueUSD = parseFloat(asset.usdValue);
+          } else if (asset.btcValue && asset.coinName === 'BTC') {
+            // If it's BTC and we have btcValue
+            valueUSD = parseFloat(asset.btcValue) * 67000; // Approximate BTC USD value
+          }
+          
+          return {
+            currency: asset.coinName || 'Unknown',
+            available,
+            frozen,
+            total,
+            valueUSD
+          };
+        });
     } catch (error) {
       console.error('Failed to fetch account balances:', error);
       
