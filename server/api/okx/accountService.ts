@@ -29,22 +29,40 @@ export class AccountService {
   /**
    * Get account balances
    * If the API request fails or authentication is not set up, returns empty balances
+   * 
+   * @param {boolean} throwError - If true, will throw errors instead of returning empty balances
+   * @returns Array of account balances or throws error if throwError is true
    */
-  async getAccountBalances(): Promise<AccountBalance[]> {
+  async getAccountBalances(throwError = false): Promise<AccountBalance[]> {
     // Check if OKX API is properly configured first
     if (!okxService.isConfigured()) {
       console.warn('OKX API credentials not configured - returning empty balances');
+      if (throwError) {
+        throw new Error('OKX API credentials not configured');
+      }
       return this.getEmptyBalanceResponse();
     }
     
     try {
+      console.log('Fetching account balances from OKX API...');
       const response = await okxService.makeAuthenticatedRequest<OkxResponse<{ details: Balance[] }>>(
         'GET',
         '/api/v5/account/balance'
       );
       
-      if (response.code !== '0' || !response.data[0]?.details) {
-        console.warn(`Failed to fetch account balances: ${response.msg}`);
+      if (response.code !== '0') {
+        console.warn(`Failed to fetch account balances: ${response.msg} (Code: ${response.code})`);
+        if (throwError) {
+          throw new Error(`OKX API error (code ${response.code}): ${response.msg}`);
+        }
+        return this.getEmptyBalanceResponse();
+      }
+      
+      if (!response.data[0]?.details) {
+        console.warn('Account balance data format unexpected - no details found');
+        if (throwError) {
+          throw new Error('Failed to parse OKX balance data - unexpected format');
+        }
         return this.getEmptyBalanceResponse();
       }
       
@@ -58,6 +76,9 @@ export class AccountService {
       }));
     } catch (error) {
       console.error('Failed to fetch account balances:', error);
+      if (throwError) {
+        throw error;
+      }
       return this.getEmptyBalanceResponse();
     }
   }
@@ -281,7 +302,29 @@ export class AccountService {
       // Try to access authenticated endpoint
       try {
         console.log('Testing OKX authenticated API connection...');
-        const balances = await this.getAccountBalances();
+        
+        // Before checking balances, we need to verify if the OKX API authentication actually works
+        // Make a direct call that requires authentication to test auth status
+        const authTest = await okxService.makeAuthenticatedRequest('GET', '/api/v5/account/config');
+        
+        // If we reach here without an error, authentication was successful
+        if (!authTest || typeof authTest !== 'object' || !('code' in authTest) || authTest.code !== '0') {
+          // Auth test failed with a non-success code
+          console.error('Authentication test failed:', authTest);
+          return {
+            connected: true,
+            authenticated: false,
+            message: `Connected to OKX public API, but authentication failed with code ${(authTest as any)?.code || 'unknown'}: ${(authTest as any)?.msg || 'unknown error'}`,
+            publicApiWorking: true,
+            apiKeyConfigured,
+            apiUrl,
+            isDemo,
+            details: { authResponse: authTest }
+          };
+        }
+        
+        // If authentication passed, get balances with throwError parameter set to true
+        const balances = await this.getAccountBalances(true);
         
         // If we have balances with non-zero values, authentication is definitely working
         const hasRealBalances = balances.some(balance => balance.total > 0);
