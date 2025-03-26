@@ -59,8 +59,25 @@ export class OkxService {
     // Pre-encode the message for signature
     const message = timestamp + method + requestPath + body;
     
+    // Log signature components for debugging
+    if (requestPath.includes('account')) {
+      console.log('Generating OKX signature with:');
+      console.log(`- Timestamp: ${timestamp}`);
+      console.log(`- Method: ${method}`);
+      console.log(`- Path: ${requestPath}`);
+      console.log(`- Body Length: ${body.length} chars`);
+      console.log(`- Message: ${timestamp + method + requestPath}[body omitted]`);
+      console.log(`- Secret Key Length: ${SECRET_KEY.length} chars`);
+    }
+    
     // Create HMAC SHA256 signature using the secret key
-    return CryptoJS.HmacSHA256(message, SECRET_KEY).toString(CryptoJS.enc.Base64);
+    const signature = CryptoJS.HmacSHA256(message, SECRET_KEY).toString(CryptoJS.enc.Base64);
+    
+    if (requestPath.includes('account')) {
+      console.log(`- Generated Signature: ${signature.substring(0, 10)}...`);
+    }
+    
+    return signature;
   }
   
   /**
@@ -73,17 +90,28 @@ export class OkxService {
     const passLast = PASSPHRASE.slice(-1);
     console.log(`Using passphrase format: ${passFirst}...${passLast} (length: ${PASSPHRASE.length})`);
     
-    // For API v5, OKX documentation indicates the passphrase needs to be Base64 encoded
-    // for some API endpoints. We'll try with the encoded version since the regular one fails.
     try {
-      // Check if we're already using environment variables
+      // According to OKX API v5 docs, we need to try different formats:
+      // 1. Raw passphrase - most common format
+      // 2. MD5 hashed passphrase - sometimes needed for API v5
+      // 3. Base64 encoded passphrase - required for some endpoints
+
+      // For debug purposes, we'll try the raw passphrase first
+      // When we get the updated keys, we might need to experiment with different formats
+      
+      // If we're using environment variables, use the value as-is
       if (process.env.OKX_PASSPHRASE) {
-        // If using environment variables, return as is - assuming it's already in the correct format
+        console.log('Using passphrase from environment variable');
         return process.env.OKX_PASSPHRASE;
-      } else {
-        // Otherwise, use the hardcoded passphrase
-        return PASSPHRASE;
       }
+      
+      // Otherwise use the hardcoded passphrase
+      console.log('Using hardcoded passphrase');
+      return PASSPHRASE;
+      
+      // If raw passphrase doesn't work, we can try these formats:
+      // 1. MD5 hash: CryptoJS.MD5(PASSPHRASE).toString()
+      // 2. Base64 encode: CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(PASSPHRASE))
     } catch (error) {
       console.error('Error processing passphrase:', error);
       return PASSPHRASE;

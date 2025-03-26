@@ -14,6 +14,61 @@ interface AccountBalance {
 
 export class AccountService {
   /**
+   * Check API key format to help diagnose issues
+   * @param apiKey - The API key to check
+   * @returns Format description
+   */
+  private checkApiKeyFormat(apiKey: string): string {
+    if (!apiKey) return 'Missing';
+    if (apiKey.length < 10) return 'Too short - invalid format';
+    
+    // Bitget API keys typically have a specific format
+    if (apiKey.length >= 24 && apiKey.length <= 36) {
+      return 'Standard format (expected length)';
+    } else {
+      return `Unusual format (length: ${apiKey.length})`;
+    }
+  }
+  
+  /**
+   * Check secret key format to help diagnose issues
+   * @param secretKey - The secret key to check
+   * @returns Format description
+   */
+  private checkSecretKeyFormat(secretKey: string): string {
+    if (!secretKey) return 'Missing';
+    if (secretKey.length < 10) return 'Too short - invalid format';
+    
+    // Bitget secret keys are typically longer strings
+    if (/^[A-Za-z0-9+/=]+$/.test(secretKey) && secretKey.length >= 32) {
+      return 'Standard format (Base64-like)';
+    } else if (/^[A-F0-9]+$/.test(secretKey) && secretKey.length >= 32) {
+      return 'Standard format (Hexadecimal)';
+    } else {
+      return `Unusual format (length: ${secretKey.length})`;
+    }
+  }
+  
+  /**
+   * Check passphrase format to help diagnose issues
+   * @param passphrase - The passphrase to check
+   * @returns Format description
+   */
+  private checkPassphraseFormat(passphrase: string): string {
+    if (!passphrase) return 'Missing';
+    
+    // Passphrases can vary but should be of reasonable length
+    if (passphrase.length < 4) {
+      return 'Too short - might be invalid';
+    } else if (/^[A-F0-9]+$/.test(passphrase) && passphrase.length === 32) {
+      return 'Appears to be MD5 hash format';
+    } else if (/^[A-Za-z0-9+/=]+$/.test(passphrase) && passphrase.length % 4 === 0) {
+      return 'Might be Base64 encoded';
+    } else {
+      return 'Standard plain text format';
+    }
+  }
+  /**
    * Get account balances
    * If the API request fails or authentication is not set up, returns demo balances
    * 

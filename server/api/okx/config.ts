@@ -17,9 +17,17 @@ console.log(`OKX_API_KEY: ${process.env.OKX_API_KEY ? process.env.OKX_API_KEY.su
 console.log(`OKX_SECRET_KEY: ${process.env.OKX_SECRET_KEY ? process.env.OKX_SECRET_KEY.substring(0, 4) + '...' : 'missing'}`);
 console.log(`OKX_PASSPHRASE: ${process.env.OKX_PASSPHRASE ? process.env.OKX_PASSPHRASE.substring(0, 2) + '...' : 'missing'}`);
 
+// Use environment variables with fallbacks for API credentials
+// When updating these credentials, you need to restart the server
 export const API_KEY = process.env.OKX_API_KEY || 'a6c726f8-4e11-4c7c-b236-ad3b63d73a3d';
 export const SECRET_KEY = process.env.OKX_SECRET_KEY || 'E5DE2806C9778CCCCCC80D07F719FD3B';
 export const PASSPHRASE = process.env.OKX_PASSPHRASE || 'Khaled123.';
+
+// Log the actual values being used (first 4 and last 4 chars for security)
+console.log('Using API Key:', API_KEY.length > 8 ? 
+  `${API_KEY.substring(0, 4)}...${API_KEY.substring(API_KEY.length - 4)}` : '[hidden]');
+console.log('Using Secret Key:', SECRET_KEY.length > 8 ?
+  `${SECRET_KEY.substring(0, 4)}...${SECRET_KEY.substring(SECRET_KEY.length - 4)}` : '[hidden]');
 
 /**
  * Check if API credentials are configured

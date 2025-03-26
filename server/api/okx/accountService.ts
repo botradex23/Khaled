@@ -28,6 +28,61 @@ interface AccountBalance {
 // Service for account-related operations
 export class AccountService {
   /**
+   * Check API key format to help diagnose issues
+   * @param apiKey - The API key to check
+   * @returns Format description
+   */
+  private checkApiKeyFormat(apiKey: string): string {
+    if (!apiKey) return 'Missing';
+    if (apiKey.length < 10) return 'Too short - invalid format';
+    
+    // OKX API keys typically have a specific format with hyphens
+    if (apiKey.includes('-') && apiKey.length > 30) {
+      return 'Standard format (UUID with hyphens)';
+    } else if (apiKey.length > 30) {
+      return 'Long format without hyphens';
+    } else {
+      return `Unusual format (length: ${apiKey.length})`;
+    }
+  }
+  
+  /**
+   * Check secret key format to help diagnose issues
+   * @param secretKey - The secret key to check
+   * @returns Format description
+   */
+  private checkSecretKeyFormat(secretKey: string): string {
+    if (!secretKey) return 'Missing';
+    if (secretKey.length < 10) return 'Too short - invalid format';
+    
+    // OKX secret keys are typically 32+ character hexadecimal strings
+    if (/^[A-F0-9]+$/.test(secretKey) && secretKey.length >= 32) {
+      return 'Standard format (Hexadecimal)';
+    } else {
+      return `Unusual format (length: ${secretKey.length})`;
+    }
+  }
+  
+  /**
+   * Check passphrase format to help diagnose issues
+   * @param passphrase - The passphrase to check
+   * @returns Format description
+   */
+  private checkPassphraseFormat(passphrase: string): string {
+    if (!passphrase) return 'Missing';
+    
+    // Passphrases can vary but should be of reasonable length
+    if (passphrase.length < 4) {
+      return 'Too short - might be invalid';
+    } else if (/^[A-F0-9]+$/.test(passphrase) && passphrase.length === 32) {
+      return 'Appears to be MD5 hash format';
+    } else if (/^[A-Za-z0-9+/=]+$/.test(passphrase) && passphrase.length % 4 === 0) {
+      return 'Might be Base64 encoded';
+    } else {
+      return 'Standard plain text format';
+    }
+  }
+  /**
    * Get account balances
    * If the API request fails or authentication is not set up, returns empty balances
    * 
@@ -417,6 +472,11 @@ export class AccountService {
     apiKeyConfigured?: boolean;
     apiUrl?: string;
     isDemo?: boolean;
+    keyFormat?: {
+      apiKeyFormat: string;
+      secretKeyFormat: string;
+      passphraseFormat: string;
+    };
     details?: any;
   }> {
     console.log('Running comprehensive OKX API connection check...');
@@ -425,6 +485,13 @@ export class AccountService {
     const apiKeyConfigured = okxService.isConfigured();
     const isDemo = true; // We're using demo mode by default
     const apiUrl = okxService.getBaseUrl();
+    
+    // Check key formats to help diagnose issues
+    const keyFormat = {
+      apiKeyFormat: this.checkApiKeyFormat(API_KEY),
+      secretKeyFormat: this.checkSecretKeyFormat(SECRET_KEY),
+      passphraseFormat: this.checkPassphraseFormat(PASSPHRASE)
+    };
     
     console.log(`OKX API configuration status: 
       - API URL: ${apiUrl}
@@ -451,7 +518,8 @@ export class AccountService {
           publicApiWorking: false,
           apiKeyConfigured,
           apiUrl,
-          isDemo
+          isDemo,
+          keyFormat
         };
       }
       
@@ -464,7 +532,8 @@ export class AccountService {
           publicApiWorking: true,
           apiKeyConfigured,
           apiUrl,
-          isDemo
+          isDemo,
+          keyFormat
         };
       }
       
@@ -488,6 +557,7 @@ export class AccountService {
             apiKeyConfigured,
             apiUrl,
             isDemo,
+            keyFormat,
             details: { authResponse: authTest }
           };
         }
@@ -505,7 +575,8 @@ export class AccountService {
           publicApiWorking: true,
           apiKeyConfigured,
           apiUrl,
-          isDemo
+          isDemo,
+          keyFormat
         };
       } catch (authError: any) {
         // Detailed authentication error information
@@ -546,6 +617,7 @@ export class AccountService {
           apiKeyConfigured,
           apiUrl,
           isDemo,
+          keyFormat,
           details
         };
       }
@@ -561,6 +633,7 @@ export class AccountService {
         apiKeyConfigured,
         apiUrl,
         isDemo,
+        keyFormat,
         details: { originalError: error.message }
       };
     }
