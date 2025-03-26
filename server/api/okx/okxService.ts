@@ -68,6 +68,9 @@ export class OkxService {
     const signature = this.generateSignature(timestamp, method, requestPath, body);
     
     // Setup request config
+    // Problem: We're getting "Request header OK-ACCESS-PASSPHRASE incorrect" error
+    // According to OKX documentation v5, we need to use the raw passphrase, not the hash
+    
     const config: AxiosRequestConfig = {
       method,
       url: `${this.baseUrl}${requestPath}`,
@@ -144,8 +147,11 @@ export class OkxService {
   /**
    * Get historical candlestick data for chart
    */
-  async getKlineData(symbol: string, interval = '1h', limit = 100) {
-    return this.makePublicRequest(`/api/v5/market/candles?instId=${symbol}&bar=${interval}&limit=${limit}`);
+  async getKlineData(symbol: string, interval = '1H', limit = 100) {
+    // OKX requires uppercase time interval (e.g., 1H, 4H, 1D)
+    // converts interval to uppercase if it's passed in lowercase
+    const formattedInterval = interval.toUpperCase();
+    return this.makePublicRequest(`/api/v5/market/candles?instId=${symbol}&bar=${formattedInterval}&limit=${limit}`);
   }
   
   /**
