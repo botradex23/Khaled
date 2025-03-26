@@ -27,7 +27,8 @@ export const setupGoogleAuth = () => {
         clientID: process.env.GOOGLE_CLIENT_ID || '',
         clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
         callbackURL: 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback',
-        scope: ['profile', 'email'],
+        scope: ['profile', 'email']
+        // proxy option removed due to TypeScript compatibility issues
       },
       async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: (error: Error | null, user?: User) => void) => {
         try {

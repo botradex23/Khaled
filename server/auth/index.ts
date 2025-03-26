@@ -95,18 +95,20 @@ function registerAuthRoutes(app: Express) {
       passport.authenticate('google', (err: Error | null, user: any, info: any) => {
         if (err) {
           console.error('Error during Google authentication:', err);
-          return res.redirect('/login?error=google_auth_failed');
+          return res.redirect('/login?error=google_auth_failed&message=' + encodeURIComponent(err.message));
         }
         
         if (!user) {
           console.error('No user returned from Google auth, info:', info);
-          return res.redirect('/login?error=google_no_user');
+          const infoStr = info ? JSON.stringify(info) : 'No info available';
+          console.log('Authentication info details:', infoStr);
+          return res.redirect('/login?error=google_no_user&info=' + encodeURIComponent(infoStr));
         }
         
         req.logIn(user, (loginErr) => {
           if (loginErr) {
             console.error('Error during login after Google auth:', loginErr);
-            return res.redirect('/login?error=login_failed');
+            return res.redirect('/login?error=login_failed&message=' + encodeURIComponent(loginErr.message));
           }
           
           console.log('Google authentication successful, user:', user);
