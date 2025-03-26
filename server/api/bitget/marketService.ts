@@ -222,13 +222,28 @@ export class MarketService {
                 volume: parseFloat(item[5])
               };
             } else {
-              // בדיקה אם יש שדה ts (חותמת זמן) בפורמט שנקבל מה-API של ביטגט
-              // מכיוון שהחותמת זמן היא בפורמט מילישניות מ-1970, נוכל לייצר תאריך אמיתי
+              // שיפור טיפול בחותמות זמן מה-API של Bitget
+              // Bitget מחזיר חותמות זמן במילישניות מ-1970, אבל לפעמים הן מוצגות כתאריכים עתידיים
+              // נקבע את הזמן לפי הנתונים שיש לנו בצורה הנכונה ביותר
               let timestamp: string;
+              
               if (item.ts) {
-                timestamp = new Date(parseInt(item.ts)).toISOString();
+                // קבל את החותמת זמן מה-API ובדוק אם היא הגיונית
+                const apiTimestamp = parseInt(item.ts);
+                const apiDate = new Date(apiTimestamp);
+                
+                // בדוק אם התאריך הוא עתידי (יותר משעה מהזמן הנוכחי)
+                if (apiDate.getTime() > now.getTime() + (60 * 60 * 1000)) {
+                  // אם זה תאריך עתידי מרוחק, השתמש בזמן יחסי מהרגע הנוכחי
+                  console.log(`Adjusting future timestamp: ${apiDate.toISOString()} to current time reference`);
+                  const hourOffset = klineData.length - klineData.indexOf(item) - 1;
+                  timestamp = new Date(now.getTime() - hourOffset * 60 * 60 * 1000).toISOString();
+                } else {
+                  // אם התאריך סביר, השתמש בו
+                  timestamp = apiDate.toISOString();
+                }
               } else {
-                // אם אין חותמת זמן, נקבע זמן יחסי מהרגע הנוכחי
+                // אם אין חותמת זמן כלל, השתמש בזמן יחסי מהרגע הנוכחי
                 const hourOffset = klineData.length - klineData.indexOf(item) - 1;
                 timestamp = new Date(now.getTime() - hourOffset * 60 * 60 * 1000).toISOString();
               }
@@ -244,9 +259,32 @@ export class MarketService {
             }
           } catch (err) {
             console.error('Error parsing candle data:', err, 'Item:', JSON.stringify(item));
-            // תן ערכי ברירת מחדל אם יש בעיה
-            const hourOffset = klineData.length - klineData.indexOf(item) - 1;
-            const fallbackTimestamp = new Date(now.getTime() - hourOffset * 60 * 60 * 1000).toISOString();
+            
+            // טיפול במקרה של שגיאה - נשתמש בזמן אמת
+            let fallbackTimestamp: string;
+            try {
+              if (item && typeof item === 'object' && item.ts) {
+                // נסה להשתמש בחותמת הזמן מהפריט הנוכחי
+                const apiTimestamp = parseInt(item.ts);
+                const apiDate = new Date(apiTimestamp);
+                
+                if (apiDate.getTime() > now.getTime() + (60 * 60 * 1000)) {
+                  console.log(`Adjusting future timestamp in error handler: ${apiDate.toISOString()} to current time`);
+                  const hourOffset = klineData.length - klineData.indexOf(item) - 1;
+                  fallbackTimestamp = new Date(now.getTime() - hourOffset * 60 * 60 * 1000).toISOString();
+                } else {
+                  fallbackTimestamp = apiDate.toISOString();
+                }
+              } else {
+                // אם אין חותמת זמן, השתמש בזמן יחסי
+                const hourOffset = klineData.length - klineData.indexOf(item) - 1;
+                fallbackTimestamp = new Date(now.getTime() - hourOffset * 60 * 60 * 1000).toISOString();
+              }
+            } catch (fallbackErr) {
+              console.error('Error in fallback timestamp calculation:', fallbackErr);
+              // במקרה של שגיאה נוספת, השתמש בזמן נוכחי
+              fallbackTimestamp = new Date().toISOString();
+            }
             
             return {
               timestamp: fallbackTimestamp,
