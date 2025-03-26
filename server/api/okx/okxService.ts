@@ -127,8 +127,8 @@ export class OkxService {
         'OK-ACCESS-SIGN': signature,
         'OK-ACCESS-TIMESTAMP': timestamp,
         'OK-ACCESS-PASSPHRASE': this.getPassphrase(),
-        // Always add demo trading header regardless of isDemo setting
-        'x-simulated-trading': '1'
+        // Add demo trading header only when isDemo is true
+        ...(this.isDemo ? { 'x-simulated-trading': '1' } : {})
       }
     };
     
@@ -348,5 +348,5 @@ export class OkxService {
   }
 }
 
-// Create and export default instance using demo trading
-export const okxService = new OkxService(true);
+// Create and export default instance using real trading (not demo)
+export const okxService = new OkxService(false);

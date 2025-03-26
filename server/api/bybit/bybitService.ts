@@ -363,4 +363,4 @@ export class BybitService {
 }
 
 // Export a singleton instance of the service
-export const bybitService = new BybitService(false); // Using main server instead of testnet
+export const bybitService = new BybitService(true); // Using testnet as requested by user
