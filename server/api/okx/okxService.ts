@@ -18,6 +18,13 @@ class OkxApiNotConfiguredError extends Error {
   }
 }
 
+// Define OkxResponse interface
+interface OkxResponse<T> {
+  code: string;
+  msg: string;
+  data: T;
+}
+
 // Main service class for OKX API
 export class OkxService {
   private baseUrl: string;
@@ -169,11 +176,23 @@ export class OkxService {
   /**
    * Get historical candlestick data for chart
    */
-  async getKlineData(symbol: string, interval = '1H', limit = 100) {
-    // OKX requires uppercase time interval (e.g., 1H, 4H, 1D)
-    // converts interval to uppercase if it's passed in lowercase
-    const formattedInterval = interval.toUpperCase();
-    return this.makePublicRequest(`/api/v5/market/candles?instId=${symbol}&bar=${formattedInterval}&limit=${limit}`);
+  async getKlineData(symbol: string, interval = '1H', limit = 100): Promise<OkxResponse<string[][]>> {
+    // According to OKX API docs, bar parameter should be one of:
+    // 1m, 3m, 5m, 15m, 30m, 1H, 2H, 4H, 6H, 12H, 1D, 1W, 1M, 3M, 6M, 1Y
+    
+    // Make sure interval is in the right format
+    let formattedInterval = interval.toUpperCase();
+    
+    // Valid intervals
+    const validIntervals = ['1M', '3M', '5M', '15M', '30M', '1H', '2H', '4H', '6H', '12H', '1D', '1W', '1M', '3M', '6M', '1Y'];
+    
+    // Default to 1H if not valid
+    if (!validIntervals.includes(formattedInterval)) {
+      console.warn(`Invalid interval '${interval}' provided, defaulting to '1H'`);
+      formattedInterval = '1H';
+    }
+    
+    return this.makePublicRequest<OkxResponse<string[][]>>(`/api/v5/market/candles?instId=${symbol}&bar=${formattedInterval}&limit=${limit}`);
   }
   
   /**
