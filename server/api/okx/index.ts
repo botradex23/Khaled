@@ -42,6 +42,48 @@ router.get('/status', async (req: Request, res: Response) => {
   }
 });
 
+// Endpoint to check API key configuration details (for debugging)
+router.get('/config', async (req: Request, res: Response) => {
+  try {
+    const apiKey = process.env.OKX_API_KEY || '';
+    const maskedApiKey = apiKey ? `${apiKey.substring(0, 5)}...${apiKey.substring(apiKey.length - 4)}` : 'Not configured';
+    
+    const secretKey = process.env.OKX_SECRET_KEY || '';
+    const maskedSecretKey = secretKey ? `${secretKey.substring(0, 5)}...${secretKey.substring(secretKey.length - 4)}` : 'Not configured';
+    
+    const passphrase = process.env.OKX_PASSPHRASE || '';
+    const maskedPassphrase = passphrase ? `${passphrase.substring(0, 5)}...${passphrase.substring(passphrase.length - 4)}` : 'Not configured';
+    
+    // Check if keys are in correct format
+    const isApiKeyValid = apiKey.length >= 10; // Typical API keys are longer
+    const isSecretKeyValid = secretKey.length >= 10;
+    const isPassphraseValid = passphrase.length >= 4;
+    
+    // Check if passphrase looks like a hex string (all uppercase hex characters)
+    const isPassphraseHex = /^[A-F0-9]+$/.test(passphrase);
+    
+    res.json({
+      apiKeyConfigured: !!apiKey,
+      secretKeyConfigured: !!secretKey,
+      passphraseConfigured: !!passphrase,
+      maskedApiKey,
+      maskedSecretKey,
+      maskedPassphrase,
+      apiKeyLength: apiKey.length,
+      secretKeyLength: secretKey.length,
+      passphraseLength: passphrase.length,
+      isApiKeyValid,
+      isSecretKeyValid,
+      isPassphraseValid,
+      isPassphraseHex,
+      baseUrl: okxService.getBaseUrl(),
+      isDemoMode: true
+    });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
 // Market data endpoints
 router.get('/markets', async (req: Request, res: Response) => {
   try {
