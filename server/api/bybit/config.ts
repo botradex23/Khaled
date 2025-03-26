@@ -19,6 +19,7 @@ console.log(`BYBIT_SECRET_KEY: ${process.env.BYBIT_SECRET_KEY ? process.env.BYBI
  * Required permissions for the Bybit API key:
  * - Read permission (for account information and market data)
  * - Trade permission (for executing trades)
+ * - The API key must have both read and write permissions for full functionality
  */
 export const isConfigured = () => {
   return !!(API_KEY && SECRET_KEY);
