@@ -218,17 +218,30 @@ export class BitgetService {
 
       console.log(`Received response with status ${response.status}`);
       
+      // Handle two possible response formats from Bitget API:
+      // 1. Standard API response with code/msg/data fields
+      // 2. Candles API which directly returns an array
+      
+      // Check if the response is an array (used for candles data)
+      if (Array.isArray(response.data)) {
+        console.log(`Received array response with ${response.data.length} items`);
+        return response.data as T;
+      }
+      
+      // Handle structured response with code/msg/data
       if (response.data && response.data.code) {
         console.log(`Response code: ${response.data.code}, message: ${response.data.msg || 'No message'}`);
-      } else {
-        console.log('Response has unexpected format:', typeof response.data);
+        
+        if (response.data.code !== '00000') {
+          throw new Error(`Bitget API error: ${response.data.msg} (${response.data.code})`);
+        }
+        
+        return response.data.data as T;
       }
-
-      if (response.data.code !== '00000') {
-        throw new Error(`Bitget API error: ${response.data.msg} (${response.data.code})`);
-      }
-
-      return response.data.data as T;
+      
+      // Unknown response format, log and return as is
+      console.log('Response has unexpected format:', typeof response.data);
+      return response.data as T;
     } catch (error: any) {
       if (error.response) {
         console.error('Bitget API error response:', {
@@ -346,20 +359,12 @@ export class BitgetService {
    * @param limit - Maximum number of results to return
    */
   async getKlineData(symbol: string, interval = '1h', limit = 100): Promise<any> {
-    const response = await this.makePublicRequest<any>('/api/spot/v1/market/candles', {
+    // For candlestick data, Bitget returns an array directly
+    return this.makePublicRequest('/api/spot/v1/market/candles', {
       symbol,
       period: interval,
       limit
     });
-    
-    // Extract the data array from the response
-    // The API returns { code, msg, data: [...] }
-    if (response && response.data) {
-      return response.data;
-    }
-    
-    // If no data is available, return empty array
-    return [];
   }
 
   /**
