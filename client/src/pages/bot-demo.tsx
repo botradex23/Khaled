@@ -24,7 +24,7 @@ import {
   History,
 } from "lucide-react";
 
-export default function BotDemoSimple() {
+export default function BotDemo() {
   const [activeTab, setActiveTab] = useState("balance");
   
   // Demo data
