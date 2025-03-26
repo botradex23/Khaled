@@ -237,10 +237,12 @@ export default function Bots() {
                             ))}
                           </div>
                         </div>
-                        <Button variant="outline" size="sm" onClick={() => window.alert(`Performance analytics for ${bot.name} coming soon!`)}>
-                          <span>Performance Details</span>
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
+                        <Link href="/bot-demo">
+                          <Button variant="outline" size="sm">
+                            <span>Performance Details</span>
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </Link>
                       </CardFooter>
                     </Card>
                   ))}
@@ -318,10 +320,12 @@ export default function Bots() {
                         </div>
                       </CardContent>
                       <CardFooter>
-                        <Button className="w-full" onClick={() => window.alert("Grid Strategy deployment coming soon!")}>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Deploy This Strategy
-                        </Button>
+                        <Link href="/bot-demo" className="w-full">
+                          <Button className="w-full">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Deploy This Strategy
+                          </Button>
+                        </Link>
                       </CardFooter>
                     </Card>
                     
@@ -373,10 +377,12 @@ export default function Bots() {
                         </div>
                       </CardContent>
                       <CardFooter>
-                        <Button className="w-full" onClick={() => window.alert("DCA Strategy deployment coming soon!")}>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Deploy This Strategy
-                        </Button>
+                        <Link href="/bot-demo" className="w-full">
+                          <Button className="w-full">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Deploy This Strategy
+                          </Button>
+                        </Link>
                       </CardFooter>
                     </Card>
                     
@@ -428,10 +434,12 @@ export default function Bots() {
                         </div>
                       </CardContent>
                       <CardFooter>
-                        <Button className="w-full" onClick={() => window.alert("MACD Strategy deployment coming soon!")}>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Deploy This Strategy
-                        </Button>
+                        <Link href="/bot-demo" className="w-full">
+                          <Button className="w-full">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Deploy This Strategy
+                          </Button>
+                        </Link>
                       </CardFooter>
                     </Card>
                   </div>
