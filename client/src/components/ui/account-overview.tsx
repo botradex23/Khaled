@@ -59,6 +59,18 @@ export function AccountBalanceCard() {
   // Check for errors in both queries
   const okxError = okxQuery.error;
   const bitgetError = bitgetQuery.error;
+  
+  // Debug logging to see the status of both queries
+  console.log("Account Balance Card - Debug Status:", {
+    okxLoading: okxQuery.isLoading,
+    okxSuccess: okxQuery.isSuccess,
+    okxError: okxQuery.error ? "Error" : "None",
+    okxData: okxQuery.data,
+    bitgetLoading: bitgetQuery.isLoading,
+    bitgetSuccess: bitgetQuery.isSuccess,
+    bitgetError: bitgetQuery.error ? "Error" : "None",
+    bitgetData: bitgetQuery.data
+  });
 
   if (isLoading) {
     return (

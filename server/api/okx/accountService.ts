@@ -143,14 +143,24 @@ export class AccountService {
         return this.getEmptyBalanceResponse();
       }
       
+      console.log("Successfully retrieved balance data directly from API");
+      console.log("Sample balance:", JSON.stringify(response.data.data[0].details[0]));
+      
       // Format the response data
-      return response.data.data[0].details.map((balance: Balance): AccountBalance => ({
-        currency: balance.ccy,
-        available: parseFloat(balance.availBal),
-        frozen: parseFloat(balance.frozenBal),
-        total: parseFloat(balance.bal),
-        valueUSD: parseFloat(balance.eq)
-      }));
+      return response.data.data[0].details.map((balance: Balance): AccountBalance => {
+        // Fix issue with total value sometimes being null (using available + frozen instead)
+        const available = parseFloat(balance.availBal) || 0;
+        const frozen = parseFloat(balance.frozenBal) || 0;
+        const total = balance.bal ? parseFloat(balance.bal) : (available + frozen);
+        
+        return {
+          currency: balance.ccy,
+          available: available,
+          frozen: frozen,
+          total: total,
+          valueUSD: parseFloat(balance.eq) || 0
+        };
+      });
     } catch (error: unknown) {
       const err = error as Error & { response?: { data: unknown } };
       console.error('Failed to fetch account balances:', err.response?.data || err.message);
