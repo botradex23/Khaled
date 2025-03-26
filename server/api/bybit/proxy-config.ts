@@ -3,25 +3,23 @@ import { SocksProxyAgent } from 'socks-proxy-agent';
 import axios from 'axios';
 
 // VPN Proxy Configuration
-// Change these settings to match your proxy/VPN service
+// Configured with Webshare proxy service
 export const VPN_CONFIG = {
   // Whether to use VPN for all Bybit API requests
   // Setting to false will use the fallback demo data when geo-restrictions are detected
-  enabled: false, // Disabled by default until a working proxy is configured
+  enabled: true, // Enabled with Webshare proxy
 
   // Type of proxy: 'https' or 'socks'
   type: 'https' as 'https' | 'socks',
 
-  // Real, publicly available proxy servers
-  // NOTE: These are examples - the reliability of public proxy servers varies
-  // For production, use a reliable paid proxy/VPN service
-  host: 'open-proxy.example.com', // Replace with real proxy server when testing
-  port: 3128,              // Common proxy port
+  // Webshare proxy server details
+  host: '38.154.227.167', // Webshare proxy IP address
+  port: 5868,             // Webshare proxy port
   
-  // Optional authentication
+  // Webshare authentication credentials
   auth: {
-    username: '', // Optional proxy username
-    password: ''  // Optional proxy password
+    username: 'ahjqspco',     // Webshare username
+    password: 'dzx3r1prpz9k'  // Webshare password
   },
 
   // Preferred proxy countries (Bybit isn't geo-restricted in these)
