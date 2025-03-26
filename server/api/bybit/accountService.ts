@@ -50,16 +50,29 @@ export class AccountService {
    * If the API request fails or authentication is not set up, returns demo balances
    * 
    * @param {boolean} throwError - If true, will throw errors instead of returning demo balances
+   * @param {boolean} forceDemoData - If true, always return demo data regardless of API status
    * @returns Array of account balances or throws error if throwError is true
    */
-  async getAccountBalances(throwError = false): Promise<AccountBalance[]> {
+  async getAccountBalances(throwError = false, forceDemoData = false): Promise<AccountBalance[]> {
     try {
-      if (!isConfigured()) {
-        if (throwError) {
+      if (!isConfigured() || forceDemoData) {
+        if (throwError && !forceDemoData) {
           throw new Error('Bybit API not configured');
         }
-        console.log('Bybit API not configured, returning demo balances');
+        console.log('Bybit API not configured or demo data requested, returning demo balances');
         return this.getEmptyBalanceResponse();
+      }
+
+      // Try to check for API permissions
+      let status;
+      try {
+        status = await this.checkConnection();
+        if (!status.hasReadPermissions) {
+          console.log('Bybit API key does not have read permissions, returning demo balances');
+          return this.getEmptyBalanceResponse();
+        }
+      } catch (err) {
+        console.error('Failed to check API permissions:', err);
       }
 
       // Get wallet balance from Bybit API
@@ -155,12 +168,26 @@ export class AccountService {
   /**
    * Get trading history
    * Returns demo data array if authentication fails
+   * 
+   * @param {boolean} forceDemoData - If true, always return demo data regardless of API status
    */
-  async getTradingHistory(): Promise<any[]> {
+  async getTradingHistory(forceDemoData = false): Promise<any[]> {
     try {
-      if (!isConfigured()) {
-        console.log('Bybit API not configured, returning demo trading history');
+      if (!isConfigured() || forceDemoData) {
+        console.log('Bybit API not configured or demo data requested, returning demo trading history');
         return this.getDemoTradingHistory();
+      }
+
+      // Try to check for API permissions
+      let status;
+      try {
+        status = await this.checkConnection();
+        if (!status.hasReadPermissions) {
+          console.log('Bybit API key does not have read permissions, returning demo trading history');
+          return this.getDemoTradingHistory();
+        }
+      } catch (err) {
+        console.error('Failed to check API permissions:', err);
       }
 
       // Get trading history from Bybit API
@@ -230,12 +257,26 @@ export class AccountService {
   /**
    * Get open orders
    * Returns demo data array if authentication fails
+   * 
+   * @param {boolean} forceDemoData - If true, always return demo data regardless of API status
    */
-  async getOpenOrders(): Promise<any[]> {
+  async getOpenOrders(forceDemoData = false): Promise<any[]> {
     try {
-      if (!isConfigured()) {
-        console.log('Bybit API not configured, returning demo open orders');
+      if (!isConfigured() || forceDemoData) {
+        console.log('Bybit API not configured or demo data requested, returning demo open orders');
         return this.getDemoOpenOrders();
+      }
+
+      // Try to check for API permissions
+      let status;
+      try {
+        status = await this.checkConnection();
+        if (!status.hasReadPermissions) {
+          console.log('Bybit API key does not have read permissions, returning demo open orders');
+          return this.getDemoOpenOrders();
+        }
+      } catch (err) {
+        console.error('Failed to check API permissions:', err);
       }
 
       // Get open orders from Bybit API
@@ -348,6 +389,19 @@ export class AccountService {
         };
       }
 
+      // Check API permissions
+      try {
+        const status = await this.checkConnection();
+        if (!status.hasWritePermissions) {
+          return {
+            success: false,
+            message: 'Your API key does not have write permissions. Please update your API key with write access.'
+          };
+        }
+      } catch (err) {
+        console.error('Failed to check API permissions:', err);
+      }
+
       // Using any type because TypeScript is having trouble with the return type
       const result: any = await bybitService.placeOrder(symbol, side, type, amount, price);
       
@@ -380,6 +434,19 @@ export class AccountService {
           success: false,
           message: 'Bybit API not configured. Please check your API keys.'
         };
+      }
+
+      // Check API permissions
+      try {
+        const status = await this.checkConnection();
+        if (!status.hasWritePermissions) {
+          return {
+            success: false,
+            message: 'Your API key does not have write permissions. Please update your API key with write access.'
+          };
+        }
+      } catch (err) {
+        console.error('Failed to check API permissions:', err);
       }
 
       await bybitService.cancelOrder(symbol, orderId);

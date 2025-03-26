@@ -28,7 +28,27 @@ router.get('/status', async (req: Request, res: Response) => {
     const status = await accountService.checkConnection();
     res.json({
       success: true,
-      status
+      status,
+      apiKeyHasWritePermissions: status.hasWritePermissions,
+      apiKeyHasReadPermissions: status.hasReadPermissions
+    });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * Verify API key permissions
+ * GET /api/bybit/permissions
+ */
+router.get('/permissions', async (req: Request, res: Response) => {
+  try {
+    const status = await accountService.checkConnection();
+    res.json({
+      success: true,
+      hasReadPermissions: status.hasReadPermissions,
+      hasWritePermissions: status.hasWritePermissions,
+      message: status.message
     });
   } catch (err) {
     handleApiError(err, res);
