@@ -88,11 +88,8 @@ export class OkxService {
     // Generate signature
     const signature = this.generateSignature(timestamp, method, requestPath, body);
     
-    // Setup request config
-    // OKX API v5 accepts the raw passphrase for the header
-    // We'll try with the raw passphrase instead of encrypted one
-    
     // Setup request configuration
+    // For v5 API, passphrase should be the original, not encrypted one
     const config: AxiosRequestConfig = {
       method,
       url: `${this.baseUrl}${requestPath}`,
@@ -176,7 +173,7 @@ export class OkxService {
   /**
    * Get historical candlestick data for chart
    */
-  async getKlineData(symbol: string, interval = '1H', limit = 100): Promise<OkxResponse<string[][]>> {
+  async getKlineData(symbol: string, interval = '1H', limit = 100): Promise<any> {
     // According to OKX API docs, bar parameter should be one of:
     // 1m, 3m, 5m, 15m, 30m, 1H, 2H, 4H, 6H, 12H, 1D, 1W, 1M, 3M, 6M, 1Y
     
@@ -192,7 +189,7 @@ export class OkxService {
       formattedInterval = '1H';
     }
     
-    return this.makePublicRequest<OkxResponse<string[][]>>(`/api/v5/market/candles?instId=${symbol}&bar=${formattedInterval}&limit=${limit}`);
+    return this.makePublicRequest(`/api/v5/market/candles?instId=${symbol}&bar=${formattedInterval}&limit=${limit}`);
   }
   
   /**

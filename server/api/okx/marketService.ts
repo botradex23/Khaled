@@ -84,7 +84,7 @@ export class MarketService {
   async getCandlestickData(symbol: string, interval = '1H', limit = 100): Promise<any> {
     try {
       // Use the okxService.getKlineData method which has the correct parameter handling
-      const response = await okxService.getKlineData(symbol, interval, limit) as OkxResponse<string[][]>;
+      const response = await okxService.getKlineData(symbol, interval, limit);
       
       if (response.code !== '0') {
         throw new Error(`Failed to fetch candlestick data: ${response.msg}`);
@@ -93,12 +93,12 @@ export class MarketService {
       // Process and format candlestick data
       // OKX returns an array of arrays: [[timestamp, open, high, low, close, vol, volCcy], [...], ...]
       return response.data.map((candle: any) => ({
-        timestamp: candle[0] as string,
-        open: parseFloat(candle[1] as string),
-        high: parseFloat(candle[2] as string),
-        low: parseFloat(candle[3] as string),
-        close: parseFloat(candle[4] as string),
-        volume: parseFloat(candle[5] as string)
+        timestamp: candle[0],
+        open: parseFloat(candle[1]),
+        high: parseFloat(candle[2]),
+        low: parseFloat(candle[3]),
+        close: parseFloat(candle[4]),
+        volume: parseFloat(candle[5])
       }));
     } catch (error) {
       console.error(`Failed to fetch candlestick data for ${symbol}:`, error);

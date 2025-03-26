@@ -9,7 +9,14 @@ export const API_KEY = process.env.OKX_API_KEY || '';
 export const SECRET_KEY = process.env.OKX_SECRET_KEY || '';
 export const PASSPHRASE = process.env.OKX_PASSPHRASE || '';
 
-// Check if we have valid API credentials
+/**
+ * Check if API credentials are configured
+ * 
+ * Required permissions for the OKX API key:
+ * - Read permission (for account information and market data)
+ * - Trade permission (for executing trades)
+ * - No withdraw permission needed
+ */
 export const isConfigured = () => {
   return !!(API_KEY && SECRET_KEY && PASSPHRASE);
 };
