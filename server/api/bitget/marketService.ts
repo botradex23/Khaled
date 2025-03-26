@@ -162,8 +162,12 @@ export class MarketService {
       // Create a special endpoint to test raw data for debugging
       try {
         // Make a direct call to get the raw data for debugging
+        // Format the symbol properly - remove dash and add _SPBL if needed
+        const formattedSymbol = symbol.replace('-', '');
+        const finalSymbol = formattedSymbol.endsWith('_SPBL') ? formattedSymbol : `${formattedSymbol}_SPBL`;
+        
         const rawResponse = await bitgetService.makePublicRequest<any>('/api/spot/v1/market/candles', {
-          symbol: symbol.endsWith('_SPBL') ? symbol : `${symbol}_SPBL`,
+          symbol: finalSymbol,
           period: mappedInterval,
           limit
         });

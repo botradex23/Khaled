@@ -430,13 +430,16 @@ export class BitgetService {
    */
   async getKlineData(symbol: string, interval = '1h', limit = 100): Promise<any> {
     try {
-      // Ensure symbol format is correct for candles endpoint (it requires symbol_SPBL format)
-      const formattedSymbol = symbol.endsWith('_SPBL') ? symbol : `${symbol}_SPBL`;
+      // Ensure symbol format is correct for candles endpoint
+      // Bitget expects format without dash: BTCUSDT_SPBL
+      const formattedSymbol = symbol.replace('-', '');
+      // Only add _SPBL if not already present
+      const finalSymbol = formattedSymbol.endsWith('_SPBL') ? formattedSymbol : `${formattedSymbol}_SPBL`;
       
-      console.log(`Fetching candles for ${formattedSymbol} with interval ${interval}`);
+      console.log(`Fetching candles for ${finalSymbol} with interval ${interval}`);
       
       const response = await this.makePublicRequest<any>('/api/spot/v1/market/candles', {
-        symbol: formattedSymbol,
+        symbol: finalSymbol,
         period: interval,
         limit
       });
