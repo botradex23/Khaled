@@ -23,9 +23,21 @@ interface AccountBalance {
 }
 
 export function AccountBalanceCard() {
-  const { data, isLoading, error } = useQuery({
+  const queryResult = useQuery({
     queryKey: ["/api/bitget/account/balance"],
     refetchInterval: 60000 // 1 minute refresh
+  });
+  
+  const { data, isLoading, error } = queryResult;
+  
+  // Debug output to console - helps identify issues with the data
+  console.log("Account Balance Card - Query Result:", {
+    data,
+    isLoading,
+    error,
+    isError: queryResult.isError,
+    status: queryResult.status,
+    isSuccess: queryResult.isSuccess
   });
 
   if (isLoading) {
@@ -51,7 +63,7 @@ export function AccountBalanceCard() {
     );
   }
 
-  if (error || !data || !Array.isArray(data)) {
+  if (error || !data) {
     return (
       <Card>
         <CardHeader className="pb-2">
@@ -67,6 +79,35 @@ export function AccountBalanceCard() {
             <p className="text-center text-sm text-muted-foreground">
               Please check your API connection and try again
             </p>
+            {error && (
+              <div className="mt-2 p-2 bg-muted rounded-md text-xs overflow-auto max-w-full">
+                <pre>{JSON.stringify(error, null, 2)}</pre>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // Check if data is not an array or empty
+  if (!Array.isArray(data)) {
+    console.error("Account balance data is not an array:", data);
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold">Account Overview</CardTitle>
+          <CardDescription>Invalid data format</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-6">
+            <BadgeInfo className="h-10 w-10 text-muted-foreground mb-2" />
+            <p className="text-center text-muted-foreground mb-2">
+              Data received in unexpected format
+            </p>
+            <div className="mt-2 p-2 bg-muted rounded-md text-xs overflow-auto max-w-full">
+              <pre>{JSON.stringify(data, null, 2)}</pre>
+            </div>
           </div>
         </CardContent>
       </Card>
