@@ -6,6 +6,7 @@ type AuthContextType = {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  needsProfileCompletion: boolean;
   login: (user: User) => void;
   logout: () => void;
   checkSession: () => Promise<void>;
@@ -17,6 +18,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [needsProfileCompletion, setNeedsProfileCompletion] = useState<boolean>(false);
 
   // Function to check session with the server
   const checkSession = async () => {
@@ -28,11 +30,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // User is authenticated according to server
         setUser(response.user);
         setIsAuthenticated(true);
+        
+        // Check if user needs to complete profile
+        if (!response.user.firstName || !response.user.lastName) {
+          setNeedsProfileCompletion(true);
+        } else {
+          setNeedsProfileCompletion(false);
+        }
+        
         localStorage.setItem("user", JSON.stringify(response.user));
       } else {
         // Not authenticated according to server
         setUser(null);
         setIsAuthenticated(false);
+        setNeedsProfileCompletion(false);
         localStorage.removeItem("user");
       }
     } catch (error) {
@@ -62,6 +73,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = (userData: User) => {
     setUser(userData);
     setIsAuthenticated(true);
+    
+    // Check if user needs to complete profile
+    if (!userData.firstName || !userData.lastName) {
+      setNeedsProfileCompletion(true);
+    } else {
+      setNeedsProfileCompletion(false);
+    }
+    
     localStorage.setItem("user", JSON.stringify(userData));
   };
 
@@ -75,6 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Always clear local state even if server logout fails
       setUser(null);
       setIsAuthenticated(false);
+      setNeedsProfileCompletion(false);
       localStorage.removeItem("user");
     }
   };
@@ -84,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user, 
       isAuthenticated, 
       isLoading,
+      needsProfileCompletion,
       login, 
       logout,
       checkSession

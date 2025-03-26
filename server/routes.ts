@@ -151,6 +151,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to login" });
     }
   });
+  
+  // Update user profile
+  app.patch("/api/users/profile", ensureAuthenticated, async (req, res) => {
+    const profileSchema = z.object({
+      firstName: z.string().min(2, "First name must be at least 2 characters"),
+      lastName: z.string().min(2, "Last name must be at least 2 characters"),
+    });
+
+    try {
+      // Get authenticated user ID from session
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = req.user.id;
+      
+      // Validate input
+      const data = profileSchema.parse(req.body);
+      
+      // Update user profile
+      const updatedUser = await storage.updateUser(userId, {
+        firstName: data.firstName,
+        lastName: data.lastName
+      });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return success with updated user data
+      res.status(200).json({
+        message: "Profile updated successfully",
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName
+        }
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      console.error("Profile update error:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
 
   // Create HTTP server
   const httpServer = createServer(app);

@@ -16,6 +16,7 @@ export interface IStorage {
   getUserByGoogleId(googleId: string): Promise<User | undefined>;
   getUserByAppleId(appleId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
   
   // Bot related methods
   getAllBots(): Promise<Bot[]>;
@@ -197,6 +198,25 @@ export class MemStorage implements IStorage {
     
     this.users.set(id, user);
     return user;
+  }
+  
+  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
+    const existingUser = this.users.get(id);
+    
+    if (!existingUser) {
+      return undefined;
+    }
+    
+    // Create updated user by merging existing user with updates
+    const updatedUser: User = {
+      ...existingUser,
+      ...updates
+    };
+    
+    // Save the updated user
+    this.users.set(id, updatedUser);
+    
+    return updatedUser;
   }
   
   // Bot related methods

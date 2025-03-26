@@ -112,7 +112,14 @@ function registerAuthRoutes(app: Express) {
           }
           
           console.log('Google authentication successful, user:', user);
-          return res.redirect('/login?success=true');
+          
+          // If user has no firstName or lastName, redirect to complete profile page
+          if (!user.firstName || !user.lastName) {
+            return res.redirect('/complete-profile');
+          }
+          
+          // User profile is complete, redirect to dashboard
+          return res.redirect('/dashboard');
         });
       })(req, res, next);
     }
