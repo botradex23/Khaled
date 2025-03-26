@@ -37,6 +37,17 @@ const handleApiError = (err: any, res: Response) => {
 router.get('/status', async (req: Request, res: Response) => {
   try {
     const status = await accountService.checkConnection();
+    
+    // Log key format details on the server for debugging
+    if (status.keyFormat) {
+      console.log(`
+Bitget API Key Format Analysis:
+- API Key: ${status.keyFormat.apiKeyFormat}
+- Secret Key: ${status.keyFormat.secretKeyFormat}
+- Passphrase: ${status.keyFormat.passphraseFormat}
+      `);
+    }
+    
     res.json(status);
   } catch (err) {
     handleApiError(err, res);

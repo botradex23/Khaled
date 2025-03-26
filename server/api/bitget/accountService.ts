@@ -1,5 +1,5 @@
 import { bitgetService } from './bitgetService';
-import { ALWAYS_USE_DEMO, DEFAULT_CURRENCIES } from './config';
+import { ALWAYS_USE_DEMO, DEFAULT_CURRENCIES, API_KEY, SECRET_KEY, PASSPHRASE } from './config';
 
 /**
  * Interface for standardized account balance information
@@ -584,18 +584,38 @@ export class AccountService {
     authenticated: boolean; 
     message: string; 
     details?: any; 
-    error?: any 
+    error?: any;
+    keyFormat?: {
+      apiKeyFormat: string;
+      secretKeyFormat: string;
+      passphraseFormat: string;
+    };
   }> {
     try {
       // First test basic API connectivity with a public endpoint
       await bitgetService.ping();
+      
+      // Check API key format to help diagnose issues
+      const keyFormat = {
+        apiKeyFormat: this.checkApiKeyFormat(API_KEY),
+        secretKeyFormat: this.checkSecretKeyFormat(SECRET_KEY),
+        passphraseFormat: this.checkPassphraseFormat(PASSPHRASE)
+      };
+      
+      console.log(`
+Bitget API Key Format Analysis:
+- API Key: ${keyFormat.apiKeyFormat}
+- Secret Key: ${keyFormat.secretKeyFormat}
+- Passphrase: ${keyFormat.passphraseFormat}
+      `);
       
       // If ALWAYS_USE_DEMO is true, return demo connection info
       if (ALWAYS_USE_DEMO) {
         return {
           success: true,
           authenticated: true,
-          message: 'Demo connection is functioning properly'
+          message: 'Demo connection is functioning properly',
+          keyFormat
         };
       }
       
@@ -604,7 +624,8 @@ export class AccountService {
         return {
           success: true,
           authenticated: false,
-          message: 'Public API connection successful, but API credentials are not configured'
+          message: 'Public API connection successful, but API credentials are not configured',
+          keyFormat
         };
       }
       
@@ -618,7 +639,8 @@ export class AccountService {
         details: {
           accountInfo: accountInfo ? 'Retrieved successfully' : 'No account data returned',
           baseUrl: bitgetService.getBaseUrl()
-        }
+        },
+        keyFormat
       };
     } catch (error: any) {
       console.error('API connection check failed:', error);
@@ -628,13 +650,21 @@ export class AccountService {
                         error.message?.includes('authentication') ||
                         error.message?.includes('signature');
       
+      // Need to declare keyFormat variable in catch block
+      const keyFormat = {
+        apiKeyFormat: this.checkApiKeyFormat(API_KEY),
+        secretKeyFormat: this.checkSecretKeyFormat(SECRET_KEY),
+        passphraseFormat: this.checkPassphraseFormat(PASSPHRASE)
+      };
+      
       return {
         success: false,
         authenticated: false,
         message: isAuthError 
           ? 'Public API connection successful, but authentication failed' 
           : 'Failed to connect to Bitget API',
-        error
+        error,
+        keyFormat
       };
     }
   }
