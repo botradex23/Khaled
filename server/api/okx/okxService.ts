@@ -43,6 +43,20 @@ export class OkxService {
     // Create HMAC SHA256 signature using the secret key
     return CryptoJS.HmacSHA256(message, SECRET_KEY).toString(CryptoJS.enc.Base64);
   }
+  
+  /**
+   * Generate encrypted passphrase for API v5
+   * OKX API v5 requires the passphrase to be encrypted with HMAC-SHA256 method
+   */
+  private encryptPassphrase(): string {
+    try {
+      // According to OKX V5 documentation
+      return CryptoJS.HmacSHA256(PASSPHRASE, SECRET_KEY).toString(CryptoJS.enc.Base64);
+    } catch (error) {
+      console.error('Failed to encrypt passphrase:', error);
+      return PASSPHRASE; // Fallback to plain passphrase
+    }
+  }
 
   /**
    * Make authenticated API request to OKX
@@ -68,9 +82,10 @@ export class OkxService {
     const signature = this.generateSignature(timestamp, method, requestPath, body);
     
     // Setup request config
-    // Problem: We're getting "Request header OK-ACCESS-PASSPHRASE incorrect" error
-    // According to OKX documentation v5, we need to use the raw passphrase, not the hash
+    // OKX API v5 accepts the raw passphrase for the header
+    // We'll try with the raw passphrase instead of encrypted one
     
+    // Setup request configuration
     const config: AxiosRequestConfig = {
       method,
       url: `${this.baseUrl}${requestPath}`,
