@@ -366,16 +366,23 @@ export class BitgetService {
    * @param limit - Maximum number of results to return
    */
   async getKlineData(symbol: string, interval = '1h', limit = 100): Promise<any> {
+    // Ensure symbol format is correct for candles endpoint (it requires symbol_SPBL format)
+    const formattedSymbol = symbol.endsWith('_SPBL') ? symbol : `${symbol}_SPBL`;
+    
+    console.log(`Fetching candles for ${formattedSymbol} with interval ${interval}`);
+    
     const response = await this.makePublicRequest<any>('/api/spot/v1/market/candles', {
-      symbol,
+      symbol: formattedSymbol,
       period: interval,
       limit
     });
     
     // Bitget returns data in a 'data' property
     if (response && response.data) {
+      console.log(`Successfully retrieved ${response.data.length} candles`);
       return response.data;
     }
+    console.warn('No valid candle data returned from Bitget API');
     return []; // Return empty array if no valid data
   }
 

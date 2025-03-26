@@ -48,9 +48,10 @@ export const DEFAULT_CURRENCIES = [
 ];
 
 // Common trading pairs to show in the app
-// Bitget uses symbol_SPBL format for spot pairs
+// NOTE: Bitget API returns symbols without the _SPBL suffix, but when making individual calls to the API,
+// we need to use the _SPBL suffix for many endpoints. Here we use the format returned by the tickers API.
 export const DEFAULT_PAIRS = [
-  'BTCUSDT_SPBL', 'ETHUSDT_SPBL', 'SOLUSDT_SPBL', 'DOGEUSDT_SPBL', 'XRPUSDT_SPBL', 'BNBUSDT_SPBL', 'ADAUSDT_SPBL'
+  'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'DOGEUSDT', 'XRPUSDT', 'BNBUSDT', 'ADAUSDT'
 ];
 
 // Trading strategies supported by the app

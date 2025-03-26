@@ -51,12 +51,10 @@ export class MarketService {
       const filteredTickers = symbols.length > 0
         ? tickers.filter((ticker: any) => {
             return symbols.some(symbol => {
-              // Try to match symbols - handle the _SPBL format properly
-              // For our search symbols format is BTCUSDT_SPBL but in API response it's BTCUSDT
-              const cleanSymbol = symbol.replace('_SPBL', '');
-              return ticker.symbol === cleanSymbol || 
-                    ticker.symbol.replace(/-/g, '') === cleanSymbol ||
-                    ticker.symbol.replace(/_/g, '') === cleanSymbol;
+              // We now use the same format as the API returns (without _SPBL)
+              return ticker.symbol === symbol || 
+                    ticker.symbol.replace(/-/g, '') === symbol ||
+                    ticker.symbol.replace(/_/g, '') === symbol;
             });
           })
         : tickers;
