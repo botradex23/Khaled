@@ -5,15 +5,15 @@ export const BITGET_MAINNET_URL = 'https://api.bitget.com';
 export const BITGET_TESTNET_URL = 'https://api.bitgettest.com';
 
 // Whether to use testnet (demo environment) instead of mainnet
-// Changed to use mainnet since the testnet may have connectivity issues
-export const USE_TESTNET = false;
+// Using testnet for bot training and testing
+export const USE_TESTNET = true;
 
 // Base URL to use (will be set to testnet or mainnet based on USE_TESTNET)
 export const BASE_URL = USE_TESTNET ? BITGET_TESTNET_URL : BITGET_MAINNET_URL;
 
 // Use fallback demo data if API fails or for testing purposes
-// Let's only use demo as a fallback, not as default
-export const ALWAYS_USE_DEMO = false;
+// We're using demo data as the primary source for development and testing
+export const ALWAYS_USE_DEMO = true;
 
 // API credentials - these should be sourced from environment variables
 export const API_KEY = process.env.BITGET_API_KEY || '';

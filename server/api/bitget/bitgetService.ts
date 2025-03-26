@@ -375,7 +375,7 @@ export class BitgetService {
         return result;
       } catch (error) {
         lastError = error;
-        console.error(`Ping attempt ${attempt} failed:`, error.message);
+        console.error(`Ping attempt ${attempt} failed:`, error instanceof Error ? error.message : String(error));
         
         // Only wait if we're going to retry
         if (attempt < maxRetries) {
@@ -399,13 +399,25 @@ export class BitgetService {
     publicApi: boolean;
     authenticatedApi: boolean;
     message: string;
-    details?: any;
+    details: {
+      publicApiResponse?: string;
+      publicApiError?: string;
+      authenticatedApiResponse?: string;
+      authenticatedApiError?: string;
+      [key: string]: any;
+    };
   }> {
     const result = {
       publicApi: false,
       authenticatedApi: false,
       message: '',
-      details: {}
+      details: {} as {
+        publicApiResponse?: string;
+        publicApiError?: string;
+        authenticatedApiResponse?: string;
+        authenticatedApiError?: string;
+        [key: string]: any;
+      }
     };
     
     // Test public endpoints
@@ -422,8 +434,9 @@ export class BitgetService {
       
     } catch (error) {
       result.publicApi = false;
-      result.message = `Failed to connect to Bitget public API: ${error.message}`;
-      result.details.publicApiError = error.message;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      result.message = `Failed to connect to Bitget public API: ${errorMsg}`;
+      result.details.publicApiError = errorMsg;
       return result;
     }
     
@@ -437,8 +450,9 @@ export class BitgetService {
         result.details.authenticatedApiResponse = 'Success';
       } catch (error) {
         result.authenticatedApi = false;
-        result.message = `Public API connection successful, but authentication failed: ${error.message}`;
-        result.details.authenticatedApiError = error.message;
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        result.message = `Public API connection successful, but authentication failed: ${errorMsg}`;
+        result.details.authenticatedApiError = errorMsg;
       }
     } else {
       result.message = 'Public API connection successful. Authentication not tested (no API keys).';
