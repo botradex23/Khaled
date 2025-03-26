@@ -218,6 +218,24 @@ export class BitgetService {
 
       console.log(`Received response with status ${response.status}`);
       
+      // Log the raw response data type and first part of its content
+      const responseType = typeof response.data;
+      console.log(`Raw response type: ${responseType}`);
+      
+      if (responseType === 'object') {
+        const isArray = Array.isArray(response.data);
+        console.log(`Is array: ${isArray}`);
+        
+        if (isArray) {
+          console.log(`Array length: ${response.data.length}`);
+          if (response.data.length > 0) {
+            console.log(`First item sample:`, JSON.stringify(response.data[0]).substring(0, 100));
+          }
+        } else {
+          console.log(`Object keys: ${Object.keys(response.data).join(', ')}`);
+        }
+      }
+      
       // Handle two possible response formats from Bitget API:
       // 1. Standard API response with code/msg/data fields
       // 2. Candles API which directly returns an array
@@ -234,6 +252,25 @@ export class BitgetService {
         
         if (response.data.code !== '00000') {
           throw new Error(`Bitget API error: ${response.data.msg} (${response.data.code})`);
+        }
+        
+        // Check if data property exists and log its type
+        if ('data' in response.data) {
+          const dataType = typeof response.data.data;
+          console.log(`Data property type: ${dataType}`);
+          
+          if (dataType === 'object') {
+            const isArray = Array.isArray(response.data.data);
+            console.log(`Data is array: ${isArray}`);
+            
+            if (isArray) {
+              console.log(`Data array length: ${response.data.data.length}`);
+            } else if (response.data.data) {
+              console.log(`Data object keys: ${Object.keys(response.data.data).join(', ')}`);
+            }
+          }
+        } else {
+          console.log('Response has no data property');
         }
         
         return response.data.data as T;
@@ -349,13 +386,39 @@ export class BitgetService {
    * @returns All market tickers from Bitget in standardized format
    */
   async getAllTickers() {
-    // The API returns data inside a data array property
-    const response = await this.makePublicRequest<any>('/api/spot/v1/market/tickers');
-    // Check if we have a valid response with data array
-    if (response && response.data && Array.isArray(response.data)) {
-      return response.data;
+    // Log the request to debug
+    console.log('Fetching all tickers from Bitget...');
+    
+    try {
+      // The API returns an object with a 'data' property containing the array
+      const response = await this.makePublicRequest<any>('/api/spot/v1/market/tickers');
+      
+      // Log the response type for debugging
+      console.log('Tickers response type:', typeof response);
+      console.log('Is array:', Array.isArray(response));
+      console.log('Response length:', Array.isArray(response) ? response.length : 0);
+      
+      // Check if the response itself is an array (direct response)
+      if (Array.isArray(response)) {
+        console.log(`Received ${response.length} tickers directly`);
+        return response;
+      }
+      
+      // Check if response has a data property that is an array
+      if (response && response.data && Array.isArray(response.data)) {
+        console.log(`Received ${response.data.length} tickers from data property`);
+        return response.data;
+      }
+      
+      // If we get here, log what we actually received
+      console.error('Unexpected response format from getAllTickers:', 
+                 response ? JSON.stringify(response).substring(0, 200) + '...' : 'null');
+      
+      return []; // Return empty array if no valid data
+    } catch (error) {
+      console.error('Error fetching all tickers:', error);
+      return []; // Return empty on error
     }
-    return []; // Return empty array if no valid data
   }
 
   /**
