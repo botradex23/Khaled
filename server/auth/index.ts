@@ -19,11 +19,12 @@ export function setupAuth(app: Express) {
   app.use(
     session({
       secret: process.env.SESSION_SECRET || 'mudrex-crypto-trading-secret',
-      resave: false,
-      saveUninitialized: false,
+      resave: true,
+      saveUninitialized: true,
       cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: false, // Set to false for development, even on HTTPS
         maxAge: 24 * 60 * 60 * 1000, // 1 day
+        sameSite: 'lax'
       },
     })
   );
