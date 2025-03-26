@@ -59,10 +59,10 @@ export class TradingBotService {
       name,
       strategy: strategy as any, // Cast to the expected type from schema
       description,
-      minInvestment: getMinInvestmentForStrategy(strategy),
-      monthlyReturn: getEstimatedReturnForStrategy(strategy),
+      minInvestment: getMinInvestmentForStrategy(strategy).toString(),
+      monthlyReturn: getEstimatedReturnForStrategy(strategy).toString(),
       riskLevel: getRiskLevelForStrategy(strategy),
-      rating: 4.5, // Default rating
+      rating: '4.5', // Default rating
       isPopular: false,
       userId,
       // Add additional properties as needed

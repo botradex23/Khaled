@@ -35,6 +35,7 @@ export const bots = pgTable("bots", {
   riskLevel: integer("risk_level").notNull(),
   rating: decimal("rating").notNull(),
   isPopular: boolean("is_popular").notNull().default(false),
+  userId: integer("user_id").notNull(),
 });
 
 export const botSchema = createInsertSchema(bots);

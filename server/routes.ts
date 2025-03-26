@@ -3,8 +3,12 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { botSchema, pricingPlanSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
+import okxRouter from "./api/okx";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // OKX API routes
+  app.use("/api/okx", okxRouter);
+  
   // API routes
   
   // Get all bots
