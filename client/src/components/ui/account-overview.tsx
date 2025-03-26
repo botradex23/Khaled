@@ -23,22 +23,42 @@ interface AccountBalance {
 }
 
 export function AccountBalanceCard() {
-  const queryResult = useQuery({
+  // We'll fetch balances from both exchanges and display them
+  const bitgetQuery = useQuery({
     queryKey: ["/api/bitget/account/balance"],
     refetchInterval: 60000 // 1 minute refresh
   });
-  
-  const { data, isLoading, error } = queryResult;
-  
-  // Debug output to console - helps identify issues with the data
-  console.log("Account Balance Card - Query Result:", {
-    data,
-    isLoading,
-    error,
-    isError: queryResult.isError,
-    status: queryResult.status,
-    isSuccess: queryResult.isSuccess
+
+  const okxQuery = useQuery({
+    queryKey: ["/api/okx/account/balance"],
+    refetchInterval: 60000 // 1 minute refresh
   });
+  
+  // Debug output to console to help identify issues with the data
+  console.log("Account Balance Card - OKX Query Result:", {
+    data: okxQuery.data,
+    isLoading: okxQuery.isLoading,
+    error: okxQuery.error,
+    isError: okxQuery.isError,
+    status: okxQuery.status,
+    isSuccess: okxQuery.isSuccess
+  });
+  
+  console.log("Account Balance Card - Bitget Query Result:", {
+    data: bitgetQuery.data,
+    isLoading: bitgetQuery.isLoading,
+    error: bitgetQuery.error,
+    isError: bitgetQuery.isError,
+    status: bitgetQuery.status,
+    isSuccess: bitgetQuery.isSuccess
+  });
+  
+  // Combine loading state from both queries
+  const isLoading = okxQuery.isLoading || bitgetQuery.isLoading;
+  
+  // Check for errors in both queries
+  const okxError = okxQuery.error;
+  const bitgetError = bitgetQuery.error;
 
   if (isLoading) {
     return (
@@ -63,7 +83,12 @@ export function AccountBalanceCard() {
     );
   }
 
-  if (error || !data) {
+  // Check if we have data from either API
+  const hasOkxData = okxQuery.data && Array.isArray(okxQuery.data) && okxQuery.data.length > 0;
+  const hasBitgetData = bitgetQuery.data && Array.isArray(bitgetQuery.data) && bitgetQuery.data.length > 0;
+  
+  // If neither API has data and they're both done loading, show an error
+  if (!hasOkxData && !hasBitgetData && !isLoading) {
     return (
       <Card>
         <CardHeader className="pb-2">
@@ -74,25 +99,52 @@ export function AccountBalanceCard() {
           <div className="flex flex-col items-center justify-center py-6">
             <BadgeInfo className="h-10 w-10 text-muted-foreground mb-2" />
             <p className="text-center text-muted-foreground mb-2">
-              Could not retrieve account balance from Bitget API
+              Could not retrieve account balance from either API
             </p>
             <p className="text-center text-sm text-muted-foreground">
-              Please check your API connection and try again
+              Please check your API connections and try again
             </p>
-            {error && (
-              <div className="mt-2 p-2 bg-muted rounded-md text-xs overflow-auto max-w-full">
-                <pre>{JSON.stringify(error, null, 2)}</pre>
+            <div className="grid grid-cols-2 gap-4 mt-4 w-full">
+              <div>
+                <p className="text-xs font-semibold mb-1">OKX API:</p>
+                {okxError ? (
+                  <div className="p-2 bg-muted rounded-md text-xs overflow-auto max-h-20">
+                    <p className="text-red-500">Error</p>
+                  </div>
+                ) : !hasOkxData ? (
+                  <p className="text-xs text-muted-foreground">No data returned</p>
+                ) : (
+                  <p className="text-xs text-green-500">OK</p>
+                )}
               </div>
-            )}
+              
+              <div>
+                <p className="text-xs font-semibold mb-1">Bitget API:</p>
+                {bitgetError ? (
+                  <div className="p-2 bg-muted rounded-md text-xs overflow-auto max-h-20">
+                    <p className="text-red-500">Error</p>
+                  </div>
+                ) : !hasBitgetData ? (
+                  <p className="text-xs text-muted-foreground">No data returned</p>
+                ) : (
+                  <p className="text-xs text-green-500">OK</p>
+                )}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
     );
   }
   
-  // Check if data is not an array or empty
-  if (!Array.isArray(data)) {
-    console.error("Account balance data is not an array:", data);
+  // Prioritize OKX data for demo testnet purposes, but fall back to Bitget if needed
+  const useOkxData = hasOkxData;
+  const selectedData = useOkxData ? okxQuery.data : bitgetQuery.data;
+  const dataSource = useOkxData ? "OKX" : "Bitget";
+  
+  // Check if data is not an array or empty (this should not happen with our validation above, but just in case)
+  if (!Array.isArray(selectedData)) {
+    console.error(`Account balance data is not an array:`, selectedData);
     return (
       <Card>
         <CardHeader className="pb-2">
@@ -106,7 +158,7 @@ export function AccountBalanceCard() {
               Data received in unexpected format
             </p>
             <div className="mt-2 p-2 bg-muted rounded-md text-xs overflow-auto max-w-full">
-              <pre>{JSON.stringify(data, null, 2)}</pre>
+              <pre>{JSON.stringify(selectedData, null, 2)}</pre>
             </div>
           </div>
         </CardContent>
@@ -114,7 +166,7 @@ export function AccountBalanceCard() {
     );
   }
 
-  const balances: AccountBalance[] = data;
+  const balances: AccountBalance[] = selectedData;
   
   // Calculate total portfolio value
   const totalValue = balances.reduce((sum, asset) => sum + asset.valueUSD, 0);
@@ -211,7 +263,7 @@ export function AccountBalanceCard() {
       {sortedBalances.length > 0 && (
         <CardFooter className="pt-0">
           <div className="text-xs text-muted-foreground w-full text-center">
-            Data from Bitget account • Updated {new Date().toLocaleTimeString()}
+            Data from {dataSource} {useOkxData ? "(Demo Mode)" : ""} • Updated {new Date().toLocaleTimeString()}
           </div>
         </CardFooter>
       )}
