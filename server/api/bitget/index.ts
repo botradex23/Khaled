@@ -424,4 +424,24 @@ router.get('/bots/:id/performance', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Get raw account info for debugging
+ * GET /api/bitget/raw-account-info
+ */
+router.get('/raw-account-info', async (req: Request, res: Response) => {
+  try {
+    // Get raw API response without any transformation
+    const response = await bitgetService.makeAuthenticatedRequest('GET', '/api/spot/v1/account/assets');
+    console.log('Raw account info response:', JSON.stringify(response));
+    res.json({
+      success: true,
+      data: response,
+      message: 'Raw account info retrieved for debugging'
+    });
+  } catch (error) {
+    console.error('Error fetching raw account info:', error);
+    handleApiError(error, res);
+  }
+});
+
 export default router;
