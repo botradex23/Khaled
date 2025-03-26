@@ -251,10 +251,10 @@ export default function Bots() {
                 <Card className="py-10">
                   <CardContent className="text-center">
                     <p className="text-muted-foreground mb-4">You don't have any active bots yet</p>
-                    <Link href="/bot-demo">
+                    <Link href="/ai-grid-bot">
                       <Button>
                         <Plus className="mr-2 h-4 w-4" />
-                        Create Your First Bot
+                        Create AI Grid Bot
                       </Button>
                     </Link>
                   </CardContent>
