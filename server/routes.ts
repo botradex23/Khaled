@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { botSchema, pricingPlanSchema, insertUserSchema } from "@shared/schema";
@@ -6,8 +6,12 @@ import { z } from "zod";
 import okxRouter from "./api/okx";
 import bybitRouter from "./api/bybit";
 import bitgetRouter from "./api/bitget";
+import { setupAuth, ensureAuthenticated } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication system
+  setupAuth(app);
+  
   // OKX API routes
   app.use("/api/okx", okxRouter);
   
