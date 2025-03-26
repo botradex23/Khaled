@@ -13,6 +13,7 @@ import Login from "@/pages/login";
 import BotDemo from "@/pages/bot-demo";
 import Learn from "@/pages/learn";
 import AIGridBot from "@/pages/ai-grid-bot";
+import ApiStatus from "@/pages/api-status";
 
 function Router() {
   return (
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/bot-demo" component={BotDemo} />
       <Route path="/learn" component={Learn} />
       <Route path="/ai-grid-bot" component={AIGridBot} />
+      <Route path="/api-status" component={ApiStatus} />
       <Route component={NotFound} />
     </Switch>
   );

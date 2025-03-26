@@ -32,7 +32,7 @@ export default function Footer() {
     { label: "Bot Marketplace", href: "/bots" },
     { label: "Analytics", href: "/dashboard" },
     { label: "API Documentation", href: "/learn" },
-    { label: "Pricing", href: "/bots" }
+    { label: "API Status", href: "/api-status" }
   ];
 
   const resourceLinks = [

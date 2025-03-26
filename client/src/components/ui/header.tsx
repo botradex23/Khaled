@@ -1,170 +1,151 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Menu, X, User, LogOut } from "lucide-react";
+import React from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Menu, X, User, Gauge, BarChart3, BookOpen, Grid, Activity, LayoutGrid, Settings } from "lucide-react";
 
 export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, isAuthenticated, logout } = useAuth();
-  const [, navigate] = useLocation();
+  const [location] = useLocation();
+  const { isAuthenticated, logout } = useAuth();
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = React.useState(false);
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+  const closeMenu = () => {
+    setIsOpen(false);
   };
 
-  // Get user initials for avatar
-  const getUserInitials = () => {
-    if (!user) return "U";
-    if (user.firstName && user.lastName) {
-      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
-    }
-    return user.email ? user.email[0].toUpperCase() : "U";
-  };
-
-  // Get user display name
-  const getUserDisplayName = () => {
-    if (!user) return "";
-    if (user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName}`;
-    }
-    return user.email ? user.email.split("@")[0] : "";
-  };
+  const navLinks = [
+    { to: "/dashboard", label: "Dashboard", icon: <Gauge className="h-4 w-4 mr-2" /> },
+    { to: "/markets", label: "Markets", icon: <BarChart3 className="h-4 w-4 mr-2" /> },
+    { to: "/bots", label: "Bots", icon: <Grid className="h-4 w-4 mr-2" /> },
+    { to: "/learn", label: "Learn", icon: <BookOpen className="h-4 w-4 mr-2" /> },
+    { to: "/api-status", label: "API Status", icon: <Activity className="h-4 w-4 mr-2" /> },
+  ];
 
   return (
-    <header className="bg-card border-b border-border py-4 px-6 fixed top-0 left-0 right-0 z-50">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <Link href="/">
-            <div className="text-primary font-bold text-2xl mr-2">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+    <header className="fixed top-0 left-0 w-full z-50 bg-background border-b border-border">
+      <div className="container mx-auto px-4 py-3 max-w-7xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Link href="/">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary text-xl font-bold cursor-pointer">
                 Cryptex
               </span>
-            </div>
-          </Link>
-        </div>
-        
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-8">
-          <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
-            Home
-          </Link>
-          <Link href="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">
-            Dashboard
-          </Link>
-          <Link href="/bots" className="text-muted-foreground hover:text-primary transition-colors">
-            Bots
-          </Link>
-          <Link href="/markets" className="text-muted-foreground hover:text-primary transition-colors">
-            Markets
-          </Link>
-          <Link href="/learn" className="text-muted-foreground hover:text-primary transition-colors">
-            Learn
-          </Link>
-        </nav>
-        
-        <div className="flex items-center space-x-4">
-          {isAuthenticated && user ? (
-            <div className="flex items-center">
-              <span className="mr-3 text-sm hidden sm:block">שלום, {getUserDisplayName()}</span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {getUserInitials()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel>החשבון שלי</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={() => navigate("/dashboard")}>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>פרופיל</span>
+            </Link>
+          </div>
+
+          {/* Desktop Menu */}
+          {!isMobile && (
+            <nav className="hidden md:flex space-x-6">
+              {navLinks.map((link) => (
+                <Link key={link.to} href={link.to}>
+                  <span
+                    className={`flex items-center text-sm font-medium ${
+                      location === link.to
+                        ? "text-primary border-b-2 border-primary"
+                        : "text-muted-foreground hover:text-primary transition-colors"
+                    }`}
+                  >
+                    {link.icon}
+                    {link.label}
+                  </span>
+                </Link>
+              ))}
+            </nav>
+          )}
+
+          <div className="flex items-center">
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-4">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <User className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>
+                      <Link href="/dashboard">
+                        <span className="flex items-center">
+                          <Gauge className="h-4 w-4 mr-2" />
+                          Dashboard
+                        </span>
+                      </Link>
                     </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>התנתק</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ) : (
-            <>
-              <Link href="/register">
-                <Button variant="default" className="bg-primary hover:bg-primary/90">
-                  Sign Up
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button variant="outline" className="border-border hover:border-primary">
-                  Login
-                </Button>
-              </Link>
-            </>
-          )}
-          
-          {/* Mobile menu button */}
-          <Button 
-            variant="ghost" 
-            className="md:hidden text-muted-foreground hover:text-white" 
-            onClick={toggleMobileMenu}
-          >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </Button>
+                    <DropdownMenuItem>
+                      <Link href="/settings">
+                        <span className="flex items-center">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Settings
+                        </span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={logout}>
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button size="sm">Sign Up</Button>
+                </Link>
+              </div>
+            )}
+
+            {/* Mobile menu toggle */}
+            {isMobile && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-2"
+                onClick={toggleMenu}
+              >
+                {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {isMobile && isOpen && (
+          <div className="md:hidden mt-4 py-4 border-t border-border">
+            <nav className="flex flex-col space-y-4">
+              {navLinks.map((link) => (
+                <Link key={link.to} href={link.to} onClick={closeMenu}>
+                  <span
+                    className={`flex items-center text-sm font-medium ${
+                      location === link.to
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-primary transition-colors"
+                    }`}
+                  >
+                    {link.icon}
+                    {link.label}
+                  </span>
+                </Link>
+              ))}
+            </nav>
+          </div>
+        )}
       </div>
-      
-      {/* Mobile Navigation */}
-      {mobileMenuOpen && (
-        <nav className="md:hidden absolute top-full left-0 right-0 bg-card border-b border-border py-4 px-6 flex flex-col space-y-4">
-          <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
-            Home
-          </Link>
-          <Link href="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">
-            Dashboard
-          </Link>
-          <Link href="/bots" className="text-muted-foreground hover:text-primary transition-colors">
-            Bots
-          </Link>
-          <Link href="/markets" className="text-muted-foreground hover:text-primary transition-colors">
-            Markets
-          </Link>
-          <Link href="/learn" className="text-muted-foreground hover:text-primary transition-colors">
-            Learn
-          </Link>
-          {isAuthenticated && (
-            <Button 
-              variant="ghost" 
-              className="justify-start p-0 h-auto font-normal hover:bg-transparent text-destructive"
-              onClick={handleLogout}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              התנתק
-            </Button>
-          )}
-        </nav>
-      )}
     </header>
   );
 }
