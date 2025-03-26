@@ -14,11 +14,13 @@ export default function Header() {
     <header className="bg-card border-b border-border py-4 px-6 fixed top-0 left-0 right-0 z-50">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <div className="text-primary font-bold text-2xl mr-2">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-              Cryptex
-            </span>
-          </div>
+          <Link href="/">
+            <div className="text-primary font-bold text-2xl mr-2">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                Cryptex
+              </span>
+            </div>
+          </Link>
         </div>
         
         {/* Desktop Navigation */}
@@ -35,7 +37,7 @@ export default function Header() {
           <Link href="/markets" className="text-muted-foreground hover:text-primary transition-colors">
             Markets
           </Link>
-          <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/learn" className="text-muted-foreground hover:text-primary transition-colors">
             Learn
           </Link>
         </nav>
@@ -78,7 +80,7 @@ export default function Header() {
           <Link href="/markets" className="text-muted-foreground hover:text-primary transition-colors">
             Markets
           </Link>
-          <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/learn" className="text-muted-foreground hover:text-primary transition-colors">
             Learn
           </Link>
         </nav>

@@ -10,6 +10,7 @@ import Markets from "@/pages/markets";
 import Register from "@/pages/register";
 import Login from "@/pages/login";
 import BotDemo from "@/pages/bot-demo";
+import Learn from "@/pages/learn";
 
 function Router() {
   return (
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/login" component={Login} />
       <Route path="/bot-demo" component={BotDemo} />
+      <Route path="/learn" component={Learn} />
       <Route component={NotFound} />
     </Switch>
   );

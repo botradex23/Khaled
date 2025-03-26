@@ -26,9 +26,11 @@ export default function Hero() {
             Start building your portfolio in minutes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="bg-primary hover:bg-primary/90">
-              Get Started
-            </Button>
+            <Link href="/register">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
+                Get Started
+              </Button>
+            </Link>
             <Link href="/bot-demo">
               <Button 
                 size="lg" 

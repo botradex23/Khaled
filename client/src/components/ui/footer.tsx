@@ -28,27 +28,27 @@ function FooterLinkGroup({ title, links }: FooterLinkGroupProps) {
 
 export default function Footer() {
   const platformLinks = [
-    { label: "Dashboard", href: "/" },
-    { label: "Bot Marketplace", href: "#" },
-    { label: "Analytics", href: "#" },
-    { label: "API Documentation", href: "#" },
-    { label: "Pricing", href: "#" }
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Bot Marketplace", href: "/bots" },
+    { label: "Analytics", href: "/dashboard" },
+    { label: "API Documentation", href: "/learn" },
+    { label: "Pricing", href: "/bots" }
   ];
 
   const resourceLinks = [
-    { label: "Blog", href: "#" },
-    { label: "Tutorials", href: "#" },
-    { label: "Academy", href: "#" },
-    { label: "Community Forum", href: "#" },
-    { label: "Help Center", href: "#" }
+    { label: "Blog", href: "/learn" },
+    { label: "Tutorials", href: "/learn" },
+    { label: "Academy", href: "/learn" },
+    { label: "Community Forum", href: "/learn" },
+    { label: "Help Center", href: "/learn" }
   ];
 
   const companyLinks = [
-    { label: "About Us", href: "#" },
-    { label: "Careers", href: "#" },
-    { label: "Press", href: "#" },
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" }
+    { label: "About Us", href: "/" },
+    { label: "Careers", href: "/" },
+    { label: "Press", href: "/" },
+    { label: "Privacy Policy", href: "/" },
+    { label: "Terms of Service", href: "/" }
   ];
 
   return (
@@ -65,16 +65,16 @@ export default function Footer() {
               Automated crypto trading platform for everyone. No coding required.
             </p>
             <div className="flex space-x-4">
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
                 <Twitter className="h-5 w-5" />
               </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
                 <MessageCircle className="h-5 w-5" />
               </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
                 <Send className="h-5 w-5" />
               </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
                 <Youtube className="h-5 w-5" />
               </Link>
             </div>
@@ -90,13 +90,13 @@ export default function Footer() {
             &copy; 2023 Cryptex. All rights reserved.
           </p>
           <div className="flex items-center space-x-4">
-            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">
+            <Link href="/" className="text-muted-foreground hover:text-primary transition-colors text-sm">
               Privacy Policy
             </Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">
+            <Link href="/" className="text-muted-foreground hover:text-primary transition-colors text-sm">
               Terms of Service
             </Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">
+            <Link href="/" className="text-muted-foreground hover:text-primary transition-colors text-sm">
               Cookie Policy
             </Link>
           </div>
