@@ -1,0 +1,462 @@
+# קבצים הקשורים לחיבור Google OAuth
+
+## 1. server/auth/google.ts - קובץ הגדרות אסטרטגיית Google
+```typescript
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { User } from '@shared/schema';
+import { storage } from '../storage';
+
+// Define profile type for use in callback
+interface GoogleProfile {
+  id: string;
+  displayName: string;
+  emails?: { value: string }[];
+  photos?: { value: string }[];
+  name?: {
+    givenName?: string;
+    familyName?: string;
+  };
+}
+
+// Initialize Google OAuth strategy
+export const setupGoogleAuth = () => {
+  console.log('Setting up Google OAuth with:');
+  console.log(`Client ID: ${process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0, 10) + '...' : 'not set'}`);
+  console.log(`Client Secret: ${process.env.GOOGLE_CLIENT_SECRET ? 'set (hidden)' : 'not set'}`);
+  console.log('Callback URL: https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback');
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID || '',
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+        callbackURL: 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback',
+        scope: ['profile', 'email'],
+      },
+      async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: (error: Error | null, user?: User) => void) => {
+        try {
+          // Check if user exists with this Google ID
+          let user = await storage.getUserByGoogleId(profile.id);
+          
+          if (user) {
+            // User found, return the user
+            return done(null, user);
+          }
+          
+          // Check if user exists with same email
+          const email = profile.emails?.[0]?.value;
+          if (email) {
+            user = await storage.getUserByEmail(email);
+            if (user) {
+              // TODO: We could update the user to add the Google ID
+              // This would link the Google account to the existing account
+              return done(null, user);
+            }
+          }
+          
+          // No existing user found, create a new one
+          if (email) {
+            const newUser = await storage.createUser({
+              username: profile.displayName || `user_${profile.id}`,
+              email: email,
+              firstName: profile.name?.givenName || '',
+              lastName: profile.name?.familyName || '',
+              googleId: profile.id,
+              profilePicture: profile.photos?.[0]?.value
+            });
+            
+            return done(null, newUser);
+          } else {
+            // Cannot create user without email
+            return done(new Error('Could not retrieve email from Google profile'), undefined);
+          }
+        } catch (error) {
+          console.error('Error during Google authentication', error);
+          return done(error instanceof Error ? error : new Error('Unknown error during authentication'), undefined);
+        }
+      }
+    )
+  );
+
+  // We'll handle serialize/deserialize in the main auth setup
+  // to avoid conflicts with other strategies
+};
+```
+
+## 2. server/auth/index.ts - קובץ הגדרות האימות הראשי
+```typescript
+import { Express, Request, Response, NextFunction } from 'express';
+import passport from 'passport';
+import session from 'express-session';
+import { setupGoogleAuth } from './google';
+import { setupAppleAuth } from './apple';
+import { storage } from '../storage';
+
+// Type definition for user in session
+import { User as UserModel } from '@shared/schema';
+
+declare global {
+  namespace Express {
+    interface User extends UserModel {}
+  }
+}
+
+export function setupAuth(app: Express) {
+  // Setup session
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || 'mudrex-crypto-trading-secret',
+      resave: true,
+      saveUninitialized: true,
+      cookie: {
+        secure: false, // Set to false for development, even on HTTPS
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        sameSite: 'lax'
+      },
+    })
+  );
+
+  // Initialize passport
+  app.use(passport.initialize());
+  app.use(passport.session());
+  
+  // Configure user serialization/deserialization
+  passport.serializeUser((user: Express.User, done) => {
+    done(null, user.id);
+  });
+
+  passport.deserializeUser(async (id: number, done) => {
+    try {
+      const user = await storage.getUser(id);
+      done(null, user || null);
+    } catch (error) {
+      done(error instanceof Error ? error : new Error('Error deserializing user'), null);
+    }
+  });
+
+  // Setup OAuth providers
+  setupGoogleAuth();
+  setupAppleAuth();
+
+  // Register auth routes
+  registerAuthRoutes(app);
+}
+
+function registerAuthRoutes(app: Express) {
+  // Google Auth
+  app.get(
+    '/api/auth/google',
+    (req: Request, res: Response, next: NextFunction) => {
+      console.log('Google auth request initiated');
+      console.log('Redirect URI used in callback:', 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback');
+      console.log('Current host:', req.headers.host);
+      console.log('Current protocol:', req.protocol);
+      next();
+    },
+    passport.authenticate('google', { scope: ['profile', 'email'] }),
+    (err: any, req: Request, res: Response, next: NextFunction) => {
+      if (err) {
+        console.error('Error during Google auth initialization:', err);
+        return res.redirect('/login?error=google_auth_failed');
+      }
+      next();
+    }
+  );
+
+  app.get(
+    '/api/auth/google/callback',
+    (req: Request, res: Response, next: NextFunction) => {
+      console.log('Google callback received with query params:', req.query);
+      console.log('Google callback received with headers:', req.headers);
+      console.log('Google callback received with host:', req.headers.host);
+      if (req.query.error) {
+        console.error('Error returned from Google:', req.query.error);
+        return res.redirect(`/login?error=${req.query.error}`);
+      }
+      next();
+    },
+    (req: Request, res: Response, next: NextFunction) => {
+      passport.authenticate('google', (err: Error | null, user: any, info: any) => {
+        if (err) {
+          console.error('Error during Google authentication:', err);
+          return res.redirect('/login?error=google_auth_failed');
+        }
+        
+        if (!user) {
+          console.error('No user returned from Google auth, info:', info);
+          return res.redirect('/login?error=google_no_user');
+        }
+        
+        req.logIn(user, (loginErr) => {
+          if (loginErr) {
+            console.error('Error during login after Google auth:', loginErr);
+            return res.redirect('/login?error=login_failed');
+          }
+          
+          console.log('Google authentication successful, user:', user);
+          return res.redirect('/dashboard');
+        });
+      })(req, res, next);
+    }
+  );
+
+  // Logout
+  app.get('/api/auth/logout', (req: Request, res: Response) => {
+    req.logout((err) => {
+      if (err) {
+        console.error('Error during logout:', err);
+      }
+      res.redirect('/');
+    });
+  });
+
+  // Get current user
+  app.get('/api/auth/user', (req: Request, res: Response) => {
+    if (req.isAuthenticated()) {
+      res.json({
+        isAuthenticated: true,
+        user: req.user,
+      });
+    } else {
+      res.json({
+        isAuthenticated: false,
+        user: null,
+      });
+    }
+  });
+
+  // Auth middleware for protected routes
+  app.use('/api/protected', ensureAuthenticated);
+}
+
+// Middleware to ensure a user is authenticated
+export function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ error: 'Unauthorized' });
+}
+```
+
+## 3. shared/schema.ts - חלק רלוונטי למשתמשים
+```typescript
+import { pgTable, text, serial, integer, boolean, decimal, timestamp } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+// Users table schema
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
+  firstName: text("first_name").notNull().default(""),
+  lastName: text("last_name").notNull().default(""),
+  password: text("password").notNull().default(""),
+  googleId: text("google_id").unique(),
+  appleId: text("apple_id").unique(),
+  profilePicture: text("profile_picture"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertUserSchema = createInsertSchema(users)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    password: z.string().optional(),
+    googleId: z.string().optional(),
+    appleId: z.string().optional(),
+    profilePicture: z.string().optional(),
+  })
+  .refine(data => {
+    // User must authenticate with either password or OAuth
+    return (
+      (data.password !== undefined && data.password !== '') || 
+      (data.googleId !== undefined && data.googleId !== '') ||
+      (data.appleId !== undefined && data.appleId !== '')
+    );
+  }, {
+    message: "User must authenticate with password or social login",
+    path: ["authentication"]
+  })
+  .transform(data => ({
+    ...data,
+    firstName: data.firstName || "",
+    lastName: data.lastName || ""
+  }));
+
+// Export types
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+```
+
+## 4. server/storage.ts - חלק רלוונטי למתודות המשתמש
+```typescript
+import { 
+  users, 
+  type User, 
+  type InsertUser 
+} from "@shared/schema";
+
+export interface IStorage {
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
+  getUserByAppleId(appleId: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  
+  constructor() {
+    this.users = new Map();
+    this.currentId = 1;
+  }
+
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
+  
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.googleId === googleId,
+    );
+  }
+  
+  async getUserByAppleId(appleId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.appleId === appleId,
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.currentId++;
+    
+    // Create base user object with required fields and null defaults for optional fields
+    const user: User = {
+      id,
+      username: insertUser.username,
+      email: insertUser.email,
+      firstName: insertUser.firstName || "",
+      lastName: insertUser.lastName || "",
+      password: insertUser.password || "",
+      googleId: null,
+      appleId: null,
+      profilePicture: null,
+      createdAt: new Date()
+    };
+    
+    // Add optional OAuth fields if provided
+    if (insertUser.googleId) {
+      user.googleId = insertUser.googleId;
+    }
+    
+    if (insertUser.appleId) {
+      user.appleId = insertUser.appleId;
+    }
+    
+    if (insertUser.profilePicture) {
+      user.profilePicture = insertUser.profilePicture;
+    }
+    
+    this.users.set(id, user);
+    return user;
+  }
+}
+
+export const storage = new MemStorage();
+```
+
+## 5. client/src/pages/login.tsx - חלק רלוונטי לכפתור התחברות Google
+```typescript
+// Social Logins
+<div className="mt-6">
+  <Separator className="my-4">
+    <span className="mx-2 text-xs text-muted-foreground">OR CONTINUE WITH</span>
+  </Separator>
+  
+  <div className="flex gap-4 mt-4">
+    <Button
+      variant="outline"
+      className="w-full"
+      onClick={() => {
+        window.location.href = "/api/auth/google";
+      }}
+    >
+      <FcGoogle className="mr-2 h-5 w-5" />
+      Google
+    </Button>
+    
+    <Button
+      variant="outline"
+      className="w-full"
+      onClick={() => {
+        window.location.href = "/api/auth/apple";
+      }}
+      disabled={true} // Disabled until Apple auth is configured
+    >
+      <SiApple className="mr-2 h-5 w-5" />
+      Apple
+    </Button>
+  </div>
+</div>
+```
+
+## 6. פרטי הגדרות OAuth של Google
+```json
+{
+  "web": {
+    "client_id": "630262457045-f1f57bi0o328md41itrig1l7sgqpcqdu.apps.googleusercontent.com",
+    "project_id": "beaming-mode-454619-n6",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_secret": "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",
+    "redirect_uris": [
+      "https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback"
+    ],
+    "javascript_origins": [
+      "https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev"
+    ]
+  }
+}
+```
+
+## 7. לוגים שנצפו בעת ניסיון התחברות
+```
+Google auth request initiated
+Redirect URI used in callback: https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback
+Current host: 19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev
+Current protocol: http
+```
+
+## 8. אפשריות בעיות והצעות תיקון:
+
+1. פרוטוקול HTTP במקום HTTPS:
+   - הלוגים מראים `Current protocol: http` אבל ה-redirect URI ב-Google מוגדר כ-HTTPS.
+   - אפשר ליצור redirect URI נוסף ב-Google Console שישתמש ב-HTTP.
+
+2. הגדרת session:
+   - יתכן שההגדרות הנוכחיות של ה-session אינן תואמות לסביבת העבודה של replit.
+   - אפשר לנסות לשנות את `secure: false` ל-`secure: true`
+   - אפשר לשנות את `sameSite: 'lax'` ל-`sameSite: 'none'`
+
+3. Proxy Headers:
+   - יתכן שצריך להגדיר ב-express לסמוך על proxy headers
+   - להוסיף `app.set('trust proxy', 1)` לפני הגדרת ה-session
+
+4. אימות ותקינות מפתחות ה-OAuth:
+   - לוודא שמפתחות ה-CLIENT_ID וה-CLIENT_SECRET מוגדרים נכון בסביבת העבודה
+   - לוודא שאין תקופת ניסיון שפגה או הגבלות אחרות על פרויקט ה-Google Cloud
