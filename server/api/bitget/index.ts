@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { marketService } from './marketService';
 import { accountService } from './accountService';
 import { bitgetService } from './bitgetService';
+import { tradingBotService } from './tradingBotService';
 import { isConfigured, TRADING_STRATEGIES, DEFAULT_PAIRS, ALWAYS_USE_DEMO } from './config';
 
 const router = Router();
@@ -230,6 +231,131 @@ router.delete('/order', async (req: Request, res: Response) => {
     
     const result = await accountService.cancelOrder(symbol, orderId);
     res.json(result);
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * Create a new trading bot
+ * POST /api/bitget/bots
+ */
+router.post('/bots', async (req: Request, res: Response) => {
+  try {
+    const { name, strategy, description, parameters } = req.body;
+    
+    if (!name || !strategy || !parameters) {
+      return res.status(400).json({
+        success: false,
+        message: 'name, strategy, and parameters are required fields'
+      });
+    }
+    
+    // Create the bot
+    const bot = await tradingBotService.createBot(
+      name,
+      strategy,
+      description || `${strategy} trading bot`,
+      parameters
+    );
+    
+    res.status(201).json(bot);
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * Start a trading bot
+ * POST /api/bitget/bots/:id/start
+ */
+router.post('/bots/:id/start', async (req: Request, res: Response) => {
+  try {
+    const botId = parseInt(req.params.id, 10);
+    
+    if (isNaN(botId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid bot ID'
+      });
+    }
+    
+    const success = await tradingBotService.startBot(botId);
+    
+    res.json({
+      success,
+      message: success ? 'Bot started successfully' : 'Failed to start bot'
+    });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * Stop a trading bot
+ * POST /api/bitget/bots/:id/stop
+ */
+router.post('/bots/:id/stop', async (req: Request, res: Response) => {
+  try {
+    const botId = parseInt(req.params.id, 10);
+    
+    if (isNaN(botId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid bot ID'
+      });
+    }
+    
+    const success = await tradingBotService.stopBot(botId);
+    
+    res.json({
+      success,
+      message: success ? 'Bot stopped successfully' : 'Bot was not running'
+    });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * Get bot status
+ * GET /api/bitget/bots/:id/status
+ */
+router.get('/bots/:id/status', async (req: Request, res: Response) => {
+  try {
+    const botId = parseInt(req.params.id, 10);
+    
+    if (isNaN(botId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid bot ID'
+      });
+    }
+    
+    const status = await tradingBotService.getBotStatus(botId);
+    res.json(status);
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * Get bot performance
+ * GET /api/bitget/bots/:id/performance
+ */
+router.get('/bots/:id/performance', async (req: Request, res: Response) => {
+  try {
+    const botId = parseInt(req.params.id, 10);
+    
+    if (isNaN(botId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid bot ID'
+      });
+    }
+    
+    const performance = await tradingBotService.getBotPerformance(botId);
+    res.json(performance);
   } catch (err) {
     handleApiError(err, res);
   }
