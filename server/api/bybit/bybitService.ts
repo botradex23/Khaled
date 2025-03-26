@@ -50,34 +50,45 @@ export class BybitService {
   /**
    * Generate signature required for authenticated API calls
    * @param timestamp - current timestamp in milliseconds
+   * @param recvWindow - receive window in milliseconds
    * @param method - HTTP method
    * @param path - request path (without base URL)
-   * @param data - request payload (for POST requests)
+   * @param data - request payload (for POST requests) or query params (for GET)
    * @returns signature string
    */
-  private generateSignature(timestamp: number, method: string, path: string, data?: any): string {
+  private generateSignature(
+    timestamp: number,
+    recvWindow: number,
+    method: string,
+    path: string,
+    data?: any
+  ): string {
     if (!SECRET_KEY) {
       throw new BybitApiNotConfiguredError();
     }
 
-    // Bybit uses a specific signature method:
-    // timestamp + API_KEY + (recv_window) + (queryString or body)
-    let signatureString = `${timestamp}${API_KEY}`;
-    
-    // Add query string or body depending on the request type
+    let bodyString = '';
+
     if (method === 'GET' && data) {
-      // For GET, convert params to query string
       const queryString = Object.entries(data)
         .map(([key, value]) => `${key}=${value}`)
         .join('&');
-      if (queryString) {
-        signatureString += queryString;
-      }
+      bodyString = queryString;
     } else if (data) {
-      // For other methods with body
-      signatureString += JSON.stringify(data);
+      bodyString = JSON.stringify(data);
     }
+
+    // החתימה לפי הסדר הנכון: timestamp + apiKey + recvWindow + body
+    const signatureString = `${timestamp}${API_KEY}${recvWindow}${bodyString}`;
     
+    console.log('Generating signature with:', {
+      timestamp,
+      method,
+      path,
+      recvWindow,
+      bodyStringLength: bodyString.length 
+    });
+
     // Generate HMAC signature using SHA256
     return crypto
       .createHmac('sha256', SECRET_KEY)
@@ -102,8 +113,11 @@ export class BybitService {
     }
 
     const timestamp = Date.now();
-    const signature = this.generateSignature(timestamp, method, endpoint, params);
+    const recvWindow = 5000; // Window in milliseconds
+    const signature = this.generateSignature(timestamp, recvWindow, method, endpoint, params);
     const url = `${this.baseUrl}${endpoint}`;
+    
+    console.log(`Making ${method} request to ${endpoint}`);
 
     const config: AxiosRequestConfig = {
       method,
@@ -112,8 +126,8 @@ export class BybitService {
       headers: {
         'X-BAPI-API-KEY': API_KEY,
         'X-BAPI-SIGN': signature,
-        'X-BAPI-TIMESTAMP': timestamp,
-        'X-BAPI-RECV-WINDOW': 5000, // Window in milliseconds
+        'X-BAPI-TIMESTAMP': timestamp.toString(),
+        'X-BAPI-RECV-WINDOW': recvWindow.toString(),
         'Content-Type': 'application/json'
       }
     };
