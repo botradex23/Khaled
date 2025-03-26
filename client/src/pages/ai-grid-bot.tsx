@@ -602,7 +602,7 @@ export default function AIGridBot() {
                           <div className="flex justify-center py-12">
                             <div className="loader"></div>
                           </div>
-                        ) : performanceData ? (
+                        ) : performanceData && performanceData.length > 0 ? (
                           <div className="pt-2 px-2 h-[300px]">
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart
@@ -736,7 +736,7 @@ export default function AIGridBot() {
       </main>
       <Footer />
       
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .loader {
           border: 3px solid rgba(0, 0, 0, 0.1);
           border-radius: 50%;
@@ -750,7 +750,7 @@ export default function AIGridBot() {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
-      `}</style>
+      `}} />
     </div>
   );
 }

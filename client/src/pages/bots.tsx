@@ -116,10 +116,10 @@ export default function Bots() {
                 Manage and monitor your automated crypto trading strategies
               </p>
             </div>
-            <Link href="/bot-demo">
+            <Link href="/ai-grid-bot">
               <Button className="mt-4 md:mt-0">
                 <Plus className="mr-2 h-4 w-4" />
-                Create New Bot
+                Create AI Grid Bot
               </Button>
             </Link>
           </div>
@@ -272,6 +272,63 @@ export default function Bots() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* AI Grid Trading Bot */}
+                    <Card className="border-2 border-primary/70">
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-lg">AI Grid Trading</CardTitle>
+                          <div className="text-xs px-2 py-1 rounded-full bg-purple-500/10 text-purple-500">
+                            NEW
+                          </div>
+                        </div>
+                        <CardDescription>
+                          AI-powered grid bot that optimizes parameters
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pb-2">
+                        <div className="h-32">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={gridChartData}>
+                              <Line 
+                                type="monotone" 
+                                dataKey="value" 
+                                stroke="hsl(var(--primary))" 
+                                strokeWidth={2}
+                                dot={false}
+                              />
+                              <XAxis dataKey="name" hide />
+                              <YAxis hide />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="mt-2 space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Avg. Monthly Return</span>
+                            <span className="text-sm font-medium">+7.5%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Risk Level</span>
+                            <div className="flex items-center">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <div 
+                                  key={i} 
+                                  className={`w-1 h-4 mx-0.5 rounded-sm ${i < 3 ? 'bg-primary' : 'bg-border'}`} 
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Link href="/ai-grid-bot" className="w-full">
+                          <Button className="w-full">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create AI Grid Bot
+                          </Button>
+                        </Link>
+                      </CardFooter>
+                    </Card>
+                    
                     {/* Grid Trading Strategy */}
                     <Card>
                       <CardHeader className="pb-2">
