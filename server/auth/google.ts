@@ -17,12 +17,16 @@ interface GoogleProfile {
 
 // Initialize Google OAuth strategy
 export const setupGoogleAuth = () => {
+  console.log('Setting up Google OAuth with:');
+  console.log(`Client ID: ${process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0, 10) + '...' : 'not set'}`);
+  console.log(`Client Secret: ${process.env.GOOGLE_CLIENT_SECRET ? 'set (hidden)' : 'not set'}`);
+  console.log('Callback URL: https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback');
   passport.use(
     new GoogleStrategy(
       {
         clientID: process.env.GOOGLE_CLIENT_ID || '',
         clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-        callbackURL: '/api/auth/google/callback',
+        callbackURL: 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback',
         scope: ['profile', 'email'],
       },
       async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: (error: Error | null, user?: User) => void) => {

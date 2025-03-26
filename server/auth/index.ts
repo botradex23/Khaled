@@ -58,13 +58,29 @@ function registerAuthRoutes(app: Express) {
   // Google Auth
   app.get(
     '/api/auth/google',
-    passport.authenticate('google', { scope: ['profile', 'email'] })
+    (req: Request, res: Response, next: NextFunction) => {
+      console.log('Google auth request initiated');
+      next();
+    },
+    passport.authenticate('google', { scope: ['profile', 'email'] }),
+    (err: any, req: Request, res: Response, next: NextFunction) => {
+      if (err) {
+        console.error('Error during Google auth initialization:', err);
+        return res.redirect('/login?error=google_auth_failed');
+      }
+      next();
+    }
   );
 
   app.get(
     '/api/auth/google/callback',
+    (req: Request, res: Response, next: NextFunction) => {
+      console.log('Google callback received with query params:', req.query);
+      next();
+    },
     passport.authenticate('google', { failureRedirect: '/login' }),
     (req: Request, res: Response) => {
+      console.log('Google authentication successful, user:', req.user);
       // Successful authentication, redirect to dashboard
       res.redirect('/dashboard');
     }
