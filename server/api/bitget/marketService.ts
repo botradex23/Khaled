@@ -28,6 +28,8 @@ export class MarketService {
    * @returns Array of processed market data
    */
   async getMarketData(symbols: string[] = DEFAULT_PAIRS): Promise<MarketData[]> {
+    console.log(`Getting market data for symbols: ${symbols.join(', ')}`);
+    
     try {
       // If ALWAYS_USE_DEMO is true, directly return demo data
       if (ALWAYS_USE_DEMO) {
@@ -36,24 +38,49 @@ export class MarketService {
       }
       
       // Get all tickers from Bitget
+      console.log('Fetching all tickers from Bitget...');
       const tickersResponse = await bitgetService.getAllTickers();
-      const tickers = tickersResponse as any[];
+      console.log('Tickers response type:', typeof tickersResponse);
+      console.log('Is array:', Array.isArray(tickersResponse));
+      console.log('Response length:', Array.isArray(tickersResponse) ? tickersResponse.length : 'N/A');
+      
+      // Make sure we have an array of tickers
+      const tickers = Array.isArray(tickersResponse) ? tickersResponse : [];
       
       // Filter tickers by requested symbols
       const filteredTickers = symbols.length > 0
-        ? tickers.filter((ticker: any) => symbols.includes(ticker.symbol))
+        ? tickers.filter((ticker: any) => {
+            return symbols.some(symbol => {
+              // Try to match symbols which may have different formats
+              return ticker.symbol === symbol || 
+                    ticker.symbol.replace(/-/g, '') === symbol ||
+                    ticker.symbol.replace(/_/g, '') === symbol;
+            });
+          })
         : tickers;
+      
+      // Log our matching results for debugging
+      console.log(`All tickers count: ${Array.isArray(tickers) ? tickers.length : 0}`);
+      console.log(`Matched tickers count: ${filteredTickers.length}`);
+      console.log(`Requested symbols: ${symbols.join(', ')}`);
+      console.log(`First few matches: ${filteredTickers.slice(0, 3).map((t: any) => t.symbol).join(', ')}`);
       
       // Map Bitget ticker to our MarketData interface
       return filteredTickers.map((ticker: any): MarketData => {
-        // Calculate the percentage change from close and open prices
-        const changePercent = ((ticker.close - ticker.open) / ticker.open) * 100;
+        // Use the change value directly from API response
+        // Bitget provides change as decimal (e.g., 0.0189 for 1.89%)
+        // Need to convert it to percentage
+        const changePercent = ticker.change ? parseFloat(ticker.change) * 100 : 0;
         
         return {
           symbol: ticker.symbol,
           price: parseFloat(ticker.close),
-          change24h: parseFloat(changePercent.toFixed(2)),
-          volume24h: parseFloat(ticker.baseVolume),
+          change24h: changePercent,
+          volume24h: ticker.usdtVol ? parseFloat(ticker.usdtVol) : (
+            ticker.quoteVol ? parseFloat(ticker.quoteVol) : (
+              ticker.baseVol ? parseFloat(ticker.baseVol) : 0
+            )
+          ),
           high24h: parseFloat(ticker.high24h),
           low24h: parseFloat(ticker.low24h)
         };
