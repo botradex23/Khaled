@@ -55,11 +55,11 @@ export class AccountService {
    */
   async getAccountBalances(throwError = false, forceDemoData = false): Promise<AccountBalance[]> {
     try {
-      if (!isConfigured() || forceDemoData) {
-        if (throwError && !forceDemoData) {
+      if (!isConfigured() || forceDemoData || ALWAYS_USE_DEMO) {
+        if (throwError && !forceDemoData && !ALWAYS_USE_DEMO) {
           throw new Error('Bybit API not configured');
         }
-        console.log('Bybit API not configured or demo data requested, returning demo balances');
+        console.log('Using demo data for account balances (API not configured, demo data requested, or ALWAYS_USE_DEMO is true)');
         return this.getEmptyBalanceResponse();
       }
 
@@ -186,8 +186,8 @@ export class AccountService {
    */
   async getTradingHistory(forceDemoData = false): Promise<any[]> {
     try {
-      if (!isConfigured() || forceDemoData) {
-        console.log('Bybit API not configured or demo data requested, returning demo trading history');
+      if (!isConfigured() || forceDemoData || ALWAYS_USE_DEMO) {
+        console.log('Using demo data for trading history (API not configured, demo data requested, or ALWAYS_USE_DEMO is true)');
         return this.getDemoTradingHistory();
       }
 

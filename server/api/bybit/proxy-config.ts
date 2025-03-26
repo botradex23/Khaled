@@ -63,10 +63,17 @@ export function createProxyInstance() {
     console.log(`Using SOCKS proxy: ${VPN_CONFIG.host}:${VPN_CONFIG.port}`);
   }
   
-  // Create Axios instance with the proxy agent
+  // Create Axios instance with the proxy agent and additional headers to mask our origin
   return axios.create({
     httpAgent: agent,
-    httpsAgent: agent
+    httpsAgent: agent,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept': 'application/json, text/plain, */*',
+      'Origin': 'https://www.bybit.com',
+      'Referer': 'https://www.bybit.com/'
+    }
   });
 }
 

@@ -4,6 +4,9 @@
 export const BYBIT_BASE_URL = 'https://api.bybit.com'; // Base URL for main API
 export const BYBIT_TESTNET_URL = 'https://api-testnet.bybit.com'; // Base URL for testnet
 
+// Use fallback demo data by default due to consistent geo-restriction issues
+export const ALWAYS_USE_DEMO = true;
+
 // Use API credentials from environment variables
 // For testnet we're using demo keys because testnet isn't geo-restricted
 // We'll still try to use the real API keys if they exist in the environment
