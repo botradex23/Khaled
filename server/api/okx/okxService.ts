@@ -37,6 +37,12 @@ export class OkxService {
     // Check for API configuration
     if (!isConfigured()) {
       console.warn('OKX API credentials not configured properly');
+    } else {
+      // Log partial API key (first 4 and last 4 characters only) for debugging
+      if (API_KEY.length > 8) {
+        const partialKey = API_KEY.substring(0, 4) + '...' + API_KEY.substring(API_KEY.length - 4);
+        console.log(`OKX API configured with key: ${partialKey}`);
+      }
     }
   }
 
@@ -52,11 +58,18 @@ export class OkxService {
   }
   
   /**
-   * Check if passphrase needs encryption for API v5
-   * Note: OKX documentation can be contradictory - we're using the plain passphrase as per latest guidance
+   * Get passphrase for API v5
+   * Note: OKX documentation mentions different formats in different places
+   * If your passphrase looks like a hex string, it might need to be normalized
    */
   private encryptPassphrase(): string {
-    // In the V5 API, we use the original passphrase as provided in API management
+    // Check if the passphrase is in all caps and looks like a hex string (common mistake)
+    const hexRegex = /^[0-9A-F]+$/;
+    if (PASSPHRASE.length > 8 && hexRegex.test(PASSPHRASE)) {
+      console.log("Passphrase appears to be in hex format. Check OKX documentation for correct format.");
+    }
+    
+    // In the V5 API, we generally use the original passphrase as provided during API key creation
     return PASSPHRASE;
   }
 
@@ -83,8 +96,16 @@ export class OkxService {
     // Generate signature
     const signature = this.generateSignature(timestamp, method, requestPath, body);
     
+    // Debug passphrase format - only show first and last character for security
+    const passphraseFormat = PASSPHRASE.length > 2 
+      ? `${PASSPHRASE.charAt(0)}...${PASSPHRASE.charAt(PASSPHRASE.length - 1)} (length: ${PASSPHRASE.length})`
+      : 'too short';
+    
+    console.log(`OKX API request: ${method} ${requestPath}`);
+    console.log(`Using passphrase format: ${passphraseFormat}`);
+    
     // Setup request configuration
-    // For v5 API, passphrase should be the original, not encrypted one
+    // For v5 API, we need to use the original passphrase as provided in API management
     const config: AxiosRequestConfig = {
       method,
       url: `${this.baseUrl}${requestPath}`,
