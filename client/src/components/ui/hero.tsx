@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { heroChartData } from "@/lib/chart-data";
+import { Link } from "wouter";
 import { 
   Area, 
   AreaChart, 
@@ -28,13 +29,15 @@ export default function Hero() {
             <Button size="lg" className="bg-primary hover:bg-primary/90">
               Get Started
             </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="border-muted hover:border-primary"
-            >
-              View Demo
-            </Button>
+            <Link href="/bot-demo">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-muted hover:border-primary"
+              >
+                View Demo
+              </Button>
+            </Link>
           </div>
           
           <div className="mt-8 grid grid-cols-3 gap-4">
