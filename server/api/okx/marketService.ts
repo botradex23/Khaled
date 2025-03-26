@@ -81,7 +81,7 @@ export class MarketService {
   /**
    * Get candlestick data for a specific trading pair
    */
-  async getCandlestickData(symbol: string, interval = '1h', limit = 100): Promise<any> {
+  async getCandlestickData(symbol: string, interval = '1H', limit = 100): Promise<any> {
     try {
       const response = await okxService.makePublicRequest<OkxResponse<string[]>>(`/api/v5/market/candles?instId=${symbol}&bar=${interval}&limit=${limit}`);
       

@@ -22,12 +22,12 @@ import {
 
 // Chart time interval options
 const INTERVALS = [
-  { value: "1m", label: "1m" },
-  { value: "15m", label: "15m" },
-  { value: "1h", label: "1h" },
-  { value: "4h", label: "4h" },
-  { value: "1d", label: "1D" },
-  { value: "1w", label: "1W" }
+  { value: "1M", label: "1m" },
+  { value: "15M", label: "15m" },
+  { value: "1H", label: "1h" },
+  { value: "4H", label: "4h" },
+  { value: "1D", label: "1D" },
+  { value: "1W", label: "1W" }
 ];
 
 // Type for candle data
@@ -74,7 +74,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export function PriceChart({ symbol = "BTC-USDT" }: { symbol?: string }) {
-  const [interval, setInterval] = useState("1h");
+  const [interval, setInterval] = useState("1H");
   
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: [`/api/okx/candles/${symbol}`, interval],
