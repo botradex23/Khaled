@@ -88,6 +88,7 @@ export default function Login() {
                         placeholder="you@example.com" 
                         type="email" 
                         autoComplete="email"
+                        inputMode="email"
                         {...field} 
                       />
                     </FormControl>
@@ -107,6 +108,7 @@ export default function Login() {
                         placeholder="••••••••" 
                         type="password" 
                         autoComplete="current-password"
+                        inputMode="text"
                         {...field} 
                       />
                     </FormControl>

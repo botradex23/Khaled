@@ -7,6 +7,19 @@ export interface InputProps
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, ...props }, ref) => {
+    // Explicitly handle events to ensure proper functionality
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (props.onChange) {
+        props.onChange(e);
+      }
+    };
+
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+      if (props.onFocus) {
+        props.onFocus(e);
+      }
+    };
+
     return (
       <input
         type={type}
@@ -15,7 +28,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           className
         )}
         ref={ref}
+        onChange={handleChange}
+        onFocus={handleFocus}
         {...props}
+        style={{ touchAction: 'manipulation', ...props.style }}
       />
     )
   }

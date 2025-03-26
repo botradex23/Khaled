@@ -115,6 +115,7 @@ export default function RegistrationForm() {
                           <Input 
                             placeholder="Enter your first name" 
                             className="bg-background border-border focus:border-primary"
+                            inputMode="text"
                             {...field} 
                           />
                         </FormControl>
@@ -133,6 +134,7 @@ export default function RegistrationForm() {
                           <Input 
                             placeholder="Enter your last name" 
                             className="bg-background border-border focus:border-primary"
+                            inputMode="text"
                             {...field} 
                           />
                         </FormControl>
@@ -153,6 +155,9 @@ export default function RegistrationForm() {
                           type="email" 
                           placeholder="Enter your email" 
                           className="bg-background border-border focus:border-primary"
+                          inputMode="email"
+                          autoCapitalize="none"
+                          autoCorrect="off"
                           {...field} 
                         />
                       </FormControl>
@@ -172,6 +177,8 @@ export default function RegistrationForm() {
                           type="password" 
                           placeholder="Create a password" 
                           className="bg-background border-border focus:border-primary"
+                          inputMode="text"
+                          autoComplete="new-password"
                           {...field} 
                         />
                       </FormControl>
