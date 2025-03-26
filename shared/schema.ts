@@ -7,8 +7,8 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
-  firstName: text("first_name"),
-  lastName: text("last_name"),
+  firstName: text("first_name").notNull().default(""),
+  lastName: text("last_name").notNull().default(""),
   password: text("password").notNull(),
 });
 
@@ -18,7 +18,11 @@ export const insertUserSchema = createInsertSchema(users).pick({
   firstName: true,
   lastName: true,
   password: true,
-});
+}).transform(data => ({
+  ...data,
+  firstName: data.firstName || "",
+  lastName: data.lastName || ""
+}));
 
 // Bots table schema
 export const bots = pgTable("bots", {
