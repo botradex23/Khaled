@@ -38,11 +38,17 @@ export class OkxService {
     if (!isConfigured()) {
       console.warn('OKX API credentials not configured properly');
     } else {
-      // Log partial API key (first 4 and last 4 characters only) for debugging
-      if (API_KEY.length > 8) {
-        const partialKey = API_KEY.substring(0, 4) + '...' + API_KEY.substring(API_KEY.length - 4);
-        console.log(`OKX API configured with key: ${partialKey}`);
-      }
+      // Check and log environment variables
+      console.log('Environment variables:');
+      console.log(`OKX_API_KEY env: ${process.env.OKX_API_KEY ? 'exists' : 'missing'}`);
+      console.log(`OKX_SECRET_KEY env: ${process.env.OKX_SECRET_KEY ? 'exists' : 'missing'}`);
+      console.log(`OKX_PASSPHRASE env: ${process.env.OKX_PASSPHRASE ? 'exists' : 'missing'}`);
+      
+      // Log config values
+      console.log('Config values:');
+      console.log(`API_KEY: ${API_KEY.substring(0, 4)}...${API_KEY.substring(API_KEY.length - 4)}`);
+      console.log(`SECRET_KEY: ${SECRET_KEY.substring(0, 4)}...${SECRET_KEY.substring(SECRET_KEY.length - 4)}`);
+      console.log(`PASSPHRASE: ${PASSPHRASE.substring(0, 2)}...${PASSPHRASE.substring(PASSPHRASE.length - 2)}`);
     }
   }
 

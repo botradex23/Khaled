@@ -11,6 +11,12 @@ export const OKX_BASE_URL = 'https://www.okx.com'; // Base URL for API
 export const OKX_DEMO_BASE_URL = 'https://www.okx.com'; // Use same URL for demo (handled via header)
 
 // Use API credentials from environment variables with fallbacks
+// Check and log the environment variables
+console.log('OKX Config - Environment variables check:');
+console.log(`OKX_API_KEY: ${process.env.OKX_API_KEY ? process.env.OKX_API_KEY.substring(0, 4) + '...' : 'missing'}`);
+console.log(`OKX_SECRET_KEY: ${process.env.OKX_SECRET_KEY ? process.env.OKX_SECRET_KEY.substring(0, 4) + '...' : 'missing'}`);
+console.log(`OKX_PASSPHRASE: ${process.env.OKX_PASSPHRASE ? process.env.OKX_PASSPHRASE.substring(0, 2) + '...' : 'missing'}`);
+
 export const API_KEY = process.env.OKX_API_KEY || 'a6c726f8-4e11-4c7c-b236-ad3b63d73a3d';
 export const SECRET_KEY = process.env.OKX_SECRET_KEY || 'E5DE2806C9778CCCCCC80D07F719FD3B';
 export const PASSPHRASE = process.env.OKX_PASSPHRASE || 'Khaled123.';
