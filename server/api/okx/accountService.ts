@@ -168,11 +168,19 @@ export class AccountService {
           publicApiWorking: true
         };
       } catch (authError: any) {
+        // Check for specific OKX error responses
+        let errorMessage = authError.message;
+        
+        // Check if this is an axios error with an OKX API response containing an error code
+        if (authError.response?.data?.code === '50119') {
+          errorMessage = "API key doesn't exist (code 50119). Please check that your API key is correct and has been created with Read and Trade permissions.";
+        }
+        
         // Authentication failed but public API works
         return {
           connected: true,
           authenticated: false,
-          message: `Connected to OKX public API, but authentication failed: ${authError.message}`,
+          message: `Connected to OKX public API, but authentication failed: ${errorMessage}`,
           publicApiWorking: true
         };
       }

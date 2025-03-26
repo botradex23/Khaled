@@ -52,17 +52,12 @@ export class OkxService {
   }
   
   /**
-   * Generate encrypted passphrase for API v5
-   * OKX API v5 requires the passphrase to be encrypted with HMAC-SHA256 method
+   * Check if passphrase needs encryption for API v5
+   * Note: OKX documentation can be contradictory - we're using the plain passphrase as per latest guidance
    */
   private encryptPassphrase(): string {
-    try {
-      // According to OKX V5 documentation
-      return CryptoJS.HmacSHA256(PASSPHRASE, SECRET_KEY).toString(CryptoJS.enc.Base64);
-    } catch (error) {
-      console.error('Failed to encrypt passphrase:', error);
-      return PASSPHRASE; // Fallback to plain passphrase
-    }
+    // In the V5 API, we use the original passphrase as provided in API management
+    return PASSPHRASE;
   }
 
   /**
@@ -118,9 +113,30 @@ export class OkxService {
     
     try {
       const response: AxiosResponse = await axios(config);
+      
+      // Check if the response contains an OKX API error
+      if (response.data && response.data.code && response.data.code !== '0') {
+        console.error(`OKX API error: code ${response.data.code}, message: ${response.data.msg}`);
+        
+        // Create an error object with the response data for better error handling
+        const apiError: any = new Error(response.data.msg || 'OKX API Error');
+        apiError.code = response.data.code;
+        apiError.response = response;
+        throw apiError;
+      }
+      
       return response.data as T;
-    } catch (error) {
-      console.error('OKX API request failed:', error);
+    } catch (error: any) {
+      // Log and rethrow the error with more context
+      if (error.response?.data) {
+        console.error('OKX API request failed:', {
+          status: error.response.status,
+          code: error.response.data.code,
+          message: error.response.data.msg
+        });
+      } else {
+        console.error('OKX API request failed:', error.message);
+      }
       throw error;
     }
   }
@@ -135,9 +151,30 @@ export class OkxService {
         params,
         timeout: DEFAULT_TIMEOUT 
       });
+      
+      // Check if the response contains an OKX API error
+      if (response.data && response.data.code && response.data.code !== '0') {
+        console.error(`OKX API error in public request: code ${response.data.code}, message: ${response.data.msg}`);
+        
+        // Create an error object with the response data for better error handling
+        const apiError: any = new Error(response.data.msg || 'OKX API Error');
+        apiError.code = response.data.code;
+        apiError.response = response;
+        throw apiError;
+      }
+      
       return response.data as T;
-    } catch (error) {
-      console.error('OKX public API request failed:', error);
+    } catch (error: any) {
+      // Log and rethrow the error with more context
+      if (error.response?.data) {
+        console.error('OKX public API request failed:', {
+          status: error.response.status,
+          code: error.response.data.code,
+          message: error.response.data.msg
+        });
+      } else {
+        console.error('OKX public API request failed:', error.message);
+      }
       throw error;
     }
   }
