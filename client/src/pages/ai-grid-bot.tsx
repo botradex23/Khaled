@@ -117,7 +117,7 @@ export default function AIGridBot() {
   // Get market data for the selected pair
   const selectedPair = form.watch("symbol");
   const { data: marketData = [] } = useQuery<any[]>({
-    queryKey: ['/api/bybit/markets', selectedPair],
+    queryKey: ['/api/bitget/markets', selectedPair],
     enabled: !!selectedPair,
     refetchInterval: 30000,
   });
@@ -153,7 +153,7 @@ export default function AIGridBot() {
         useAI: data.useAI,
       };
 
-      return apiRequest("POST", "/api/bybit/bots", {
+      return apiRequest("POST", "/api/bitget/bots", {
         name: data.name,
         strategy: "grid",
         description: data.useAI 
@@ -191,7 +191,7 @@ export default function AIGridBot() {
   // Start bot mutation
   const startBotMutation = useMutation({
     mutationFn: (id: number) => {
-      return apiRequest("POST", `/api/bybit/bots/${id}/start`);
+      return apiRequest("POST", `/api/bitget/bots/${id}/start`);
     },
     onSuccess: () => {
       setIsRunning(true);
@@ -215,7 +215,7 @@ export default function AIGridBot() {
   // Stop bot mutation
   const stopBotMutation = useMutation({
     mutationFn: (id: number) => {
-      return apiRequest("POST", `/api/bybit/bots/${id}/stop`);
+      return apiRequest("POST", `/api/bitget/bots/${id}/stop`);
     },
     onSuccess: () => {
       setIsRunning(false);

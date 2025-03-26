@@ -34,7 +34,8 @@ export const isConfigured = (): boolean => {
   if (!hasSecretKey) console.log('Warning: BITGET_SECRET_KEY not configured');
   if (!hasPassphrase) console.log('Warning: BITGET_PASSPHRASE not configured');
   
-  return hasApiKey && hasSecretKey && hasPassphrase;
+  // Make sure we're explicitly returning a boolean value
+  return Boolean(hasApiKey && hasSecretKey && hasPassphrase);
 };
 
 // Common currencies to show in the app

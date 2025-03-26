@@ -161,7 +161,7 @@ export function TradingHistoryCard() {
           <div className="flex flex-col items-center justify-center py-6">
             <BadgeInfo className="h-10 w-10 text-muted-foreground mb-2" />
             <p className="text-center text-muted-foreground mb-2">
-              Could not retrieve trading history from OKX API
+              Could not retrieve trading history from Bitget API
             </p>
             <p className="text-center text-sm text-muted-foreground">
               Please check your API connection and try again
