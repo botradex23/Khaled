@@ -440,11 +440,32 @@ export class BitgetService {
       limit
     });
     
-    // Bitget returns data in a 'data' property
-    if (response && response.data) {
-      console.log(`Successfully retrieved ${response.data.length} candles`);
-      return response.data;
+    // Log detailed information about the response
+    console.log(`Raw kline response type: ${typeof response}`);
+    if (response && typeof response === 'object') {
+      console.log(`Kline response keys: ${Object.keys(response).join(', ')}`);
+      
+      // Check if response has data property
+      if (response.data) {
+        console.log(`Kline data type: ${typeof response.data}`);
+        console.log(`Kline data is array: ${Array.isArray(response.data)}`);
+        if (Array.isArray(response.data)) {
+          console.log(`Kline data length: ${response.data.length}`);
+          if (response.data.length > 0) {
+            console.log(`First candle item: ${JSON.stringify(response.data[0])}`);
+          }
+        }
+        console.log(`Successfully retrieved candle data`);
+        return response.data;
+      }
     }
+    
+    // Check if response itself is an array (unlikely but possible)
+    if (Array.isArray(response)) {
+      console.log(`Response is array with ${response.length} items`);
+      return response;
+    }
+    
     console.warn('No valid candle data returned from Bitget API');
     return []; // Return empty array if no valid data
   }
