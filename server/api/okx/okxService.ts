@@ -111,7 +111,6 @@ export class OkxService {
     console.log(`OKX API request: ${method} ${requestPath}`);
     
     // Setup request configuration
-    // For v5 API, we need to use the encrypted passphrase
     const config: AxiosRequestConfig = {
       method,
       url: `${this.baseUrl}${requestPath}`,
@@ -122,16 +121,10 @@ export class OkxService {
         'OK-ACCESS-SIGN': signature,
         'OK-ACCESS-TIMESTAMP': timestamp,
         'OK-ACCESS-PASSPHRASE': this.getPassphrase(),
+        // Always add demo trading header regardless of isDemo setting
+        'x-simulated-trading': '1'
       }
     };
-    
-    // Add demo trading header if needed
-    if (this.isDemo) {
-      config.headers = {
-        ...config.headers,
-        'x-simulated-trading': '1'
-      };
-    }
     
     // Add request body for non-GET requests
     if (method !== 'GET' && body) {

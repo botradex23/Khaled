@@ -44,21 +44,39 @@ export class AccountService {
     }
     
     try {
-      console.log('Fetching account balances from OKX API...');
-      const response = await okxService.makeAuthenticatedRequest<OkxResponse<{ details: Balance[] }>>(
-        'GET',
-        '/api/v5/account/balance'
-      );
+      console.log('Fetching account balances from OKX API with demo mode enabled...');
       
-      if (response.code !== '0') {
-        console.warn(`Failed to fetch account balances: ${response.msg} (Code: ${response.code})`);
+      // Prepare timestamp for the request
+      const timestamp = new Date().toISOString();
+      const method = 'GET';
+      const requestPath = '/api/v5/account/balance';
+      
+      // Generate signature as per the example code
+      const signature = okxService['generateSignature'](timestamp, method, requestPath);
+      
+      // Make direct API call to ensure demo mode is properly set
+      const response = await axios.get(`${okxService.getBaseUrl()}${requestPath}`, {
+        headers: {
+          'OK-ACCESS-KEY': API_KEY,
+          'OK-ACCESS-SIGN': signature,
+          'OK-ACCESS-TIMESTAMP': timestamp,
+          'OK-ACCESS-PASSPHRASE': PASSPHRASE,
+          'x-simulated-trading': '1' // Ensure demo trading mode is enabled
+        },
+        timeout: DEFAULT_TIMEOUT
+      });
+      
+      console.log('OKX API response status:', response.status);
+      
+      if (response.data.code !== '0') {
+        console.warn(`Failed to fetch account balances: ${response.data.msg} (Code: ${response.data.code})`);
         if (throwError) {
-          throw new Error(`OKX API error (code ${response.code}): ${response.msg}`);
+          throw new Error(`OKX API error (code ${response.data.code}): ${response.data.msg}`);
         }
         return this.getEmptyBalanceResponse();
       }
       
-      if (!response.data[0]?.details) {
+      if (!response.data.data[0]?.details) {
         console.warn('Account balance data format unexpected - no details found');
         if (throwError) {
           throw new Error('Failed to parse OKX balance data - unexpected format');
@@ -67,7 +85,7 @@ export class AccountService {
       }
       
       // Format the response data
-      return response.data[0].details.map(balance => ({
+      return response.data.data[0].details.map(balance => ({
         currency: balance.ccy,
         available: parseFloat(balance.availBal),
         frozen: parseFloat(balance.frozenBal),
@@ -75,7 +93,7 @@ export class AccountService {
         valueUSD: parseFloat(balance.eq)
       }));
     } catch (error) {
-      console.error('Failed to fetch account balances:', error);
+      console.error('Failed to fetch account balances:', error.response?.data || error.message);
       if (throwError) {
         throw error;
       }
