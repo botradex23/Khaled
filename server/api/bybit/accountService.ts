@@ -421,7 +421,18 @@ export class AccountService {
     price?: string
   ): Promise<{ success: boolean; orderId?: string; message: string; error?: any }> {
     try {
-      if (!isConfigured()) {
+      if (!isConfigured() || ALWAYS_USE_DEMO) {
+        // When using demo data, simulate a successful order to maintain good UX
+        if (ALWAYS_USE_DEMO) {
+          const demoOrderId = `demo-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+          return {
+            success: true,
+            orderId: demoOrderId,
+            message: `Demo mode: Simulated ${side} order for ${amount} ${symbol}`
+          };
+        }
+        
+        // Only show error if not in demo mode
         return {
           success: false,
           message: 'Bybit API not configured. Please check your API keys.'
@@ -484,7 +495,16 @@ export class AccountService {
     orderId: string
   ): Promise<{ success: boolean; message: string; error?: any }> {
     try {
-      if (!isConfigured()) {
+      if (!isConfigured() || ALWAYS_USE_DEMO) {
+        // When using demo data, simulate a successful order cancellation for better UX
+        if (ALWAYS_USE_DEMO) {
+          return {
+            success: true,
+            message: `Demo mode: Simulated cancellation of order ${orderId} for ${symbol}`
+          };
+        }
+        
+        // Only show error if not in demo mode
         return {
           success: false,
           message: 'Bybit API not configured. Please check your API keys.'
@@ -549,8 +569,18 @@ export class AccountService {
     details?: any;
   }> {
     try {
-      // Step 1: Check if API keys are configured
-      if (!isConfigured()) {
+      // Step 1: Check if API keys are configured or if we're in demo mode
+      if (!isConfigured() || ALWAYS_USE_DEMO) {
+        if (ALWAYS_USE_DEMO) {
+          return {
+            connected: true,
+            authenticated: true,
+            hasReadPermissions: true,
+            hasWritePermissions: true,
+            message: 'Demo mode: Using simulated API connection with full permissions'
+          };
+        }
+        
         return {
           connected: false,
           authenticated: false,

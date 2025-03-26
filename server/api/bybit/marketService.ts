@@ -43,6 +43,12 @@ export class MarketService {
    */
   async getMarketData(symbols: string[] = DEFAULT_PAIRS): Promise<MarketData[]> {
     try {
+      // If ALWAYS_USE_DEMO is true, directly return demo data
+      if (ALWAYS_USE_DEMO) {
+        console.log('ALWAYS_USE_DEMO flag is enabled. Using demo market data.');
+        return this.getDemoMarketData(symbols);
+      }
+      
       // Check for geo-restrictions first by trying a simple ping request
       try {
         await bybitService.ping();
@@ -142,6 +148,12 @@ export class MarketService {
    */
   async getCandlestickData(symbol: string, interval = '60', limit = 100): Promise<KlineData[]> {
     try {
+      // If ALWAYS_USE_DEMO is true, directly return demo data
+      if (ALWAYS_USE_DEMO) {
+        console.log('ALWAYS_USE_DEMO flag is enabled. Using demo candlestick data.');
+        return this.getDemoCandlestickData(symbol, interval, limit);
+      }
+      
       // Check for geo-restrictions first by trying a simple ping request
       try {
         await bybitService.ping();
@@ -295,6 +307,12 @@ export class MarketService {
   
   async getMarketDetail(symbol: string): Promise<any> {
     try {
+      // If ALWAYS_USE_DEMO is true, directly return demo data
+      if (ALWAYS_USE_DEMO) {
+        console.log('ALWAYS_USE_DEMO flag is enabled. Using demo market detail.');
+        return this.getDemoMarketDetail(symbol);
+      }
+      
       // Check for geo-restrictions first by trying a simple ping request
       try {
         await bybitService.ping();
