@@ -5,8 +5,8 @@ export const BITGET_MAINNET_URL = 'https://api.bitget.com';
 export const BITGET_TESTNET_URL = 'https://api.bitgettest.com';
 
 // Whether to use testnet (demo environment) instead of mainnet
-// Using testnet for bot training and testing
-export const USE_TESTNET = true;
+// Initially tried testnet, but switching to mainnet for better connectivity
+export const USE_TESTNET = false;
 
 // Base URL to use (will be set to testnet or mainnet based on USE_TESTNET)
 export const BASE_URL = USE_TESTNET ? BITGET_TESTNET_URL : BITGET_MAINNET_URL;
