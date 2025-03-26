@@ -1,4 +1,5 @@
 import { okxService } from './okxService';
+import { DEFAULT_CURRENCIES } from './config';
 
 // Define response types
 interface Balance {

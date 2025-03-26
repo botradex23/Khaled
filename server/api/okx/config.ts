@@ -1,8 +1,14 @@
 // OKX API Configuration
 
 // Define OKX API endpoints
-export const OKX_BASE_URL = 'https://www.okx.com'; // Base URL for API
-export const OKX_DEMO_BASE_URL = 'https://www.okx.com'; // Use same URL for demo (handled via header)
+// Note: OKX documentation sometimes references different base URLs
+// Options include:
+// - https://www.okx.com (main website with API)
+// - https://api.okx.com (dedicated API endpoint)
+// - https://aws.okx.com (AWS hosted endpoint)
+// Demo trading is handled via the 'x-simulated-trading' header
+export const OKX_BASE_URL = 'https://api.okx.com'; // Base URL for API
+export const OKX_DEMO_BASE_URL = 'https://api.okx.com'; // Use same URL for demo (handled via header)
 
 // Environment variables for API credentials
 export const API_KEY = process.env.OKX_API_KEY || '';

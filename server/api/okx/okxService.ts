@@ -133,14 +133,36 @@ export class OkxService {
     }
     
     try {
+      // Add more detailed logging of the request for debugging
+      console.log(`Making ${this.isDemo ? 'DEMO' : 'LIVE'} OKX API request:`, {
+        method,
+        path: requestPath,
+        demoMode: this.isDemo,
+        timestampFormat: timestamp
+      });
+      
       const response: AxiosResponse = await axios(config);
       
       // Check if the response contains an OKX API error
       if (response.data && response.data.code && response.data.code !== '0') {
         console.error(`OKX API error: code ${response.data.code}, message: ${response.data.msg}`);
         
+        // Handle specific error codes with more detailed messages
+        let errorMessage = response.data.msg || 'OKX API Error';
+        
+        // Add helpful troubleshooting advice based on error code
+        if (response.data.code === '50119') {
+          errorMessage += ". This typically means the API key is invalid, doesn't exist, or wasn't created on the main OKX exchange (not OKX Wallet).";
+        } else if (response.data.code === '50102') {
+          errorMessage += ". This typically means the timestamp is invalid or request timed out.";
+        } else if (response.data.code === '50103') {
+          errorMessage += ". This typically means the signature is invalid - check your SECRET_KEY format.";
+        } else if (response.data.code === '50104') {
+          errorMessage += ". This typically means the passphrase is incorrect.";
+        }
+        
         // Create an error object with the response data for better error handling
-        const apiError: any = new Error(response.data.msg || 'OKX API Error');
+        const apiError: any = new Error(errorMessage);
         apiError.code = response.data.code;
         apiError.response = response;
         throw apiError;
@@ -155,6 +177,13 @@ export class OkxService {
           code: error.response.data.code,
           message: error.response.data.msg
         });
+        
+        // Add debug information for specific endpoints
+        if (requestPath.includes('/account/balance')) {
+          console.log('Note: /account/balance endpoint requires Read permission on your API key');
+        } else if (requestPath.includes('/trade/')) {
+          console.log('Note: Trade-related endpoints require Trade permission on your API key');
+        }
       } else {
         console.error('OKX API request failed:', error.message);
       }
