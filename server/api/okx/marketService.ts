@@ -83,7 +83,8 @@ export class MarketService {
    */
   async getCandlestickData(symbol: string, interval = '1H', limit = 100): Promise<any> {
     try {
-      const response = await okxService.makePublicRequest<OkxResponse<string[]>>(`/api/v5/market/candles?instId=${symbol}&bar=${interval}&limit=${limit}`);
+      // Use the okxService.getKlineData method which has the correct parameter handling
+      const response = await okxService.getKlineData(symbol, interval, limit);
       
       if (response.code !== '0') {
         throw new Error(`Failed to fetch candlestick data: ${response.msg}`);
@@ -91,7 +92,7 @@ export class MarketService {
       
       // Process and format candlestick data
       // OKX returns: [timestamp, open, high, low, close, vol, volCcy]
-      return response.data.map(candle => ({
+      return response.data.map((candle: string[]) => ({
         timestamp: candle[0],
         open: parseFloat(candle[1]),
         high: parseFloat(candle[2]),

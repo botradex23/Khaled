@@ -69,7 +69,10 @@ router.get('/markets/:symbol', async (req: Request, res: Response) => {
 router.get('/candles/:symbol', async (req: Request, res: Response) => {
   try {
     const { symbol } = req.params;
-    const interval = req.query.interval as string || '1h';
+    // Default to '1H' (uppercase) and ensure any passed interval is also uppercase
+    const interval = req.query.interval 
+      ? (req.query.interval as string).toUpperCase() 
+      : '1H';
     const limit = parseInt(req.query.limit as string || '100');
     
     const candleData = await marketService.getCandlestickData(symbol, interval, limit);
