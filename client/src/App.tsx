@@ -7,6 +7,7 @@ import Home from "@/pages/home";
 import Dashboard from "@/pages/dashboard";
 import Bots from "@/pages/bots";
 import Markets from "@/pages/markets";
+import Register from "@/pages/register";
 
 function Router() {
   return (
