@@ -362,10 +362,89 @@ export class BitgetService {
 
   /**
    * Test connectivity to the API
+   * Added retry mechanism to improve reliability
    */
-  async ping() {
+  async ping(maxRetries = 3) {
     // Bitget doesn't have a dedicated ping endpoint, so use a simple public endpoint
-    return this.makePublicRequest('/api/spot/v1/public/time');
+    let lastError;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`Attempting to ping Bitget API (attempt ${attempt}/${maxRetries})...`);
+        const result = await this.makePublicRequest('/api/spot/v1/public/time');
+        console.log('Successfully pinged Bitget API');
+        return result;
+      } catch (error) {
+        lastError = error;
+        console.error(`Ping attempt ${attempt} failed:`, error.message);
+        
+        // Only wait if we're going to retry
+        if (attempt < maxRetries) {
+          // Exponential backoff - wait longer between attempts
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          console.log(`Waiting ${delay}ms before next attempt...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    // If we get here, all attempts failed
+    throw lastError;
+  }
+  
+  /**
+   * Enhanced connection test that checks multiple endpoints
+   * Attempts to access both public and private endpoints with retries
+   */
+  async checkConnection(testAuthenticated = true): Promise<{
+    publicApi: boolean;
+    authenticatedApi: boolean;
+    message: string;
+    details?: any;
+  }> {
+    const result = {
+      publicApi: false,
+      authenticatedApi: false,
+      message: '',
+      details: {}
+    };
+    
+    // Test public endpoints
+    try {
+      const timeResponse = await this.ping(2);
+      result.publicApi = true;
+      result.details.publicApiResponse = 'Success';
+      
+      // If we just want to check public API, return now
+      if (!testAuthenticated) {
+        result.message = 'Public API connection successful. Authentication not tested.';
+        return result;
+      }
+      
+    } catch (error) {
+      result.publicApi = false;
+      result.message = `Failed to connect to Bitget public API: ${error.message}`;
+      result.details.publicApiError = error.message;
+      return result;
+    }
+    
+    // Now test authenticated endpoints if we got API keys
+    if (this.isConfigured()) {
+      try {
+        // Use smaller timeout for authenticated tests
+        const accountResponse = await this.getAccountInfo();
+        result.authenticatedApi = true;
+        result.message = 'Successfully connected to Bitget API with authentication';
+        result.details.authenticatedApiResponse = 'Success';
+      } catch (error) {
+        result.authenticatedApi = false;
+        result.message = `Public API connection successful, but authentication failed: ${error.message}`;
+        result.details.authenticatedApiError = error.message;
+      }
+    } else {
+      result.message = 'Public API connection successful. Authentication not tested (no API keys).';
+    }
+    
+    return result;
   }
 }
 

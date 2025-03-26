@@ -5,13 +5,15 @@ export const BITGET_MAINNET_URL = 'https://api.bitget.com';
 export const BITGET_TESTNET_URL = 'https://api.bitgettest.com';
 
 // Whether to use testnet (demo environment) instead of mainnet
-export const USE_TESTNET = true;
+// Changed to use mainnet since the testnet may have connectivity issues
+export const USE_TESTNET = false;
 
 // Base URL to use (will be set to testnet or mainnet based on USE_TESTNET)
 export const BASE_URL = USE_TESTNET ? BITGET_TESTNET_URL : BITGET_MAINNET_URL;
 
 // Use fallback demo data if API fails or for testing purposes
-export const ALWAYS_USE_DEMO = true;
+// Let's only use demo as a fallback, not as default
+export const ALWAYS_USE_DEMO = false;
 
 // API credentials - these should be sourced from environment variables
 export const API_KEY = process.env.BITGET_API_KEY || '';
@@ -55,5 +57,5 @@ export const TRADING_STRATEGIES = {
   MACD: 'macd'
 };
 
-// Default timeout for API requests (10 seconds)
-export const DEFAULT_TIMEOUT = 10000;
+// Default timeout for API requests (increased to 30 seconds for better reliability)
+export const DEFAULT_TIMEOUT = 30000;
