@@ -5,6 +5,7 @@ import { botSchema, pricingPlanSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import okxRouter from "./api/okx";
 import bybitRouter from "./api/bybit";
+import bitgetRouter from "./api/bitget";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // OKX API routes
@@ -12,6 +13,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Bybit API routes
   app.use("/api/bybit", bybitRouter);
+  
+  // Bitget API routes
+  app.use("/api/bitget", bitgetRouter);
   
   // API routes
   
