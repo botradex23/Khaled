@@ -55,7 +55,8 @@ export class MemStorage implements IStorage {
         monthlyReturn: "5.2",
         riskLevel: 2,
         rating: "4.5",
-        isPopular: true
+        isPopular: true,
+        userId: 1 // Default user
       },
       {
         id: this.botId++,
@@ -66,7 +67,8 @@ export class MemStorage implements IStorage {
         monthlyReturn: "3.8",
         riskLevel: 1,
         rating: "4.8",
-        isPopular: false
+        isPopular: false,
+        userId: 1 // Default user
       },
       {
         id: this.botId++,
@@ -77,7 +79,8 @@ export class MemStorage implements IStorage {
         monthlyReturn: "7.5",
         riskLevel: 3,
         rating: "4.2",
-        isPopular: true
+        isPopular: true,
+        userId: 1 // Default user
       }
     ];
     

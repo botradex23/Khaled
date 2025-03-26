@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import { 
@@ -22,14 +23,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   LineChart,
   Line,
-  AreaChart,
-  Area,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer
 } from "recharts";
+import { PriceChart } from "@/components/ui/price-chart";
+import { TopMarketTickers, MarketTickerCard } from "@/components/ui/market-ticker";
 import { 
   Search, 
   Star, 
@@ -41,122 +41,79 @@ import {
   Clock,
   Wallet,
   BarChart3,
-  Copy
+  Copy,
+  RefreshCw
 } from "lucide-react";
 
-// Sample market data
-const cryptoMarkets = [
-  { 
-    id: 1, 
-    name: "Bitcoin", 
-    symbol: "BTC", 
-    price: 42356.78, 
-    change24h: 2.34, 
-    volume24h: 28945123765, 
-    marketCap: 824567890123,
-    sparkline: Array.from({ length: 20 }, () => Math.random() * 10 + 40)
-  },
-  { 
-    id: 2, 
-    name: "Ethereum", 
-    symbol: "ETH", 
-    price: 2846.92, 
-    change24h: -1.23, 
-    volume24h: 17283945610, 
-    marketCap: 345678901234,
-    sparkline: Array.from({ length: 20 }, () => Math.random() * 5 + 28)
-  },
-  { 
-    id: 3, 
-    name: "Solana", 
-    symbol: "SOL", 
-    price: 128.45, 
-    change24h: 5.67, 
-    volume24h: 8723456789, 
-    marketCap: 56789012345,
-    sparkline: Array.from({ length: 20 }, () => Math.random() * 10 + 120)
-  },
-  { 
-    id: 4, 
-    name: "Cardano", 
-    symbol: "ADA", 
-    price: 0.58, 
-    change24h: 0.34, 
-    volume24h: 2345678901, 
-    marketCap: 23456789012,
-    sparkline: Array.from({ length: 20 }, () => Math.random() * 0.1 + 0.55)
-  },
-  { 
-    id: 5, 
-    name: "Binance Coin", 
-    symbol: "BNB", 
-    price: 345.67, 
-    change24h: -0.78, 
-    volume24h: 3456789012, 
-    marketCap: 67890123456,
-    sparkline: Array.from({ length: 20 }, () => Math.random() * 15 + 340)
-  },
-  { 
-    id: 6, 
-    name: "XRP", 
-    symbol: "XRP", 
-    price: 0.62, 
-    change24h: 1.23, 
-    volume24h: 1234567890, 
-    marketCap: 34567890123,
-    sparkline: Array.from({ length: 20 }, () => Math.random() * 0.05 + 0.60)
-  },
-  { 
-    id: 7, 
-    name: "Polkadot", 
-    symbol: "DOT", 
-    price: 7.89, 
-    change24h: -2.34, 
-    volume24h: 987654321, 
-    marketCap: 12345678901,
-    sparkline: Array.from({ length: 20 }, () => Math.random() * 0.8 + 7.5)
-  },
-  { 
-    id: 8, 
-    name: "Dogecoin", 
-    symbol: "DOGE", 
-    price: 0.087, 
-    change24h: 3.45, 
-    volume24h: 876543210, 
-    marketCap: 11234567890,
-    sparkline: Array.from({ length: 20 }, () => Math.random() * 0.01 + 0.08)
-  }
-];
-
-// Convert sparkline data to chart format
-const getSparklineData = (sparkline: number[]) => {
-  return sparkline.map((value, index) => ({
-    name: index.toString(),
-    value
-  }));
+// Coin name mapping
+const coinNames: Record<string, string> = {
+  "BTC": "Bitcoin",
+  "ETH": "Ethereum",
+  "SOL": "Solana",
+  "BNB": "Binance Coin",
+  "ADA": "Cardano",
+  "XRP": "XRP",
+  "DOT": "Polkadot",
+  "DOGE": "Dogecoin",
+  "AVAX": "Avalanche",
+  "LINK": "Chainlink",
+  "MATIC": "Polygon",
+  "NEAR": "NEAR Protocol",
+  "UNI": "Uniswap",
+  "AAVE": "Aave",
+  "ATOM": "Cosmos",
+  "FTM": "Fantom"
 };
 
-// Sample detailed market data for selected coin
-const bitcoinDetailData = [
-  { time: "00:00", price: 42100 },
-  { time: "04:00", price: 42300 },
-  { time: "08:00", price: 42200 },
-  { time: "12:00", price: 42500 },
-  { time: "16:00", price: 42800 },
-  { time: "20:00", price: 42400 },
-  { time: "24:00", price: 42600 }
-];
+// Market cap estimations (in billions)
+const marketCapEstimates: Record<string, number> = {
+  "BTC": 824.5,
+  "ETH": 345.6,
+  "SOL": 56.7,
+  "BNB": 67.8,
+  "ADA": 23.4,
+  "XRP": 34.5,
+  "DOT": 12.3,
+  "DOGE": 11.2,
+  "AVAX": 10.5,
+  "LINK": 8.7,
+  "MATIC": 7.5,
+  "NEAR": 5.6,
+  "UNI": 4.3,
+  "AAVE": 3.9,
+  "ATOM": 3.1,
+  "FTM": 2.8
+};
 
 export default function Markets() {
   // State for search and filters
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCoin, setSelectedCoin] = useState<string | null>(null);
   
-  // Filter crypto markets by search query
-  const filteredMarkets = cryptoMarkets.filter(market => 
-    market.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    market.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Fetch market data
+  const { data: marketsData, isLoading, error, refetch } = useQuery({
+    queryKey: ["/api/okx/markets"],
+    refetchInterval: 30000 // refresh every 30 seconds
+  });
+  
+  // Format data and add market cap estimates
+  const markets = Array.isArray(marketsData) ? marketsData.map(market => {
+    const symbol = market.symbol.split('-')[0];
+    return {
+      ...market,
+      name: coinNames[symbol] || symbol,
+      // Estimate market cap based on price
+      marketCap: (marketCapEstimates[symbol] || 1) * 1_000_000_000
+    };
+  }) : [];
+  
+  // Filter markets by search query
+  const filteredMarkets = markets.filter(market => {
+    const symbol = market.symbol.split('-')[0];
+    const name = coinNames[symbol] || symbol;
+    return name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+           symbol.toLowerCase().includes(searchQuery.toLowerCase());
+  });
   
   // Handle coin selection for detailed view
   const handleCoinSelect = (symbol: string) => {
