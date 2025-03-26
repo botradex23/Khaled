@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { User } from "@shared/schema";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -20,6 +22,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -32,16 +35,21 @@ export default function Login() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      // This would be replaced with actual login logic from the server
-      await apiRequest("POST", "/api/login", data);
+      // Call the server to login
+      const response = await apiRequest<{ message: string, user: User }>("POST", "/api/login", data);
       
-      toast({
-        title: "Login Successful",
-        description: "You have been logged in successfully.",
-      });
-      
-      // Redirect to dashboard after successful login
-      setLocation("/dashboard");
+      // If successful, update the auth context
+      if (response && response.user) {
+        login(response.user);
+        
+        toast({
+          title: "Login Successful",
+          description: "You have been logged in successfully.",
+        });
+        
+        // Redirect to dashboard after successful login
+        setLocation("/dashboard");
+      }
     } catch (error) {
       console.error("Login error:", error);
       toast({
