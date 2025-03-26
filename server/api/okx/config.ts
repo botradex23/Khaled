@@ -10,10 +10,10 @@
 export const OKX_BASE_URL = 'https://www.okx.com'; // Base URL for API 
 export const OKX_DEMO_BASE_URL = 'https://www.okx.com'; // Use same URL for demo (handled via header)
 
-// Direct API credentials (temporary for testing)
-export const API_KEY = '990ddc24-085e-4567-9f86-64a732036f96'; // From screenshot
-export const SECRET_KEY = '2528132DE19F19B2BADE00A48D82D7EA'; // From screenshot 
-export const PASSPHRASE = 'Khaled123'; // From screenshot
+// Use API credentials from environment variables with fallbacks
+export const API_KEY = process.env.OKX_API_KEY || '990ddc24-085e-4567-9f86-64a732036f96';
+export const SECRET_KEY = process.env.OKX_SECRET_KEY || '2528132DE19F19B2BADE00A48D82D7EA';
+export const PASSPHRASE = process.env.OKX_PASSPHRASE || 'Khaled123';
 
 /**
  * Check if API credentials are configured

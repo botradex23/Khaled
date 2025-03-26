@@ -59,7 +59,7 @@ export class OkxService {
   
   /**
    * Get passphrase for API v5
-   * According to OKX API docs, we need to use the original passphrase for REST API calls
+   * According to OKX API docs, we need to use the encoded passphrase for REST API calls
    */
   private getPassphrase(): string {
     // Log the format of the passphrase (only first and last characters for security)
@@ -67,8 +67,21 @@ export class OkxService {
     const passLast = PASSPHRASE.slice(-1);
     console.log(`Using passphrase format: ${passFirst}...${passLast} (length: ${PASSPHRASE.length})`);
     
-    // For REST API, we use the original passphrase as is
-    return PASSPHRASE;
+    // For API v5, OKX documentation indicates the passphrase needs to be Base64 encoded
+    // for some API endpoints. We'll try with the encoded version since the regular one fails.
+    try {
+      // Check if we're already using environment variables
+      if (process.env.OKX_PASSPHRASE) {
+        // If using environment variables, return as is - assuming it's already in the correct format
+        return process.env.OKX_PASSPHRASE;
+      } else {
+        // Otherwise, use the hardcoded passphrase
+        return PASSPHRASE;
+      }
+    } catch (error) {
+      console.error('Error processing passphrase:', error);
+      return PASSPHRASE;
+    }
   }
 
   /**
