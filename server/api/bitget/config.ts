@@ -12,7 +12,7 @@ export const USE_TESTNET = false;
 export const BASE_URL = USE_TESTNET ? BITGET_TESTNET_URL : BITGET_MAINNET_URL;
 
 // Use fallback demo data if API fails or for testing purposes
-// We're only using testnet data, not local demo data
+// Set to false to use real API data when the connection works
 export const ALWAYS_USE_DEMO = false;
 
 // API credentials - these should be sourced from environment variables

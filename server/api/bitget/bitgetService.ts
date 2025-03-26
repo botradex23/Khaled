@@ -266,23 +266,31 @@ export class BitgetService {
       console.log('Retrieving account assets from Bitget...');
       const response = await this.makeAuthenticatedRequest('GET', '/api/spot/v1/account/assets');
       
-      // Log response structure for debugging
-      if (response && typeof response === 'object') {
-        console.log('Account response structure:', Object.keys(response).join(', '));
-      } else {
-        console.log('Account response structure:', typeof response);
-      }
+      // Log response structure for comprehensive debugging
+      console.log('Full account response:', JSON.stringify(response));
       
-      if (response && typeof response === 'object') {
+      // The actual Bitget API returns the array directly without a data property
+      // We need to adapt to the real API response format
+      if (Array.isArray(response)) {
+        console.log(`Successfully retrieved ${response.length} assets directly from API`);
+        if (response.length > 0) {
+          console.log('Sample asset structure:', JSON.stringify(response[0]));
+        }
+        // Return in the expected format for compatibility
+        return { data: response };
+      } 
+      // Check if the response itself is an object with a data property
+      else if (response && typeof response === 'object') {
         if ('data' in response) {
           const assets = response.data;
-          console.log(`Successfully retrieved ${Array.isArray(assets) ? assets.length : 'unknown'} assets`);
+          console.log(`Successfully retrieved ${Array.isArray(assets) ? assets.length : 'unknown'} assets through data property`);
           if (Array.isArray(assets) && assets.length > 0) {
             console.log('Sample asset structure:', JSON.stringify(assets[0]));
           }
           return response;
         } else {
           console.warn('Unexpected response format from Bitget getAccountInfo - missing data property');
+          console.log('Available properties:', Object.keys(response).join(', '));
           return { data: [] };
         }
       } else {

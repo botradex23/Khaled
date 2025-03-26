@@ -68,24 +68,36 @@ export class AccountService {
             console.log('Processing asset:', JSON.stringify(asset));
           }
           
-          // Map Bitget API fields to our standard format
+          // Map Bitget API fields to our standard format based on actual response
           const available = parseFloat(asset.available || '0');
-          const frozen = parseFloat(asset.locked || '0');
-          const total = available + frozen;
+          const frozen = parseFloat(asset.frozen || '0');
+          const lock = parseFloat(asset.lock || '0');
+          const total = available + frozen + lock;
           
-          // Calculate USD value if not provided directly
+          // We don't have direct USD value in API, estimate based on common prices
           let valueUSD = 0;
-          if (asset.usdValue) {
-            valueUSD = parseFloat(asset.usdValue);
-          } else if (asset.btcValue && asset.coinName === 'BTC') {
-            // If it's BTC and we have btcValue
-            valueUSD = parseFloat(asset.btcValue) * 67000; // Approximate BTC USD value
+          
+          // Simple price mapping for major currencies
+          const estimatedPrices: Record<string, number> = {
+            'BTC': 67000,
+            'ETH': 3500,
+            'SOL': 140,
+            'USDT': 1,
+            'USDC': 1,
+            'BNB': 590,
+            'ADA': 0.45,
+            'XRP': 0.62,
+            'DOGE': 0.14
+          };
+          
+          if (estimatedPrices[asset.coinName]) {
+            valueUSD = total * estimatedPrices[asset.coinName];
           }
           
           return {
-            currency: asset.coinName || 'Unknown',
+            currency: asset.coinName || asset.coinDisplayName || 'Unknown',
             available,
-            frozen,
+            frozen: frozen + lock, // Combine frozen and locked funds
             total,
             valueUSD
           };
