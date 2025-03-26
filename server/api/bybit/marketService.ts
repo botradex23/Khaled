@@ -1,5 +1,5 @@
 import { bybitService } from './bybitService';
-import { DEFAULT_PAIRS } from './config';
+import { DEFAULT_PAIRS, ALWAYS_USE_DEMO } from './config';
 
 // Interface for Bybit market ticker
 interface BybitTicker {

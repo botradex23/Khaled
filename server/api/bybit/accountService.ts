@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { bybitService } from './bybitService';
-import { isConfigured } from './config';
+import { isConfigured, ALWAYS_USE_DEMO } from './config';
 
 // Interface for Bybit wallet balance
 interface BybitBalance {
@@ -288,8 +288,8 @@ export class AccountService {
    */
   async getOpenOrders(forceDemoData = false): Promise<any[]> {
     try {
-      if (!isConfigured() || forceDemoData) {
-        console.log('Bybit API not configured or demo data requested, returning demo open orders');
+      if (!isConfigured() || forceDemoData || ALWAYS_USE_DEMO) {
+        console.log('Using demo data for open orders (API not configured, demo data requested, or ALWAYS_USE_DEMO is true)');
         return this.getDemoOpenOrders();
       }
 
