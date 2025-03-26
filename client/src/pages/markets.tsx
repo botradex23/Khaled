@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Table, 
   TableBody, 
@@ -147,91 +148,116 @@ export default function Markets() {
             <Card className="md:col-span-2">
               <CardHeader>
                 <CardTitle>Market Overview</CardTitle>
-                <CardDescription>Top trending cryptocurrencies</CardDescription>
+                <CardDescription className="flex items-center gap-2">
+                  <span>Top trending cryptocurrencies</span>
+                  {isLoading ? (
+                    <span className="text-xs text-muted-foreground flex items-center">
+                      <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                      Updating...
+                    </span>
+                  ) : (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 px-2 -my-1" 
+                      onClick={() => refetch()}
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      <span className="text-xs">Refresh</span>
+                    </Button>
+                  )}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <Card className="bg-card/50">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <TrendingUp className="h-5 w-5 text-green-500" />
-                        <Star className="h-4 w-4 text-amber-400" />
-                      </div>
-                      <div className="mt-2">
-                        <div className="flex items-center">
-                          <span className="text-sm font-medium">BTC</span>
-                          <span className="ml-1 text-xs text-muted-foreground">Bitcoin</span>
-                        </div>
-                        <div className="flex items-baseline mt-1">
-                          <span className="text-xl font-bold">${cryptoMarkets[0].price.toLocaleString()}</span>
-                          <span className="ml-2 text-xs text-green-500 flex items-center">
-                            <ArrowUpRight className="h-3 w-3 mr-1" />
-                            {cryptoMarkets[0].change24h}%
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-card/50">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <TrendingDown className="h-5 w-5 text-red-500" />
-                        <Star className="h-4 w-4 text-amber-400" />
-                      </div>
-                      <div className="mt-2">
-                        <div className="flex items-center">
-                          <span className="text-sm font-medium">ETH</span>
-                          <span className="ml-1 text-xs text-muted-foreground">Ethereum</span>
-                        </div>
-                        <div className="flex items-baseline mt-1">
-                          <span className="text-xl font-bold">${cryptoMarkets[1].price.toLocaleString()}</span>
-                          <span className="ml-2 text-xs text-red-500 flex items-center">
-                            <ArrowDownRight className="h-3 w-3 mr-1" />
-                            {Math.abs(cryptoMarkets[1].change24h)}%
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-card/50">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <TrendingUp className="h-5 w-5 text-green-500" />
-                        <Bookmark className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div className="mt-2">
-                        <div className="flex items-center">
-                          <span className="text-sm font-medium">SOL</span>
-                          <span className="ml-1 text-xs text-muted-foreground">Solana</span>
-                        </div>
-                        <div className="flex items-baseline mt-1">
-                          <span className="text-xl font-bold">${cryptoMarkets[2].price.toLocaleString()}</span>
-                          <span className="ml-2 text-xs text-green-500 flex items-center">
-                            <ArrowUpRight className="h-3 w-3 mr-1" />
-                            {cryptoMarkets[2].change24h}%
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-card/50">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <Clock className="h-5 w-5 text-primary" />
-                        <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2" onClick={() => window.alert("Market added to watchlist!")}>
-                          <Bookmark className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      </div>
-                      <div className="mt-2">
-                        <div className="text-sm">Market Cap</div>
-                        <div className="text-xl font-bold mt-1">$2.34T</div>
-                        <div className="text-xs text-muted-foreground mt-1">24h Volume: $98.7B</div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {isLoading ? (
+                    // Skeleton loader for market overview cards
+                    Array(4).fill(0).map((_, i) => (
+                      <Card key={i} className="bg-card/50">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <Skeleton className="h-5 w-5" />
+                            <Skeleton className="h-4 w-4" />
+                          </div>
+                          <div className="mt-2">
+                            <Skeleton className="h-4 w-16 mb-1" />
+                            <Skeleton className="h-6 w-20 mb-1" />
+                            <Skeleton className="h-4 w-12" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : markets.length > 0 ? (
+                    // Top 3 markets and market overview
+                    <>
+                      {markets.slice(0, 3).map((market, index) => {
+                        const isPositive = market.change24h >= 0;
+                        const symbol = market.symbol.split('-')[0];
+                        return (
+                          <Card key={index} className="bg-card/50">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                {isPositive ? 
+                                  <TrendingUp className="h-5 w-5 text-green-500" /> : 
+                                  <TrendingDown className="h-5 w-5 text-red-500" />
+                                }
+                                <Star className="h-4 w-4 text-amber-400" />
+                              </div>
+                              <div className="mt-2">
+                                <div className="flex items-center">
+                                  <span className="text-sm font-medium">{symbol}</span>
+                                  <span className="ml-1 text-xs text-muted-foreground">{coinNames[symbol] || symbol}</span>
+                                </div>
+                                <div className="flex items-baseline mt-1">
+                                  <span className="text-xl font-bold">${market.price.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                  })}</span>
+                                  <span className={`ml-2 text-xs ${isPositive ? 'text-green-500' : 'text-red-500'} flex items-center`}>
+                                    {isPositive ? 
+                                      <ArrowUpRight className="h-3 w-3 mr-1" /> : 
+                                      <ArrowDownRight className="h-3 w-3 mr-1" />
+                                    }
+                                    {Math.abs(market.change24h).toFixed(2)}%
+                                  </span>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                      
+                      <Card className="bg-card/50">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <Clock className="h-5 w-5 text-primary" />
+                            <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2" onClick={() => window.alert("Market added to watchlist!")}>
+                              <Bookmark className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </div>
+                          <div className="mt-2">
+                            <div className="text-sm">Total Market</div>
+                            <div className="text-xl font-bold mt-1">$2.34T</div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {markets.length} Coins
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </>
+                  ) : error ? (
+                    <div className="col-span-4 p-4 text-center text-muted-foreground">
+                      <p>Unable to load market data</p>
+                      <Button variant="outline" size="sm" className="mt-2" onClick={() => refetch()}>
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Retry
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="col-span-4 p-4 text-center text-muted-foreground">
+                      No market data available
+                    </div>
+                  )}
                 </div>
                 
                 <Tabs defaultValue="all">
@@ -257,69 +283,105 @@ export default function Markets() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredMarkets.map((market, index) => (
-                            <TableRow 
-                              key={market.id} 
-                              className="cursor-pointer hover:bg-muted/40"
-                              onClick={() => handleCoinSelect(market.symbol)}
-                            >
-                              <TableCell className="font-medium">{index + 1}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center">
-                                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center mr-2">
-                                    {market.symbol[0]}
+                          {isLoading ? (
+                            Array(5).fill(0).map((_, i) => (
+                              <TableRow key={i}>
+                                <TableCell><Skeleton className="h-4 w-6" /></TableCell>
+                                <TableCell>
+                                  <div className="flex items-center">
+                                    <Skeleton className="h-6 w-6 rounded-full mr-2" />
+                                    <div>
+                                      <Skeleton className="h-4 w-24 mb-1" />
+                                      <Skeleton className="h-3 w-12" />
+                                    </div>
                                   </div>
-                                  <div>
-                                    <div className="font-medium">{market.name}</div>
-                                    <div className="text-xs text-muted-foreground">{market.symbol}</div>
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right font-medium">
-                                ${market.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </TableCell>
-                              <TableCell className={`text-right ${market.change24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                <div className="flex items-center justify-end">
-                                  {market.change24h >= 0 ? 
-                                    <ArrowUpRight className="h-3 w-3 mr-1" /> : 
-                                    <ArrowDownRight className="h-3 w-3 mr-1" />
-                                  }
-                                  {Math.abs(market.change24h)}%
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                ${(market.marketCap / 1000000000).toFixed(1)}B
-                              </TableCell>
-                              <TableCell>
-                                <div className="h-10 w-20">
-                                  <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={getSparklineData(market.sparkline)}>
-                                      <Line 
-                                        type="monotone" 
-                                        dataKey="value" 
-                                        stroke={market.change24h >= 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))'}
-                                        strokeWidth={1.5}
-                                        dot={false}
-                                      />
-                                    </LineChart>
-                                  </ResponsiveContainer>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    window.alert(`${market.name} added to favorites!`);
-                                  }}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Skeleton className="h-4 w-20 ml-auto" />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Skeleton className="h-4 w-16 ml-auto" />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Skeleton className="h-4 w-16 ml-auto" />
+                                </TableCell>
+                                <TableCell>
+                                  <Skeleton className="h-10 w-20" />
+                                </TableCell>
+                                <TableCell>
+                                  <Skeleton className="h-8 w-8 rounded-full mx-auto" />
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : filteredMarkets.length > 0 ? (
+                            filteredMarkets.map((market, index) => {
+                              // Extract base symbol (BTC from BTC-USDT)
+                              const baseSymbol = market.symbol.split('-')[0];
+                              const isPositive = market.change24h >= 0;
+                              
+                              return (
+                                <TableRow 
+                                  key={index} 
+                                  className="cursor-pointer hover:bg-muted/40"
+                                  onClick={() => handleCoinSelect(market.symbol)}
                                 >
-                                  <Star className={`h-4 w-4 ${index < 2 ? 'text-amber-400' : 'text-muted-foreground'}`} />
-                                </Button>
+                                  <TableCell className="font-medium">{index + 1}</TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center">
+                                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center mr-2">
+                                        {baseSymbol[0]}
+                                      </div>
+                                      <div>
+                                        <div className="font-medium">{market.name}</div>
+                                        <div className="text-xs text-muted-foreground">{baseSymbol}</div>
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right font-medium">
+                                    ${market.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </TableCell>
+                                  <TableCell className={`text-right ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                                    <div className="flex items-center justify-end">
+                                      {isPositive ? 
+                                        <ArrowUpRight className="h-3 w-3 mr-1" /> : 
+                                        <ArrowDownRight className="h-3 w-3 mr-1" />
+                                      }
+                                      {Math.abs(market.change24h).toFixed(2)}%
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    ${(market.marketCap / 1000000000).toFixed(1)}B
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="h-10 w-20 flex items-center justify-center">
+                                      <span className={`text-xs ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                                        {isPositive ? '+' : ''}{market.change24h.toFixed(2)}%
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-8 w-8"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.alert(`${market.name} added to favorites!`);
+                                      }}
+                                    >
+                                      <Star className={`h-4 w-4 ${index < 2 ? 'text-amber-400' : 'text-muted-foreground'}`} />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={7} className="h-24 text-center">
+                                No coins found matching your search.
                               </TableCell>
                             </TableRow>
-                          ))}
+                          )}
                         </TableBody>
                       </Table>
                     </div>
@@ -411,61 +473,8 @@ export default function Markets() {
                     </div>
                     
                     <div className="mb-4">
-                      <Tabs defaultValue="1d">
-                        <TabsList className="w-full mb-4">
-                          <TabsTrigger value="1h" className="flex-1">1H</TabsTrigger>
-                          <TabsTrigger value="1d" className="flex-1">1D</TabsTrigger>
-                          <TabsTrigger value="1w" className="flex-1">1W</TabsTrigger>
-                          <TabsTrigger value="1m" className="flex-1">1M</TabsTrigger>
-                          <TabsTrigger value="1y" className="flex-1">1Y</TabsTrigger>
-                        </TabsList>
-                        
-                        <div className="h-52">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart
-                              data={bitcoinDetailData}
-                              margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
-                            >
-                              <defs>
-                                <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <XAxis 
-                                dataKey="time" 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 12 }}
-                                stroke="hsl(var(--muted-foreground))"
-                              />
-                              <YAxis 
-                                domain={['dataMin - 200', 'dataMax + 200']}
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 12 }}
-                                stroke="hsl(var(--muted-foreground))"
-                                tickFormatter={(value) => `$${value}`}
-                              />
-                              <Tooltip 
-                                contentStyle={{ 
-                                  backgroundColor: 'hsl(var(--card))', 
-                                  borderColor: 'hsl(var(--border))',
-                                  borderRadius: '0.5rem' 
-                                }}
-                                formatter={(value: any) => [`$${value}`, 'Price']}
-                              />
-                              <Area 
-                                type="monotone" 
-                                dataKey="price" 
-                                stroke="hsl(var(--primary))"
-                                fillOpacity={1}
-                                fill="url(#colorPrice)"
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </Tabs>
+                      {/* Real-time price chart using our PriceChart component */}
+                      <PriceChart symbol={selectedCoin} />
                     </div>
                     
                     <div className="space-y-4">

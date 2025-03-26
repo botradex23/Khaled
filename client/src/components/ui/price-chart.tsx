@@ -164,7 +164,7 @@ export function PriceChart({ symbol = "BTC-USDT" }: { symbol?: string }) {
               className="p-2 hover:bg-muted rounded-full"
               title="Refresh data"
             >
-              <ReloadIcon className="h-4 w-4" />
+              <RefreshCw className="h-4 w-4" />
             </button>
           </div>
         </div>
