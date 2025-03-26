@@ -10,7 +10,7 @@ export const VPN_CONFIG = {
   enabled: true, // Enabled with Webshare proxy
 
   // Type of proxy: 'https' or 'socks'
-  type: 'socks' as 'https' | 'socks',
+  type: 'https' as 'https' | 'socks',
 
   // Webshare proxy server details
   host: '38.154.227.167', // Webshare proxy IP address
@@ -79,9 +79,19 @@ export async function testProxyConnection() {
   }
   
   try {
+    console.log('Testing proxy connection to Bybit...');
     const axiosInstance = createProxyInstance();
-    // Try the testnet endpoint instead of the main API endpoint
-    const response = await axiosInstance.get('https://api-testnet.bybit.com/v5/market/time', {
+    
+    // Log proxy configuration details
+    if (VPN_CONFIG.type === 'https') {
+      console.log(`Using HTTPS proxy: ${VPN_CONFIG.host}:${VPN_CONFIG.port}`);
+    } else {
+      console.log(`Using SOCKS proxy: ${VPN_CONFIG.host}:${VPN_CONFIG.port}`);
+    }
+    
+    console.log('Attempting to connect to Bybit main API endpoint...');
+    // Try the main API endpoint instead of testnet
+    const response = await axiosInstance.get('https://api.bybit.com/v5/market/time', {
       timeout: 10000 // 10 second timeout
     });
     
@@ -99,9 +109,38 @@ export async function testProxyConnection() {
     }
   } catch (error: any) {
     console.error('Proxy connection test failed:', error.message);
+    
+    // Log more detailed error information
+    if (error.response) {
+      // The server responded with a status code outside the 2xx range
+      console.error('Error response:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        headers: error.response.headers,
+        data: error.response.data
+      });
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('Error request:', error.request);
+      console.error('No response received, this could be a network or proxy connectivity issue');
+    } else {
+      // Something happened in setting up the request
+      console.error('Error setting up request:', error.message);
+    }
+    
+    if (error.code) {
+      console.error(`Network error code: ${error.code}`);
+    }
+    
     return { 
       success: false, 
-      message: `Proxy connection error: ${error.message}`
+      message: `Proxy connection error: ${error.message}`,
+      details: error.response ? {
+        status: error.response.status,
+        statusText: error.response.statusText
+      } : {
+        code: error.code
+      }
     };
   }
 }

@@ -209,7 +209,7 @@ router.get('/proxy-test', async (req: Request, res: Response) => {
     if (VPN_CONFIG.enabled && req.query.compareWithDirect === 'true') {
       try {
         // Try a direct connection to see if we're geo-restricted without proxy
-        const directResponse = await axios.get('https://api-testnet.bybit.com/v5/market/time', {
+        const directResponse = await axios.get('https://api.bybit.com/v5/market/time', {
           timeout: 10000
         });
         
