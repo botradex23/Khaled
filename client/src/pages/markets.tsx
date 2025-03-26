@@ -507,18 +507,18 @@ export default function Markets() {
                       </div>
                       
                       <div className="flex space-x-2">
-                        <Link href="/bot-demo" className="flex-1">
-                          <Button className="w-full">
+                        <div className="flex-1">
+                          <Button className="w-full" onClick={() => window.location.href = "/bot-demo"}>
                             <Wallet className="mr-2 h-4 w-4" />
                             Buy
                           </Button>
-                        </Link>
-                        <Link href="/bot-demo" className="flex-1">
-                          <Button variant="outline" className="w-full">
+                        </div>
+                        <div className="flex-1">
+                          <Button variant="outline" className="w-full" onClick={() => window.location.href = "/bot-demo"}>
                             <BarChart3 className="mr-2 h-4 w-4" />
                             Trade
                           </Button>
-                        </Link>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
