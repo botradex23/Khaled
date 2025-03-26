@@ -48,8 +48,9 @@ export const DEFAULT_CURRENCIES = [
 ];
 
 // Common trading pairs to show in the app
+// Bitget uses symbol_SPBL format for spot pairs
 export const DEFAULT_PAIRS = [
-  'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'DOGEUSDT', 'XRPUSDT', 'BNBUSDT', 'ADAUSDT'
+  'BTCUSDT_SPBL', 'ETHUSDT_SPBL', 'SOLUSDT_SPBL', 'DOGEUSDT_SPBL', 'XRPUSDT_SPBL', 'BNBUSDT_SPBL', 'ADAUSDT_SPBL'
 ];
 
 // Trading strategies supported by the app

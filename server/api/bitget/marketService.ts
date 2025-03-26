@@ -157,14 +157,32 @@ export class MarketService {
       
       // Bitget's kline data has format: [timestamp, open, high, low, close, volume]
       return klineData.map((item: any[]): KlineData => {
-        return {
-          timestamp: new Date(parseInt(item[0])).toISOString(),
-          open: parseFloat(item[1]),
-          high: parseFloat(item[2]),
-          low: parseFloat(item[3]),
-          close: parseFloat(item[4]),
-          volume: parseFloat(item[5])
-        };
+        try {
+          // Handle timestamp format correctly
+          const timestamp = typeof item[0] === 'string' ? item[0] : 
+                           typeof item[0] === 'number' ? new Date(item[0]).toISOString() : 
+                           new Date().toISOString();
+          
+          return {
+            timestamp: timestamp,
+            open: parseFloat(item[1]),
+            high: parseFloat(item[2]),
+            low: parseFloat(item[3]),
+            close: parseFloat(item[4]),
+            volume: parseFloat(item[5])
+          };
+        } catch (err) {
+          console.error('Error parsing candle data:', err, 'Item:', item);
+          // Provide fallback values for invalid data
+          return {
+            timestamp: new Date().toISOString(),
+            open: 0,
+            high: 0,
+            low: 0,
+            close: 0,
+            volume: 0
+          };
+        }
       });
     } catch (error) {
       console.error(`Error fetching candlestick data for ${symbol} from Bitget:`, error);
@@ -203,16 +221,26 @@ export class MarketService {
   private getDemoCandlestickData(symbol: string, interval: string, limit: number): KlineData[] {
     // Get the base price for this symbol
     const basePrices: Record<string, number> = {
-      'BTCUSDT': 35000,
-      'ETHUSDT': 2100,
-      'SOLUSDT': 80,
-      'DOGEUSDT': 0.07,
-      'XRPUSDT': 0.48,
-      'BNBUSDT': 225,
-      'ADAUSDT': 0.32,
-      'MATICUSDT': 0.55,
-      'AVAXUSDT': 22,
-      'DOTUSDT': 4.8
+      'BTCUSDT_SPBL': 86700,
+      'ETHUSDT_SPBL': 2015,
+      'SOLUSDT_SPBL': 140,
+      'DOGEUSDT_SPBL': 0.19,
+      'XRPUSDT_SPBL': 2.40,
+      'BNBUSDT_SPBL': 624,
+      'ADAUSDT_SPBL': 0.74,
+      'MATICUSDT_SPBL': 0.58,
+      'AVAXUSDT_SPBL': 25,
+      'DOTUSDT_SPBL': 5.2,
+      // For backward compatibility
+      'BTCUSDT': 86700,
+      'ETHUSDT': 2015,
+      'SOLUSDT': 140,
+      'DOGEUSDT': 0.19,
+      'XRPUSDT': 2.40,
+      'BNBUSDT': 624,
+      'ADAUSDT': 0.74,
+      'AVAXUSDT': 25,
+      'DOTUSDT': 5.2
     };
     
     const basePrice = basePrices[symbol] || 10;
@@ -321,14 +349,22 @@ export class MarketService {
   private getDemoMarketDetail(symbol: string): any {
     // Get base price for this symbol
     const basePrices: Record<string, number> = {
-      'BTCUSDT': 35000,
-      'ETHUSDT': 2100,
-      'SOLUSDT': 80,
-      'DOGEUSDT': 0.07,
-      'XRPUSDT': 0.48,
-      'BNBUSDT': 225,
-      'ADAUSDT': 0.32,
-      'MATICUSDT': 0.55
+      'BTCUSDT_SPBL': 86700,
+      'ETHUSDT_SPBL': 2015,
+      'SOLUSDT_SPBL': 140,
+      'DOGEUSDT_SPBL': 0.19,
+      'XRPUSDT_SPBL': 2.40,
+      'BNBUSDT_SPBL': 624,
+      'ADAUSDT_SPBL': 0.74,
+      'MATICUSDT_SPBL': 0.58,
+      // For backward compatibility
+      'BTCUSDT': 86700,
+      'ETHUSDT': 2015,
+      'SOLUSDT': 140,
+      'DOGEUSDT': 0.19,
+      'XRPUSDT': 2.40,
+      'BNBUSDT': 624,
+      'ADAUSDT': 0.74
     };
     
     const basePrice = basePrices[symbol] || 100;

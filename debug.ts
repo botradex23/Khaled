@@ -1,0 +1,1 @@
+import { bitgetService } from "./server/api/bitget/bitgetService.ts"; (async () => { try { const data = await bitgetService.getKlineData("BTCUSDT_SPBL"); console.log("Raw data:", data); } catch (error) { console.error("Error:", error); }})();
