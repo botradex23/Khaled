@@ -2,15 +2,15 @@ import { Express, Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 import session from 'express-session';
 import { setupGoogleAuth } from './google';
+import { setupAppleAuth } from './apple';
+import { storage } from '../storage';
 
 // Type definition for user in session
+import { User as UserModel } from '@shared/schema';
+
 declare global {
   namespace Express {
-    interface User {
-      id: number;
-      username: string;
-      email: string;
-    }
+    interface User extends UserModel {}
   }
 }
 
@@ -31,9 +31,24 @@ export function setupAuth(app: Express) {
   // Initialize passport
   app.use(passport.initialize());
   app.use(passport.session());
+  
+  // Configure user serialization/deserialization
+  passport.serializeUser((user: Express.User, done) => {
+    done(null, user.id);
+  });
 
-  // Setup Google authentication
+  passport.deserializeUser(async (id: number, done) => {
+    try {
+      const user = await storage.getUser(id);
+      done(null, user || null);
+    } catch (error) {
+      done(error instanceof Error ? error : new Error('Error deserializing user'), null);
+    }
+  });
+
+  // Setup OAuth providers
   setupGoogleAuth();
+  setupAppleAuth();
 
   // Register auth routes
   registerAuthRoutes(app);

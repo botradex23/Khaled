@@ -70,17 +70,6 @@ export const setupGoogleAuth = () => {
     )
   );
 
-  // Serialize and deserialize user
-  passport.serializeUser((user: User, done: (err: Error | null, id: number) => void) => {
-    done(null, user.id);
-  });
-
-  passport.deserializeUser(async (id: number, done: (err: Error | null, user: User | null) => void) => {
-    try {
-      const user = await storage.getUser(id);
-      done(null, user);
-    } catch (error) {
-      done(error instanceof Error ? error : new Error('Error deserializing user'), null);
-    }
-  });
+  // We'll handle serialize/deserialize in the main auth setup
+  // to avoid conflicts with other strategies
 };
