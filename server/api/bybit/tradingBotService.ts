@@ -2,7 +2,7 @@ import { bybitService } from './bybitService';
 import { isConfigured } from './config';
 
 // Define a type for our bot response
-type BotResponse = {
+export type BotResponse = {
   id: number;
   name: string;
   strategy: 'grid' | 'dca' | 'macd';
@@ -63,7 +63,7 @@ export class TradingBotService {
     strategy: 'grid' | 'dca' | 'macd',
     description: string,
     parameters: BotParameters
-  ): Promise<Bot> {
+  ): Promise<BotResponse> {
     // Determine min investment based on strategy
     const minInvestment = getMinInvestmentForStrategy(strategy);
     
@@ -73,18 +73,17 @@ export class TradingBotService {
     // Determine risk level (1-10)
     const riskLevel = getRiskLevelForStrategy(strategy);
     
-    // Create bot object with proper types according to the schema
-    const bot: Bot = {
+    // Create bot object with proper types
+    const bot = {
       id: Date.now(), // Use timestamp as temporary ID
       name,
       strategy,
       description,
-      minInvestment: minInvestment,
-      monthlyReturn: monthlyReturn,
-      riskLevel: riskLevel,
+      minInvestment,
+      monthlyReturn,
+      riskLevel,
       rating: 4.5, // Default rating
-      isPopular: false,
-      userId: 1 // Default user ID
+      isPopular: false
     };
     
     return bot;

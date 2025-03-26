@@ -121,36 +121,57 @@ export class MarketService {
    * @param symbol - Trading pair symbol (e.g., BTCUSDT)
    * @returns Detailed market information
    */
+  /**
+   * Process ticker response data
+   */
+  private processTickerData(data: any): any {
+    return data?.result?.list?.[0] || {};
+  }
+  
+  /**
+   * Process trades response data
+   */
+  private processTradesData(data: any): any[] {
+    return data?.result?.list || [];
+  }
+  
+  /**
+   * Process orderbook response data
+   */
+  private processOrderbookData(data: any): { asks: any[], bids: any[] } {
+    return {
+      asks: data?.result?.a || [],
+      bids: data?.result?.b || []
+    };
+  }
+  
   async getMarketDetail(symbol: string): Promise<any> {
     try {
       // Get the ticker information for the specific symbol
-      const tickerResponse = await bybitService.makePublicRequest('/v5/market/tickers', {
+      const tickerResponse = await bybitService.makePublicRequest<any>('/v5/market/tickers', {
         category: 'spot',
         symbol
       });
       
       // Get recent trades
-      const tradesResponse = await bybitService.makePublicRequest('/v5/market/recent-trade', {
+      const tradesResponse = await bybitService.makePublicRequest<any>('/v5/market/recent-trade', {
         category: 'spot',
         symbol,
         limit: 50
       });
       
       // Get order book (bid/ask)
-      const orderBookResponse = await bybitService.makePublicRequest('/v5/market/orderbook', {
+      const orderBookResponse = await bybitService.makePublicRequest<any>('/v5/market/orderbook', {
         category: 'spot',
         symbol,
         limit: 50
       });
       
-      // Return combined market detail
+      // Return combined market detail using helper methods
       return {
-        ticker: tickerResponse.list[0],
-        trades: tradesResponse.list,
-        orderBook: {
-          asks: orderBookResponse.a,
-          bids: orderBookResponse.b
-        }
+        ticker: this.processTickerData(tickerResponse),
+        trades: this.processTradesData(tradesResponse),
+        orderBook: this.processOrderbookData(orderBookResponse)
       };
     } catch (error) {
       console.error(`Error fetching market detail for ${symbol} from Bybit:`, error);
