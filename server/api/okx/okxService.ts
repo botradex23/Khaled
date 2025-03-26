@@ -244,6 +244,13 @@ export class OkxService {
   }
   
   /**
+   * Get the base URL being used for API requests
+   */
+  getBaseUrl(): string {
+    return this.baseUrl;
+  }
+  
+  /**
    * Get market trading pairs
    */
   async getTradingPairs() {
