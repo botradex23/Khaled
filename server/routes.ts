@@ -36,8 +36,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register user
   app.post("/api/register", async (req, res) => {
-    // Use the schema from shared/schema.ts with additional validations
-    const registerSchema = insertUserSchema.extend({
+    // Create schema with additional validations
+    const registerSchema = z.object({
+      firstName: z.string().min(2, "First name must be at least 2 characters"),
+      lastName: z.string().min(2, "Last name must be at least 2 characters"),
       email: z.string().email("Invalid email address"),
       password: z.string().min(8, "Password must be at least 8 characters")
         .regex(/[0-9]/, "Password must contain at least one number")
@@ -85,6 +87,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.error("Registration error:", error);
       res.status(500).json({ message: "Failed to register user" });
+    }
+  });
+  
+  // Login user
+  app.post("/api/login", async (req, res) => {
+    const loginSchema = z.object({
+      email: z.string().email("Invalid email address"),
+      password: z.string().min(1, "Password is required")
+    });
+
+    try {
+      // Validate input
+      const data = loginSchema.parse(req.body);
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(data.email);
+      
+      // Check if user exists and password matches
+      if (!user || user.password !== data.password) {
+        return res.status(401).json({ 
+          message: "Invalid email or password" 
+        });
+      }
+      
+      // In a real app, you would set up a session here
+      
+      // Return success with user data
+      res.status(200).json({
+        message: "Login successful",
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName
+        }
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Failed to login" });
     }
   });
 

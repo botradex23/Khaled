@@ -41,12 +41,16 @@ export default function Header() {
         </nav>
         
         <div className="flex items-center space-x-4">
-          <Button variant="default" className="bg-primary hover:bg-primary/90">
-            Sign Up
-          </Button>
-          <Button variant="outline" className="border-border hover:border-primary">
-            Login
-          </Button>
+          <Link href="/register">
+            <Button variant="default" className="bg-primary hover:bg-primary/90">
+              Sign Up
+            </Button>
+          </Link>
+          <Link href="/login">
+            <Button variant="outline" className="border-border hover:border-primary">
+              Login
+            </Button>
+          </Link>
           
           {/* Mobile menu button */}
           <Button 

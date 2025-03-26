@@ -8,6 +8,7 @@ import Dashboard from "@/pages/dashboard";
 import Bots from "@/pages/bots";
 import Markets from "@/pages/markets";
 import Register from "@/pages/register";
+import Login from "@/pages/login";
 
 function Router() {
   return (
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/bots" component={Bots} />
       <Route path="/markets" component={Markets} />
       <Route path="/register" component={Register} />
+      <Route path="/login" component={Login} />
       <Route component={NotFound} />
     </Switch>
   );
