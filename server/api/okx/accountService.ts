@@ -33,6 +33,9 @@ export class AccountService {
    * @returns Format description
    */
   private checkApiKeyFormat(apiKey: string): string {
+    // Log the original issue for debugging
+    console.log("OKX API Key Debugging - Key Issue: 'APIKey does not match current environment' (code 50101)");
+    console.log("This typically means the API key was created for Demo/Production but we're using it in the other mode.");
     if (!apiKey) return 'Missing';
     if (apiKey.length < 10) return 'Too short - invalid format';
     

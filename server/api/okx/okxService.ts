@@ -156,6 +156,7 @@ export class OkxService {
         'OK-ACCESS-TIMESTAMP': timestamp,
         'OK-ACCESS-PASSPHRASE': this.getPassphrase(),
         // Add demo trading header only when isDemo is true
+        // OKX requires 'x-simulated-trading' header for demo mode
         ...(this.isDemo ? { 'x-simulated-trading': '1' } : {})
       }
     };
@@ -376,5 +377,6 @@ export class OkxService {
   }
 }
 
-// Create and export default instance using real trading (not demo)
-export const okxService = new OkxService(false);
+// Create and export default instance using demo mode
+// Since we're getting APIKey doesn't match environment error, let's try demo mode
+export const okxService = new OkxService(true);
