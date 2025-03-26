@@ -1,5 +1,6 @@
 import { okxService } from './okxService';
-import { DEFAULT_CURRENCIES } from './config';
+import { DEFAULT_CURRENCIES, API_KEY, SECRET_KEY, PASSPHRASE, DEFAULT_TIMEOUT } from './config';
+import axios from 'axios';
 
 // Define response types
 interface Balance {
