@@ -127,36 +127,62 @@ export class AccountService {
   /**
    * Check if API connection and authentication are working
    */
-  async checkConnection(): Promise<{ connected: boolean; message: string }> {
+  async checkConnection(): Promise<{ connected: boolean; authenticated: boolean; message: string; publicApiWorking?: boolean }> {
+    // Check public API first
     try {
-      // First check public API
-      const pingResult = await okxService.ping();
+      // Attempt to get market data which doesn't require authentication
+      const marketData = await okxService.makePublicRequest<OkxResponse<any>>('/api/v5/market/tickers?instType=SPOT');
       
-      if (!pingResult.success) {
+      // If we reach here, public API is working
+      const publicApiWorking = marketData && marketData.code === '0';
+      
+      if (!publicApiWorking) {
         return {
           connected: false,
-          message: 'Failed to connect to OKX API'
+          authenticated: false,
+          message: 'Failed to connect to OKX public API',
+          publicApiWorking: false
         };
       }
       
-      // Then try to access authenticated endpoint
-      await this.getAccountBalances();
+      // Now check if API keys are configured
+      const apiConfigured = okxService.isConfigured();
       
-      return {
-        connected: true,
-        message: 'Successfully connected to OKX API with authentication'
-      };
+      if (!apiConfigured) {
+        return {
+          connected: true,
+          authenticated: false,
+          message: 'Connected to OKX public API, but API keys are not configured',
+          publicApiWorking: true
+        };
+      }
+      
+      // Try to access authenticated endpoint
+      try {
+        await this.getAccountBalances();
+        
+        return {
+          connected: true,
+          authenticated: true,
+          message: 'Successfully connected to OKX API with full authentication',
+          publicApiWorking: true
+        };
+      } catch (authError: any) {
+        // Authentication failed but public API works
+        return {
+          connected: true,
+          authenticated: false,
+          message: `Connected to OKX public API, but authentication failed: ${authError.message}`,
+          publicApiWorking: true
+        };
+      }
     } catch (error: any) {
-      if (error.name === 'OkxApiNotConfiguredError') {
-        return {
-          connected: false,
-          message: 'OKX API is not configured. Please provide API credentials'
-        };
-      }
-      
+      // Complete connection failure
       return {
         connected: false,
-        message: `Failed to authenticate with OKX API: ${error.message}`
+        authenticated: false,
+        message: `Failed to connect to OKX API: ${error.message}`,
+        publicApiWorking: false
       };
     }
   }

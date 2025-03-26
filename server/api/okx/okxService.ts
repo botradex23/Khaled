@@ -146,6 +146,13 @@ export class OkxService {
   }
   
   /**
+   * Check if API is configured with proper credentials
+   */
+  isConfigured(): boolean {
+    return isConfigured();
+  }
+  
+  /**
    * Get market trading pairs
    */
   async getTradingPairs() {
