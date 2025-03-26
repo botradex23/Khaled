@@ -13,6 +13,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { User } from "@shared/schema";
+import { Separator } from "@/components/ui/separator";
+import { FcGoogle } from "react-icons/fc";
+import { SiApple } from "react-icons/si";
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
@@ -221,6 +224,35 @@ export default function RegistrationForm() {
                 >
                   {isSubmitting ? "Creating Account..." : "Create Account"}
                 </Button>
+                
+                <Separator className="my-6">
+                  <span className="mx-2 text-xs text-muted-foreground">OR SIGN UP WITH</span>
+                </Separator>
+                
+                <div className="flex gap-4">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      window.location.href = "/api/auth/google";
+                    }}
+                  >
+                    <FcGoogle className="mr-2 h-5 w-5" />
+                    Google
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      window.location.href = "/api/auth/apple";
+                    }}
+                    disabled={true} // Disabled until Apple auth is configured
+                  >
+                    <SiApple className="mr-2 h-5 w-5" />
+                    Apple
+                  </Button>
+                </div>
                 
                 <div className="text-center text-muted-foreground text-sm">
                   Already have an account?{" "}

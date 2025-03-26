@@ -10,6 +10,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { User } from "@shared/schema";
+import { Separator } from "@/components/ui/separator";
+import { FcGoogle } from "react-icons/fc";
+import { SiApple } from "react-icons/si";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -129,6 +132,37 @@ export default function Login() {
             </form>
           </Form>
 
+          <div className="mt-6">
+            <Separator className="my-4">
+              <span className="mx-2 text-xs text-muted-foreground">OR CONTINUE WITH</span>
+            </Separator>
+            
+            <div className="flex gap-4 mt-4">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  window.location.href = "/api/auth/google";
+                }}
+              >
+                <FcGoogle className="mr-2 h-5 w-5" />
+                Google
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  window.location.href = "/api/auth/apple";
+                }}
+                disabled={true} // Disabled until Apple auth is configured
+              >
+                <SiApple className="mr-2 h-5 w-5" />
+                Apple
+              </Button>
+            </div>
+          </div>
+          
           <div className="mt-6 text-center text-sm">
             <p className="text-muted-foreground">
               Don't have an account?{" "}
