@@ -44,7 +44,9 @@ export class MarketService {
   async getMarketData(symbols: string[] = DEFAULT_PAIRS): Promise<MarketData[]> {
     try {
       // Get all tickers
-      const response = await bybitService.makePublicRequest('/v5/market/tickers', {
+      const response = await bybitService.makePublicRequest<{
+        list: BybitTicker[];
+      }>('/v5/market/tickers', {
         category: 'spot'
       });
       
@@ -86,7 +88,8 @@ export class MarketService {
    */
   async getCandlestickData(symbol: string, interval = '60', limit = 100): Promise<KlineData[]> {
     try {
-      const response = await bybitService.makePublicRequest('/v5/market/kline', {
+      // Using any type for response to avoid TypeScript errors
+      const response: any = await bybitService.makePublicRequest('/v5/market/kline', {
         category: 'spot',
         symbol,
         interval,

@@ -63,7 +63,9 @@ export class AccountService {
       }
 
       // Get wallet balance from Bybit API
-      const response = await bybitService.makeAuthenticatedRequest(
+      const response = await bybitService.makeAuthenticatedRequest<{
+        list: Array<{ coin: BybitBalance[] }>
+      }>(
         'GET',
         '/v5/account/wallet-balance',
         { accountType: 'UNIFIED' }
@@ -162,7 +164,9 @@ export class AccountService {
       }
 
       // Get trading history from Bybit API
-      const response = await bybitService.makeAuthenticatedRequest(
+      const response = await bybitService.makeAuthenticatedRequest<{
+        list: TradingHistoryItem[];
+      }>(
         'GET',
         '/v5/execution/list',
         { category: 'spot', limit: 50 }
@@ -235,7 +239,9 @@ export class AccountService {
       }
 
       // Get open orders from Bybit API
-      const response = await bybitService.makeAuthenticatedRequest(
+      const response = await bybitService.makeAuthenticatedRequest<{
+        list: OpenOrder[];
+      }>(
         'GET',
         '/v5/order/realtime',
         { category: 'spot', limit: 50 }
@@ -342,7 +348,8 @@ export class AccountService {
         };
       }
 
-      const result = await bybitService.placeOrder(symbol, side, type, amount, price);
+      // Using any type because TypeScript is having trouble with the return type
+      const result: any = await bybitService.placeOrder(symbol, side, type, amount, price);
       
       return {
         success: true,
