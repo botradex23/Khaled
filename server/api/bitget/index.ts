@@ -39,12 +39,22 @@ router.get('/status', async (req: Request, res: Response) => {
  */
 router.get('/config', async (req: Request, res: Response) => {
   try {
+    // Get all tickers to examine format
+    const allTickers = await bitgetService.getAllTickers();
+    const sampleTickers = Array.isArray(allTickers) && allTickers.length > 0 
+      ? allTickers.slice(0, 3) 
+      : [];
+    
     res.json({
       apiConfigured: isConfigured(),
       baseUrl: bitgetService.getBaseUrl(),
       usingDemoMode: ALWAYS_USE_DEMO,
       tradingStrategies: TRADING_STRATEGIES,
-      defaultPairs: DEFAULT_PAIRS
+      defaultPairs: DEFAULT_PAIRS,
+      debug: {
+        sampleTickers,
+        tickersCount: Array.isArray(allTickers) ? allTickers.length : 0,
+      }
     });
   } catch (err) {
     handleApiError(err, res);
@@ -87,25 +97,39 @@ router.get('/raw-ticker/:symbol', async (req: Request, res: Response) => {
       });
     }
     
-    // Get raw ticker data directly via axios
-    const baseUrl = bitgetService.getBaseUrl();
-    const response = await axios.get(`${baseUrl}/api/spot/v1/market/ticker`, {
-      params: { symbol }
-    });
+    console.log(`Fetching all tickers to examine data structure`);
     
-    // Get all tickers as well for comparison
-    const allTickersResponse = await axios.get(`${baseUrl}/api/spot/v1/market/tickers`);
+    // For now, get all tickers and filter to find the requested one
+    const allTickers = await bitgetService.getAllTickers();
+    
+    // Find the requested ticker from all tickers
+    let requestedTicker = null;
+    if (Array.isArray(allTickers)) {
+      requestedTicker = allTickers.find((ticker: any) => 
+        ticker.symbol === symbol || 
+        ticker.symbol.replace(/_/g, '') === symbol ||
+        ticker.symbol.replace(/-/g, '') === symbol
+      );
+      
+      console.log(`All tickers count: ${allTickers.length}`);
+      console.log(`First few symbols: ${allTickers.slice(0, 5).map((t: any) => t.symbol).join(', ')}`);
+      console.log(`Found requested ticker: ${requestedTicker ? 'Yes' : 'No'}`);
+    }
     
     res.json({
-      rawTicker: response.data,
-      rawAllTickers: {
-        responseStructure: allTickersResponse.data,
-        firstItem: allTickersResponse.data.data && allTickersResponse.data.data.length > 0 
-          ? allTickersResponse.data.data[0] 
-          : null
+      success: true,
+      requestedTicker: requestedTicker,
+      allTickersSample: Array.isArray(allTickers) && allTickers.length > 0 ? 
+        allTickers.slice(0, 3) : [],
+      message: 'Raw ticker data retrieved for debugging',
+      dataFormat: {
+        allTickersType: typeof allTickers,
+        isArray: Array.isArray(allTickers),
+        count: Array.isArray(allTickers) ? allTickers.length : 0
       }
     });
   } catch (err) {
+    console.error('Error fetching raw ticker data:', err);
     handleApiError(err, res);
   }
 });
