@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import axios from 'axios';
 import { marketService } from './marketService';
 import { accountService } from './accountService';
 import { bitgetService } from './bitgetService';
@@ -66,6 +67,44 @@ router.get('/markets', async (req: Request, res: Response) => {
     );
     
     res.json(marketData);
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * Get raw ticker data for debugging
+ * GET /api/bitget/raw-ticker/:symbol
+ */
+router.get('/raw-ticker/:symbol', async (req: Request, res: Response) => {
+  try {
+    const { symbol } = req.params;
+    
+    if (!symbol) {
+      return res.status(400).json({
+        success: false,
+        message: 'Symbol parameter is required'
+      });
+    }
+    
+    // Get raw ticker data directly via axios
+    const baseUrl = bitgetService.getBaseUrl();
+    const response = await axios.get(`${baseUrl}/api/spot/v1/market/ticker`, {
+      params: { symbol }
+    });
+    
+    // Get all tickers as well for comparison
+    const allTickersResponse = await axios.get(`${baseUrl}/api/spot/v1/market/tickers`);
+    
+    res.json({
+      rawTicker: response.data,
+      rawAllTickers: {
+        responseStructure: allTickersResponse.data,
+        firstItem: allTickersResponse.data.data && allTickersResponse.data.data.length > 0 
+          ? allTickersResponse.data.data[0] 
+          : null
+      }
+    });
   } catch (err) {
     handleApiError(err, res);
   }
