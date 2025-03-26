@@ -429,24 +429,55 @@ export class BitgetService {
    * @param limit - Maximum number of results to return
    */
   async getKlineData(symbol: string, interval = '1h', limit = 100): Promise<any> {
-    // Ensure symbol format is correct for candles endpoint (it requires symbol_SPBL format)
-    const formattedSymbol = symbol.endsWith('_SPBL') ? symbol : `${symbol}_SPBL`;
-    
-    console.log(`Fetching candles for ${formattedSymbol} with interval ${interval}`);
-    
-    const response = await this.makePublicRequest<any>('/api/spot/v1/market/candles', {
-      symbol: formattedSymbol,
-      period: interval,
-      limit
-    });
-    
-    // Bitget returns data in a 'data' property
-    if (response && response.data) {
-      console.log(`Successfully retrieved ${response.data.length} candles`);
-      return response.data;
+    try {
+      // Ensure symbol format is correct for candles endpoint (it requires symbol_SPBL format)
+      const formattedSymbol = symbol.endsWith('_SPBL') ? symbol : `${symbol}_SPBL`;
+      
+      console.log(`Fetching candles for ${formattedSymbol} with interval ${interval}`);
+      
+      const response = await this.makePublicRequest<any>('/api/spot/v1/market/candles', {
+        symbol: formattedSymbol,
+        period: interval,
+        limit
+      });
+      
+      // מדפיס את התשובה המלאה מה-API 
+      console.log('Raw candle response structure:', JSON.stringify({
+        type: typeof response,
+        keys: response ? Object.keys(response) : null,
+        code: response?.code,
+        msg: response?.msg,
+        hasData: response && 'data' in response,
+        dataType: response?.data ? typeof response.data : null,
+        isDataArray: response?.data ? Array.isArray(response.data) : null,
+        dataLength: response?.data && Array.isArray(response.data) ? response.data.length : null
+      }));
+
+      // יומני דיבוג נוספים על מבנה הנתונים אם יש
+      if (response?.data && Array.isArray(response.data) && response.data.length > 0) {
+        console.log('First candle data item:', response.data[0]);
+      }
+      
+      // התשובה מה-API מגיעה במבנה הזה:
+      // { code: "00000", msg: "success", requestTime: 123456789, data: [...] }
+      if (response && response.code === "00000" && response.data && Array.isArray(response.data)) {
+        console.log(`Successfully retrieved ${response.data.length} candles from Bitget API`);
+        return response.data;
+      }
+      
+      // נסיון נוסף למקרה שהתשובה בפורמט אחר
+      if (Array.isArray(response)) {
+        console.log(`Successfully retrieved ${response.length} candles directly from response (array format)`);
+        return response;
+      }
+      
+      // אם לא מצאנו נתונים תקינים, מחזירים מערך ריק
+      console.warn('No valid candle data found in Bitget API response');
+      return [];
+    } catch (error) {
+      console.error('Error fetching candle data:', error);
+      return []; // Return empty array if error
     }
-    console.warn('No valid candle data returned from Bitget API');
-    return []; // Return empty array if no valid data
   }
 
   /**

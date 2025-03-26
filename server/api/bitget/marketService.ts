@@ -159,6 +159,31 @@ export class MarketService {
       console.log('klineData type:', typeof klineData);
       console.log('Is array:', Array.isArray(klineData));
       
+      // Create a special endpoint to test raw data for debugging
+      try {
+        // Make a direct call to get the raw data for debugging
+        const rawResponse = await bitgetService.makePublicRequest('/api/spot/v1/market/candles', {
+          symbol: symbol.endsWith('_SPBL') ? symbol : `${symbol}_SPBL`,
+          period: mappedInterval,
+          limit
+        });
+        
+        console.log('Direct API call - Full response structure:', 
+          JSON.stringify({
+            responseType: typeof rawResponse,
+            isArray: Array.isArray(rawResponse),
+            keys: rawResponse && typeof rawResponse === 'object' ? Object.keys(rawResponse) : [],
+            dataType: rawResponse && rawResponse.data ? typeof rawResponse.data : null,
+            dataIsArray: rawResponse && rawResponse.data ? Array.isArray(rawResponse.data) : null,
+            dataLength: rawResponse && rawResponse.data && Array.isArray(rawResponse.data) ? rawResponse.data.length : null,
+            dataSample: rawResponse && rawResponse.data && Array.isArray(rawResponse.data) && rawResponse.data.length > 0 
+              ? JSON.stringify(rawResponse.data[0]).substring(0, 100) : null
+          })
+        );
+      } catch (err) {
+        console.error('Error making direct API call for debugging:', err);
+      }
+      
       // Handle empty result case
       if (!klineData || (Array.isArray(klineData) && klineData.length === 0)) {
         console.log('No candle data returned from Bitget, returning demo data');

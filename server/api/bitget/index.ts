@@ -165,6 +165,12 @@ router.get('/candles/:symbol', async (req: Request, res: Response) => {
     const { symbol } = req.params;
     const { interval = '1h', limit = '100' } = req.query;
     
+    console.log("Candles endpoint called with params:", {
+      symbol,
+      interval,
+      limit
+    });
+    
     if (!symbol) {
       return res.status(400).json({
         success: false,
@@ -177,6 +183,14 @@ router.get('/candles/:symbol', async (req: Request, res: Response) => {
       interval as string,
       parseInt(limit as string, 10)
     );
+    
+    console.log("Candles result summary:", {
+      count: Array.isArray(candleData) ? candleData.length : 0,
+      isDemoData: !Array.isArray(candleData) || candleData.length === 0 || 
+                 (candleData.length > 0 && candleData[0].timestamp && candleData[0].timestamp.includes('2025')),
+      firstTimestamp: Array.isArray(candleData) && candleData.length > 0 ? candleData[0].timestamp : null,
+      lastTimestamp: Array.isArray(candleData) && candleData.length > 0 ? candleData[candleData.length-1].timestamp : null,
+    });
     
     res.json(candleData);
   } catch (err) {
