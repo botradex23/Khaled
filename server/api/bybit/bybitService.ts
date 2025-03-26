@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse, AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
 import {
   API_KEY,
@@ -8,6 +8,7 @@ import {
   DEFAULT_TIMEOUT,
   isConfigured
 } from './config';
+import { createProxyInstance, VPN_CONFIG } from './proxy-config';
 
 // Custom error for API configuration issues
 class BybitApiNotConfiguredError extends Error {
@@ -32,6 +33,7 @@ interface BybitResponse<T> {
 export class BybitService {
   private baseUrl: string;
   private isTestnet: boolean;
+  private axiosInstance: AxiosInstance;
 
   /**
    * Initialize the Bybit service
@@ -40,6 +42,15 @@ export class BybitService {
   constructor(useTestnet = false) {
     this.isTestnet = useTestnet;
     this.baseUrl = useTestnet ? BYBIT_TESTNET_URL : BYBIT_BASE_URL;
+    
+    // Create axios instance with VPN proxy if enabled
+    if (VPN_CONFIG.enabled) {
+      this.axiosInstance = createProxyInstance();
+      console.log(`Bybit Service initialized with VPN/Proxy: ${VPN_CONFIG.host}:${VPN_CONFIG.port}`);
+    } else {
+      this.axiosInstance = axios;
+      console.log('Bybit Service initialized with direct connection (no VPN/proxy)');
+    }
 
     // Log configuration at startup
     console.log(`Bybit Service initialized with ${useTestnet ? 'testnet' : 'mainnet'}`);
@@ -117,7 +128,7 @@ export class BybitService {
     const signature = this.generateSignature(timestamp, recvWindow, method, endpoint, params);
     const url = `${this.baseUrl}${endpoint}`;
     
-    console.log(`Making ${method} request to ${endpoint}`);
+    console.log(`Making ${method} request to ${endpoint} via ${VPN_CONFIG.enabled ? 'VPN/proxy' : 'direct connection'}`);
 
     const config: AxiosRequestConfig = {
       method,
@@ -141,7 +152,8 @@ export class BybitService {
     }
 
     try {
-      const response: AxiosResponse<BybitResponse<T>> = await axios(config);
+      // Use the proxy-enabled axios instance instead of the global axios
+      const response: AxiosResponse<BybitResponse<T>> = await this.axiosInstance(config);
       
       // Check if the API returned an error
       if (response.data.retCode !== 0) {
@@ -152,6 +164,12 @@ export class BybitService {
       return response.data.result;
     } catch (error: any) {
       console.error('Error making authenticated request to Bybit:', error.message);
+      
+      // Log more details about proxy-related errors
+      if (VPN_CONFIG.enabled && error.code) {
+        console.error(`VPN/Proxy error (${error.code}): This might be related to the proxy configuration.`);
+      }
+      
       throw error;
     }
   }
@@ -165,8 +183,11 @@ export class BybitService {
   async makePublicRequest<T>(endpoint: string, params: any = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
+    console.log(`Making public request to ${endpoint} via ${VPN_CONFIG.enabled ? 'VPN/proxy' : 'direct connection'}`);
+    
     try {
-      const response = await axios.get<BybitResponse<T>>(url, {
+      // Use the proxy-enabled axios instance
+      const response = await this.axiosInstance.get<BybitResponse<T>>(url, {
         params,
         timeout: DEFAULT_TIMEOUT
       });
@@ -180,6 +201,12 @@ export class BybitService {
       return response.data.result;
     } catch (error: any) {
       console.error('Error making public request to Bybit:', error.message);
+      
+      // Log more details about proxy-related errors
+      if (VPN_CONFIG.enabled && error.code) {
+        console.error(`VPN/Proxy error (${error.code}): This might be related to the proxy configuration.`);
+      }
+      
       throw error;
     }
   }
@@ -318,10 +345,18 @@ export class BybitService {
    */
   async ping() {
     try {
-      const response = await axios.get(`${this.baseUrl}/v5/market/time`);
+      console.log(`Pinging Bybit API via ${VPN_CONFIG.enabled ? 'VPN/proxy' : 'direct connection'}`);
+      const response = await this.axiosInstance.get(`${this.baseUrl}/v5/market/time`);
+      console.log('Ping response:', response.status, response.statusText);
       return response.data;
-    } catch (error) {
-      console.error('Error pinging Bybit API:', error);
+    } catch (error: any) {
+      console.error('Error pinging Bybit API:', error.message);
+      
+      // Log more details about proxy-related errors
+      if (VPN_CONFIG.enabled && error.code) {
+        console.error(`VPN/Proxy error (${error.code}): This might be related to the proxy configuration.`);
+      }
+      
       throw error;
     }
   }
