@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, decimal, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -9,20 +9,37 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   firstName: text("first_name").notNull().default(""),
   lastName: text("last_name").notNull().default(""),
-  password: text("password").notNull(),
+  password: text("password"),
+  googleId: text("google_id").unique(),
+  appleId: text("apple_id").unique(),
+  profilePicture: text("profile_picture"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  email: true,
-  firstName: true,
-  lastName: true,
-  password: true,
-}).transform(data => ({
-  ...data,
-  firstName: data.firstName || "",
-  lastName: data.lastName || ""
-}));
+export const insertUserSchema = createInsertSchema(users)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    password: z.string().optional(),
+    googleId: z.string().optional(),
+    appleId: z.string().optional(),
+    profilePicture: z.string().optional(),
+  })
+  .refine(data => {
+    // User must authenticate with either password or OAuth
+    return (
+      (data.password !== undefined && data.password !== '') || 
+      (data.googleId !== undefined && data.googleId !== '') ||
+      (data.appleId !== undefined && data.appleId !== '')
+    );
+  }, {
+    message: "User must authenticate with password or social login",
+    path: ["authentication"]
+  })
+  .transform(data => ({
+    ...data,
+    firstName: data.firstName || "",
+    lastName: data.lastName || ""
+  }));
 
 // Bots table schema
 export const bots = pgTable("bots", {
