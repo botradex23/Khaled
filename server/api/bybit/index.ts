@@ -1,9 +1,11 @@
 import { Router, Request, Response } from 'express';
+import axios from 'axios';
 import { accountService } from './accountService';
 import { marketService } from './marketService';
 import { bybitService } from './bybitService';
 import { tradingBotService } from './tradingBotService';
 import { convertToBybitPair, convertFromBybitPair } from './config';
+import { testProxyConnection, VPN_CONFIG } from './proxy-config';
 
 const router = Router();
 
@@ -135,9 +137,89 @@ router.get('/config', async (req: Request, res: Response) => {
       config: {
         baseUrl: bybitService.getBaseUrl(),
         isConfigured: bybitService.isConfigured(),
-        isTestnet: bybitService.getBaseUrl().includes('testnet')
+        isTestnet: bybitService.getBaseUrl().includes('testnet'),
+        proxyEnabled: VPN_CONFIG.enabled,
+        proxyType: VPN_CONFIG.type,
+        proxyHost: VPN_CONFIG.host
       }
     });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * Test proxy connection to Bybit API
+ * GET /api/bybit/proxy-test
+ */
+router.get('/proxy-test', async (req: Request, res: Response) => {
+  try {
+    // Test the proxy connection
+    const proxyTest = await testProxyConnection();
+    
+    // Check if we should try a direct connection for comparison
+    if (VPN_CONFIG.enabled && req.query.compareWithDirect === 'true') {
+      try {
+        // Try a direct connection to see if we're geo-restricted without proxy
+        const directResponse = await axios.get('https://api.bybit.com/v5/market/time', {
+          timeout: 10000
+        });
+        
+        // If we get here, direct connection worked
+        res.json({
+          success: true,
+          proxyTest,
+          directTest: {
+            success: true,
+            message: 'Direct connection succeeded, you may not need a proxy',
+            data: directResponse.data
+          },
+          vpnConfig: {
+            enabled: VPN_CONFIG.enabled,
+            type: VPN_CONFIG.type,
+            host: VPN_CONFIG.host,
+            port: VPN_CONFIG.port
+          }
+        });
+      } catch (directError: any) {
+        // Direct connection failed
+        const isGeoRestricted = directError.response && 
+                               directError.response.status === 403 && 
+                               directError.response.data && 
+                               typeof directError.response.data === 'string' && 
+                               directError.response.data.includes('CloudFront');
+        
+        res.json({
+          success: true,
+          proxyTest,
+          directTest: {
+            success: false,
+            geoRestricted: isGeoRestricted,
+            message: isGeoRestricted 
+              ? 'Direct connection failed due to geo-restrictions' 
+              : `Direct connection failed: ${directError.message}`,
+          },
+          vpnConfig: {
+            enabled: VPN_CONFIG.enabled,
+            type: VPN_CONFIG.type,
+            host: VPN_CONFIG.host,
+            port: VPN_CONFIG.port
+          }
+        });
+      }
+    } else {
+      // Just return the proxy test results
+      res.json({
+        success: true,
+        proxyTest,
+        vpnConfig: {
+          enabled: VPN_CONFIG.enabled,
+          type: VPN_CONFIG.type,
+          host: VPN_CONFIG.host,
+          port: VPN_CONFIG.port
+        }
+      });
+    }
   } catch (err) {
     handleApiError(err, res);
   }
