@@ -36,7 +36,8 @@ export class MarketService {
       }
       
       // Get all tickers from Bitget
-      const tickers = await bitgetService.getAllTickers();
+      const tickersResponse = await bitgetService.getAllTickers();
+      const tickers = tickersResponse as any[];
       
       // Filter tickers by requested symbols
       const filteredTickers = symbols.length > 0

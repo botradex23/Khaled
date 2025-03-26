@@ -211,7 +211,7 @@ export class BitgetService {
    * Check if API is configured with proper credentials
    */
   isConfigured(): boolean {
-    return isConfigured();
+    return isConfigured() === true;
   }
 
   /**

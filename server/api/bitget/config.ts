@@ -25,7 +25,7 @@ export const PASSPHRASE = process.env.BITGET_PASSPHRASE || ''; // Bitget require
  * - Read permission (for account information and market data)
  * - Trade permission (for executing trades)
  */
-export const isConfigured = () => {
+export const isConfigured = (): boolean => {
   const hasApiKey = API_KEY && API_KEY.length > 0 && API_KEY !== 'undefined';
   const hasSecretKey = SECRET_KEY && SECRET_KEY.length > 0 && SECRET_KEY !== 'undefined';
   const hasPassphrase = PASSPHRASE && PASSPHRASE.length > 0 && PASSPHRASE !== 'undefined';

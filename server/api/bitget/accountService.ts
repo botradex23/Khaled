@@ -39,7 +39,8 @@ export class AccountService {
       }
       
       // Make API request to get account balances
-      const response = await bitgetService.getAccountInfo();
+      const accountResponse = await bitgetService.getAccountInfo();
+      const response = accountResponse as any[];
       
       // Transform the data to our standard format
       return response.map((asset: any): AccountBalance => ({
@@ -126,7 +127,8 @@ export class AccountService {
       }
       
       // Make API request to get trading history
-      const response = await bitgetService.getTradingHistory();
+      const tradeResponse = await bitgetService.getTradingHistory();
+      const response = tradeResponse as any[];
       
       // Transform the data to our standard format
       return response.map((trade: any) => ({
@@ -220,7 +222,8 @@ export class AccountService {
       }
       
       // Make API request to get open orders
-      const response = await bitgetService.getOpenOrders();
+      const ordersResponse = await bitgetService.getOpenOrders();
+      const response = ordersResponse as any[];
       
       // Transform the data to our standard format
       return response.map((order: any) => ({
@@ -328,13 +331,14 @@ export class AccountService {
       }
       
       // Make API request to place order
-      const response = await bitgetService.placeOrder(
+      const orderResponse = await bitgetService.placeOrder(
         symbol, 
         side, 
         orderType, 
         quantity, 
         price
       );
+      const response = orderResponse as any;
       
       return {
         success: true,
