@@ -155,34 +155,65 @@ export class MarketService {
       // Get candlestick data from Bitget
       const klineData = await bitgetService.getKlineData(symbol, mappedInterval, limit);
       
+      console.log('Raw klineData received:', JSON.stringify(klineData).substring(0, 200));
+      console.log('klineData type:', typeof klineData);
+      console.log('Is array:', Array.isArray(klineData));
+      
+      // Handle empty result case
+      if (!klineData || (Array.isArray(klineData) && klineData.length === 0)) {
+        console.log('No candle data returned from Bitget, returning demo data');
+        return this.getDemoCandlestickData(symbol, interval, limit);
+      }
+      
       // Bitget's kline data has following format for each item:
-      // { open, high, low, close, quoteVol, baseVol, usdtVol, ts }
-      return klineData.map((item: any): KlineData => {
-        try {
-          // Convert timestamp from milliseconds to ISO string
-          const timestamp = new Date(parseInt(item.ts)).toISOString();
-          
-          return {
-            timestamp: timestamp,
-            open: parseFloat(item.open),
-            high: parseFloat(item.high),
-            low: parseFloat(item.low),
-            close: parseFloat(item.close),
-            volume: parseFloat(item.baseVol)
-          };
-        } catch (err) {
-          console.error('Error parsing candle data:', err, 'Item:', JSON.stringify(item));
-          // Provide fallback values for invalid data
-          return {
-            timestamp: new Date().toISOString(),
-            open: 0,
-            high: 0,
-            low: 0,
-            close: 0,
-            volume: 0
-          };
-        }
-      });
+      // [ timestamp, open, high, low, close, volume, quoteVolume ]
+      // or { ts, open, high, low, close, baseVol, quoteVol } depending on format
+      
+      if (Array.isArray(klineData)) {
+        console.log(`Processing ${klineData.length} candles in array format`);
+        return klineData.map((item: any): KlineData => {
+          try {
+            // Check if the item is an array or object
+            if (Array.isArray(item)) {
+              // Format: [timestamp, open, high, low, close, baseVol, quoteVol]
+              return {
+                timestamp: new Date(parseInt(item[0])).toISOString(),
+                open: parseFloat(item[1]),
+                high: parseFloat(item[2]),
+                low: parseFloat(item[3]),
+                close: parseFloat(item[4]),
+                volume: parseFloat(item[5])
+              };
+            } else {
+              // Format: { ts, open, high, low, close, baseVol, quoteVol }
+              const timestamp = new Date(parseInt(item.ts)).toISOString();
+              
+              return {
+                timestamp: timestamp,
+                open: parseFloat(item.open),
+                high: parseFloat(item.high),
+                low: parseFloat(item.low),
+                close: parseFloat(item.close),
+                volume: parseFloat(item.baseVol || item.volume || 0)
+              };
+            }
+          } catch (err) {
+            console.error('Error parsing candle data:', err, 'Item:', JSON.stringify(item));
+            // Provide fallback values for invalid data
+            return {
+              timestamp: new Date().toISOString(),
+              open: 0,
+              high: 0,
+              low: 0,
+              close: 0,
+              volume: 0
+            };
+          }
+        });
+      } else {
+        console.log('Received non-array candle data, returning demo data');
+        return this.getDemoCandlestickData(symbol, interval, limit);
+      }
     } catch (error) {
       console.error(`Error fetching candlestick data for ${symbol} from Bitget:`, error);
       return this.getDemoCandlestickData(symbol, interval, limit);
