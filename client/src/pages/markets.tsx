@@ -264,7 +264,7 @@ export default function Markets() {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <Clock className="h-5 w-5 text-primary" />
-                        <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2">
+                        <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2" onClick={() => window.alert("Market added to watchlist!")}>
                           <Bookmark className="h-4 w-4 text-muted-foreground" />
                         </Button>
                       </div>
@@ -349,7 +349,15 @@ export default function Markets() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.alert(`${market.name} added to favorites!`);
+                                  }}
+                                >
                                   <Star className={`h-4 w-4 ${index < 2 ? 'text-amber-400' : 'text-muted-foreground'}`} />
                                 </Button>
                               </TableCell>
@@ -393,7 +401,12 @@ export default function Markets() {
                             {selectedCoin[0]}
                           </div>
                           {selectedCoin === "BTC" ? "Bitcoin" : selectedCoin === "ETH" ? "Ethereum" : "Solana"}
-                          <Button variant="ghost" size="icon" className="h-6 w-6 ml-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 ml-1"
+                            onClick={() => window.alert(`${selectedCoin} symbol copied to clipboard!`)}
+                          >
                             <Copy className="h-3 w-3" />
                           </Button>
                         </CardTitle>
@@ -404,7 +417,12 @@ export default function Markets() {
                           </div>
                         </CardDescription>
                       </div>
-                      <Button variant="outline" size="icon" className="h-8 w-8">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => window.alert(`${selectedCoin} added to favorites!`)}
+                      >
                         <Star className="h-4 w-4 text-amber-400" />
                       </Button>
                     </div>
@@ -522,11 +540,18 @@ export default function Markets() {
                       </div>
                       
                       <div className="flex space-x-2">
-                        <Button className="flex-1">
+                        <Button 
+                          className="flex-1"
+                          onClick={() => window.alert(`Opening buy interface for ${selectedCoin}...`)}
+                        >
                           <Wallet className="mr-2 h-4 w-4" />
                           Buy
                         </Button>
-                        <Button variant="outline" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={() => window.alert(`Opening trading interface for ${selectedCoin}...`)}
+                        >
                           <BarChart3 className="mr-2 h-4 w-4" />
                           Trade
                         </Button>
@@ -618,7 +643,10 @@ export default function Markets() {
                         </CardContent>
                       </Card>
                       
-                      <Button className="w-full">
+                      <Button 
+                        className="w-full"
+                        onClick={() => setSearchQuery("")}
+                      >
                         View All Markets
                       </Button>
                     </div>
