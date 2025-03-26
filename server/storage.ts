@@ -168,7 +168,7 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentId++;
     
-    // Create base user object with required fields
+    // Create base user object with required fields and null defaults for optional fields
     const user: User = {
       id,
       username: insertUser.username,
@@ -176,6 +176,9 @@ export class MemStorage implements IStorage {
       firstName: insertUser.firstName || "",
       lastName: insertUser.lastName || "",
       password: insertUser.password || "",
+      googleId: null,
+      appleId: null,
+      profilePicture: null,
       createdAt: new Date()
     };
     

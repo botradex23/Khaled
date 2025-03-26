@@ -1,6 +1,19 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { User } from '@shared/schema';
 import { storage } from '../storage';
+
+// Define profile type for use in callback
+interface GoogleProfile {
+  id: string;
+  displayName: string;
+  emails?: { value: string }[];
+  photos?: { value: string }[];
+  name?: {
+    givenName?: string;
+    familyName?: string;
+  };
+}
 
 // Initialize Google OAuth strategy
 export const setupGoogleAuth = () => {
@@ -12,7 +25,7 @@ export const setupGoogleAuth = () => {
         callbackURL: '/api/auth/google/callback',
         scope: ['profile', 'email'],
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: (error: Error | null, user?: User) => void) => {
         try {
           // Check if user exists with this Google ID
           let user = await storage.getUserByGoogleId(profile.id);
@@ -51,23 +64,23 @@ export const setupGoogleAuth = () => {
           }
         } catch (error) {
           console.error('Error during Google authentication', error);
-          return done(error, undefined);
+          return done(error instanceof Error ? error : new Error('Unknown error during authentication'), undefined);
         }
       }
     )
   );
 
   // Serialize and deserialize user
-  passport.serializeUser((user: any, done) => {
+  passport.serializeUser((user: User, done: (err: Error | null, id: number) => void) => {
     done(null, user.id);
   });
 
-  passport.deserializeUser(async (id: number, done) => {
+  passport.deserializeUser(async (id: number, done: (err: Error | null, user: User | null) => void) => {
     try {
       const user = await storage.getUser(id);
       done(null, user);
     } catch (error) {
-      done(error, null);
+      done(error instanceof Error ? error : new Error('Error deserializing user'), null);
     }
   });
 };
