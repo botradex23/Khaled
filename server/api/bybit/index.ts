@@ -25,9 +25,42 @@ const handleApiError = (err: any, res: Response) => {
  */
 router.get('/status', async (req: Request, res: Response) => {
   try {
+    // First check for geo-restrictions by attempting a simple ping
+    try {
+      await bybitService.ping();
+    } catch (pingError: any) {
+      // Check if the error is related to geo-restriction (CloudFront 403)
+      if (pingError.response && pingError.response.status === 403 && 
+          (pingError.response.data && typeof pingError.response.data === 'string' && 
+           pingError.response.data.includes('CloudFront'))) {
+        
+        // Return a specific response for geo-restrictions
+        return res.json({
+          success: false,
+          geoRestricted: true,
+          message: 'Bybit API access is restricted in your region. The application will use simulated data.',
+          status: {
+            connected: false,
+            authenticated: false,
+            hasReadPermissions: false,
+            hasWritePermissions: false,
+            message: 'Bybit API access is geo-restricted in your region',
+            details: {
+              error: 'Geographic restriction detected (AWS CloudFront 403)',
+              solution: 'The application will automatically use demo data for all operations'
+            }
+          },
+          apiKeyHasWritePermissions: false,
+          apiKeyHasReadPermissions: false
+        });
+      }
+    }
+    
+    // If no geo-restriction, continue with the regular status check
     const status = await accountService.checkConnection();
     res.json({
       success: true,
+      geoRestricted: false,
       status,
       apiKeyHasWritePermissions: status.hasWritePermissions,
       apiKeyHasReadPermissions: status.hasReadPermissions
@@ -43,9 +76,31 @@ router.get('/status', async (req: Request, res: Response) => {
  */
 router.get('/permissions', async (req: Request, res: Response) => {
   try {
+    // First check for geo-restrictions by attempting a simple ping
+    try {
+      await bybitService.ping();
+    } catch (pingError: any) {
+      // Check if the error is related to geo-restriction (CloudFront 403)
+      if (pingError.response && pingError.response.status === 403 && 
+          (pingError.response.data && typeof pingError.response.data === 'string' && 
+           pingError.response.data.includes('CloudFront'))) {
+        
+        // Return a specific response for geo-restrictions
+        return res.json({
+          success: false,
+          geoRestricted: true,
+          hasReadPermissions: false,
+          hasWritePermissions: false,
+          message: 'Bybit API access is restricted in your region. The application will use simulated data.'
+        });
+      }
+    }
+    
+    // If no geo-restriction, continue with the regular permissions check
     const status = await accountService.checkConnection();
     res.json({
       success: true,
+      geoRestricted: false,
       hasReadPermissions: status.hasReadPermissions,
       hasWritePermissions: status.hasWritePermissions,
       message: status.message
@@ -61,11 +116,26 @@ router.get('/permissions', async (req: Request, res: Response) => {
  */
 router.get('/config', async (req: Request, res: Response) => {
   try {
+    // First check for geo-restrictions by attempting a simple ping
+    let geoRestricted = false;
+    try {
+      await bybitService.ping();
+    } catch (pingError: any) {
+      // Check if the error is related to geo-restriction (CloudFront 403)
+      if (pingError.response && pingError.response.status === 403 && 
+          (pingError.response.data && typeof pingError.response.data === 'string' && 
+           pingError.response.data.includes('CloudFront'))) {
+        geoRestricted = true;
+      }
+    }
+    
     res.json({
       success: true,
+      geoRestricted,
       config: {
         baseUrl: bybitService.getBaseUrl(),
-        isConfigured: bybitService.isConfigured()
+        isConfigured: bybitService.isConfigured(),
+        isTestnet: bybitService.getBaseUrl().includes('testnet')
       }
     });
   } catch (err) {
