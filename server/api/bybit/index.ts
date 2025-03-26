@@ -149,6 +149,54 @@ router.get('/config', async (req: Request, res: Response) => {
 });
 
 /**
+ * Test proxy connection to a general API
+ * GET /api/bybit/general-proxy-test
+ */
+router.get('/general-proxy-test', async (req: Request, res: Response) => {
+  try {
+    const proxyInstance = createProxyInstance();
+    try {
+      // Try to connect to a general API that should work worldwide
+      const response = await proxyInstance.get('https://httpbin.org/ip', {
+        timeout: 10000
+      });
+      
+      res.json({
+        success: true,
+        generalProxyTest: {
+          success: true,
+          message: 'Successfully connected to httpbin.org via proxy',
+          data: response.data
+        },
+        vpnConfig: {
+          enabled: VPN_CONFIG.enabled,
+          type: VPN_CONFIG.type,
+          host: VPN_CONFIG.host,
+          port: VPN_CONFIG.port
+        }
+      });
+    } catch (error: any) {
+      console.error('General proxy connection test failed:', error.message);
+      res.json({
+        success: true,
+        generalProxyTest: {
+          success: false,
+          message: `General proxy connection error: ${error.message}`
+        },
+        vpnConfig: {
+          enabled: VPN_CONFIG.enabled,
+          type: VPN_CONFIG.type,
+          host: VPN_CONFIG.host,
+          port: VPN_CONFIG.port
+        }
+      });
+    }
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
  * Test proxy connection to Bybit API
  * GET /api/bybit/proxy-test
  */
@@ -161,7 +209,7 @@ router.get('/proxy-test', async (req: Request, res: Response) => {
     if (VPN_CONFIG.enabled && req.query.compareWithDirect === 'true') {
       try {
         // Try a direct connection to see if we're geo-restricted without proxy
-        const directResponse = await axios.get('https://api.bybit.com/v5/market/time', {
+        const directResponse = await axios.get('https://api-testnet.bybit.com/v5/market/time', {
           timeout: 10000
         });
         

@@ -10,7 +10,7 @@ export const VPN_CONFIG = {
   enabled: true, // Enabled with Webshare proxy
 
   // Type of proxy: 'https' or 'socks'
-  type: 'https' as 'https' | 'socks',
+  type: 'socks' as 'https' | 'socks',
 
   // Webshare proxy server details
   host: '38.154.227.167', // Webshare proxy IP address
@@ -80,7 +80,8 @@ export async function testProxyConnection() {
   
   try {
     const axiosInstance = createProxyInstance();
-    const response = await axiosInstance.get('https://api.bybit.com/v5/market/time', {
+    // Try the testnet endpoint instead of the main API endpoint
+    const response = await axiosInstance.get('https://api-testnet.bybit.com/v5/market/time', {
       timeout: 10000 // 10 second timeout
     });
     
