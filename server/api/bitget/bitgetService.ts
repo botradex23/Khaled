@@ -84,6 +84,7 @@ export class BitgetService {
     params: any = {}
   ): Promise<T> {
     if (!isConfigured()) {
+      console.log('Bitget API not configured - aborting authenticated request');
       throw new BitgetApiNotConfiguredError();
     }
 
@@ -106,6 +107,19 @@ export class BitgetService {
 
     // Generate signature
     const signature = this.generateSignature(timestamp, method, requestPath, requestBody);
+    
+    console.log(`Making authenticated ${method} request to ${this.baseUrl}${requestPath}`);
+    
+    // Log request details (excluding sensitive information)
+    console.log('Request details:', {
+      method,
+      endpoint: requestPath,
+      timestamp,
+      hasSignature: !!signature,
+      hasPassphrase: !!PASSPHRASE,
+      timeout: DEFAULT_TIMEOUT,
+      bodyLength: requestBody ? requestBody.length : 0
+    });
 
     const config: AxiosRequestConfig = {
       method,
@@ -127,7 +141,16 @@ export class BitgetService {
     }
 
     try {
+      console.log(`Sending request to Bitget...`);
       const response: AxiosResponse = await axios(config);
+      
+      console.log(`Received response with status ${response.status}`);
+      
+      if (response.data && response.data.code) {
+        console.log(`Response code: ${response.data.code}, message: ${response.data.msg || 'No message'}`);
+      } else {
+        console.log('Response has unexpected format:', typeof response.data);
+      }
       
       if (response.data.code !== '00000') {
         throw new Error(`Bitget API error: ${response.data.msg} (${response.data.code})`);
@@ -137,15 +160,24 @@ export class BitgetService {
     } catch (error: any) {
       if (error.response) {
         // The request was made and the server responded with a non-2xx status
-        console.error('Bitget API error:', error.response.data);
+        console.error('Bitget API error response:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        });
         throw new Error(`Bitget API error: ${error.response.data.msg || 'Unknown error'}`);
       } else if (error.request) {
         // The request was made but no response was received
-        console.error('Bitget API no response:', error.request);
+        console.error('Bitget API no response error:', {
+          requestPath,
+          method,
+          apiConfigured: isConfigured()
+        });
+        console.error('Request details:', error.request);
         throw new Error('No response from Bitget API');
       } else {
         // Something happened in setting up the request that triggered an Error
-        console.error('Bitget API request setup error:', error.message);
+        console.error('Bitget API unexpected error:', error.message);
         throw error;
       }
     }
@@ -169,7 +201,10 @@ export class BitgetService {
       url = `${url}?${queryString}`;
     }
 
+    console.log(`Making public request to ${url}`);
+
     try {
+      console.log(`Sending public request to Bitget...`);
       const response = await axios({
         method: 'GET',
         url,
@@ -181,6 +216,14 @@ export class BitgetService {
         }
       });
 
+      console.log(`Received response with status ${response.status}`);
+      
+      if (response.data && response.data.code) {
+        console.log(`Response code: ${response.data.code}, message: ${response.data.msg || 'No message'}`);
+      } else {
+        console.log('Response has unexpected format:', typeof response.data);
+      }
+
       if (response.data.code !== '00000') {
         throw new Error(`Bitget API error: ${response.data.msg} (${response.data.code})`);
       }
@@ -188,13 +231,21 @@ export class BitgetService {
       return response.data.data as T;
     } catch (error: any) {
       if (error.response) {
-        console.error('Bitget API error:', error.response.data);
+        console.error('Bitget API error response:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        });
         throw new Error(`Bitget API error: ${error.response.data.msg || 'Unknown error'}`);
       } else if (error.request) {
-        console.error('Bitget API no response:', error.request);
+        console.error('Bitget API no response error:', {
+          endpoint,
+          url
+        });
+        console.error('Request details:', error.request);
         throw new Error('No response from Bitget API');
       } else {
-        console.error('Bitget API request setup error:', error.message);
+        console.error('Bitget API unexpected error:', error.message);
         throw error;
       }
     }

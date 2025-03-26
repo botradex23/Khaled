@@ -38,18 +38,36 @@ export class AccountService {
         return this.getEmptyBalanceResponse();
       }
       
+      console.log('Attempting to fetch real account data from Bitget API...');
+      
       // Make API request to get account balances
       const accountResponse = await bitgetService.getAccountInfo();
+      console.log('Received account response from Bitget:', 
+        typeof accountResponse === 'object' ? 'Object received' : 'Unexpected response type');
+      
+      // Check if we got a valid response
+      if (!accountResponse || (Array.isArray(accountResponse) && accountResponse.length === 0)) {
+        console.log('Empty response from Bitget API, using demo data');
+        return this.getEmptyBalanceResponse();
+      }
+      
       const response = accountResponse as any[];
       
+      console.log(`Processing ${response.length} assets from account data`);
+      
       // Transform the data to our standard format
-      return response.map((asset: any): AccountBalance => ({
-        currency: asset.coinName,
-        available: parseFloat(asset.available),
-        frozen: parseFloat(asset.locked),
-        total: parseFloat(asset.available) + parseFloat(asset.locked),
-        valueUSD: parseFloat(asset.usdValue || '0')
-      }));
+      return response.map((asset: any): AccountBalance => {
+        // Log the asset structure to debug
+        console.log('Processing asset:', JSON.stringify(asset));
+        
+        return {
+          currency: asset.coinName || asset.coin || asset.currency || 'Unknown',
+          available: parseFloat(asset.available || asset.free || '0'),
+          frozen: parseFloat(asset.locked || asset.frozen || '0'),
+          total: parseFloat(asset.available || asset.free || '0') + parseFloat(asset.locked || asset.frozen || '0'),
+          valueUSD: parseFloat(asset.usdValue || asset.valueUSD || '0')
+        };
+      });
     } catch (error) {
       console.error('Failed to fetch account balances:', error);
       
