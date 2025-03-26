@@ -15,6 +15,9 @@ declare global {
 }
 
 export function setupAuth(app: Express) {
+  // Trust first proxy for secure cookies behind HTTPS
+  app.set('trust proxy', 1);
+  
   // Setup session
   app.use(
     session({
@@ -22,9 +25,9 @@ export function setupAuth(app: Express) {
       resave: true,
       saveUninitialized: true,
       cookie: {
-        secure: false, // Set to false for development, even on HTTPS
+        secure: 'auto', // 'auto' will use secure cookies when the connection is HTTPS
         maxAge: 24 * 60 * 60 * 1000, // 1 day
-        sameSite: 'lax'
+        sameSite: 'none'   // Allow cross-site cookies for OAuth callbacks
       },
     })
   );
