@@ -201,7 +201,7 @@ export default function AIGridBot() {
       });
       
       // Refetch bot status
-      queryClient.invalidateQueries({ queryKey: ['/api/bybit/bots', botId, 'status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bitget/bots', botId, 'status'] });
     },
     onError: (error) => {
       toast({
@@ -225,7 +225,7 @@ export default function AIGridBot() {
       });
       
       // Refetch bot status
-      queryClient.invalidateQueries({ queryKey: ['/api/bybit/bots', botId, 'status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bitget/bots', botId, 'status'] });
     },
     onError: (error) => {
       toast({
@@ -241,7 +241,7 @@ export default function AIGridBot() {
     data: botStatus = { stats: {}, trades: [] },
     isLoading: isLoadingStatus,
   } = useQuery<{ stats: any, trades: any[] }>({
-    queryKey: ['/api/bybit/bots', botId, 'status'],
+    queryKey: ['/api/bitget/bots', botId, 'status'],
     enabled: !!botId,
     refetchInterval: isRunning ? 10000 : false,
   });
@@ -251,7 +251,7 @@ export default function AIGridBot() {
     data: performanceData = [],
     isLoading: isLoadingPerformance,
   } = useQuery<any[]>({
-    queryKey: ['/api/bybit/bots', botId, 'performance'],
+    queryKey: ['/api/bitget/bots', botId, 'performance'],
     enabled: !!botId,
     refetchInterval: isRunning ? 30000 : false,
   });
