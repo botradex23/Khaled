@@ -59,15 +59,15 @@ export class OkxService {
   
   /**
    * Get passphrase for API v5
-   * Note: For OKX API v5, we need to use the original passphrase as entered during API key creation
+   * According to OKX API docs, we need to use the original passphrase for REST API calls
    */
-  private encryptPassphrase(): string {
+  private getPassphrase(): string {
     // Log the format of the passphrase (only first and last characters for security)
     const passFirst = PASSPHRASE.slice(0, 1);
     const passLast = PASSPHRASE.slice(-1);
     console.log(`Using passphrase format: ${passFirst}...${passLast} (length: ${PASSPHRASE.length})`);
     
-    // We use the original passphrase exactly as provided during API key creation
+    // For REST API, we use the original passphrase as is
     return PASSPHRASE;
   }
 
@@ -98,7 +98,7 @@ export class OkxService {
     console.log(`OKX API request: ${method} ${requestPath}`);
     
     // Setup request configuration
-    // For v5 API, we need to use the original passphrase as provided in API management
+    // For v5 API, we need to use the encrypted passphrase
     const config: AxiosRequestConfig = {
       method,
       url: `${this.baseUrl}${requestPath}`,
@@ -108,7 +108,7 @@ export class OkxService {
         'OK-ACCESS-KEY': API_KEY,
         'OK-ACCESS-SIGN': signature,
         'OK-ACCESS-TIMESTAMP': timestamp,
-        'OK-ACCESS-PASSPHRASE': PASSPHRASE,
+        'OK-ACCESS-PASSPHRASE': this.getPassphrase(),
       }
     };
     
