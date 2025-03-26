@@ -180,8 +180,13 @@ export function AccountBalanceCard() {
 
   const balances: AccountBalance[] = selectedData;
   
-  // Calculate total portfolio value
-  const totalValue = balances.reduce((sum, asset) => sum + asset.valueUSD, 0);
+  // Calculate the distribution between "Available" and "Frozen" funds
+  const totalAvailable = balances.reduce((sum, asset) => sum + asset.available, 0);
+  const totalFrozen = balances.reduce((sum, asset) => sum + asset.frozen, 0);
+  
+  // Calculate total portfolio value (accounting for both available and frozen funds)
+  // נתקן כאן - נוודא שהחישוב כולל גם את הכספים הקפואים
+  const totalValue = totalAvailable + totalFrozen;
   
   // Sort by value (highest first)
   const sortedBalances = [...balances]
@@ -192,12 +197,8 @@ export function AccountBalanceCard() {
   // Count assets with non-zero balance
   const assetsWithBalance = balances.filter(asset => asset.total > 0).length;
   
-  // Calculate the distribution between "Available" and "Frozen" funds
-  const totalAvailable = balances.reduce((sum, asset) => sum + asset.available, 0);
-  const totalFrozen = balances.reduce((sum, asset) => sum + asset.frozen, 0);
-  
   // Calculate percentages for available/frozen donut chart
-  const availablePercentage = totalValue > 0 ? (totalAvailable / (totalAvailable + totalFrozen)) * 100 : 0;
+  const availablePercentage = totalValue > 0 ? (totalAvailable / totalValue) * 100 : 0;
   const frozenPercentage = totalValue > 0 ? 100 - availablePercentage : 0;
 
   return (
