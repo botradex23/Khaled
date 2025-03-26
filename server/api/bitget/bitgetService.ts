@@ -346,9 +346,16 @@ export class BitgetService {
 
   /**
    * Get all tickers
+   * @returns All market tickers from Bitget in standardized format
    */
   async getAllTickers() {
-    return this.makePublicRequest('/api/spot/v1/market/tickers');
+    // The API returns data inside a data array property
+    const response = await this.makePublicRequest<any>('/api/spot/v1/market/tickers');
+    // Check if we have a valid response with data array
+    if (response && response.data && Array.isArray(response.data)) {
+      return response.data;
+    }
+    return []; // Return empty array if no valid data
   }
 
   /**
@@ -359,12 +366,17 @@ export class BitgetService {
    * @param limit - Maximum number of results to return
    */
   async getKlineData(symbol: string, interval = '1h', limit = 100): Promise<any> {
-    // For candlestick data, Bitget returns an array directly
-    return this.makePublicRequest('/api/spot/v1/market/candles', {
+    const response = await this.makePublicRequest<any>('/api/spot/v1/market/candles', {
       symbol,
       period: interval,
       limit
     });
+    
+    // Bitget returns data in a 'data' property
+    if (response && response.data) {
+      return response.data;
+    }
+    return []; // Return empty array if no valid data
   }
 
   /**
