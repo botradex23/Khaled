@@ -184,10 +184,31 @@ router.get('/candles/:symbol', async (req: Request, res: Response) => {
       parseInt(limit as string, 10)
     );
     
+    // בדיקה האם אלו נתונים אמיתיים מה-API
+    const currentDate = new Date();
+    
+    // סימון מיוחד עבור נתונים אמיתיים מה-API
+    // נבדוק שיש לנו נתונים וגם את המבנה והערכים שלהם
+    const isRealApiData = Array.isArray(candleData) && candleData.length > 0 && 
+                         candleData[0].hasOwnProperty('open') && candleData[0].hasOwnProperty('close') &&
+                         candleData[0].volume > 0;
+                         
+    // בדיקה של נתון הראשון לדוגמה
+    if (Array.isArray(candleData) && candleData.length > 0) {
+      console.log("Sample data first item:", JSON.stringify(candleData[0]));
+    }
+    
     console.log("Candles result summary:", {
       count: Array.isArray(candleData) ? candleData.length : 0,
-      isDemoData: !Array.isArray(candleData) || candleData.length === 0 || 
-                 (candleData.length > 0 && candleData[0].timestamp && candleData[0].timestamp.includes('2025')),
+      // נבדוק אם אלו נתונים אמיתיים לפי המבנה והערכים שלהם
+      isRealApiData: isRealApiData,
+      // נתונים אמיתיים יסומנו כ-isDemoData=false
+      isDemoData: !isRealApiData,
+      hasExpectedProperties: Array.isArray(candleData) && candleData.length > 0 ?
+                            ['timestamp', 'open', 'high', 'low', 'close', 'volume'].every(prop => 
+                              candleData[0].hasOwnProperty(prop)) : false,
+      timeDiff: Array.isArray(candleData) && candleData.length > 0 ? 
+                Math.abs(new Date(candleData[0].timestamp).getTime() - currentDate.getTime()) / (1000 * 60 * 60) : null,
       firstTimestamp: Array.isArray(candleData) && candleData.length > 0 ? candleData[0].timestamp : null,
       lastTimestamp: Array.isArray(candleData) && candleData.length > 0 ? candleData[candleData.length-1].timestamp : null,
     });

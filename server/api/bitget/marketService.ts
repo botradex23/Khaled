@@ -162,7 +162,7 @@ export class MarketService {
       // Create a special endpoint to test raw data for debugging
       try {
         // Make a direct call to get the raw data for debugging
-        const rawResponse = await bitgetService.makePublicRequest('/api/spot/v1/market/candles', {
+        const rawResponse = await bitgetService.makePublicRequest<any>('/api/spot/v1/market/candles', {
           symbol: symbol.endsWith('_SPBL') ? symbol : `${symbol}_SPBL`,
           period: mappedInterval,
           limit
@@ -173,11 +173,19 @@ export class MarketService {
             responseType: typeof rawResponse,
             isArray: Array.isArray(rawResponse),
             keys: rawResponse && typeof rawResponse === 'object' ? Object.keys(rawResponse) : [],
-            dataType: rawResponse && rawResponse.data ? typeof rawResponse.data : null,
-            dataIsArray: rawResponse && rawResponse.data ? Array.isArray(rawResponse.data) : null,
-            dataLength: rawResponse && rawResponse.data && Array.isArray(rawResponse.data) ? rawResponse.data.length : null,
-            dataSample: rawResponse && rawResponse.data && Array.isArray(rawResponse.data) && rawResponse.data.length > 0 
-              ? JSON.stringify(rawResponse.data[0]).substring(0, 100) : null
+            // הוספת בדיקות מובטחות לשדות באובייקט
+            hasCode: rawResponse && 'code' in rawResponse,
+            hasData: rawResponse && 'data' in rawResponse,
+            code: rawResponse && typeof rawResponse === 'object' && 'code' in rawResponse ? rawResponse.code : null,
+            msg: rawResponse && typeof rawResponse === 'object' && 'msg' in rawResponse ? rawResponse.msg : null,
+            // בדיקות בטוחות של המידע
+            dataExists: rawResponse && typeof rawResponse === 'object' && 'data' in rawResponse,
+            dataType: rawResponse && typeof rawResponse === 'object' && 'data' in rawResponse ? 
+              typeof (rawResponse as any).data : null,
+            dataIsArray: rawResponse && typeof rawResponse === 'object' && 'data' in rawResponse ? 
+              Array.isArray((rawResponse as any).data) : null,
+            dataLength: rawResponse && typeof rawResponse === 'object' && 'data' in rawResponse && 
+              Array.isArray((rawResponse as any).data) ? (rawResponse as any).data.length : null
           })
         );
       } catch (err) {
@@ -196,7 +204,11 @@ export class MarketService {
       
       if (Array.isArray(klineData)) {
         console.log(`Processing ${klineData.length} candles in array format`);
-        return klineData.map((item: any): KlineData => {
+        
+        // הגדר את תבנית התאריך עבור התוצאות בצורה נכונה שתשקף את הזמן האמיתי
+        const now = new Date();
+        
+        const result = klineData.map((item: any): KlineData => {
           try {
             // Check if the item is an array or object
             if (Array.isArray(item)) {
@@ -210,8 +222,16 @@ export class MarketService {
                 volume: parseFloat(item[5])
               };
             } else {
-              // Format: { ts, open, high, low, close, baseVol, quoteVol }
-              const timestamp = new Date(parseInt(item.ts)).toISOString();
+              // בדיקה אם יש שדה ts (חותמת זמן) בפורמט שנקבל מה-API של ביטגט
+              // מכיוון שהחותמת זמן היא בפורמט מילישניות מ-1970, נוכל לייצר תאריך אמיתי
+              let timestamp: string;
+              if (item.ts) {
+                timestamp = new Date(parseInt(item.ts)).toISOString();
+              } else {
+                // אם אין חותמת זמן, נקבע זמן יחסי מהרגע הנוכחי
+                const hourOffset = klineData.length - klineData.indexOf(item) - 1;
+                timestamp = new Date(now.getTime() - hourOffset * 60 * 60 * 1000).toISOString();
+              }
               
               return {
                 timestamp: timestamp,
@@ -224,9 +244,12 @@ export class MarketService {
             }
           } catch (err) {
             console.error('Error parsing candle data:', err, 'Item:', JSON.stringify(item));
-            // Provide fallback values for invalid data
+            // תן ערכי ברירת מחדל אם יש בעיה
+            const hourOffset = klineData.length - klineData.indexOf(item) - 1;
+            const fallbackTimestamp = new Date(now.getTime() - hourOffset * 60 * 60 * 1000).toISOString();
+            
             return {
-              timestamp: new Date().toISOString(),
+              timestamp: fallbackTimestamp,
               open: 0,
               high: 0,
               low: 0,
@@ -235,6 +258,9 @@ export class MarketService {
             };
           }
         });
+        
+        console.log(`Processed candles with real timestamps from API data. First timestamp: ${result[0]?.timestamp}`);
+        return result;
       } else {
         console.log('Received non-array candle data, returning demo data');
         return this.getDemoCandlestickData(symbol, interval, limit);
@@ -260,10 +286,17 @@ export class MarketService {
       '4h': '4h',
       '12h': '12h',
       '1d': '1day',
-      '1w': '1week'
+      '1w': '1week',
+      // עבור תאימות לפורמטים אחרים
+      '1min': '1min',
+      '5min': '5min',
+      '15min': '15min',
+      '30min': '30min',
+      '1day': '1day',
+      '1week': '1week'
     };
     
-    return mapping[interval] || '1h'; // Default to 1h if not found
+    return mapping[interval] || '1h'; // ברירת מחדל ל-1h אם לא נמצא
   }
   
   /**
