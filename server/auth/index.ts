@@ -60,6 +60,9 @@ function registerAuthRoutes(app: Express) {
     '/api/auth/google',
     (req: Request, res: Response, next: NextFunction) => {
       console.log('Google auth request initiated');
+      console.log('Redirect URI used in callback:', 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback');
+      console.log('Current host:', req.headers.host);
+      console.log('Current protocol:', req.protocol);
       next();
     },
     passport.authenticate('google', { scope: ['profile', 'email'] }),
@@ -76,6 +79,8 @@ function registerAuthRoutes(app: Express) {
     '/api/auth/google/callback',
     (req: Request, res: Response, next: NextFunction) => {
       console.log('Google callback received with query params:', req.query);
+      console.log('Google callback received with headers:', req.headers);
+      console.log('Google callback received with host:', req.headers.host);
       if (req.query.error) {
         console.error('Error returned from Google:', req.query.error);
         return res.redirect(`/login?error=${req.query.error}`);
