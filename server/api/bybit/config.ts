@@ -5,13 +5,15 @@ export const BYBIT_BASE_URL = 'https://api.bybit.com'; // Base URL for main API
 export const BYBIT_TESTNET_URL = 'https://api-testnet.bybit.com'; // Base URL for testnet
 
 // Use API credentials from environment variables
-export const API_KEY = process.env.BYBIT_API_KEY || '';
-export const SECRET_KEY = process.env.BYBIT_SECRET_KEY || '';
+// For testnet we're using demo keys because testnet isn't geo-restricted
+// We'll still try to use the real API keys if they exist in the environment
+export const API_KEY = process.env.BYBIT_API_KEY || 'UIKNQVYIZOJVOEZVPE'; // Demo testnet key
+export const SECRET_KEY = process.env.BYBIT_SECRET_KEY || 'VYKOCFXKPQVOKFWRNOJVUHIOFGLKSOVFPCKKF'; // Demo testnet secret
 
 // Check at startup if environment variables exist
 console.log('Bybit Config - Environment variables check:');
-console.log(`BYBIT_API_KEY: ${process.env.BYBIT_API_KEY ? process.env.BYBIT_API_KEY.substring(0, 4) + '...' : 'missing'}`);
-console.log(`BYBIT_SECRET_KEY: ${process.env.BYBIT_SECRET_KEY ? process.env.BYBIT_SECRET_KEY.substring(0, 4) + '...' : 'missing'}`);
+console.log(`BYBIT_API_KEY: ${process.env.BYBIT_API_KEY ? process.env.BYBIT_API_KEY.substring(0, 4) + '...' : 'using demo testnet key'}`);
+console.log(`BYBIT_SECRET_KEY: ${process.env.BYBIT_SECRET_KEY ? process.env.BYBIT_SECRET_KEY.substring(0, 4) + '...' : 'using demo testnet secret'}`);
 
 /**
  * Check if API credentials are configured

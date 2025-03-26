@@ -314,4 +314,4 @@ export class BybitService {
 }
 
 // Export a singleton instance of the service
-export const bybitService = new BybitService(false); // Using mainnet by default
+export const bybitService = new BybitService(true); // Using testnet to avoid geo-restrictions
