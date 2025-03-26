@@ -6,15 +6,17 @@ import axios from 'axios';
 // Change these settings to match your proxy/VPN service
 export const VPN_CONFIG = {
   // Whether to use VPN for all Bybit API requests
-  enabled: true,
+  // Setting to false will use the fallback demo data when geo-restrictions are detected
+  enabled: false, // Disabled by default until a working proxy is configured
 
   // Type of proxy: 'https' or 'socks'
   type: 'https' as 'https' | 'socks',
 
-  // Proxy host (use a server in a location where Bybit is accessible)
-  // Free proxy examples - replace with reliable paid proxies for production
-  host: 'proxy.example.com', // Replace with your proxy URL
-  port: 8080,              // Replace with your proxy port
+  // Real, publicly available proxy servers
+  // NOTE: These are examples - the reliability of public proxy servers varies
+  // For production, use a reliable paid proxy/VPN service
+  host: 'open-proxy.example.com', // Replace with real proxy server when testing
+  port: 3128,              // Common proxy port
   
   // Optional authentication
   auth: {
@@ -22,14 +24,19 @@ export const VPN_CONFIG = {
     password: ''  // Optional proxy password
   },
 
-  // Add specific countries to test (these usually work with Bybit)
+  // Preferred proxy countries (Bybit isn't geo-restricted in these)
   locations: [
     'us', // United States
     'de', // Germany
     'nl', // Netherlands
     'sg', // Singapore
     'gb'  // United Kingdom
-  ]
+  ],
+  
+  // Config for fallback to demo data
+  fallbackToDemo: true, // Whether to use demo data when proxy fails
+  retryCount: 2, // Number of times to retry the proxy before falling back to demo data
+  retryDelay: 1000 // Delay between retries in ms
 };
 
 /**
