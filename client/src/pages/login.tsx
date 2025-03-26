@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -23,9 +23,36 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const { login } = useAuth();
+  
+  // Check for error params in URL
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const error = searchParams.get('error');
+    
+    if (error) {
+      let errorMessage = 'Authentication failed. Please try again.';
+      
+      if (error === 'google_auth_failed') {
+        errorMessage = 'Google authentication failed. Please try again.';
+      } else if (error === 'google_no_user') {
+        errorMessage = 'Could not retrieve user info from Google.';
+      } else if (error === 'login_failed') {
+        errorMessage = 'Login failed after authentication. Please try again.';
+      }
+      
+      toast({
+        title: 'Authentication Error',
+        description: errorMessage,
+        variant: 'destructive'
+      });
+      
+      // Clean up the URL
+      window.history.replaceState({}, document.title, '/login');
+    }
+  }, [location, toast]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),

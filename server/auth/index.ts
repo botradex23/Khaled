@@ -76,13 +76,34 @@ function registerAuthRoutes(app: Express) {
     '/api/auth/google/callback',
     (req: Request, res: Response, next: NextFunction) => {
       console.log('Google callback received with query params:', req.query);
+      if (req.query.error) {
+        console.error('Error returned from Google:', req.query.error);
+        return res.redirect(`/login?error=${req.query.error}`);
+      }
       next();
     },
-    passport.authenticate('google', { failureRedirect: '/login' }),
-    (req: Request, res: Response) => {
-      console.log('Google authentication successful, user:', req.user);
-      // Successful authentication, redirect to dashboard
-      res.redirect('/dashboard');
+    (req: Request, res: Response, next: NextFunction) => {
+      passport.authenticate('google', (err: Error | null, user: any, info: any) => {
+        if (err) {
+          console.error('Error during Google authentication:', err);
+          return res.redirect('/login?error=google_auth_failed');
+        }
+        
+        if (!user) {
+          console.error('No user returned from Google auth, info:', info);
+          return res.redirect('/login?error=google_no_user');
+        }
+        
+        req.logIn(user, (loginErr) => {
+          if (loginErr) {
+            console.error('Error during login after Google auth:', loginErr);
+            return res.redirect('/login?error=login_failed');
+          }
+          
+          console.log('Google authentication successful, user:', user);
+          return res.redirect('/dashboard');
+        });
+      })(req, res, next);
     }
   );
 
