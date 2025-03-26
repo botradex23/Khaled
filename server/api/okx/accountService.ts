@@ -153,12 +153,23 @@ export class AccountService {
         const frozen = parseFloat(balance.frozenBal) || 0;
         const total = balance.bal ? parseFloat(balance.bal) : (available + frozen);
         
+        // Fix USD value calculation, especially for BTC
+        let valueUSD = parseFloat(balance.eq) || 0;
+        
+        // Manual correction for BTC in demo account where eq value is sometimes wrong
+        if (balance.ccy === "BTC" && total > 0 && valueUSD < 10) {
+          // Current approximate BTC price
+          const estimatedBTCValue = total * 67000; // Current BTC price as of March 2024
+          valueUSD = estimatedBTCValue;
+          console.log(`Corrected BTC value from ${balance.eq} to ${valueUSD} USD`);
+        }
+        
         return {
           currency: balance.ccy,
           available: available,
           frozen: frozen,
           total: total,
-          valueUSD: parseFloat(balance.eq) || 0
+          valueUSD: valueUSD
         };
       });
     } catch (error: unknown) {
