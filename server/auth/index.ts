@@ -112,7 +112,7 @@ function registerAuthRoutes(app: Express) {
           }
           
           console.log('Google authentication successful, user:', user);
-          return res.redirect('/dashboard');
+          return res.redirect('/login?success=true');
         });
       })(req, res, next);
     }
@@ -123,8 +123,9 @@ function registerAuthRoutes(app: Express) {
     req.logout((err) => {
       if (err) {
         console.error('Error during logout:', err);
+        return res.status(500).json({ success: false, error: 'An error occurred during logout' });
       }
-      res.redirect('/');
+      res.json({ success: true, message: 'Successfully logged out' });
     });
   });
 

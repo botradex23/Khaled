@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useLocation } from "wouter";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import { 
@@ -30,6 +32,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AccountBalanceCard, TradingHistoryCard } from "@/components/ui/account-overview";
 import { PriceChart } from "@/components/ui/price-chart";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { 
   ArrowRight, 
   ArrowUpRight, 
@@ -42,9 +46,33 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
+  const { isAuthenticated, isLoading: authLoading, checkSession } = useAuth();
+  const { toast } = useToast();
+  const [location, setLocation] = useLocation();
+  
+  // Check if user is authenticated
+  useEffect(() => {
+    const verifyAuth = async () => {
+      await checkSession();
+      
+      // If the user isn't authenticated after checking session, redirect to login
+      if (!isAuthenticated && !authLoading) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to view your dashboard.",
+          variant: "destructive"
+        });
+        setLocation("/login");
+      }
+    };
+    
+    verifyAuth();
+  }, [isAuthenticated, authLoading, checkSession, setLocation, toast]);
+  
   // Fetch user's bots
   const { data: bots, isLoading } = useQuery<Bot[]>({
     queryKey: ['/api/bots'],
+    enabled: isAuthenticated // Only fetch if user is authenticated
   });
 
   return (

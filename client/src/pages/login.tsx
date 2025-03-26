@@ -25,12 +25,43 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
-  const { login } = useAuth();
+  const { login, isAuthenticated, isLoading: authLoading, checkSession } = useAuth();
+  
+  // Check if user is already authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      await checkSession();
+      
+      // If user is already authenticated, redirect to dashboard
+      if (isAuthenticated && !authLoading) {
+        toast({
+          title: "Already Logged In",
+          description: "You are already logged in.",
+        });
+        setLocation("/dashboard");
+      }
+    };
+    
+    checkAuth();
+  }, [isAuthenticated, authLoading, checkSession, setLocation, toast]);
   
   // Check for error params in URL
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const error = searchParams.get('error');
+    const success = searchParams.get('success');
+    
+    if (success === 'true') {
+      toast({
+        title: 'Authentication Successful',
+        description: 'You have been logged in successfully.',
+      });
+      
+      // Clean up the URL and redirect to dashboard
+      window.history.replaceState({}, document.title, '/dashboard');
+      setLocation("/dashboard");
+      return;
+    }
     
     if (error) {
       let errorMessage = 'Authentication failed. Please try again.';
@@ -52,7 +83,7 @@ export default function Login() {
       // Clean up the URL
       window.history.replaceState({}, document.title, '/login');
     }
-  }, [location, toast]);
+  }, [location, toast, setLocation]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),

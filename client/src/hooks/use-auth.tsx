@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 
 type AuthContextType = {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (user: User) => void;
   logout: () => void;
+  checkSession: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -13,20 +16,47 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    // Check localStorage for saved user data on initial load
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
+  // Function to check session with the server
+  const checkSession = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiRequest("GET", "/api/auth/user");
+      
+      if (response && response.isAuthenticated && response.user) {
+        // User is authenticated according to server
+        setUser(response.user);
         setIsAuthenticated(true);
-      } catch (error) {
-        console.error("Failed to parse saved user data:", error);
+        localStorage.setItem("user", JSON.stringify(response.user));
+      } else {
+        // Not authenticated according to server
+        setUser(null);
+        setIsAuthenticated(false);
         localStorage.removeItem("user");
       }
+    } catch (error) {
+      console.error("Failed to check authentication status:", error);
+      // On error, try to use localStorage as fallback
+      const savedUser = localStorage.getItem("user");
+      if (savedUser) {
+        try {
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error("Failed to parse saved user data:", error);
+          localStorage.removeItem("user");
+        }
+      }
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // Check authentication status on component mount
+  useEffect(() => {
+    checkSession();
   }, []);
 
   const login = (userData: User) => {
@@ -35,14 +65,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("user", JSON.stringify(userData));
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem("user");
+  const logout = async () => {
+    try {
+      // Call logout endpoint on server
+      await apiRequest("GET", "/api/auth/logout");
+    } catch (error) {
+      console.error("Error during logout:", error);
+    } finally {
+      // Always clear local state even if server logout fails
+      setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem("user");
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated, 
+      isLoading,
+      login, 
+      logout,
+      checkSession
+    }}>
       {children}
     </AuthContext.Provider>
   );

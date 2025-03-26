@@ -13,7 +13,7 @@ import { Menu, X, User, Gauge, BarChart3, BookOpen, Grid, Activity, LayoutGrid, 
 
 export default function Header() {
   const [location] = useLocation();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -68,6 +68,14 @@ export default function Header() {
           <div className="flex items-center">
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
+                {!isMobile && (
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <span className="mr-2">Welcome,</span>
+                    <span className="font-medium text-foreground">
+                      {user?.firstName || 'User'}
+                    </span>
+                  </div>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -75,6 +83,11 @@ export default function Header() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    {user && (
+                      <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground">
+                        {user.email}
+                      </div>
+                    )}
                     <DropdownMenuItem>
                       <Link href="/dashboard">
                         <span className="flex items-center">
