@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import { 
@@ -506,21 +507,18 @@ export default function Markets() {
                       </div>
                       
                       <div className="flex space-x-2">
-                        <Button 
-                          className="flex-1"
-                          onClick={() => window.alert(`Opening buy interface for ${selectedCoin}...`)}
-                        >
-                          <Wallet className="mr-2 h-4 w-4" />
-                          Buy
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className="flex-1"
-                          onClick={() => window.alert(`Opening trading interface for ${selectedCoin}...`)}
-                        >
-                          <BarChart3 className="mr-2 h-4 w-4" />
-                          Trade
-                        </Button>
+                        <Link href="/bot-demo" className="flex-1">
+                          <Button className="w-full">
+                            <Wallet className="mr-2 h-4 w-4" />
+                            Buy
+                          </Button>
+                        </Link>
+                        <Link href="/bot-demo" className="flex-1">
+                          <Button variant="outline" className="w-full">
+                            <BarChart3 className="mr-2 h-4 w-4" />
+                            Trade
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   </CardContent>
