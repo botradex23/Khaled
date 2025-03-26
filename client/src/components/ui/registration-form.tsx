@@ -208,7 +208,7 @@ export default function RegistrationForm() {
                 
                 <div className="text-center text-muted-foreground text-sm">
                   Already have an account?{" "}
-                  <Link href="#" className="text-primary hover:underline">Sign in</Link>
+                  <Link href="/login" className="text-primary hover:underline">Sign in</Link>
                 </div>
               </form>
             </Form>
