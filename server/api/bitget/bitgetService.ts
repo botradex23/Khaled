@@ -346,11 +346,20 @@ export class BitgetService {
    * @param limit - Maximum number of results to return
    */
   async getKlineData(symbol: string, interval = '1h', limit = 100): Promise<any> {
-    return this.makePublicRequest('/api/spot/v1/market/candles', {
+    const response = await this.makePublicRequest<any>('/api/spot/v1/market/candles', {
       symbol,
       period: interval,
       limit
     });
+    
+    // Extract the data array from the response
+    // The API returns { code, msg, data: [...] }
+    if (response && response.data) {
+      return response.data;
+    }
+    
+    // If no data is available, return empty array
+    return [];
   }
 
   /**

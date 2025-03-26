@@ -155,24 +155,23 @@ export class MarketService {
       // Get candlestick data from Bitget
       const klineData = await bitgetService.getKlineData(symbol, mappedInterval, limit);
       
-      // Bitget's kline data has format: [timestamp, open, high, low, close, volume]
-      return klineData.map((item: any[]): KlineData => {
+      // Bitget's kline data has following format for each item:
+      // { open, high, low, close, quoteVol, baseVol, usdtVol, ts }
+      return klineData.map((item: any): KlineData => {
         try {
-          // Handle timestamp format correctly
-          const timestamp = typeof item[0] === 'string' ? item[0] : 
-                           typeof item[0] === 'number' ? new Date(item[0]).toISOString() : 
-                           new Date().toISOString();
+          // Convert timestamp from milliseconds to ISO string
+          const timestamp = new Date(parseInt(item.ts)).toISOString();
           
           return {
             timestamp: timestamp,
-            open: parseFloat(item[1]),
-            high: parseFloat(item[2]),
-            low: parseFloat(item[3]),
-            close: parseFloat(item[4]),
-            volume: parseFloat(item[5])
+            open: parseFloat(item.open),
+            high: parseFloat(item.high),
+            low: parseFloat(item.low),
+            close: parseFloat(item.close),
+            volume: parseFloat(item.baseVol)
           };
         } catch (err) {
-          console.error('Error parsing candle data:', err, 'Item:', item);
+          console.error('Error parsing candle data:', err, 'Item:', JSON.stringify(item));
           // Provide fallback values for invalid data
           return {
             timestamp: new Date().toISOString(),
