@@ -59,7 +59,7 @@ export default function Dashboard() {
                 <div className="flex justify-between items-center">
                   <div>
                     <CardTitle className="text-xl font-medium">Market Chart</CardTitle>
-                    <CardDescription>Live price data from OKX</CardDescription>
+                    <CardDescription>Live price data from Bitget</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-xs px-2 py-1 rounded-full bg-blue-500/10 text-blue-500">
@@ -69,7 +69,7 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <PriceChart symbol="BTC-USDT" />
+                <PriceChart symbol="BTCUSDT" />
               </CardContent>
             </Card>
 
@@ -145,7 +145,7 @@ export default function Dashboard() {
 
           {/* Analytics Tabs Section */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Trading Activity Card - Real data from OKX */}
+            {/* Trading Activity Card - Real data from Bitget */}
             <div className="md:col-span-2">
               <TradingHistoryCard />
             </div>

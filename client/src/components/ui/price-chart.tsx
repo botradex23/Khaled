@@ -42,13 +42,27 @@ interface CandleData {
 
 // Format timestamp for display
 function formatTimestamp(timestamp: string, interval: string): string {
-  const date = new Date(parseInt(timestamp));
-  
-  if (interval.includes('d') || interval.includes('w')) {
-    return date.toLocaleDateString();
+  try {
+    // Check if timestamp is already a Date object or ISO string
+    const date = typeof timestamp === 'string' && timestamp.includes('T') 
+      ? new Date(timestamp)  // It's an ISO string
+      : new Date(parseInt(timestamp)); // It's a numeric timestamp
+    
+    if (isNaN(date.getTime())) {
+      console.error("Invalid timestamp:", timestamp);
+      return "Invalid date";
+    }
+    
+    if (interval.includes('D') || interval.includes('W') || 
+        interval.includes('d') || interval.includes('w')) {
+      return date.toLocaleDateString();
+    }
+    
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch (error) {
+    console.error("Error formatting timestamp:", error, timestamp);
+    return "Invalid date";
   }
-  
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 // Function to format numbers with commas for thousands
@@ -131,11 +145,35 @@ export function PriceChart({ symbol = "BTCUSDT" }: { symbol?: string }) {
   }
   
   // Format the data for the chart
-  const chartData = (data as CandleData[]).map(candle => ({
-    time: formatTimestamp(candle.timestamp, interval),
-    price: candle.close,
-    timestamp: parseInt(candle.timestamp)
-  }))
+  const chartData = (data as CandleData[]).map(candle => {
+    // Handle timestamp: it can be either ISO string or numeric timestamp
+    let timestampValue: number;
+    try {
+      // First try: check if it's an ISO string
+      if (typeof candle.timestamp === 'string' && candle.timestamp.includes('T')) {
+        timestampValue = new Date(candle.timestamp).getTime();
+      } else {
+        // Otherwise it might be a numeric string
+        timestampValue = typeof candle.timestamp === 'string' ? 
+          parseInt(candle.timestamp) : candle.timestamp;
+      }
+      
+      // If we got an invalid timestamp, log and use current time
+      if (isNaN(timestampValue)) {
+        console.error("Invalid timestamp encountered:", candle.timestamp);
+        timestampValue = Date.now();
+      }
+    } catch (error) {
+      console.error("Error processing timestamp:", error, candle);
+      timestampValue = Date.now();
+    }
+    
+    return {
+      time: formatTimestamp(candle.timestamp, interval),
+      price: candle.close,
+      timestamp: timestampValue
+    };
+  })
   .sort((a, b) => a.timestamp - b.timestamp);
   
   // Calculate price change
