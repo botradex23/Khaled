@@ -106,27 +106,9 @@ export default function ApiKeys() {
   const updateMutation = useMutation({
     mutationFn: async (data: ApiKeyFormValues) => {
       try {
-        const response = await apiRequest("PUT", "/api/users/api-keys", data);
-        if (!response.ok) {
-          let errorMessage = "Failed to update API keys";
-          try {
-            const errorData = await response.json();
-            if (errorData && errorData.message) {
-              errorMessage = errorData.message;
-            }
-          } catch (e) {
-            console.error("Failed to parse error response:", e);
-          }
-          throw new Error(errorMessage);
-        }
-        
-        // Parse response only if it's ok
-        try {
-          return await response.json();
-        } catch (e) {
-          console.error("Error parsing response JSON:", e);
-          return { message: "API Keys updated successfully" };
-        }
+        // apiRequest כבר מחזיר את אובייקט ה-JSON ולא את Response
+        // אם יש שגיאה, הפונקציה תזרוק אותה אוטומטית
+        return await apiRequest("PUT", "/api/users/api-keys", data);
       } catch (err) {
         console.error("API Key update error:", err);
         throw err;
@@ -151,27 +133,9 @@ export default function ApiKeys() {
   const deleteMutation = useMutation({
     mutationFn: async () => {
       try {
-        const response = await apiRequest("DELETE", "/api/users/api-keys");
-        if (!response.ok) {
-          let errorMessage = "Failed to delete API keys";
-          try {
-            const errorData = await response.json();
-            if (errorData && errorData.message) {
-              errorMessage = errorData.message;
-            }
-          } catch (e) {
-            console.error("Failed to parse error response:", e);
-          }
-          throw new Error(errorMessage);
-        }
-        
-        // Parse response only if it's ok
-        try {
-          return await response.json();
-        } catch (e) {
-          console.error("Error parsing response JSON:", e);
-          return { message: "API Keys deleted successfully" };
-        }
+        // apiRequest כבר מחזיר את אובייקט ה-JSON ולא את Response
+        // אם יש שגיאה, הפונקציה תזרוק אותה אוטומטית
+        return await apiRequest("DELETE", "/api/users/api-keys");
       } catch (err) {
         console.error("API Key deletion error:", err);
         throw err;
