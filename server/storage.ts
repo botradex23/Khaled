@@ -19,6 +19,28 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
   
+  // New API key related methods
+  updateUserApiKeys(
+    userId: number, 
+    apiKeys: { 
+      okxApiKey?: string; 
+      okxSecretKey?: string; 
+      okxPassphrase?: string; 
+      defaultBroker?: string;
+      useTestnet?: boolean;
+    }
+  ): Promise<User | undefined>;
+  
+  getUserApiKeys(userId: number): Promise<{ 
+    okxApiKey?: string; 
+    okxSecretKey?: string; 
+    okxPassphrase?: string;
+    defaultBroker: string;
+    useTestnet: boolean;
+  } | undefined>;
+  
+  clearUserApiKeys(userId: number): Promise<boolean>;
+  
   // Bot related methods
   getAllBots(): Promise<Bot[]>;
   getBotById(id: number): Promise<Bot | undefined>;
@@ -239,7 +261,16 @@ export class MemStorage implements IStorage {
       googleId: null,
       appleId: null,
       profilePicture: null,
-      createdAt: new Date()
+      createdAt: new Date(),
+      
+      // API key fields with null defaults
+      okxApiKey: null,
+      okxSecretKey: null,
+      okxPassphrase: null,
+      
+      // Default broker settings
+      defaultBroker: insertUser.defaultBroker || "okx",
+      useTestnet: insertUser.useTestnet !== undefined ? insertUser.useTestnet : true
     };
     
     // Add optional OAuth fields if provided
@@ -253,6 +284,19 @@ export class MemStorage implements IStorage {
     
     if (insertUser.profilePicture) {
       user.profilePicture = insertUser.profilePicture;
+    }
+    
+    // Add API keys if provided
+    if (insertUser.okxApiKey) {
+      user.okxApiKey = insertUser.okxApiKey;
+    }
+    
+    if (insertUser.okxSecretKey) {
+      user.okxSecretKey = insertUser.okxSecretKey;
+    }
+    
+    if (insertUser.okxPassphrase) {
+      user.okxPassphrase = insertUser.okxPassphrase;
     }
     
     this.users.set(id, user);
@@ -276,6 +320,82 @@ export class MemStorage implements IStorage {
     this.users.set(id, updatedUser);
     
     return updatedUser;
+  }
+  
+  // New API key related methods
+  async updateUserApiKeys(
+    userId: number,
+    apiKeys: {
+      okxApiKey?: string;
+      okxSecretKey?: string;
+      okxPassphrase?: string;
+      defaultBroker?: string;
+      useTestnet?: boolean;
+    }
+  ): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    // Update the API keys
+    const updatedUser: User = {
+      ...user,
+      okxApiKey: apiKeys.okxApiKey !== undefined ? apiKeys.okxApiKey : user.okxApiKey,
+      okxSecretKey: apiKeys.okxSecretKey !== undefined ? apiKeys.okxSecretKey : user.okxSecretKey,
+      okxPassphrase: apiKeys.okxPassphrase !== undefined ? apiKeys.okxPassphrase : user.okxPassphrase,
+      defaultBroker: apiKeys.defaultBroker || user.defaultBroker || "okx",
+      useTestnet: apiKeys.useTestnet !== undefined ? apiKeys.useTestnet : (user.useTestnet || true)
+    };
+    
+    // Save the updated user
+    this.users.set(userId, updatedUser);
+    
+    return updatedUser;
+  }
+  
+  async getUserApiKeys(userId: number): Promise<{
+    okxApiKey?: string;
+    okxSecretKey?: string;
+    okxPassphrase?: string;
+    defaultBroker: string;
+    useTestnet: boolean;
+  } | undefined> {
+    const user = this.users.get(userId);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    return {
+      okxApiKey: user.okxApiKey || undefined,
+      okxSecretKey: user.okxSecretKey || undefined,
+      okxPassphrase: user.okxPassphrase || undefined,
+      defaultBroker: user.defaultBroker || "okx",
+      useTestnet: user.useTestnet || true
+    };
+  }
+  
+  async clearUserApiKeys(userId: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    
+    if (!user) {
+      return false;
+    }
+    
+    // Clear all API keys
+    const updatedUser: User = {
+      ...user,
+      okxApiKey: null,
+      okxSecretKey: null,
+      okxPassphrase: null
+    };
+    
+    // Save the updated user
+    this.users.set(userId, updatedUser);
+    
+    return true;
   }
   
   // Bot related methods

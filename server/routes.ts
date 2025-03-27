@@ -9,6 +9,15 @@ import bitgetRouter from "./api/bitget";
 import aiRouter from "./api/ai";
 import { setupAuth, ensureAuthenticated } from "./auth";
 
+// Helper function to mask sensitive data (like API keys)
+function maskSecret(secret: string): string {
+  if (!secret) return "";
+  if (secret.length <= 8) {
+    return "****" + secret.substring(secret.length - 2);
+  }
+  return secret.substring(0, 4) + "****" + secret.substring(secret.length - 4);
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication system
   setupAuth(app);
@@ -130,7 +139,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: data.email,
         firstName: data.firstName,
         lastName: data.lastName,
-        password: data.password // In a real app, this would be hashed
+        password: data.password, // In a real app, this would be hashed
+        defaultBroker: "okx",
+        useTestnet: true
       });
       
       // Send success response
@@ -250,6 +261,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.error("Profile update error:", error);
       res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+  
+  // API Keys Management
+  
+  // Get user API keys (masked)
+  app.get("/api/users/api-keys", ensureAuthenticated, async (req, res) => {
+    try {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = req.user.id;
+      
+      // Get the user's API keys
+      const apiKeys = await storage.getUserApiKeys(userId);
+      
+      if (!apiKeys) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Mask API keys for security
+      const maskedApiKeys = {
+        okxApiKey: apiKeys.okxApiKey ? maskSecret(apiKeys.okxApiKey) : null,
+        okxSecretKey: apiKeys.okxSecretKey ? maskSecret(apiKeys.okxSecretKey) : null,
+        okxPassphrase: apiKeys.okxPassphrase ? maskSecret(apiKeys.okxPassphrase) : null,
+        defaultBroker: apiKeys.defaultBroker,
+        useTestnet: apiKeys.useTestnet
+      };
+      
+      res.status(200).json({
+        message: "API keys retrieved successfully",
+        apiKeys: maskedApiKeys
+      });
+    } catch (error) {
+      console.error("API keys retrieval error:", error);
+      res.status(500).json({ message: "Failed to retrieve API keys" });
+    }
+  });
+  
+  // Update user API keys
+  app.put("/api/users/api-keys", ensureAuthenticated, async (req, res) => {
+    const apiKeysSchema = z.object({
+      okxApiKey: z.string().min(10, "API key must be valid").optional(),
+      okxSecretKey: z.string().min(10, "Secret key must be valid").optional(),
+      okxPassphrase: z.string().min(2, "Passphrase must be valid").optional(),
+      defaultBroker: z.string().default("okx"),
+      useTestnet: z.boolean().default(true)
+    });
+    
+    try {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = req.user.id;
+      
+      // Check if it's the hindi1000hindi@gmail.com account
+      const user = await storage.getUser(userId);
+      if (user?.email === "hindi1000hindi@gmail.com") {
+        // Special case for this user - use environment variables
+        const updatedUser = await storage.updateUserApiKeys(userId, {
+          okxApiKey: process.env.OKX_API_KEY,
+          okxSecretKey: process.env.OKX_SECRET_KEY,
+          okxPassphrase: process.env.OKX_PASSPHRASE,
+          defaultBroker: "okx",
+          useTestnet: true
+        });
+        
+        return res.status(200).json({
+          message: "API keys updated successfully with environment variables",
+          success: true
+        });
+      }
+      
+      // Validate input
+      const data = apiKeysSchema.parse(req.body);
+      
+      // Update the API keys
+      const updatedUser = await storage.updateUserApiKeys(userId, {
+        okxApiKey: data.okxApiKey,
+        okxSecretKey: data.okxSecretKey,
+        okxPassphrase: data.okxPassphrase,
+        defaultBroker: data.defaultBroker,
+        useTestnet: data.useTestnet
+      });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.status(200).json({
+        message: "API keys updated successfully",
+        success: true
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      console.error("API keys update error:", error);
+      res.status(500).json({ message: "Failed to update API keys" });
+    }
+  });
+  
+  // Delete user API keys
+  app.delete("/api/users/api-keys", ensureAuthenticated, async (req, res) => {
+    try {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = req.user.id;
+      
+      // Check if it's the hindi1000hindi@gmail.com account
+      const user = await storage.getUser(userId);
+      if (user?.email === "hindi1000hindi@gmail.com") {
+        return res.status(403).json({
+          message: "Cannot delete API keys for this special account",
+          success: false
+        });
+      }
+      
+      // Clear the API keys
+      const success = await storage.clearUserApiKeys(userId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.status(200).json({
+        message: "API keys deleted successfully",
+        success: true
+      });
+    } catch (error) {
+      console.error("API keys deletion error:", error);
+      res.status(500).json({ message: "Failed to delete API keys" });
     }
   });
 

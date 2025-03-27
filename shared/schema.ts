@@ -14,6 +14,17 @@ export const users = pgTable("users", {
   appleId: text("apple_id").unique(),
   profilePicture: text("profile_picture"),
   createdAt: timestamp("created_at").defaultNow(),
+  
+  // Broker API credentials for user-specific trading
+  okxApiKey: text("okx_api_key"),
+  okxSecretKey: text("okx_secret_key"),
+  okxPassphrase: text("okx_passphrase"),
+  
+  // Default broker for trading (e.g., 'okx', 'bitget')
+  defaultBroker: text("default_broker").default("okx"),
+  
+  // Whether to use demo/test mode
+  useTestnet: boolean("use_testnet").default(true),
 });
 
 export const insertUserSchema = createInsertSchema(users)
@@ -23,6 +34,11 @@ export const insertUserSchema = createInsertSchema(users)
     googleId: z.string().optional(),
     appleId: z.string().optional(),
     profilePicture: z.string().optional(),
+    okxApiKey: z.string().optional(),
+    okxSecretKey: z.string().optional(),
+    okxPassphrase: z.string().optional(),
+    useTestnet: z.boolean().default(true),
+    defaultBroker: z.string().default("okx"),
   })
   .refine(data => {
     // User must authenticate with either password or OAuth
