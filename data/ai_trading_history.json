@@ -22058,9 +22058,86 @@
         "shortTerm": "DOWN",
         "longTerm": "DOWN"
       }
+    },
+    {
+      "action": "BUY",
+      "confidence": 0.8333333333333333,
+      "reason": "Multiple signals indicate buying opportunity",
+      "timestamp": 1743116618936,
+      "symbol": "BTC-USDT",
+      "price": 86942.6,
+      "strategy": "BREAKOUT",
+      "parameters": {
+        "breakoutVolumeMultiplier": 2.5,
+        "stopLossPercent": 6,
+        "takeProfitPercent": 12
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "BUY",
+        "genetic": "BUY",
+        "technicalIndicators": "SELL"
+      },
+      "marketState": "BREAKING_DOWN",
+      "predictions": {
+        "shortTerm": "DOWN",
+        "longTerm": "SIDEWAYS"
+      }
+    },
+    {
+      "action": "SELL",
+      "confidence": 0.51,
+      "reason": "Forced trade due to time interval - weighted sell signal",
+      "timestamp": 1743116621464,
+      "symbol": "ETH-USDT",
+      "price": 2003.16,
+      "strategy": "GRID_MEDIUM",
+      "parameters": {
+        "gridParams": {
+          "upperPrice": 108,
+          "lowerPrice": 92,
+          "gridCount": 8,
+          "investmentPerGrid": 125
+        },
+        "stopLossPercent": 4,
+        "takeProfitPercent": 8
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "HOLD",
+        "genetic": "BUY",
+        "technicalIndicators": "SELL"
+      },
+      "marketState": "DOWNTREND",
+      "predictions": {
+        "shortTerm": "DOWN",
+        "longTerm": "DOWN"
+      }
+    },
+    {
+      "action": "SELL",
+      "confidence": 0.51,
+      "reason": "Forced trade due to time interval - weighted sell signal",
+      "timestamp": 1743116623691,
+      "symbol": "XRP-USDT",
+      "price": 2.3236,
+      "strategy": "COUNTER_TREND",
+      "parameters": {
+        "trendStrengthThreshold": 0.7,
+        "stopLossPercent": 3,
+        "takeProfitPercent": 6
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "HOLD",
+        "genetic": "BUY",
+        "technicalIndicators": "SELL"
+      },
+      "marketState": "DOWNTREND",
+      "predictions": {
+        "shortTerm": "DOWN",
+        "longTerm": "DOWN"
+      }
     }
   ],
   "executionHistory": [],
   "lastLearnTime": 1743113005641,
-  "lastSaved": "2025-03-27T23:00:59.136Z"
+  "lastSaved": "2025-03-27T23:03:45.692Z"
 }

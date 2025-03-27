@@ -380,10 +380,36 @@ async function withUserApiKeys(req: Request, res: Response, next: Function) {
     userId = parseInt(req.headers['x-test-user-id'] as string);
     console.log(`Getting API keys for test user ID ${userId} from header`);
   } 
-  // Case 3: No user info, fall back to default keys
+  // Case 3: No user info - only allow public endpoints, no fallback to default keys for private endpoints
   else {
-    console.log('No authenticated user or test user ID, using default API keys');
-    return next(); // Continue with default keys
+    // Check if this is a public endpoint (which doesn't need authentication)
+    // or a private endpoint (which does need authentication)
+    const path = req.path;
+    
+    // Public endpoints that don't need authentication (like market data)
+    const publicEndpoints = [
+      '/markets', 
+      '/markets/', 
+      '/candles', 
+      '/status', 
+      '/config'
+    ];
+    
+    // Check if the current path contains any of our public endpoints
+    const isPublicEndpoint = publicEndpoints.some(endpoint => path.includes(endpoint));
+    
+    if (isPublicEndpoint) {
+      // Allow access to public endpoints without API keys
+      console.log('No authenticated user, but accessing public endpoint - allowing without API keys');
+      return next();
+    } else {
+      // For private endpoints, return an authentication error
+      console.log('No authenticated user trying to access private API endpoint - returning 401');
+      return res.status(401).json({
+        error: 'Authentication Required',
+        message: 'You must be logged in with valid API keys to access this endpoint'
+      });
+    }
   }
   
   try {
@@ -431,7 +457,13 @@ async function withUserApiKeys(req: Request, res: Response, next: Function) {
         console.error(`Failed to connect to OKX with custom keys for user ${userId}:`, pingError);
       }
     } else {
-      console.log(`No complete OKX API keys found for user ID ${userId}, using default keys`);
+      console.log(`No complete OKX API keys found for user ID ${userId}, returning error for private endpoints`);
+      // Return 401 error for private endpoints since we don't have valid API keys
+      // Instead of falling back to default keys
+      return res.status(401).json({
+        error: 'Missing API Keys',
+        message: 'You need to configure valid OKX API keys in your account settings to access this endpoint'
+      });
     }
   } catch (error) {
     console.error('Error getting user API keys:', error);

@@ -67,22 +67,16 @@ export class OkxService {
       const userIdText = userId ? ` for user ID ${userId}` : '';
       console.log(`OKX Service: Using custom user-provided API credentials${userIdText}`);
     } else {
-      // Use default credentials from config/environment variables
-      this.apiKey = API_KEY;
-      this.secretKey = SECRET_KEY;
-      this.passphrase = PASSPHRASE;
+      // No user credentials found - for better security, we no longer use fallback keys
+      // We'll only permit access to public market data
+      console.log('No valid API credentials - limiting to public endpoints only');
+      this.apiKey = '';      // Intentionally using empty credentials
+      this.secretKey = '';   // to prevent accidental usage of private endpoints
+      this.passphrase = '';
       
-      // Check for API configuration
-      if (!isConfigured()) {
-        console.warn('OKX API credentials not configured properly - fallback credentials may not work');
-      } else {
-        // Log a clear message about using global/fallback credentials
-        console.log('WARNING: Using global OKX credentials (fallback)');
-        
-        // If this is for a specific user, make that clear in the logs
-        if (userId) {
-          console.log(`Note: User ID ${userId} does not have valid API keys configured`);
-        }
+      // If this is for a specific user, make that clear in the logs
+      if (userId) {
+        console.log(`Note: User ID ${userId} does not have valid API keys configured - they can only access public market data`);
       }
     }
   }
