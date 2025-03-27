@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Layout from '@/components/layout';
 import { useAuth } from '@/hooks/use-auth';
 import { useLocation } from 'wouter';
@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
+import { usePortfolioValue } from '@/hooks/use-portfolio-value';
 
 export default function Account() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -30,29 +31,6 @@ export default function Account() {
     }
   }, [balanceData]);
   
-  // Calculate total portfolio value by multiplying available amount by price per unit
-  const calculateTotalValue = () => {
-    if (!balanceData || !Array.isArray(balanceData) || balanceData.length === 0) {
-      return 0;
-    }
-    
-    // Calculate the total by multiplying available amount * pricePerUnit for each asset
-    const total = balanceData.reduce((sum, asset) => {
-      if (asset && typeof asset.available === 'number' && typeof asset.pricePerUnit === 'number') {
-        // For each asset, calculate: available amount * price per unit
-        const assetValue = asset.available * asset.pricePerUnit;
-        console.log(`${asset.currency}: ${asset.available} * ${asset.pricePerUnit} = ${assetValue}`);
-        return sum + assetValue;
-      }
-      return sum;
-    }, 0);
-    
-    // Log the total for debugging
-    console.log("Total portfolio value calculated:", total);
-    
-    return total;
-  };
-  
   // Get the number of assets
   const getAssetCount = () => {
     if (!balanceData || !Array.isArray(balanceData)) {
@@ -61,7 +39,10 @@ export default function Account() {
     return balanceData.length;
   };
 
-  if (isLoading || isBalanceLoading) {
+  // Use the portfolio value context
+  const { totalValue, isLoading: isPortfolioLoading } = usePortfolioValue();
+
+  if (isLoading || isBalanceLoading || isPortfolioLoading) {
     return (
       <Layout>
         <div className="container py-6">
@@ -75,8 +56,8 @@ export default function Account() {
     );
   }
   
-  // Calculate the total portfolio value
-  const totalPortfolioValue = calculateTotalValue();
+  // Use the total value from context
+  const totalPortfolioValue = totalValue;
   const assetCount = getAssetCount();
 
   return (
