@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import { 
@@ -65,8 +65,8 @@ export default function BotDemo() {
     profitLossPercent: "0"
   });
   
-  // Fetch trading history when page loads
-  useEffect(() => {
+  // Function to fetch data
+  const fetchData = useCallback(() => {
     setIsLoading(true);
     
     // Fetch trading history
@@ -102,12 +102,12 @@ export default function BotDemo() {
             profitPercent = (profit / totalBought) * 100;
           }
           
-          setBotStatus({
-            isRunning: true, // Assume running if we have trades
+          setBotStatus(prev => ({
+            ...prev,
             totalTrades: data.length,
             profitLoss: profit.toFixed(2),
             profitLossPercent: profitPercent.toFixed(2)
-          });
+          }));
         }
       })
       .catch(err => console.error('Error fetching trading history:', err))
@@ -126,6 +126,17 @@ export default function BotDemo() {
       })
       .catch(err => console.error('Error fetching bot status:', err));
   }, []);
+  
+  // Fetch data on initial load
+  useEffect(() => {
+    fetchData();
+    
+    // Set up auto-refresh every 30 seconds
+    const intervalId = setInterval(fetchData, 30000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [fetchData]);
   
   // Handle checkbox change for trading pairs
   const handleSymbolChange = (symbol: string, checked: boolean) => {
@@ -228,27 +239,32 @@ export default function BotDemo() {
                     <CardTitle className="text-base font-medium text-blue-300">Profit/Loss</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center">
-                      <BarChart3 className="h-6 w-6 mr-2 text-blue-400" />
-                      <span className={`text-3xl font-bold ${
-                        parseFloat(botStatus.profitLoss) > 0 
-                          ? 'text-green-400' 
-                          : parseFloat(botStatus.profitLoss) < 0 
-                            ? 'text-red-400' 
-                            : 'text-blue-100'
-                      }`}>
-                        ${Math.abs(parseFloat(botStatus.profitLoss)).toFixed(2)}
-                      </span>
-                      <span className={`text-sm ml-2 ${
-                        parseFloat(botStatus.profitLossPercent) > 0 
-                          ? 'text-green-400' 
-                          : parseFloat(botStatus.profitLossPercent) < 0 
-                            ? 'text-red-400' 
-                            : 'text-blue-300'
-                      }`}>
-                        {parseFloat(botStatus.profitLossPercent) > 0 ? '+' : ''}
-                        {botStatus.profitLossPercent}%
-                      </span>
+                    <div>
+                      <div className="flex items-center space-y-1">
+                        <BarChart3 className="h-6 w-6 mr-2 text-blue-400" />
+                        <span className={`text-3xl font-bold ${
+                          parseFloat(botStatus.profitLoss) > 0 
+                            ? 'text-green-400' 
+                            : parseFloat(botStatus.profitLoss) < 0 
+                              ? 'text-red-400' 
+                              : 'text-blue-100'
+                        }`}>
+                          ${Math.abs(parseFloat(botStatus.profitLoss)).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="mt-2 px-7">
+                        <div className={`text-xl font-bold ${
+                          parseFloat(botStatus.profitLossPercent) > 0 
+                            ? 'text-green-400' 
+                            : parseFloat(botStatus.profitLossPercent) < 0 
+                              ? 'text-red-400' 
+                              : 'text-blue-300'
+                        }`}>
+                          {parseFloat(botStatus.profitLossPercent) > 0 ? '+' : ''}
+                          {botStatus.profitLossPercent}%
+                        </div>
+                        <div className="text-xs text-blue-400 mt-1">רווח כולל</div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

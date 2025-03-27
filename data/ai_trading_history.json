@@ -1453,9 +1453,96 @@
         "shortTerm": "SIDEWAYS",
         "longTerm": "SIDEWAYS"
       }
+    },
+    {
+      "action": "SELL",
+      "confidence": 0.51,
+      "reason": "Forced trade due to time interval - weighted sell signal",
+      "timestamp": 1743072014767,
+      "symbol": "BTC-USDT",
+      "price": 87409.2,
+      "strategy": "GRID_MEDIUM",
+      "parameters": {
+        "gridParams": {
+          "lowerPrice": 84538.95311899883,
+          "upperPrice": 87832.3240177502,
+          "gridCount": 10,
+          "investmentPerGrid": 55.602648996943444
+        },
+        "stopLossPercent": 4.979691148965948,
+        "takeProfitPercent": 8.55340986380248
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "HOLD",
+        "genetic": "SELL",
+        "technicalIndicators": "BUY"
+      },
+      "marketState": "SIDEWAYS",
+      "predictions": {
+        "shortTerm": "SIDEWAYS",
+        "longTerm": "SIDEWAYS"
+      }
+    },
+    {
+      "action": "BUY",
+      "confidence": 0.8333333333333333,
+      "reason": "Multiple signals indicate buying opportunity",
+      "timestamp": 1743072016987,
+      "symbol": "ETH-USDT",
+      "price": 2026.93,
+      "strategy": "GRID_MEDIUM",
+      "parameters": {
+        "gridParams": {
+          "lowerPrice": 84538.95311899883,
+          "upperPrice": 87832.3240177502,
+          "gridCount": 10,
+          "investmentPerGrid": 55.602648996943444
+        },
+        "stopLossPercent": 4.979691148965948,
+        "takeProfitPercent": 8.55340986380248
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "HOLD",
+        "genetic": "BUY",
+        "technicalIndicators": "BUY"
+      },
+      "marketState": "SIDEWAYS",
+      "predictions": {
+        "shortTerm": "SIDEWAYS",
+        "longTerm": "SIDEWAYS"
+      }
+    },
+    {
+      "action": "BUY",
+      "confidence": 0.51,
+      "reason": "Forced trade due to time interval - weighted buy signal",
+      "timestamp": 1743072019440,
+      "symbol": "XRP-USDT",
+      "price": 2.3696,
+      "strategy": "GRID_MEDIUM",
+      "parameters": {
+        "gridParams": {
+          "lowerPrice": 84538.95311899883,
+          "upperPrice": 87832.3240177502,
+          "gridCount": 10,
+          "investmentPerGrid": 55.602648996943444
+        },
+        "stopLossPercent": 4.979691148965948,
+        "takeProfitPercent": 8.55340986380248
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "HOLD",
+        "genetic": "BUY",
+        "technicalIndicators": "SELL"
+      },
+      "marketState": "SIDEWAYS",
+      "predictions": {
+        "shortTerm": "SIDEWAYS",
+        "longTerm": "SIDEWAYS"
+      }
     }
   ],
   "executionHistory": [],
   "lastLearnTime": 1743069550238,
-  "lastSaved": "2025-03-27T10:35:25.778Z"
+  "lastSaved": "2025-03-27T10:40:21.442Z"
 }
