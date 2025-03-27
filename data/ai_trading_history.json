@@ -2410,9 +2410,96 @@
         "shortTerm": "DOWN",
         "longTerm": "DOWN"
       }
+    },
+    {
+      "action": "SELL",
+      "confidence": 0.51,
+      "reason": "Forced trade due to time interval - weighted sell signal",
+      "timestamp": 1743073453540,
+      "symbol": "BTC-USDT",
+      "price": 87310.1,
+      "strategy": "GRID_MEDIUM",
+      "parameters": {
+        "gridParams": {
+          "lowerPrice": 84538.95311899883,
+          "upperPrice": 87832.3240177502,
+          "gridCount": 10,
+          "investmentPerGrid": 55.602648996943444
+        },
+        "stopLossPercent": 4.979691148965948,
+        "takeProfitPercent": 8.55340986380248
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "HOLD",
+        "genetic": "SELL",
+        "technicalIndicators": "HOLD"
+      },
+      "marketState": "SIDEWAYS",
+      "predictions": {
+        "shortTerm": "SIDEWAYS",
+        "longTerm": "SIDEWAYS"
+      }
+    },
+    {
+      "action": "BUY",
+      "confidence": 0.51,
+      "reason": "Forced trade due to time interval - weighted buy signal",
+      "timestamp": 1743073455758,
+      "symbol": "ETH-USDT",
+      "price": 2022.23,
+      "strategy": "GRID_MEDIUM",
+      "parameters": {
+        "gridParams": {
+          "lowerPrice": 84538.95311899883,
+          "upperPrice": 87832.3240177502,
+          "gridCount": 10,
+          "investmentPerGrid": 55.602648996943444
+        },
+        "stopLossPercent": 4.979691148965948,
+        "takeProfitPercent": 8.55340986380248
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "HOLD",
+        "genetic": "BUY",
+        "technicalIndicators": "HOLD"
+      },
+      "marketState": "SIDEWAYS",
+      "predictions": {
+        "shortTerm": "SIDEWAYS",
+        "longTerm": "SIDEWAYS"
+      }
+    },
+    {
+      "action": "BUY",
+      "confidence": 0.51,
+      "reason": "Forced trade due to time interval - weighted buy signal",
+      "timestamp": 1743073457974,
+      "symbol": "XRP-USDT",
+      "price": 2.3584,
+      "strategy": "GRID_MEDIUM",
+      "parameters": {
+        "gridParams": {
+          "lowerPrice": 84538.95311899883,
+          "upperPrice": 87832.3240177502,
+          "gridCount": 10,
+          "investmentPerGrid": 55.602648996943444
+        },
+        "stopLossPercent": 4.979691148965948,
+        "takeProfitPercent": 8.55340986380248
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "HOLD",
+        "genetic": "BUY",
+        "technicalIndicators": "HOLD"
+      },
+      "marketState": "DOWNTREND",
+      "predictions": {
+        "shortTerm": "DOWN",
+        "longTerm": "DOWN"
+      }
     }
   ],
   "executionHistory": [],
   "lastLearnTime": 1743069550238,
-  "lastSaved": "2025-03-27T11:01:30.572Z"
+  "lastSaved": "2025-03-27T11:04:19.975Z"
 }

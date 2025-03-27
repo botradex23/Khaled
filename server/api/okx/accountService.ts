@@ -159,7 +159,8 @@ export class AccountService {
         // Manual correction for BTC in demo account where eq value is sometimes wrong
         if (balance.ccy === "BTC" && total > 0 && valueUSD < 10) {
           // Current approximate BTC price
-          const estimatedBTCValue = total * 67000; // Current BTC price as of March 2024
+          const btcCurrentPrice = 89000; // Current BTC price as of March 2024 (updated)
+          const estimatedBTCValue = total * btcCurrentPrice;
           valueUSD = estimatedBTCValue;
           console.log(`Corrected BTC value from ${balance.eq} to ${valueUSD} USD`);
         }
@@ -201,18 +202,18 @@ export class AccountService {
       'MATIC': { total: 3000, available: 3000, frozen: 0 }
     };
     
-    // Current prices to calculate USD value (approximate)
+    // Current prices to calculate USD value (approximate) - Updated March 2024
     const prices: Record<string, number> = {
-      'BTC': 88000,
-      'ETH': 2050,
+      'BTC': 89000,
+      'ETH': 3100,
       'USDT': 1,
       'USDC': 1,
-      'SOL': 145,
-      'BNB': 630,
-      'XRP': 2.45,
-      'DOGE': 0.15,
-      'ADA': 0.45,
-      'MATIC': 0.65
+      'SOL': 175,
+      'BNB': 635,
+      'XRP': 0.58,
+      'DOGE': 0.16,
+      'ADA': 0.51,
+      'MATIC': 0.72
     };
     
     return DEFAULT_CURRENCIES.map(currency => {
@@ -290,11 +291,11 @@ export class AccountService {
          pair.startsWith('BNB') ? 0.5 + Math.random() * 3 : 
          50 + Math.random() * 300); // XRP or default
       
-      const price = pair.startsWith('BTC') ? 85000 + Math.random() * 5000 :
-                   pair.startsWith('ETH') ? 2000 + Math.random() * 100 :
-                   pair.startsWith('SOL') ? 140 + Math.random() * 10 :
-                   pair.startsWith('BNB') ? 620 + Math.random() * 30 :
-                   2.4 + Math.random() * 0.1; // XRP or default
+      const price = pair.startsWith('BTC') ? 88000 + Math.random() * 2000 :
+                   pair.startsWith('ETH') ? 3050 + Math.random() * 100 :
+                   pair.startsWith('SOL') ? 170 + Math.random() * 10 :
+                   pair.startsWith('BNB') ? 630 + Math.random() * 10 :
+                   0.57 + Math.random() * 0.02; // XRP or default
       
       const quoteAmount = baseAmount * price;
       const fee = quoteAmount * 0.001; // 0.1% fee
@@ -360,9 +361,9 @@ export class AccountService {
       const side = sides[i % sides.length];
       
       // Set price slightly away from current market price
-      const marketPrice = pair.startsWith('BTC') ? 88000 :
-                         pair.startsWith('ETH') ? 2070 :
-                         145; // SOL price
+      const marketPrice = pair.startsWith('BTC') ? 89000 :
+                         pair.startsWith('ETH') ? 3080 :
+                         174; // SOL price
       
       // Buy orders below market, sell orders above market
       const priceOffset = (side === 'buy' ? -0.05 : 0.05) * marketPrice;
