@@ -282,17 +282,17 @@ export function AccountBalanceCard() {
                           <tr key={asset.currency} className={`${isMinorHolding ? 'text-muted-foreground' : ''}`}>
                             <td className="py-0.5 font-medium text-sm">{asset.currency}</td>
                             <td className="py-0.5 text-sm text-right">
-                              {/* Display price instead of tiny amounts for values with many zeros */}
+                              {/* Special display for very tiny amounts - show price more prominently */}
                               {asset.total < 0.0001 ? (
-                                <div>
-                                  <div className="text-xs text-muted-foreground mb-1">Actual Amount</div>
-                                  <div className="font-medium text-xs opacity-60">{formattedAmount}</div>
-                                  <div className="text-sm font-medium mt-2 border-t border-muted/30 pt-1">
+                                <div className="bg-muted/20 p-2 rounded-md border border-muted/30">
+                                  <div className="text-xs text-muted-foreground mb-1">Amount</div>
+                                  <div className="font-medium text-xs opacity-80">{formattedAmount}</div>
+                                  <div className="text-sm font-medium mt-2 border-t border-primary/20 pt-1">
                                     <div className="text-xs text-muted-foreground">Current Price</div>
-                                    <div className="text-base">
-                                      ${pricePerUnit.toLocaleString(undefined, { 
+                                    <div className="text-base text-primary font-semibold">
+                                      ${pricePerUnit ? pricePerUnit.toLocaleString(undefined, { 
                                         maximumFractionDigits: pricePerUnit > 1000 ? 0 : pricePerUnit > 1 ? 2 : 4 
-                                      })}
+                                      }) : "N/A"}
                                     </div>
                                   </div>
                                 </div>

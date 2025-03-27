@@ -66,8 +66,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Check authentication status on component mount
+  // But limit frequency to prevent excessive API calls
   useEffect(() => {
+    // Create a debounced version of the checkSession function
+    let authCheckTimeout: NodeJS.Timeout | null = null;
+    
+    // Initial check
     checkSession();
+    
+    // Set up timer for refreshes - 30 seconds is more than enough
+    const refreshInterval = setInterval(() => {
+      checkSession();
+    }, 30000); // Check every 30 seconds instead of constantly
+    
+    // Cleanup on component unmount
+    return () => {
+      if (authCheckTimeout) clearTimeout(authCheckTimeout);
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   const login = (userData: User) => {
