@@ -76,30 +76,65 @@ export default function BotDemo() {
         if (Array.isArray(data)) {
           setTrades(data.slice(0, 10)); // Get the 10 most recent trades
           
-          // Calculate rough P&L from trade history (simplified calculation)
-          let totalBought = 0;
-          let totalSold = 0;
-          let buyCount = 0;
-          let sellCount = 0;
+          // Calculate P&L from trade history using a more accurate calculation
+          // Group trades by symbol to calculate per-symbol P&L
+          const symbolTrades = {};
+          const initialInvestment = 1000; // Setting a base investment value of $1000 for percentage calc
           
+          // First, group all trades by symbol
           data.forEach(trade => {
-            const price = parseFloat(trade.price || '0');
-            const size = parseFloat(trade.size || '0');
-            const value = price * size;
+            const symbol = trade.symbol || 'Unknown';
+            if (!symbolTrades[symbol]) {
+              symbolTrades[symbol] = [];
+            }
+            symbolTrades[symbol].push(trade);
+          });
+          
+          let totalProfit = 0;
+          let totalInitialValue = 0;
+          
+          // Calculate profit for each symbol
+          Object.keys(symbolTrades).forEach(symbol => {
+            const trades = symbolTrades[symbol];
+            let symbolBought = 0;
+            let symbolSold = 0;
+            let totalBuyValue = 0;
+            let totalSellValue = 0;
             
-            if ((trade.side || '').toLowerCase() === 'buy') {
-              totalBought += value;
-              buyCount++;
-            } else {
-              totalSold += value;
-              sellCount++;
+            trades.forEach(trade => {
+              const price = parseFloat(trade.price || '0');
+              const size = parseFloat(trade.size || '0');
+              const value = price * size;
+              
+              if ((trade.side || '').toLowerCase() === 'buy') {
+                symbolBought += size;
+                totalBuyValue += value;
+              } else {
+                symbolSold += size;
+                totalSellValue += value;
+              }
+            });
+            
+            // Add to total profit
+            const symbolProfit = totalSellValue - totalBuyValue;
+            totalProfit += symbolProfit;
+            
+            // Use the first trade's value as a baseline if it's a buy
+            if (trades.length > 0 && totalBuyValue > 0) {
+              totalInitialValue += totalBuyValue;
             }
           });
           
-          const profit = totalSold - totalBought;
+          // If no initial value can be determined from trades, use initialInvestment
+          if (totalInitialValue === 0) {
+            totalInitialValue = initialInvestment;
+          }
+          
+          // Calculate profit percentage
+          const profit = totalProfit;
           let profitPercent = 0;
-          if (totalBought > 0) {
-            profitPercent = (profit / totalBought) * 100;
+          if (totalInitialValue > 0) {
+            profitPercent = (profit / totalInitialValue) * 100;
           }
           
           setBotStatus(prev => ({
