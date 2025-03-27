@@ -41,12 +41,14 @@ export class BitgetService {
    * Initialize the Bitget service
    * @param useTestnet - whether to use testnet or not
    */
-  constructor(useTestnet = false) {
-    this.useTestnet = useTestnet;
+  constructor(useTestnet = USE_TESTNET) {
+    // Always use testnet mode for safe trading (as requested by user)
+    this.useTestnet = true;  
     this.baseUrl = BASE_URL;
     
-    console.log(`Bitget Service initialized with ${useTestnet ? 'testnet' : 'mainnet'}`);
+    console.log(`Bitget Service initialized with ${this.useTestnet ? 'testnet' : 'mainnet'}`);
     console.log(`Base URL: ${this.baseUrl}`);
+    console.log(`Demo trading mode: ${this.useTestnet ? 'ENABLED' : 'DISABLED'}`);
     console.log(`API configured: ${isConfigured()}`);
   }
 
@@ -133,6 +135,8 @@ export class BitgetService {
         'Content-Type': 'application/json',
         // Add this header to indicate we're using API v2
         'X-CHANNEL-API-CODE': '6y4TdEX0',
+        // Add demo flag for testnet mode (since Bitget doesn't have a separate testnet URL)
+        'x-simulated-trading': this.useTestnet ? '1' : '0',
       },
     };
 
