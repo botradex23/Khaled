@@ -324,6 +324,42 @@ export class OkxService {
   }
   
   /**
+   * Get all tickers for market overview (spot public)
+   * Returns ticker information for all available trading pairs
+   */
+  async getAllTickers() {
+    return this.makePublicRequest(`/api/v5/market/tickers?instType=SPOT`);
+  }
+  
+  /**
+   * Get candle data (klines) for a specific symbol and timeframe
+   * @param symbol - Trading pair (e.g., BTC-USDT)
+   * @param timeframe - Candle interval (e.g., 1m, 5m, 15m, 1H, 4H, 1D)
+   * @param limit - Number of candles to return (max 100)
+   */
+  async getCandles(symbol: string, timeframe: string = '1H', limit: string = '100') {
+    return this.makePublicRequest(`/api/v5/market/candles?instId=${symbol}&bar=${timeframe}&limit=${limit}`);
+  }
+  
+  /**
+   * Get market depth (order book) for specific symbol
+   * @param symbol - Trading pair (e.g., BTC-USDT)
+   * @param depth - Depth of order book (default: 50, max: 400)
+   */
+  async getOrderBook(symbol: string, depth: string = '50') {
+    return this.makePublicRequest(`/api/v5/market/books?instId=${symbol}&sz=${depth}`);
+  }
+  
+  /**
+   * Get recent trades for a specific symbol
+   * @param symbol - Trading pair (e.g., BTC-USDT)
+   * @param limit - Number of trades to return (max 100)
+   */
+  async getTrades(symbol: string, limit: string = '50') {
+    return this.makePublicRequest(`/api/v5/market/trades?instId=${symbol}&limit=${limit}`);
+  }
+  
+  /**
    * Get historical candlestick data for chart
    */
   async getKlineData(symbol: string, interval = '1H', limit = 100): Promise<any> {
