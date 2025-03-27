@@ -172,7 +172,7 @@ export default function AIGridBot() {
   // Get market data for the selected pair
   const selectedPair = form.watch("symbol");
   const { data: marketData = [] } = useQuery<any[]>({
-    queryKey: ['/api/bitget/markets', selectedPair],
+    queryKey: ['/api/okx/markets', selectedPair],
     enabled: !!selectedPair,
     refetchInterval: 30000,
   });
@@ -208,7 +208,7 @@ export default function AIGridBot() {
         useAI: data.useAI,
       };
 
-      return apiRequest("POST", "/api/bitget/bots", {
+      return apiRequest("POST", "/api/okx/bots", {
         name: data.name,
         strategy: "grid",
         description: data.useAI 
@@ -246,7 +246,7 @@ export default function AIGridBot() {
   // Start bot mutation
   const startBotMutation = useMutation({
     mutationFn: (id: number) => {
-      return apiRequest("POST", `/api/bitget/bots/${id}/start`);
+      return apiRequest("POST", `/api/okx/bots/${id}/start`);
     },
     onSuccess: () => {
       setIsRunning(true);
@@ -256,7 +256,7 @@ export default function AIGridBot() {
       });
       
       // Refetch bot status
-      queryClient.invalidateQueries({ queryKey: ['/api/bitget/bots', botId, 'status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/okx/bots', botId, 'status'] });
     },
     onError: (error) => {
       toast({
@@ -270,7 +270,7 @@ export default function AIGridBot() {
   // Stop bot mutation
   const stopBotMutation = useMutation({
     mutationFn: (id: number) => {
-      return apiRequest("POST", `/api/bitget/bots/${id}/stop`);
+      return apiRequest("POST", `/api/okx/bots/${id}/stop`);
     },
     onSuccess: () => {
       setIsRunning(false);
@@ -280,7 +280,7 @@ export default function AIGridBot() {
       });
       
       // Refetch bot status
-      queryClient.invalidateQueries({ queryKey: ['/api/bitget/bots', botId, 'status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/okx/bots', botId, 'status'] });
     },
     onError: (error) => {
       toast({
@@ -296,7 +296,7 @@ export default function AIGridBot() {
     data: botStatus = { stats: {}, trades: [] },
     isLoading: isLoadingStatus,
   } = useQuery<{ stats: any, trades: any[] }>({
-    queryKey: ['/api/bitget/bots', botId, 'status'],
+    queryKey: ['/api/okx/bots', botId, 'status'],
     enabled: !!botId,
     refetchInterval: isRunning ? 10000 : false,
   });
@@ -306,7 +306,7 @@ export default function AIGridBot() {
     data: performanceData = [],
     isLoading: isLoadingPerformance,
   } = useQuery<any[]>({
-    queryKey: ['/api/bitget/bots', botId, 'performance'],
+    queryKey: ['/api/okx/bots', botId, 'performance'],
     enabled: !!botId,
     refetchInterval: isRunning ? 30000 : false,
   });
@@ -542,244 +542,285 @@ export default function AIGridBot() {
 
             {/* Bot Status Tab */}
             <TabsContent value="status" className="space-y-4">
-              {botId ? (
+              {isLoadingStatus ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                </div>
+              ) : (
                 <>
                   <div className="grid gap-4 md:grid-cols-2">
                     <Card>
                       <CardHeader className="pb-2">
-                        <CardTitle className="flex items-center justify-between">
-                          <span>Bot Status</span>
-                          {isRunning ? (
-                            <Badge variant="default" className="ml-2 bg-green-500">
-                              <CheckCircle2 className="mr-1 h-3 w-3" /> Running
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="ml-2">
-                              <AlertCircle className="mr-1 h-3 w-3" /> Stopped
-                            </Badge>
-                          )}
-                        </CardTitle>
+                        <CardTitle className="text-lg font-medium">Bot Status</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        {isLoadingStatus ? (
-                          <div className="flex justify-center py-8">
-                            <div className="loader"></div>
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <div className="space-y-1">
+                              <p className="text-sm font-medium leading-none">Status</p>
+                              <p className="text-sm text-muted-foreground">Current bot state</p>
+                            </div>
+                            <Badge variant={isRunning ? "default" : "outline"}>
+                              {isRunning ? (
+                                <div className="flex items-center">
+                                  <span className="h-2 w-2 mr-1 rounded-full bg-green-500 animate-pulse"></span>
+                                  Running
+                                </div>
+                              ) : "Stopped"}
+                            </Badge>
                           </div>
-                        ) : botStatus?.stats ? (
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-1">
-                                <p className="text-sm text-muted-foreground">Profit/Loss</p>
-                                <p className={`text-2xl font-bold ${
-                                  botStatus.stats.profitLoss.startsWith('-') 
-                                    ? 'text-red-500' 
-                                    : 'text-green-500'
-                                }`}>
-                                  {botStatus.stats.profitLoss}
-                                </p>
-                              </div>
-                              <div className="space-y-1">
-                                <p className="text-sm text-muted-foreground">Trades Executed</p>
-                                <p className="text-2xl font-bold">{botStatus.stats.executionCount}</p>
-                              </div>
-                            </div>
-                            
+                          
+                          <div className="flex justify-between items-center">
                             <div className="space-y-1">
-                              <p className="text-sm text-muted-foreground">Last Activity</p>
-                              <p className="text-base">
-                                {new Date(botStatus.stats.lastExecuted).toLocaleString()}
-                              </p>
+                              <p className="text-sm font-medium leading-none">Trading Pair</p>
+                              <p className="text-sm text-muted-foreground">Current market</p>
                             </div>
-                            
+                            <Badge variant="secondary">{botStatus?.stats?.symbol || form.getValues("symbol")}</Badge>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
                             <div className="space-y-1">
-                              <p className="text-sm text-muted-foreground">Bot Type</p>
-                              <div className="flex items-center">
-                                {botStatus.stats.botType === 'AI-Powered' ? (
-                                  <>
-                                    <Brain className="h-4 w-4 mr-1 text-primary" />
-                                    <span>AI-Powered Grid Trading</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Grid3x3 className="h-4 w-4 mr-1" />
-                                    <span>Standard Grid Trading</span>
-                                  </>
-                                )}
-                              </div>
+                              <p className="text-sm font-medium leading-none">Total Investment</p>
+                              <p className="text-sm text-muted-foreground">Capital allocated</p>
                             </div>
-                            
+                            <div className="font-semibold">${botStatus?.stats?.totalInvestment || form.getValues("totalInvestment")}</div>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
                             <div className="space-y-1">
-                              <p className="text-sm text-muted-foreground">Active Since</p>
-                              <p className="text-base">
-                                {new Date(botStatus.stats.activeSince).toLocaleString()}
-                              </p>
+                              <p className="text-sm font-medium leading-none">Profit/Loss</p>
+                              <p className="text-sm text-muted-foreground">Current performance</p>
+                            </div>
+                            <div className={`font-semibold ${
+                              botStatus?.stats?.profitLossPercent?.startsWith("+") 
+                                ? "text-green-500" 
+                                : "text-red-500"
+                            }`}>
+                              {botStatus?.stats?.profitLossPercent || "0.00%"} (${botStatus?.stats?.profitLoss || "0.00"})
                             </div>
                           </div>
-                        ) : (
-                          <p>No status information available</p>
-                        )}
+                          
+                          <div className="flex justify-between items-center">
+                            <div className="space-y-1">
+                              <p className="text-sm font-medium leading-none">Total Trades</p>
+                              <p className="text-sm text-muted-foreground">Completed transactions</p>
+                            </div>
+                            <div className="font-semibold">{botStatus?.stats?.totalTrades || 0}</div>
+                          </div>
+                        </div>
                       </CardContent>
-                      <CardFooter className="flex justify-between">
+                      <CardFooter>
                         {isRunning ? (
-                          <Button
-                            variant="destructive"
-                            onClick={() => botId && stopBotMutation.mutate(botId)}
+                          <Button 
+                            onClick={() => stopBotMutation.mutate(botId!)} 
                             disabled={stopBotMutation.isPending}
+                            variant="destructive"
+                            className="w-full"
                           >
-                            <Square className="mr-2 h-4 w-4" />
+                            <Square className="h-4 w-4 mr-2" />
                             {stopBotMutation.isPending ? "Stopping..." : "Stop Bot"}
                           </Button>
                         ) : (
-                          <Button
-                            onClick={() => botId && startBotMutation.mutate(botId)}
+                          <Button 
+                            onClick={() => startBotMutation.mutate(botId!)} 
                             disabled={startBotMutation.isPending}
+                            className="w-full"
                           >
-                            <Play className="mr-2 h-4 w-4" />
+                            <Play className="h-4 w-4 mr-2" />
                             {startBotMutation.isPending ? "Starting..." : "Start Bot"}
                           </Button>
                         )}
-                        <Button variant="outline" onClick={() => setActiveTab("trades")}>
-                          <History className="mr-2 h-4 w-4" />
-                          View Trades
-                        </Button>
                       </CardFooter>
                     </Card>
-
+                    
                     <Card>
-                      <CardHeader>
-                        <CardTitle>Performance</CardTitle>
-                        <CardDescription>
-                          Bot performance over time
-                        </CardDescription>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg font-medium">Bot Parameters</CardTitle>
                       </CardHeader>
-                      <CardContent className="p-0">
-                        {isLoadingPerformance ? (
-                          <div className="flex justify-center py-12">
-                            <div className="loader"></div>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {botStatus?.stats?.useAI && (
+                            <div className="rounded-md bg-primary/10 p-4 border border-primary/20 mb-4">
+                              <div className="flex items-start">
+                                <Brain className="h-5 w-5 mr-2 text-primary" />
+                                <div>
+                                  <p className="font-semibold">AI-Powered Optimization Active</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    This bot uses machine learning algorithms to automatically optimize grid parameters based on market conditions.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="flex justify-between items-center">
+                            <div className="space-y-1">
+                              <p className="text-sm font-medium leading-none">Strategy</p>
+                              <p className="text-sm text-muted-foreground">Trading method</p>
+                            </div>
+                            <Badge>Grid Trading</Badge>
                           </div>
-                        ) : performanceData && performanceData.length > 0 ? (
-                          <div className="pt-2 px-2 h-[300px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart
-                                data={performanceData}
-                                margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-                              >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis 
-                                  dataKey="date" 
-                                  tick={{ fontSize: 12 }} 
-                                  tickFormatter={(date) => {
-                                    // Format date string to shorter version (MM-DD)
-                                    const d = new Date(date);
-                                    return `${d.getMonth()+1}/${d.getDate()}`;
-                                  }}
-                                />
-                                <YAxis 
-                                  tick={{ fontSize: 12 }} 
-                                  tickFormatter={(value) => `${value.toFixed(1)}%`}
-                                />
-                                <Tooltip 
-                                  formatter={(value: any) => [`${Number(value).toFixed(2)}%`, "Return"]}
-                                  labelFormatter={(date) => `Date: ${date}`}
-                                />
-                                <Legend />
-                                <Line
-                                  type="monotone"
-                                  dataKey="cumulativeReturn"
-                                  name="Cumulative Return"
-                                  stroke="#8884d8"
-                                  activeDot={{ r: 8 }}
-                                  strokeWidth={2}
-                                />
-                                <Line
-                                  type="monotone"
-                                  dataKey="return"
-                                  name="Daily Return"
-                                  stroke="#82ca9d"
-                                  strokeWidth={1}
-                                  dot={false}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
+                          
+                          {!botStatus?.stats?.useAI && (
+                            <>
+                              <div className="flex justify-between items-center">
+                                <div className="space-y-1">
+                                  <p className="text-sm font-medium leading-none">Upper Price</p>
+                                  <p className="text-sm text-muted-foreground">Highest grid level</p>
+                                </div>
+                                <div className="font-semibold">${botStatus?.stats?.upperPrice || "N/A"}</div>
+                              </div>
+                              
+                              <div className="flex justify-between items-center">
+                                <div className="space-y-1">
+                                  <p className="text-sm font-medium leading-none">Lower Price</p>
+                                  <p className="text-sm text-muted-foreground">Lowest grid level</p>
+                                </div>
+                                <div className="font-semibold">${botStatus?.stats?.lowerPrice || "N/A"}</div>
+                              </div>
+                              
+                              <div className="flex justify-between items-center">
+                                <div className="space-y-1">
+                                  <p className="text-sm font-medium leading-none">Grid Count</p>
+                                  <p className="text-sm text-muted-foreground">Number of grid levels</p>
+                                </div>
+                                <div className="font-semibold">{botStatus?.stats?.gridCount || "N/A"}</div>
+                              </div>
+                            </>
+                          )}
+                          
+                          <div className="flex justify-between items-center">
+                            <div className="space-y-1">
+                              <p className="text-sm font-medium leading-none">Last Started</p>
+                              <p className="text-sm text-muted-foreground">Bot activation time</p>
+                            </div>
+                            <div className="font-semibold">
+                              {botStatus?.stats?.lastStartedAt 
+                                ? new Date(botStatus.stats.lastStartedAt).toLocaleString() 
+                                : "N/A"}
+                            </div>
                           </div>
-                        ) : (
-                          <div className="py-12 text-center">
-                            <p>No performance data available yet</p>
-                          </div>
-                        )}
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Performance Chart</CardTitle>
+                      <CardDescription>Portfolio value over time</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[300px]">
+                        {isLoadingPerformance ? (
+                          <div className="flex justify-center items-center h-full">
+                            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                          </div>
+                        ) : performanceData.length > 0 ? (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={performanceData}>
+                              <XAxis 
+                                dataKey="timestamp" 
+                                tickFormatter={(timestamp) => {
+                                  const date = new Date(timestamp);
+                                  return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                                }}
+                              />
+                              <YAxis />
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <Tooltip 
+                                formatter={(value) => [`$${value}`, "Portfolio Value"]}
+                                labelFormatter={(timestamp) => {
+                                  const date = new Date(timestamp);
+                                  return date.toLocaleString();
+                                }}
+                              />
+                              <Line 
+                                type="monotone" 
+                                dataKey="value" 
+                                stroke="#8884d8" 
+                                strokeWidth={2}
+                                activeDot={{ r: 8 }} 
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="flex justify-center items-center h-full text-muted-foreground">
+                            <p>No performance data available yet</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </>
-              ) : (
-                <Card>
-                  <CardContent className="py-10 text-center">
-                    <Bot className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-xl font-medium mb-2">No Bot Created Yet</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Please create a new Grid Trading Bot to see its status here
-                    </p>
-                    <Button onClick={() => setActiveTab("settings")}>
-                      Create New Bot
-                    </Button>
-                  </CardContent>
-                </Card>
               )}
             </TabsContent>
 
-            {/* Trades Tab */}
+            {/* Trading History Tab */}
             <TabsContent value="trades" className="space-y-4">
               <Card>
                 <CardHeader>
                   <CardTitle>Trading History</CardTitle>
-                  <CardDescription>
-                    Recent trades executed by your bot
-                  </CardDescription>
+                  <CardDescription>Recent bot transactions</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isLoadingStatus ? (
-                    <div className="flex justify-center py-8">
-                      <div className="loader"></div>
+                    <div className="flex justify-center py-12">
+                      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
                     </div>
                   ) : botStatus?.trades && botStatus.trades.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr>
-                            <th className="text-left font-medium p-2">Time</th>
-                            <th className="text-left font-medium p-2">Action</th>
-                            <th className="text-left font-medium p-2">Pair</th>
-                            <th className="text-right font-medium p-2">Amount</th>
-                            <th className="text-right font-medium p-2">Price</th>
-                            <th className="text-right font-medium p-2">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {botStatus.trades.map((trade: any) => (
-                            <tr key={trade.id} className="border-t border-border">
-                              <td className="p-2 text-sm">
-                                {new Date(trade.time).toLocaleString()}
-                              </td>
-                              <td className="p-2">
-                                <Badge variant={trade.action === "BUY" ? "default" : "secondary"}>
-                                  {trade.action}
-                                </Badge>
-                              </td>
-                              <td className="p-2">{trade.pair}</td>
-                              <td className="p-2 text-right">{trade.amount}</td>
-                              <td className="p-2 text-right">${trade.price}</td>
-                              <td className="p-2 text-right">${trade.total}</td>
+                    <div className="rounded-md border">
+                      <div className="overflow-auto">
+                        <table className="min-w-full divide-y divide-border">
+                          <thead>
+                            <tr className="bg-muted/50">
+                              <th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground tracking-wider">Time</th>
+                              <th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground tracking-wider">Type</th>
+                              <th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground tracking-wider">Price</th>
+                              <th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground tracking-wider">Size</th>
+                              <th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground tracking-wider">Value</th>
+                              <th className="py-3 px-4 text-left text-xs font-medium text-muted-foreground tracking-wider">Profit/Loss</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className="divide-y divide-border bg-background">
+                            {botStatus.trades.map((trade, index) => (
+                              <tr key={index}>
+                                <td className="py-3 px-4 text-sm">
+                                  {new Date(trade.timestamp).toLocaleString()}
+                                </td>
+                                <td className="py-3 px-4 text-sm">
+                                  <Badge variant={trade.side === 'buy' ? 'default' : 'secondary'}>
+                                    {trade.side === 'buy' ? 'BUY' : 'SELL'}
+                                  </Badge>
+                                </td>
+                                <td className="py-3 px-4 text-sm font-medium">
+                                  ${parseFloat(trade.price).toFixed(2)}
+                                </td>
+                                <td className="py-3 px-4 text-sm">
+                                  {parseFloat(trade.size).toFixed(5)}
+                                </td>
+                                <td className="py-3 px-4 text-sm">
+                                  ${(parseFloat(trade.price) * parseFloat(trade.size)).toFixed(2)}
+                                </td>
+                                <td className="py-3 px-4 text-sm">
+                                  {trade.profit ? (
+                                    <span className={trade.profit > 0 ? 'text-green-500' : 'text-red-500'}>
+                                      {trade.profit > 0 ? '+' : ''}{trade.profit.toFixed(2)} USD
+                                    </span>
+                                  ) : '-'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   ) : (
-                    <div className="text-center py-12">
-                      <History className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <h3 className="text-xl font-medium mb-2">No Trades Yet</h3>
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <History className="h-12 w-12 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No Trading History Yet</h3>
                       <p className="text-muted-foreground">
-                        Once your bot starts trading, the history will appear here
+                        Your bot's trading history will appear here once it starts making trades.
                       </p>
                     </div>
                   )}
@@ -791,59 +832,43 @@ export default function AIGridBot() {
       </main>
       <Footer />
       
-      <style dangerouslySetInnerHTML={{ __html: `
-        .loader {
-          border: 3px solid rgba(0, 0, 0, 0.1);
-          border-radius: 50%;
-          border-top: 3px solid var(--primary);
-          width: 24px;
-          height: 24px;
-          animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}} />
-    </div>
-    
-    {/* API Keys Dialog */}
-    <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center">
-            <Key className="w-6 h-6 mr-2 text-primary" />
-            API Keys Required
-          </DialogTitle>
-          <DialogDescription>
-            You need to configure your OKX API keys before creating a trading bot.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="py-4">
-          <Alert className="mb-4">
-            <AlertTitle className="flex items-center">
-              <AlertCircle className="w-4 h-4 mr-2" />
-              Trading requires API access
-            </AlertTitle>
-            <p className="mt-2">To use the AI Grid Bot, you need to provide your OKX API keys with trading permissions.</p>
-          </Alert>
+      {/* API Keys Dialog */}
+      <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Key className="w-6 h-6 mr-2 text-primary" />
+              API Keys Required
+            </DialogTitle>
+            <DialogDescription>
+              You need to configure your OKX API keys before creating a trading bot.
+            </DialogDescription>
+          </DialogHeader>
           
-          <p className="mb-4">
-            Please set up your API keys to continue. This is required for the trading bot to execute trades on your behalf.
-          </p>
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowApiKeyDialog(false)}>
-            Later
-          </Button>
-          <Button onClick={() => setLocation("/api-keys")} className="gap-2">
-            Set Up API Keys <ArrowRight className="w-4 h-4" />
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <div className="py-4">
+            <Alert className="mb-4">
+              <AlertTitle className="flex items-center">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                Trading requires API access
+              </AlertTitle>
+              <p className="mt-2">To use the AI Grid Bot, you need to provide your OKX API keys with trading permissions.</p>
+            </Alert>
+            
+            <p className="mb-4">
+              Please set up your API keys to continue. This is required for the trading bot to execute trades on your behalf.
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowApiKeyDialog(false)}>
+              Later
+            </Button>
+            <Button onClick={() => setLocation("/api-keys")} className="gap-2">
+              Set Up API Keys <ArrowRight className="w-4 h-4" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
