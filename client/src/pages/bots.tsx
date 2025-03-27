@@ -12,6 +12,7 @@ import {
   CardFooter 
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { 
   Select, 
@@ -81,6 +82,7 @@ export default function Bots() {
   const [selectedBot, setSelectedBot] = useState<Bot | null>(null);
   const [showBotDetails, setShowBotDetails] = useState<boolean>(false);
   const [selectedTradingPair, setSelectedTradingPair] = useState<string>("");
+  const [selectedSymbols, setSelectedSymbols] = useState<string[]>([]);
   
   // Use toast for notifications
   const { toast } = useToast();
@@ -237,10 +239,28 @@ export default function Bots() {
     setSelectedTradingPair(pair);
   };
   
-  // Effect to set the currently selected trading pair when bot changes
+  // Effect to set the currently selected trading pair and symbols when bot changes
   useEffect(() => {
     if (selectedBot) {
       setSelectedTradingPair(selectedBot.tradingPair || 'BTC-USDT');
+      
+      // Try to extract the symbols from bot parameters if available
+      try {
+        if (selectedBot.parameters) {
+          const params = JSON.parse(selectedBot.parameters);
+          if (params.symbols && Array.isArray(params.symbols)) {
+            setSelectedSymbols(params.symbols);
+          } else {
+            // Fallback to setting just the trading pair if no symbols array
+            setSelectedSymbols([selectedBot.tradingPair || 'BTC-USDT']);
+          }
+        } else {
+          setSelectedSymbols([selectedBot.tradingPair || 'BTC-USDT']);
+        }
+      } catch (e) {
+        // If JSON parsing fails, just set the trading pair
+        setSelectedSymbols([selectedBot.tradingPair || 'BTC-USDT']);
+      }
     }
   }, [selectedBot]);
   
@@ -954,20 +974,30 @@ export default function Bots() {
                   <span className="font-medium">{selectedBot?.strategy.toUpperCase()}</span>
                 </div>
                 <div className="flex flex-col space-y-1">
-                  <span className="text-sm text-muted-foreground">Trading Pair</span>
-                  <Select 
-                    value={selectedTradingPair} 
-                    onValueChange={handleTradingPairChange}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select trading pair" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tradingPairs.map(pair => (
-                        <SelectItem key={pair} value={pair}>{pair}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <span className="text-sm text-muted-foreground">Trading Cryptocurrencies</span>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    {tradingPairs.map(pair => (
+                      <div key={pair} className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox 
+                          id={`pair-${pair}`} 
+                          checked={selectedSymbols.includes(pair)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedSymbols(prev => [...prev, pair]);
+                            } else {
+                              setSelectedSymbols(prev => prev.filter(s => s !== pair));
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`pair-${pair}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {pair}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex flex-col space-y-1">
                   <span className="text-sm text-muted-foreground">Investment</span>
@@ -1016,13 +1046,21 @@ export default function Bots() {
                 variant="secondary" 
                 className="gap-1" 
                 onClick={() => {
-                  // Update bot trading pair if it changed
-                  if (selectedBot && selectedTradingPair !== selectedBot.tradingPair) {
+                  // Update bot parameters with multiple trading pairs
+                  if (selectedBot && selectedSymbols.length > 0) {
                     updateBotParametersMutation.mutate({
                       botId: selectedBot.id,
                       parameters: {
-                        symbol: selectedTradingPair
+                        symbols: selectedSymbols,
+                        riskPercentage: 2,
+                        autoAdjustRange: true
                       }
+                    });
+                  } else if (selectedSymbols.length === 0) {
+                    toast({
+                      title: "בחירת מטבעות נדרשת",
+                      description: "נא לבחור לפחות מטבע אחד לסחר",
+                      variant: "destructive"
                     });
                   } else {
                     toast({

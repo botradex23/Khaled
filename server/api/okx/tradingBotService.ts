@@ -4,13 +4,21 @@ import { TRADING_STRATEGIES } from './config';
 import { Bot } from '../../../shared/schema';
 import { storage } from '../../storage';
 
+// Default trading pairs for multi-coin trading
+const DEFAULT_PAIRS = [
+  'BTC-USDT',
+  'ETH-USDT',
+  'SOL-USDT',
+  'XRP-USDT',
+  'BNB-USDT'
+];
+
 // Define bot strategy types
 type GridParameters = {
-  symbol: string;
-  upperPrice: number;
-  lowerPrice: number;
-  gridCount: number;
-  totalInvestment: number;
+  symbols: string[];           // Array of trading pairs
+  riskPercentage: number;      // Risk percentage per trade (e.g., 2%)
+  totalInvestment: number;     // Total capital for all trading
+  autoAdjustRange: boolean;    // Automatically adjust trading range
 };
 
 type DCAParameters = {
@@ -175,42 +183,44 @@ export class TradingBotService {
       try {
         const parsedParams = JSON.parse(bot.parameters);
         
-        // Create grid parameters
+        // Create grid parameters with multi-coin support
         params = {
-          symbol: bot.tradingPair,
-          upperPrice: parsedParams.upperPrice || 88000,
-          lowerPrice: parsedParams.lowerPrice || 87000,
-          gridCount: parsedParams.gridCount || 5,
-          totalInvestment: parseFloat(bot.totalInvestment) || 1000
+          symbols: parsedParams.symbols || [bot.tradingPair || 'BTC-USDT'],
+          riskPercentage: parsedParams.riskPercentage || 2,
+          totalInvestment: parseFloat(bot.totalInvestment) || 1000,
+          autoAdjustRange: parsedParams.autoAdjustRange !== false // default to true
         };
+        
+        // If no symbols are defined, use the trading pair
+        if (!params.symbols || params.symbols.length === 0) {
+          params.symbols = [bot.tradingPair || 'BTC-USDT'];
+        }
+        
+        // Add default trading pairs if needed
+        if (!Array.isArray(params.symbols) || params.symbols.length === 0) {
+          params.symbols = DEFAULT_PAIRS;
+        }
         
         // Log the loaded parameters for debugging
         console.log(`Bot ${botId} loaded parameters:`, params);
       } catch (error) {
         console.error(`Error parsing bot parameters:`, error);
-        // Get current market price to set more dynamic parameters
-        const currentPrice = await this.getCurrentPrice(bot.tradingPair || 'BTC-USDT');
         
-        // Set grid around current price with a +/-500 range
+        // Set default parameters with multi-coin support
         params = {
-          symbol: bot.tradingPair,
-          upperPrice: Math.round(currentPrice + 500),
-          lowerPrice: Math.round(currentPrice - 500),
-          gridCount: 5,
-          totalInvestment: parseFloat(bot.totalInvestment) || 1000
+          symbols: [bot.tradingPair || 'BTC-USDT'], 
+          riskPercentage: 2,
+          totalInvestment: parseFloat(bot.totalInvestment) || 1000,
+          autoAdjustRange: true
         };
       }
     } else {
-      // Get current price to set appropriate grid levels
-      const currentPrice = await this.getCurrentPrice(bot.tradingPair || 'BTC-USDT');
-      
-      // Set grid around current price with a +/-500 range
+      // Set default parameters with multi-coin support
       params = {
-        symbol: bot.tradingPair,
-        upperPrice: Math.round(currentPrice + 500),
-        lowerPrice: Math.round(currentPrice - 500),
-        gridCount: 5,
-        totalInvestment: parseFloat(bot.totalInvestment) || 1000
+        symbols: [bot.tradingPair || 'BTC-USDT'],
+        riskPercentage: 2,
+        totalInvestment: parseFloat(bot.totalInvestment) || 1000,
+        autoAdjustRange: true
       };
     }
     
@@ -270,71 +280,159 @@ export class TradingBotService {
   /**
    * Execute a single cycle of grid trading using real OKX API calls
    * This sends actual orders to the OKX demo trading environment
+   * Supports multi-coin trading and risk percentage limits
    */
   private async executeGridTradingCycle(botId: number, params: GridParameters): Promise<void> {
     try {
-      // Step 1: Get current market price for the trading pair
-      const currentPrice = await this.getCurrentPrice(params.symbol);
-      console.log(`Bot ${botId}: Current ${params.symbol} price: ${currentPrice}`);
-      
-      // Step 2: Calculate grid levels
-      const gridStep = (params.upperPrice - params.lowerPrice) / params.gridCount;
-      const gridLevels = [];
-      
-      for (let i = 0; i <= params.gridCount; i++) {
-        gridLevels.push(params.lowerPrice + i * gridStep);
-      }
-      
-      console.log(`Bot ${botId}: Grid levels:`, gridLevels);
-      
-      // Step 3: Determine which grid level we're at and what action to take
-      const currentGridIndex = gridLevels.findIndex(level => currentPrice < level) - 1;
-      
-      // If price is within our grid range
-      if (currentGridIndex >= 0 && currentGridIndex < gridLevels.length - 1) {
-        // Calculate the distance to the next grid levels
-        const distanceToUpper = gridLevels[currentGridIndex + 1] - currentPrice;
-        const distanceToLower = currentPrice - gridLevels[currentGridIndex];
+      // Get all supported trading pairs if none specified
+      const tradingPairs = params.symbols && params.symbols.length > 0 
+        ? params.symbols 
+        : DEFAULT_PAIRS;
         
-        // Prepare order parameters
-        const symbol = params.symbol;
-        const orderSize = (params.totalInvestment / params.gridCount / currentPrice).toFixed(5);
+      console.log(`Bot ${botId}: Trading with ${tradingPairs.length} pairs:`, tradingPairs);
+      
+      // Get account balances to calculate position sizes based on risk
+      const accountBalances = await accountService.getAccountBalances();
+      const totalPortfolioValue = accountBalances.reduce(
+        (sum, balance) => sum + parseFloat(balance.valueUSD.toString()), 
+        0
+      );
+      
+      // Use portfolio value or fallback to specified investment amount
+      const portfolioValue = totalPortfolioValue > 0 
+        ? totalPortfolioValue 
+        : params.totalInvestment;
         
-        // Place a trade based on proximity to grid levels
-        if (distanceToUpper < distanceToLower) {
-          // We're closer to upper level - place a sell limit order
-          console.log(`Bot ${botId}: Placing SELL limit order at price ${gridLevels[currentGridIndex + 1]}`);
+      console.log(`Bot ${botId}: Portfolio value: $${portfolioValue}`);
+      
+      // Use risk percentage or default to 2%
+      const riskPercentage = params.riskPercentage || 2;
+      console.log(`Bot ${botId}: Using ${riskPercentage}% risk per trade`);
+      
+      // Calculate maximum amount to risk per trade
+      const maxRiskAmount = portfolioValue * (riskPercentage / 100);
+      console.log(`Bot ${botId}: Maximum risk per trade: $${maxRiskAmount.toFixed(2)}`);
+      
+      // Process each trading pair
+      for (const symbol of tradingPairs) {
+        try {
+          // Step 1: Get current market price for the trading pair
+          const currentPrice = await this.getCurrentPrice(symbol);
+          console.log(`Bot ${botId}: Current ${symbol} price: ${currentPrice}`);
           
-          // Place real order on OKX demo account
-          const result = await accountService.placeOrder(
-            symbol,
-            'sell',
-            'limit',
-            orderSize,
-            gridLevels[currentGridIndex + 1].toString()
-          );
+          // Step 2: Determine price range for this trading pair
+          // For automatic range determination, use a percentage of current price
+          const rangePercentage = 2; // 2% range for grid
+          const upperPrice = currentPrice * (1 + rangePercentage/100);
+          const lowerPrice = currentPrice * (1 - rangePercentage/100);
+          const gridCount = 5; // Default to 5 grid levels
           
-          console.log(`Bot ${botId}: SELL order result:`, result);
-        } else {
-          // We're closer to lower level - place a buy limit order
-          console.log(`Bot ${botId}: Placing BUY limit order at price ${gridLevels[currentGridIndex]}`);
+          console.log(`Bot ${botId}: Auto price range for ${symbol}: ${lowerPrice} - ${upperPrice}`);
           
-          // Place real order on OKX demo account
-          const result = await accountService.placeOrder(
-            symbol,
-            'buy',
-            'limit',
-            orderSize,
-            gridLevels[currentGridIndex].toString()
-          );
+          // Calculate grid levels
+          const gridStep = (upperPrice - lowerPrice) / gridCount;
+          const gridLevels = [];
           
-          console.log(`Bot ${botId}: BUY order result:`, result);
+          for (let i = 0; i <= gridCount; i++) {
+            gridLevels.push(lowerPrice + i * gridStep);
+          }
+          
+          // Step 3: Analyze price action and market conditions
+          // Get market volatility and trend to make better decisions
+          const volatility = await this.getMarketVolatility(symbol);
+          const trend = await this.getMarketTrend(symbol);
+          
+          console.log(`Bot ${botId}: ${symbol} market analysis - Volatility: ${volatility}, Trend: ${trend}`);
+          
+          // Adjust risk based on market conditions
+          let adjustedRisk = maxRiskAmount;
+          if (volatility === 'high') {
+            adjustedRisk = maxRiskAmount * 0.7; // Reduce risk in high volatility
+          }
+          
+          // Step 4: Determine trade action based on price and trend
+          // Calculate the position size based on risk amount and price
+          const positionSize = (adjustedRisk / currentPrice).toFixed(5);
+          const orderSize = Math.min(parseFloat(positionSize), 0.01); // Cap the order size
+          
+          console.log(`Bot ${botId}: ${symbol} position size: ${orderSize} (${(orderSize * currentPrice).toFixed(2)} USD)`);
+          
+          // Make trading decision based on trend and levels
+          let tradeAction = 'none';
+          let targetPrice = currentPrice;
+          
+          if (trend === 'up' && Math.random() > 0.6) {
+            // In uptrend, buy on dips
+            tradeAction = 'buy';
+            targetPrice = currentPrice * 0.995; // Slight discount to current price
+          } else if (trend === 'down' && Math.random() > 0.6) {
+            // In downtrend, sell rallies
+            tradeAction = 'sell';
+            targetPrice = currentPrice * 1.005; // Slight premium to current price  
+          } else if (Math.random() > 0.8) {
+            // Random trades with lower probability
+            tradeAction = Math.random() > 0.5 ? 'buy' : 'sell';
+            targetPrice = tradeAction === 'buy' 
+              ? currentPrice * 0.997 
+              : currentPrice * 1.003;
+          }
+          
+          // Step 5: Execute the trade if action is determined
+          if (tradeAction !== 'none' && orderSize > 0) {
+            console.log(`Bot ${botId}: Placing ${tradeAction.toUpperCase()} order for ${symbol} at ${targetPrice}`);
+            
+            // Place real order on OKX demo account
+            const result = await accountService.placeOrder(
+              symbol,
+              tradeAction,
+              'limit',
+              orderSize.toString(),
+              targetPrice.toString()
+            );
+            
+            console.log(`Bot ${botId}: ${tradeAction.toUpperCase()} order result:`, result);
+          } else {
+            console.log(`Bot ${botId}: No action taken for ${symbol} in this cycle`);
+          }
+        } catch (error) {
+          console.error(`Error trading ${symbol}:`, error);
+          // Continue with next symbol on error
         }
-      } else {
-        console.log(`Bot ${botId}: Current price is outside grid range, no action taken`);
       }
     } catch (error) {
       console.error(`Grid trading cycle error:`, error);
+    }
+  }
+  
+  /**
+   * Analyze market volatility for a trading pair
+   * Returns 'low', 'medium', or 'high'
+   */
+  private async getMarketVolatility(symbol: string): Promise<string> {
+    try {
+      // In a real implementation, we would analyze price data
+      // For now, return a random value
+      const volatilityOptions = ['low', 'medium', 'high'];
+      return volatilityOptions[Math.floor(Math.random() * volatilityOptions.length)];
+    } catch (error) {
+      console.error(`Error getting market volatility:`, error);
+      return 'medium'; // Default value
+    }
+  }
+  
+  /**
+   * Analyze market trend for a trading pair
+   * Returns 'up', 'down', or 'sideways'
+   */
+  private async getMarketTrend(symbol: string): Promise<string> {
+    try {
+      // In a real implementation, we would analyze price data
+      // For now, return a random value
+      const trendOptions = ['up', 'down', 'sideways'];
+      return trendOptions[Math.floor(Math.random() * trendOptions.length)];
+    } catch (error) {
+      console.error(`Error getting market trend:`, error);
+      return 'sideways'; // Default value
     }
   }
   
@@ -383,7 +481,7 @@ export class TradingBotService {
   
   /**
    * Update bot parameters
-   * This allows changing the trading pair and other strategy parameters
+   * This allows changing trading pairs, risk percentage, and other strategy parameters
    */
   async updateBotParameters(botId: number, newParameters: Partial<BotParameters>): Promise<any> {
     try {
@@ -400,22 +498,47 @@ export class TradingBotService {
           currentParams = JSON.parse(bot.parameters);
         } catch (error) {
           console.error(`Error parsing bot parameters:`, error);
-          // Initialize with defaults if parsing fails
-          currentParams = { symbol: bot.tradingPair || 'BTC-USDT' };
+          // Initialize with defaults if parsing fails - supporting multi-coin trading
+          currentParams = { 
+            symbols: [bot.tradingPair || 'BTC-USDT'],
+            riskPercentage: 2,
+            autoAdjustRange: true,
+            totalInvestment: parseFloat(bot.totalInvestment) || 1000
+          };
         }
+      }
+      
+      // Handle the special case of symbols (old vs new format)
+      if (newParameters.symbols && Array.isArray(newParameters.symbols)) {
+        // New format with multiple symbols
+        currentParams.symbols = newParameters.symbols;
+      } else if (newParameters.symbol && typeof newParameters.symbol === 'string') {
+        // Convert old symbol format to new symbols array format
+        if (!currentParams.symbols) {
+          currentParams.symbols = [];
+        }
+        
+        // Only add if not already in the list
+        if (!currentParams.symbols.includes(newParameters.symbol)) {
+          currentParams.symbols.push(newParameters.symbol);
+        }
+        
+        // Remove symbol from the parameters to avoid confusion
+        delete newParameters.symbol;
       }
       
       // Merge the new parameters with existing ones
       const updatedParams = { ...currentParams, ...newParameters };
       console.log(`Updating bot ${botId} parameters:`, updatedParams);
       
-      // If symbol is changed, update tradingPair as well
+      // If we have symbols, update tradingPair as well to the first symbol
+      // This maintains backward compatibility with the rest of the app
       let updates: Partial<Bot> = {
         parameters: JSON.stringify(updatedParams)
       };
       
-      if (newParameters.symbol && newParameters.symbol !== bot.tradingPair) {
-        updates.tradingPair = newParameters.symbol;
+      if (updatedParams.symbols && Array.isArray(updatedParams.symbols) && updatedParams.symbols.length > 0) {
+        updates.tradingPair = updatedParams.symbols[0];
       }
       
       // Update bot in storage
