@@ -2,7 +2,8 @@ import {
   users, 
   type User, 
   type InsertUser, 
-  type Bot, 
+  type Bot,
+  type InsertBot,
   type PricingPlan 
 } from "@shared/schema";
 
@@ -21,6 +22,17 @@ export interface IStorage {
   // Bot related methods
   getAllBots(): Promise<Bot[]>;
   getBotById(id: number): Promise<Bot | undefined>;
+  createBot(bot: InsertBot): Promise<Bot>;
+  updateBot(id: number, updates: Partial<Bot>): Promise<Bot | undefined>;
+  deleteBot(id: number): Promise<boolean>;
+  getUserBots(userId: number): Promise<Bot[]>;
+  startBot(id: number): Promise<Bot | undefined>;
+  stopBot(id: number): Promise<Bot | undefined>;
+  updateBotStatus(id: number, isRunning: boolean, stats?: {
+    profitLoss?: string;
+    profitLossPercent?: string;
+    totalTrades?: number;
+  }): Promise<Bot | undefined>;
   
   // Pricing plan related methods
   getAllPricingPlans(): Promise<PricingPlan[]>;
@@ -59,7 +71,23 @@ export class MemStorage implements IStorage {
         riskLevel: 2,
         rating: "4.5",
         isPopular: true,
-        userId: 1 // Default user
+        userId: 1, // Default user
+        isRunning: false,
+        tradingPair: "BTC-USDT",
+        totalInvestment: "1000",
+        parameters: JSON.stringify({
+          symbol: "BTC-USDT",
+          upperPrice: 85000,
+          lowerPrice: 80000,
+          gridCount: 5,
+          totalInvestment: 1000
+        }),
+        createdAt: new Date(),
+        lastStartedAt: null,
+        lastStoppedAt: null,
+        profitLoss: "0",
+        profitLossPercent: "0",
+        totalTrades: 0
       },
       {
         id: this.botId++,
@@ -71,7 +99,22 @@ export class MemStorage implements IStorage {
         riskLevel: 1,
         rating: "4.8",
         isPopular: false,
-        userId: 1 // Default user
+        userId: 1, // Default user
+        isRunning: false,
+        tradingPair: "ETH-USDT",
+        totalInvestment: "500",
+        parameters: JSON.stringify({
+          symbol: "ETH-USDT",
+          initialInvestment: 500,
+          interval: "1d",
+          investmentAmount: 50
+        }),
+        createdAt: new Date(),
+        lastStartedAt: null,
+        lastStoppedAt: null,
+        profitLoss: "0",
+        profitLossPercent: "0",
+        totalTrades: 0
       },
       {
         id: this.botId++,
@@ -83,7 +126,23 @@ export class MemStorage implements IStorage {
         riskLevel: 3,
         rating: "4.2",
         isPopular: true,
-        userId: 1 // Default user
+        userId: 1, // Default user
+        isRunning: false,
+        tradingPair: "SOL-USDT",
+        totalInvestment: "2000",
+        parameters: JSON.stringify({
+          symbol: "SOL-USDT",
+          fastPeriod: 12,
+          slowPeriod: 26,
+          signalPeriod: 9,
+          investmentAmount: 2000
+        }),
+        createdAt: new Date(),
+        lastStartedAt: null,
+        lastStoppedAt: null,
+        profitLoss: "0",
+        profitLossPercent: "0",
+        totalTrades: 0
       }
     ];
     
@@ -226,6 +285,116 @@ export class MemStorage implements IStorage {
   
   async getBotById(id: number): Promise<Bot | undefined> {
     return this.bots.get(id);
+  }
+  
+  async createBot(bot: InsertBot): Promise<Bot> {
+    const id = this.botId++;
+    
+    const newBot: Bot = {
+      id,
+      name: bot.name,
+      strategy: bot.strategy,
+      description: bot.description,
+      minInvestment: bot.minInvestment,
+      monthlyReturn: bot.monthlyReturn,
+      riskLevel: bot.riskLevel,
+      rating: bot.rating,
+      isPopular: bot.isPopular,
+      userId: bot.userId,
+      isRunning: false,
+      tradingPair: bot.tradingPair || "BTC-USDT",
+      totalInvestment: bot.totalInvestment || "1000",
+      parameters: bot.parameters,
+      createdAt: new Date(),
+      lastStartedAt: null,
+      lastStoppedAt: null,
+      profitLoss: "0",
+      profitLossPercent: "0",
+      totalTrades: 0
+    };
+    
+    this.bots.set(id, newBot);
+    return newBot;
+  }
+  
+  async updateBot(id: number, updates: Partial<Bot>): Promise<Bot | undefined> {
+    const existingBot = this.bots.get(id);
+    
+    if (!existingBot) {
+      return undefined;
+    }
+    
+    const updatedBot: Bot = {
+      ...existingBot,
+      ...updates
+    };
+    
+    this.bots.set(id, updatedBot);
+    return updatedBot;
+  }
+  
+  async deleteBot(id: number): Promise<boolean> {
+    const deleted = this.bots.delete(id);
+    return deleted;
+  }
+  
+  async getUserBots(userId: number): Promise<Bot[]> {
+    return Array.from(this.bots.values()).filter(bot => bot.userId === userId);
+  }
+  
+  async startBot(id: number): Promise<Bot | undefined> {
+    const bot = this.bots.get(id);
+    if (!bot) {
+      return undefined;
+    }
+    
+    const updatedBot: Bot = {
+      ...bot,
+      isRunning: true,
+      lastStartedAt: new Date()
+    };
+    
+    this.bots.set(id, updatedBot);
+    return updatedBot;
+  }
+  
+  async stopBot(id: number): Promise<Bot | undefined> {
+    const bot = this.bots.get(id);
+    if (!bot) {
+      return undefined;
+    }
+    
+    const updatedBot: Bot = {
+      ...bot,
+      isRunning: false,
+      lastStoppedAt: new Date()
+    };
+    
+    this.bots.set(id, updatedBot);
+    return updatedBot;
+  }
+  
+  async updateBotStatus(id: number, isRunning: boolean, stats?: {
+    profitLoss?: string;
+    profitLossPercent?: string;
+    totalTrades?: number;
+  }): Promise<Bot | undefined> {
+    const bot = this.bots.get(id);
+    if (!bot) {
+      return undefined;
+    }
+    
+    const updatedBot: Bot = {
+      ...bot,
+      isRunning,
+      ...(isRunning ? { lastStartedAt: new Date() } : { lastStoppedAt: new Date() }),
+      ...(stats?.profitLoss !== undefined && { profitLoss: stats.profitLoss }),
+      ...(stats?.profitLossPercent !== undefined && { profitLossPercent: stats.profitLossPercent }),
+      ...(stats?.totalTrades !== undefined && { totalTrades: stats.totalTrades })
+    };
+    
+    this.bots.set(id, updatedBot);
+    return updatedBot;
   }
   
   // Pricing plan related methods

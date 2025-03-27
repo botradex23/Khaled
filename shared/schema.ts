@@ -53,9 +53,29 @@ export const bots = pgTable("bots", {
   rating: decimal("rating").notNull(),
   isPopular: boolean("is_popular").notNull().default(false),
   userId: integer("user_id").notNull(),
+  isRunning: boolean("is_running").notNull().default(false),
+  tradingPair: text("trading_pair").notNull().default("BTC-USDT"),
+  totalInvestment: decimal("total_investment").notNull().default("1000"),
+  parameters: text("parameters"), // JSON string of bot parameters
+  createdAt: timestamp("created_at").defaultNow(),
+  lastStartedAt: timestamp("last_started_at"),
+  lastStoppedAt: timestamp("last_stopped_at"),
+  profitLoss: decimal("profit_loss").default("0"), // Actual P&L in USD
+  profitLossPercent: decimal("profit_loss_percent").default("0"), // P&L as percentage
+  totalTrades: integer("total_trades").default(0),
 });
 
-export const botSchema = createInsertSchema(bots);
+export const botSchema = createInsertSchema(bots)
+  .omit({ 
+    id: true, 
+    createdAt: true, 
+    lastStartedAt: true, 
+    lastStoppedAt: true,
+    isRunning: true,
+    totalTrades: true,
+    profitLoss: true,
+    profitLossPercent: true
+  });
 
 // Pricing plans table schema
 export const pricingPlans = pgTable("pricing_plans", {

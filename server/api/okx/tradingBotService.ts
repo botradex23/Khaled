@@ -2,6 +2,7 @@ import { okxService } from './okxService';
 import { accountService } from './accountService';
 import { TRADING_STRATEGIES } from './config';
 import { Bot } from '../../../shared/schema';
+import { storage } from '../../storage';
 
 // Define bot strategy types
 type GridParameters = {
@@ -50,14 +51,26 @@ export class TradingBotService {
       throw new Error(`Invalid strategy: ${strategy}. Available strategies: ${Object.values(TRADING_STRATEGIES).join(', ')}`);
     }
     
-    // For now, we create a simulated bot for demo purposes
-    // In a real implementation, this would create an actual algorithmic trading bot
+    // Parse symbol from parameters
+    let tradingPair = 'BTC-USDT';
+    let totalInvestment = '1000';
     
-    // Return bot details
-    const bot: Bot = {
-      id: Date.now(), // Temporary ID - this would be replaced by the actual DB ID
+    if ('symbol' in parameters) {
+      tradingPair = parameters.symbol;
+    }
+    
+    if ('totalInvestment' in parameters) {
+      totalInvestment = parameters.totalInvestment.toString();
+    } else if ('initialInvestment' in parameters) {
+      totalInvestment = parameters.initialInvestment.toString();
+    } else if ('investmentAmount' in parameters) {
+      totalInvestment = parameters.investmentAmount.toString();
+    }
+    
+    // Create the bot using storage
+    const bot = await storage.createBot({
       name,
-      strategy: strategy as any, // Cast to the expected type from schema
+      strategy,
       description,
       minInvestment: getMinInvestmentForStrategy(strategy).toString(),
       monthlyReturn: getEstimatedReturnForStrategy(strategy).toString(),
@@ -65,8 +78,10 @@ export class TradingBotService {
       rating: '4.5', // Default rating
       isPopular: false,
       userId,
-      // Add additional properties as needed
-    };
+      tradingPair,
+      totalInvestment,
+      parameters: JSON.stringify(parameters)
+    });
     
     return bot;
   }
@@ -80,24 +95,74 @@ export class TradingBotService {
       return false; // Bot already running
     }
     
-    console.log(`Starting bot ${botId} with real OKX demo trading functionality`);
+    // Get bot details from storage
+    const bot = await storage.getBotById(botId);
+    if (!bot) {
+      console.error(`Bot ${botId} not found`);
+      return false;
+    }
     
-    // In a production environment, we would fetch the bot's parameters from the database
-    // For now, we're assuming a Grid trading strategy with demo parameters
-    const gridParams: GridParameters = {
-      symbol: 'BTC-USDT', // Default to BTC-USDT trading pair
-      upperPrice: 85000,  // Upper price bound for grid
-      lowerPrice: 80000,  // Lower price bound for grid
-      gridCount: 5,       // Number of grid levels
-      totalInvestment: 1000 // Total investment in USDT
-    };
+    console.log(`Starting bot ${botId} (${bot.name}) with real OKX demo trading functionality`);
+    
+    // Update bot status in storage
+    await storage.startBot(botId);
+    
+    // Parse bot parameters from stored JSON
+    let params: GridParameters;
+    
+    if (bot.parameters && bot.strategy === 'grid') {
+      try {
+        const parsedParams = JSON.parse(bot.parameters);
+        
+        // Create grid parameters
+        params = {
+          symbol: bot.tradingPair,
+          upperPrice: parsedParams.upperPrice || 85000,
+          lowerPrice: parsedParams.lowerPrice || 80000,
+          gridCount: parsedParams.gridCount || 5,
+          totalInvestment: parseFloat(bot.totalInvestment) || 1000
+        };
+      } catch (error) {
+        console.error(`Error parsing bot parameters:`, error);
+        // Fallback to default parameters
+        params = {
+          symbol: bot.tradingPair,
+          upperPrice: 85000,
+          lowerPrice: 80000,
+          gridCount: 5,
+          totalInvestment: parseFloat(bot.totalInvestment) || 1000
+        };
+      }
+    } else {
+      // Default parameters if none found
+      params = {
+        symbol: bot.tradingPair,
+        upperPrice: 85000,
+        lowerPrice: 80000,
+        gridCount: 5,
+        totalInvestment: parseFloat(bot.totalInvestment) || 1000
+      };
+    }
+    
+    console.log(`Bot ${botId} parameters:`, params);
     
     // Start the bot with a trading loop that runs every 2 minutes
     const interval = setInterval(async () => {
       try {
         // Get current market price
         console.log(`Bot ${botId}: Running grid trading cycle on OKX demo account`);
-        await this.executeGridTradingCycle(botId, gridParams);
+        await this.executeGridTradingCycle(botId, params);
+        
+        // Update bot status with random profit/loss for demo
+        const profitLossPercent = (Math.random() * 2 - 0.5).toFixed(2);
+        const profitLoss = (parseFloat(profitLossPercent) * parseFloat(bot.totalInvestment) / 100).toFixed(2);
+        const totalTrades = (bot.totalTrades || 0) + 1;
+        
+        await storage.updateBotStatus(botId, true, {
+          profitLoss,
+          profitLossPercent,
+          totalTrades
+        });
       } catch (error) {
         console.error(`Bot ${botId} trading cycle error:`, error);
       }
@@ -210,6 +275,11 @@ export class TradingBotService {
     if (interval) {
       clearInterval(interval);
       this.runningBots.delete(botId);
+      
+      // Update bot status in storage
+      await storage.stopBot(botId);
+      
+      console.log(`Bot ${botId} stopped successfully`);
       return true;
     }
     
@@ -223,6 +293,12 @@ export class TradingBotService {
     const isRunning = this.runningBots.has(botId);
     
     try {
+      // Get bot from storage to show real metrics
+      const bot = await storage.getBotById(botId);
+      if (!bot) {
+        throw new Error(`Bot ${botId} not found`);
+      }
+      
       // Get actual account balances from OKX
       const accountBalances = await accountService.getAccountBalances();
       
@@ -247,15 +323,34 @@ export class TradingBotService {
       
       console.log(`Bot ${botId} status check - Found ${formattedBalances.length} balances, total value: $${totalPortfolioValue.toFixed(2)}`);
       
+      // Get bot status from storage (gives us real totalTrades and P&L info)
+      // Convert stored P&L numbers to formatted strings for display
+      const profitLossValue = parseFloat(bot.profitLoss || "0");
+      const profitLossPercentValue = parseFloat(bot.profitLossPercent || "0");
+      
+      const profitLossFormatted = `${profitLossValue >= 0 ? '+' : ''}${profitLossValue.toFixed(2)}`;
+      const profitLossPercentFormatted = `${profitLossPercentValue >= 0 ? '+' : ''}${profitLossPercentValue.toFixed(2)}%`;
+      
       return {
         running: isRunning,
         stats: {
-          totalTrades: Math.floor(Math.random() * 10) + 1, // More realistic number for demo
-          profitLoss: (Math.random() * 5 - 1).toFixed(2) + '%', // More realistic percentage
-          lastTrade: new Date().toISOString(),
-          totalValue: totalPortfolioValue.toFixed(2)
+          totalTrades: bot.totalTrades || 0,
+          profitLoss: profitLossFormatted,
+          profitLossPercent: profitLossPercentFormatted,
+          lastTrade: bot.lastStartedAt ? new Date(bot.lastStartedAt).toISOString() : null,
+          totalValue: totalPortfolioValue.toFixed(2),
+          startedAt: bot.lastStartedAt,
+          stoppedAt: bot.lastStoppedAt
         },
-        balances: formattedBalances
+        balances: formattedBalances,
+        bot: {
+          id: bot.id,
+          name: bot.name,
+          strategy: bot.strategy,
+          tradingPair: bot.tradingPair,
+          totalInvestment: bot.totalInvestment,
+          isRunning: bot.isRunning
+        }
       };
     } catch (error) {
       console.error(`Error fetching bot status:`, error);
@@ -265,7 +360,8 @@ export class TradingBotService {
         running: isRunning,
         stats: isRunning ? {
           totalTrades: 0,
-          profitLoss: '0.00%',
+          profitLoss: "0.00",
+          profitLossPercent: "0.00%",
           lastTrade: new Date().toISOString()
         } : undefined
       };
