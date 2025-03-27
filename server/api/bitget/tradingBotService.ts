@@ -298,70 +298,133 @@ export class TradingBotService {
    */
   private async executeGridStrategy(botId: number, parameters: GridParameters): Promise<void> {
     try {
+      console.log(`[GRID BOT ${botId}] Executing grid strategy cycle...`);
       const bot = this.storedBots.get(botId);
-      if (!bot) return;
+      if (!bot) {
+        console.log(`[GRID BOT ${botId}] Bot not found in storage`);
+        return;
+      }
       
-      // Get current price
+      // Get current price from real market data
       const marketData = await marketService.getMarketData([parameters.symbol]);
-      if (!marketData || marketData.length === 0) return;
+      if (!marketData || marketData.length === 0) {
+        console.log(`[GRID BOT ${botId}] No market data available for ${parameters.symbol}`);
+        return;
+      }
       
       const currentPrice = marketData[0].price;
+      console.log(`[GRID BOT ${botId}] Current price of ${parameters.symbol}: $${currentPrice}`);
       
       // Calculate grid levels
       const { upperPrice, lowerPrice, gridCount } = parameters;
       const gridSize = (upperPrice - lowerPrice) / gridCount;
       
       // Generate a trade based on grid levels
-      this.generateGridTrade(botId, parameters, currentPrice, gridSize);
+      await this.generateGridTrade(botId, parameters, currentPrice, gridSize);
+      
+      // Log bot's total trades count after execution
+      console.log(`[GRID BOT ${botId}] Total trades: ${bot.trades.length}`);
     } catch (error) {
-      console.error('Error executing grid strategy:', error);
+      console.error(`[GRID BOT ${botId}] Error executing grid strategy:`, error);
     }
   }
 
   /**
    * Generate grid trade based on current price and grid levels
+   * Now sending actual orders to the broker
    */
-  private generateGridTrade(
+  private async generateGridTrade(
     botId: number,
     parameters: GridParameters,
     currentPrice: number,
     gridSize: number
-  ): void {
+  ): Promise<void> {
     const bot = this.storedBots.get(botId);
     if (!bot) return;
     
-    // Determine if we should buy or sell based on position in grid
-    // Simulating trading with randomness for demo purposes
-    const side = Math.random() > 0.5 ? 'buy' : 'sell';
+    try {
+      // Import account service for real trading
+      const { accountService } = await import('./accountService');
     
-    // Calculate a realistic quantity based on investment and price
-    const totalInvestment = parameters.totalInvestment;
-    const perGridInvestment = totalInvestment / parameters.gridCount;
-    const quantity = perGridInvestment / currentPrice;
-    
-    // Some randomness in price to simulate price movements
-    const priceVariation = currentPrice * 0.003 * (Math.random() - 0.5);
-    const tradePrice = currentPrice + priceVariation;
-    
-    // Create trade record
-    const trade: Trade = {
-      id: `trade-${this.lastTradeId++}`,
-      botId,
-      timestamp: new Date(),
-      symbol: parameters.symbol,
-      side,
-      price: tradePrice,
-      quantity,
-      total: tradePrice * quantity,
-      status: Math.random() > 0.1 ? 'executed' : 'pending', // 90% chance of being executed
-    };
-    
-    // Add to bot's trades
-    bot.trades.push(trade);
-    
-    // Limit trades history to last 50
-    if (bot.trades.length > 50) {
-      bot.trades = bot.trades.slice(bot.trades.length - 50);
+      // Determine if we should buy or sell based on position in grid
+      // Use more thoughtful logic based on grid levels rather than random
+      // If price is in the lower half of the grid range, prefer buying
+      // If price is in the upper half of the grid range, prefer selling
+      const gridPosition = (currentPrice - parameters.lowerPrice) / (parameters.upperPrice - parameters.lowerPrice);
+      
+      // Still add some randomness to avoid too many similar orders
+      const sideBias = gridPosition > 0.5 ? 0.7 : 0.3; // Higher price = more likely to sell
+      const side = Math.random() > sideBias ? 'buy' : 'sell';
+      
+      // Calculate a realistic quantity based on investment and price
+      const totalInvestment = parameters.totalInvestment;
+      const perGridInvestment = totalInvestment / parameters.gridCount;
+      
+      // Calculate quantity based on grid size and total investment
+      // Keep orders smaller for real trading to reduce risk
+      const quantityFactor = 0.1; // Only use 10% of perGridInvestment for each trade
+      const quantity = (perGridInvestment * quantityFactor) / currentPrice;
+      
+      // Format quantity to proper precision (6 decimal places for BTC, fewer for others)
+      const formattedQuantity = quantity.toFixed(parameters.symbol.includes('BTC') ? 6 : 4);
+      
+      // Calculate appropriate price for limit order around current price
+      // Buy slightly below market, sell slightly above market
+      const priceOffset = side === 'buy' ? -0.002 : 0.002; // 0.2% offset
+      const tradePrice = currentPrice * (1 + priceOffset);
+      const formattedPrice = tradePrice.toFixed(2);
+      
+      console.log(`[GRID BOT ${botId}] Creating ${side} order for ${formattedQuantity} ${parameters.symbol} at $${formattedPrice}`);
+      
+      // Actually place the order with the broker
+      const orderResult = await accountService.placeOrder(
+        parameters.symbol,
+        side,
+        'limit', // Using limit orders for grid trading
+        formattedQuantity,
+        formattedPrice
+      );
+
+      // Create trade record with result from broker
+      const trade: Trade = {
+        id: orderResult.orderId || `trade-${this.lastTradeId++}`,
+        botId,
+        timestamp: new Date(),
+        symbol: parameters.symbol,
+        side,
+        price: tradePrice,
+        quantity,
+        total: tradePrice * quantity,
+        status: orderResult.success ? 'executed' : 'pending', // If not successful, mark as pending instead of failed
+      };
+      
+      console.log(`[GRID BOT ${botId}] Order result: ${orderResult.success ? 'SUCCESS' : 'FAILED'} - ${orderResult.message}`);
+      
+      // Add to bot's trades
+      bot.trades.push(trade);
+      
+      // Limit trades history to last 50
+      if (bot.trades.length > 50) {
+        bot.trades = bot.trades.slice(bot.trades.length - 50);
+      }
+    } catch (error) {
+      console.error(`[GRID BOT ${botId}] Error generating trade:`, error);
+      
+      // Still create a record of attempted trade for tracking
+      const trade: Trade = {
+        id: `error-${this.lastTradeId++}`,
+        botId,
+        timestamp: new Date(),
+        symbol: parameters.symbol,
+        side: 'buy', // Default
+        price: currentPrice,
+        quantity: 0,
+        total: 0,
+        status: 'canceled', // Use 'canceled' instead of 'failed' to match our status types
+      };
+      
+      // Add to bot's trades
+      bot.trades.push(trade);
     }
   }
 
