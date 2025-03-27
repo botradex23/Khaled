@@ -21,6 +21,13 @@ export default function Account() {
   // Do not redirect - demo mode is enabled for non-authenticated users 
   // We're using demo data API endpoints that don't require authentication
 
+  // Log the balanceData to understand its structure
+  useEffect(() => {
+    if (balanceData && Array.isArray(balanceData) && balanceData.length > 0) {
+      console.log("Balance Data sample:", balanceData[0]);
+    }
+  }, [balanceData]);
+  
   // Calculate total portfolio value from the totalValue property
   const calculateTotalValue = () => {
     if (!balanceData || !Array.isArray(balanceData) || balanceData.length === 0) {
@@ -29,8 +36,14 @@ export default function Account() {
     
     // Sum up the USD value of all assets using the totalValue USD property
     return balanceData.reduce((total, asset) => {
-      // Make sure we're using the correct property for total value in USD
-      const assetValue = asset.totalValue || asset.valueUSD || 0;
+      // Check each property that might contain the total USD value
+      const assetValue = 
+        // This is the main field we're looking for - the USD equivalent value
+        (asset.totalValueUSD !== undefined ? asset.totalValueUSD : 
+         // Alternative field names that might be used
+         (asset.totalValue !== undefined ? asset.totalValue : 
+          (asset.valueUSD !== undefined ? asset.valueUSD : 0)));
+      
       return total + assetValue;
     }, 0);
   };
