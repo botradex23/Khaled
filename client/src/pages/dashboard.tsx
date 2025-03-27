@@ -188,7 +188,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto">
           {/* API Key Warning Banner */}
           {isAuthenticated && !authLoading && !apiKeysLoading && showApiKeyDialog && (
-            <Alert variant="warning" className="mb-6 bg-amber-50 border-amber-300 text-amber-800">
+            <Alert variant="destructive" className="mb-6 bg-amber-50 border-amber-300">
               <AlertCircle className="h-4 w-4 text-amber-600" />
               <AlertTitle className="text-amber-800">API Keys Missing</AlertTitle>
               <AlertDescription className="text-amber-700">

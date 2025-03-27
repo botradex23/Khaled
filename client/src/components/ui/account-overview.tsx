@@ -185,7 +185,7 @@ export function AccountBalanceCard() {
   const totalFrozen = balances.reduce((sum, asset) => sum + asset.frozen, 0);
   
   // Calculate total portfolio value (accounting for both available and frozen funds)
-  // נתקן כאן - נוודא שהחישוב כולל גם את הכספים הקפואים
+  // Fixed: ensure the calculation includes frozen funds
   const totalValue = totalAvailable + totalFrozen;
   
   // Sort by value (highest first) - show all assets regardless of balance
@@ -244,9 +244,9 @@ export function AccountBalanceCard() {
                   <thead>
                     <tr className="text-xs text-muted-foreground">
                       <th className="text-left">Asset ({sortedBalances.length})</th>
-                      <th className="text-right">Amount</th>
+                      <th className="text-right">Quantity (Units)</th>
                       <th className="text-right">Value (USD)</th>
-                      <th>Allocation</th>
+                      <th>Distribution</th>
                     </tr>
                   </thead>
                 </table>
@@ -256,11 +256,28 @@ export function AccountBalanceCard() {
                       {sortedBalances.map((asset) => {
                         const percentage = (asset.valueUSD / totalValue) * 100;
                         const isMinorHolding = percentage < 0.1;
+                        
+                        // Calculate appropriate precision for unit quantity based on asset value
+                        const precision = asset.total < 0.001 ? 8 : asset.total < 1 ? 6 : 4;
+                        const formattedAmount = asset.total.toFixed(precision);
+                        
+                        // Calculate USD price per unit of cryptocurrency
+                        const pricePerUnit = asset.total > 0 ? asset.valueUSD / asset.total : 0;
+                        
                         return (
                           <tr key={asset.currency} className={`${isMinorHolding ? 'text-muted-foreground' : ''}`}>
                             <td className="py-0.5 font-medium text-sm">{asset.currency}</td>
-                            <td className="py-0.5 text-sm text-right">{asset.total.toFixed(asset.total < 0.001 ? 8 : asset.total < 1 ? 6 : 4)}</td>
-                            <td className="py-0.5 text-sm text-right">${asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                            <td className="py-0.5 text-sm text-right">
+                              <div>{formattedAmount}</div>
+                              {asset.total > 0 && (
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  @${pricePerUnit.toLocaleString(undefined, { maximumFractionDigits: 2 })}/unit
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-0.5 text-right font-medium">
+                              <div className="text-primary text-base">${asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                            </td>
                             <td className="py-0.5 w-1/3">
                               <div className="flex items-center gap-1">
                                 <Progress value={percentage} className="h-1.5" />
@@ -431,11 +448,11 @@ export function TradingHistoryCard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-muted-foreground">
-                  <th className="text-left font-normal">Pair</th>
-                  <th className="text-center font-normal">Side</th>
+                  <th className="text-left font-normal">Trading Pair</th>
+                  <th className="text-center font-normal">Action</th>
                   <th className="text-right font-normal">Price</th>
-                  <th className="text-right font-normal">Size</th>
-                  <th className="text-right font-normal">P/L</th>
+                  <th className="text-right font-normal">Quantity</th>
+                  <th className="text-right font-normal">Profit/Loss</th>
                 </tr>
               </thead>
               <tbody>
@@ -466,9 +483,16 @@ export function TradingHistoryCard() {
                       </td>
                       <td className="py-2 text-right">
                         {!isBreakEven ? (
-                          <span className={isProfitable ? "text-green-500" : "text-red-500"}>
-                            {isProfitable ? '+' : ''}{trade.estimatedPnL.toFixed(2)}
-                          </span>
+                          <div className="flex flex-col items-end">
+                            <span className={`${isProfitable ? "text-green-500" : "text-red-500"} font-medium text-base`}>
+                              {isProfitable ? '+' : ''}{trade.estimatedPnL.toFixed(2)}
+                            </span>
+                            {/* Adding profit/loss percentage */}
+                            <span className={`text-xs ${isProfitable ? "text-green-500/70" : "text-red-500/70"}`}>
+                              {isProfitable ? '+' : ''}
+                              {Math.round((trade.estimatedPnL / trade.totalValue) * 100 * 100) / 100}%
+                            </span>
+                          </div>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
