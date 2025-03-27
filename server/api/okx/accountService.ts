@@ -171,30 +171,31 @@ export class AccountService {
           const frozen = parseFloat(balance.frozenBal) || 0;
           const total = balance.bal ? parseFloat(balance.bal) : (available + frozen);
           
-          // Fix USD value calculation
+          // Fix USD value calculation - always use real-time prices when available for accuracy
           let valueUSD = parseFloat(balance.eq) || 0;
           
-          // Use real-time price data for all currencies when possible
-          if (total > 0) {
-            if (currencyPrices[balance.ccy]) {
-              const realTimePrice = currencyPrices[balance.ccy];
-              const estimatedValue = total * realTimePrice;
-              
-              // Update if real-time valuation is significantly different or if API-provided value seems wrong
-              const hasSignificantDifference = valueUSD > 0 && Math.abs(estimatedValue - valueUSD) / valueUSD > 0.1;
-              const valueSeemsTooLow = valueUSD < 1 && total > 0.00001;
-              
-              if (hasSignificantDifference || valueSeemsTooLow) {
-                console.log(`Corrected ${balance.ccy} value from ${valueUSD} to ${estimatedValue} USD using real-time price: ${realTimePrice}`);
-                valueUSD = estimatedValue;
+          // Always prefer real-time pricing data for most accuracy
+          if (currencyPrices[balance.ccy]) {
+            const realTimePrice = currencyPrices[balance.ccy];
+            const estimatedValue = total * realTimePrice;
+            
+            // Use real-time value instead of API value for better accuracy
+            if (valueUSD !== estimatedValue) {
+              // Only log significant differences to reduce noise
+              if (Math.abs(estimatedValue - valueUSD) > 0.1) {
+                console.log(`Updated ${balance.ccy} value from ${valueUSD} to ${estimatedValue} USD using real-time price: ${realTimePrice}`);
               }
+              valueUSD = estimatedValue;
             }
-            // For any unknown currency with non-zero balance but missing valueUSD, try to get price from market data
-            else if (valueUSD < 0.1 && total > 0.00001) {
-              // Try to find price by looking for this currency paired with USDT
-              // We can't use await here directly as we're inside a map function, so we'll set a flag for manual correction later
-              console.log(`Balance ${balance.ccy} has low USD value (${valueUSD}), will try to find price separately`);
-            }
+          } 
+          // Special case for stablecoins that might not have direct pair pricing
+          else if (balance.ccy === 'USDT' || balance.ccy === 'USDC' || balance.ccy === 'BUSD' || balance.ccy === 'DAI') {
+            // Stablecoins should be valued at 1:1 with USD
+            valueUSD = total;
+          }
+          // For any other currency with non-zero balance but missing valueUSD, log for debugging
+          else if (total > 0.00001 && valueUSD < 0.1) {
+            console.log(`Balance ${balance.ccy} has potential pricing issue (value: ${valueUSD}, amount: ${total})`);
           }
           
           return {

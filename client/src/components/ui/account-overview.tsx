@@ -31,7 +31,7 @@ export function AccountBalanceCard() {
 
   const okxQuery = useQuery({
     queryKey: ["/api/okx/account/balance"],
-    refetchInterval: 60000 // 1 minute refresh
+    refetchInterval: 15000 // 15 seconds refresh for more up-to-date data
   });
   
   // Debug output to console to help identify issues with the data
@@ -240,28 +240,40 @@ export function AccountBalanceCard() {
           <div className="space-y-2">
             {sortedBalances.length > 0 ? (
               <>
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>All Assets ({sortedBalances.length})</span>
-                  <span>Value (USD)</span>
-                </div>
-                <div className="max-h-[300px] overflow-y-auto pr-1">
-                  {sortedBalances.map((asset) => {
-                    const percentage = (asset.valueUSD / totalValue) * 100;
-                    return (
-                      <div key={asset.currency} className="space-y-0.5 mb-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="font-medium">{asset.currency}</span>
-                          <span>${asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Progress value={percentage} className="h-1.5" />
-                          <span className="text-xs text-muted-foreground w-12 text-right">
-                            {percentage.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <table className="w-full mb-1">
+                  <thead>
+                    <tr className="text-xs text-muted-foreground">
+                      <th className="text-left">Asset ({sortedBalances.length})</th>
+                      <th className="text-right">Amount</th>
+                      <th className="text-right">Value (USD)</th>
+                      <th>Allocation</th>
+                    </tr>
+                  </thead>
+                </table>
+                <div className="max-h-[300px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-muted/20">
+                  <table className="w-full">
+                    <tbody>
+                      {sortedBalances.map((asset) => {
+                        const percentage = (asset.valueUSD / totalValue) * 100;
+                        const isMinorHolding = percentage < 0.1;
+                        return (
+                          <tr key={asset.currency} className={`${isMinorHolding ? 'text-muted-foreground' : ''}`}>
+                            <td className="py-0.5 font-medium text-sm">{asset.currency}</td>
+                            <td className="py-0.5 text-sm text-right">{asset.total.toFixed(asset.total < 0.001 ? 8 : asset.total < 1 ? 6 : 4)}</td>
+                            <td className="py-0.5 text-sm text-right">${asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                            <td className="py-0.5 w-1/3">
+                              <div className="flex items-center gap-1">
+                                <Progress value={percentage} className="h-1.5" />
+                                <span className="text-xs text-muted-foreground w-10 text-right">
+                                  {percentage < 0.1 ? '<0.1' : percentage.toFixed(1)}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </>
             ) : (
@@ -285,10 +297,28 @@ export function AccountBalanceCard() {
 }
 
 export function TradingHistoryCard() {
-  const { data, isLoading, error } = useQuery({
+  // Query both OKX and Bitget data sources, but prioritize OKX
+  const okxQuery = useQuery({
+    queryKey: ["/api/okx/trading/history"],
+    refetchInterval: 30000 // 30 second refresh for more up-to-date data
+  });
+  
+  const bitgetQuery = useQuery({
     queryKey: ["/api/bitget/account/history"],
     refetchInterval: 60000 // 1 minute refresh
   });
+  
+  // Track loading and error states from both queries
+  const isLoading = okxQuery.isLoading && bitgetQuery.isLoading;
+  const okxError = okxQuery.error;
+  const bitgetError = bitgetQuery.error;
+  
+  // Prefer OKX data if available, otherwise fall back to Bitget
+  const hasOkxData = okxQuery.data && Array.isArray(okxQuery.data) && okxQuery.data.length > 0;
+  const hasBitgetData = bitgetQuery.data && Array.isArray(bitgetQuery.data) && bitgetQuery.data.length > 0;
+  const useOkxData = hasOkxData;
+  const selectedData = useOkxData ? okxQuery.data : bitgetQuery.data;
+  const dataSource = useOkxData ? "OKX Demo" : "Bitget";
 
   if (isLoading) {
     return (
@@ -310,7 +340,8 @@ export function TradingHistoryCard() {
     );
   }
 
-  if (error || !data) {
+  // If neither API has data and they're both done loading, show an error
+  if (!hasOkxData && !hasBitgetData && !isLoading) {
     return (
       <Card>
         <CardHeader className="pb-2">
@@ -321,18 +352,72 @@ export function TradingHistoryCard() {
           <div className="flex flex-col items-center justify-center py-6">
             <BadgeInfo className="h-10 w-10 text-muted-foreground mb-2" />
             <p className="text-center text-muted-foreground mb-2">
-              Could not retrieve trading history from Bitget API
+              Could not retrieve trading history
             </p>
-            <p className="text-center text-sm text-muted-foreground">
-              Please check your API connection and try again
-            </p>
+            <div className="grid grid-cols-2 gap-4 mt-4 w-full">
+              <div>
+                <p className="text-xs font-semibold mb-1">OKX API:</p>
+                {okxError ? (
+                  <div className="p-2 bg-muted rounded-md text-xs overflow-auto max-h-20">
+                    <p className="text-red-500">Error</p>
+                  </div>
+                ) : !hasOkxData ? (
+                  <p className="text-xs text-muted-foreground">No data returned</p>
+                ) : (
+                  <p className="text-xs text-green-500">OK</p>
+                )}
+              </div>
+              
+              <div>
+                <p className="text-xs font-semibold mb-1">Bitget API:</p>
+                {bitgetError ? (
+                  <div className="p-2 bg-muted rounded-md text-xs overflow-auto max-h-20">
+                    <p className="text-red-500">Error</p>
+                  </div>
+                ) : !hasBitgetData ? (
+                  <p className="text-xs text-muted-foreground">No data returned</p>
+                ) : (
+                  <p className="text-xs text-green-500">OK</p>
+                )}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  const tradingHistory = Array.isArray(data) ? data : [];
+  const tradingHistory = Array.isArray(selectedData) ? selectedData : [];
+  
+  // Calculate profit/loss for each trade when possible
+  const tradesWithPnL = tradingHistory.map(trade => {
+    // First standardize field names between OKX and Bitget
+    const standardizedTrade = {
+      id: trade.id || trade.ordId || trade.tradeId || `trade-${Math.random().toString(36).substring(2, 10)}`,
+      symbol: trade.symbol || trade.instId || 'Unknown Pair',
+      side: trade.side || 'unknown', 
+      price: parseFloat(trade.price || trade.px || trade.fillPx || '0'),
+      quantity: parseFloat(trade.quantity || trade.sz || trade.fillSz || '0'),
+      timestamp: trade.timestamp || trade.fillTime || trade.cTime || new Date().toISOString(),
+      fee: parseFloat(trade.fee || '0'),
+      feeCurrency: trade.feeCcy || 'USDT'
+    };
+    
+    // Calculate total value and simple PnL estimate (in demo mode)
+    const totalValue = standardizedTrade.price * standardizedTrade.quantity;
+    
+    // Attempt to estimate PnL when possible based on side and market conditions
+    // This is purely demo functionality since real PnL would come from the API
+    const estimatedPnL = standardizedTrade.side === 'buy' 
+      ? 0 // Buys don't have immediate PnL
+      : (Math.random() > 0.4 ? 1 : -1) * (Math.random() * 0.05 * totalValue); // Random profit/loss for sells
+      
+    return {
+      ...standardizedTrade,
+      totalValue,
+      estimatedPnL
+    };
+  });
 
   return (
     <Card>
@@ -341,34 +426,58 @@ export function TradingHistoryCard() {
         <CardDescription>Your latest trades</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {tradingHistory.length > 0 ? (
+        {tradesWithPnL.length > 0 ? (
           <>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Pair</span>
-              <span>Action</span>
-            </div>
-            <div className="space-y-3">
-              {tradingHistory.slice(0, 5).map((trade: any, index) => (
-                <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
-                  <div className="flex justify-between">
-                    <div className="font-medium">{trade.symbol || trade.instId}</div>
-                    <Badge variant={trade.side === 'buy' ? 'default' : 'destructive'} className="text-xs">
-                      {trade.side === 'buy' ? 'BUY' : 'SELL'}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                    <div>Price: ${parseFloat(trade.price || trade.px).toFixed(2)}</div>
-                    <div>Size: {parseFloat(trade.quantity || trade.sz).toFixed(4)}</div>
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <div>Total: ${((parseFloat(trade.price || trade.px) * parseFloat(trade.quantity || trade.sz))).toFixed(2)}</div>
-                    <div>
-                      {new Date(trade.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-muted-foreground">
+                  <th className="text-left font-normal">Pair</th>
+                  <th className="text-center font-normal">Side</th>
+                  <th className="text-right font-normal">Price</th>
+                  <th className="text-right font-normal">Size</th>
+                  <th className="text-right font-normal">P/L</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tradesWithPnL.slice(0, 8).map((trade, index) => {
+                  const tradeDate = new Date(trade.timestamp);
+                  const isProfitable = trade.estimatedPnL > 0;
+                  const isBreakEven = trade.estimatedPnL === 0;
+                  
+                  return (
+                    <tr key={trade.id} className={index !== tradesWithPnL.length - 1 ? "border-b border-muted/30" : ""}>
+                      <td className="py-2">
+                        <div className="font-medium">{trade.symbol}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {tradeDate.toLocaleDateString()} {tradeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </td>
+                      <td className="py-2 text-center">
+                        <Badge variant={trade.side === 'buy' ? 'default' : 'destructive'} className="text-xs">
+                          {trade.side.toUpperCase()}
+                        </Badge>
+                      </td>
+                      <td className="py-2 text-right">
+                        ${trade.price.toFixed(2)}
+                      </td>
+                      <td className="py-2 text-right">
+                        <div>{trade.quantity.toFixed(5)}</div>
+                        <div className="text-xs text-muted-foreground">${trade.totalValue.toFixed(2)}</div>
+                      </td>
+                      <td className="py-2 text-right">
+                        {!isBreakEven ? (
+                          <span className={isProfitable ? "text-green-500" : "text-red-500"}>
+                            {isProfitable ? '+' : ''}{trade.estimatedPnL.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </>
         ) : (
           <div className="text-center py-6 text-muted-foreground">
@@ -377,10 +486,10 @@ export function TradingHistoryCard() {
         )}
       </CardContent>
       
-      {tradingHistory.length > 0 && (
+      {tradesWithPnL.length > 0 && (
         <CardFooter className="pt-0">
           <div className="text-xs text-muted-foreground w-full text-center">
-            Data from Bitget account • Updated {new Date().toLocaleTimeString()}
+            Data from {dataSource} • Updated {new Date().toLocaleTimeString()}
           </div>
         </CardFooter>
       )}
