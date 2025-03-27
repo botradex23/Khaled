@@ -53,19 +53,78 @@ export default function BotDemo() {
   const [selectedSymbols, setSelectedSymbols] = useState<string[]>(["BTC-USDT"]);
   const [trades, setTrades] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [botStatus, setBotStatus] = useState<{
+    isRunning: boolean;
+    totalTrades: number;
+    profitLoss: string;
+    profitLossPercent: string;
+  }>({
+    isRunning: false,
+    totalTrades: 0,
+    profitLoss: "0",
+    profitLossPercent: "0"
+  });
   
   // Fetch trading history when page loads
   useEffect(() => {
     setIsLoading(true);
+    
+    // Fetch trading history
     fetch('/api/okx/trading/history')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
           setTrades(data.slice(0, 10)); // Get the 10 most recent trades
+          
+          // Calculate rough P&L from trade history (simplified calculation)
+          let totalBought = 0;
+          let totalSold = 0;
+          let buyCount = 0;
+          let sellCount = 0;
+          
+          data.forEach(trade => {
+            const price = parseFloat(trade.price || '0');
+            const size = parseFloat(trade.size || '0');
+            const value = price * size;
+            
+            if ((trade.side || '').toLowerCase() === 'buy') {
+              totalBought += value;
+              buyCount++;
+            } else {
+              totalSold += value;
+              sellCount++;
+            }
+          });
+          
+          const profit = totalSold - totalBought;
+          let profitPercent = 0;
+          if (totalBought > 0) {
+            profitPercent = (profit / totalBought) * 100;
+          }
+          
+          setBotStatus({
+            isRunning: true, // Assume running if we have trades
+            totalTrades: data.length,
+            profitLoss: profit.toFixed(2),
+            profitLossPercent: profitPercent.toFixed(2)
+          });
         }
       })
       .catch(err => console.error('Error fetching trading history:', err))
       .finally(() => setIsLoading(false));
+      
+    // Also fetch bot status
+    fetch('/api/okx/bots/1/status')
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data === 'object') {
+          setBotStatus(prev => ({
+            ...prev,
+            isRunning: data.isRunning || false
+          }));
+        }
+      })
+      .catch(err => console.error('Error fetching bot status:', err));
   }, []);
   
   // Handle checkbox change for trading pairs
@@ -158,7 +217,7 @@ export default function BotDemo() {
                   <CardContent>
                     <div className="flex items-center">
                       <TrendingUp className="h-6 w-6 mr-2 text-blue-400" />
-                      <span className="text-3xl font-bold text-blue-100">0</span>
+                      <span className="text-3xl font-bold text-blue-100">{botStatus.totalTrades}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -171,8 +230,25 @@ export default function BotDemo() {
                   <CardContent>
                     <div className="flex items-center">
                       <BarChart3 className="h-6 w-6 mr-2 text-blue-400" />
-                      <span className="text-3xl font-bold text-blue-100">0</span>
-                      <span className="text-sm ml-2 text-blue-300">0%</span>
+                      <span className={`text-3xl font-bold ${
+                        parseFloat(botStatus.profitLoss) > 0 
+                          ? 'text-green-400' 
+                          : parseFloat(botStatus.profitLoss) < 0 
+                            ? 'text-red-400' 
+                            : 'text-blue-100'
+                      }`}>
+                        ${Math.abs(parseFloat(botStatus.profitLoss)).toFixed(2)}
+                      </span>
+                      <span className={`text-sm ml-2 ${
+                        parseFloat(botStatus.profitLossPercent) > 0 
+                          ? 'text-green-400' 
+                          : parseFloat(botStatus.profitLossPercent) < 0 
+                            ? 'text-red-400' 
+                            : 'text-blue-300'
+                      }`}>
+                        {parseFloat(botStatus.profitLossPercent) > 0 ? '+' : ''}
+                        {botStatus.profitLossPercent}%
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -184,10 +260,17 @@ export default function BotDemo() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center">
-                      <Badge variant="outline" className="border-amber-500 text-amber-400 bg-amber-950">
-                        <Pause className="h-3 w-3 mr-1" />
-                        Paused
-                      </Badge>
+                      {botStatus.isRunning ? (
+                        <Badge variant="outline" className="border-green-500 text-green-400 bg-green-950">
+                          <Play className="h-3 w-3 mr-1" />
+                          פעיל
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-amber-500 text-amber-400 bg-amber-950">
+                          <Pause className="h-3 w-3 mr-1" />
+                          מושהה
+                        </Badge>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
