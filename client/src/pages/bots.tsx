@@ -1131,7 +1131,7 @@ export default function Bots() {
       </Dialog>
 
       {/* API Keys Dialog */}
-      <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
+      <Dialog open={showApiKeyDialog} onOpenChange={(open) => setShowApiKeyDialog(open)}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">

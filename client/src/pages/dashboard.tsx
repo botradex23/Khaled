@@ -261,7 +261,7 @@ export default function Dashboard() {
       <Footer />
       
       {/* API Key Setup Dialog */}
-      <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
+      <Dialog open={showApiKeyDialog} onOpenChange={(open) => setShowApiKeyDialog(open)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center">
@@ -288,9 +288,12 @@ export default function Dashboard() {
           </div>
           
           <DialogFooter>
-            <Button onClick={() => setLocation("/api-keys")} className="w-full">
+            <Button variant="outline" onClick={() => setShowApiKeyDialog(false)}>
+              Later
+            </Button>
+            <Button onClick={() => setLocation("/api-keys")} className="gap-2">
               Set Up API Keys
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </DialogFooter>
         </DialogContent>
