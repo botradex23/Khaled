@@ -246,8 +246,8 @@ export function AccountBalanceCard() {
                   <thead>
                     <tr className="text-xs text-muted-foreground">
                       <th className="text-left">Asset ({sortedBalances.length})</th>
-                      <th className="text-right">Quantity (Units)</th>
-                      <th className="text-right">Value (USD)</th>
+                      <th className="text-right">Quantity & Price</th>
+                      <th className="text-right">Total Value</th>
                       <th>Distribution</th>
                     </tr>
                   </thead>
@@ -282,27 +282,34 @@ export function AccountBalanceCard() {
                           <tr key={asset.currency} className={`${isMinorHolding ? 'text-muted-foreground' : ''}`}>
                             <td className="py-0.5 font-medium text-sm">{asset.currency}</td>
                             <td className="py-0.5 text-sm text-right">
-                              <div>{formattedAmount}</div>
+                              {/* Amount section */}
+                              <div className="font-medium">{formattedAmount}</div>
                               {asset.total > 0 && (
                                 <div className="text-xs text-muted-foreground mt-0.5">
-                                  {/* Display percentage of a full coin - use backend-calculated value if available */}
+                                  {/* Display percentage of a full coin */}
                                   {asset.total < 1 && asset.total > 0 && (
-                                    <span className="mr-1">
+                                    <div className="mb-1">
                                       {asset.percentOfWhole !== undefined 
-                                        ? asset.percentOfWhole.toFixed(4) 
-                                        : (asset.total * 100).toFixed(4)}% of 1 {asset.currency}
-                                    </span>
+                                        ? asset.percentOfWhole.toFixed(2) 
+                                        : (asset.total * 100).toFixed(2)}% of 1 {asset.currency}
+                                    </div>
                                   )}
-                                  <div>
-                                    @${pricePerUnit.toLocaleString(undefined, { 
-                                      maximumFractionDigits: pricePerUnit > 1000 ? 0 : pricePerUnit > 1 ? 2 : 4 
-                                    })}/unit
+                                  {/* Unit price */}
+                                  <div className="border-t border-muted/30 pt-1 mt-1">
+                                    <span className="text-muted-foreground">Price: </span>
+                                    <span className="font-medium">
+                                      ${pricePerUnit.toLocaleString(undefined, { 
+                                        maximumFractionDigits: pricePerUnit > 1000 ? 0 : pricePerUnit > 1 ? 2 : 4 
+                                      })}/unit
+                                    </span>
                                   </div>
                                 </div>
                               )}
                             </td>
-                            <td className="py-0.5 text-right font-medium">
-                              <div className="text-primary text-base">
+                            <td className="py-0.5 text-right">
+                              {/* Total value section with clear label */}
+                              <div className="text-xs text-muted-foreground mb-1">Total Value</div>
+                              <div className="text-primary text-base font-medium">
                                 ${asset.valueUSD < 0.01 && asset.valueUSD > 0 
                                   ? asset.valueUSD.toFixed(8) 
                                   : asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
