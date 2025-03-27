@@ -260,8 +260,19 @@ export function AccountBalanceCard() {
                         const isMinorHolding = percentage < 0.1;
                         
                         // Calculate appropriate precision for unit quantity based on asset value
-                        const precision = asset.total < 0.001 ? 8 : asset.total < 1 ? 6 : 4;
-                        const formattedAmount = asset.total.toFixed(precision);
+                        // For very small numbers (< 0.0001), use scientific notation
+                        // For small numbers (< 0.001), use 8 decimals
+                        // For medium numbers (< 1), use 6 decimals
+                        // For larger numbers, use 4 decimals
+                        let formattedAmount;
+                        
+                        if (asset.total < 0.0001 && asset.total > 0) {
+                          // Use scientific notation for extremely small values but with actual value
+                          formattedAmount = asset.total.toExponential(4);
+                        } else {
+                          const precision = asset.total < 0.001 ? 8 : asset.total < 1 ? 6 : 4;
+                          formattedAmount = asset.total.toFixed(precision);
+                        }
                         
                         // Calculate USD price per unit of cryptocurrency
                         const pricePerUnit = asset.total > 0 ? asset.valueUSD / asset.total : 0;
@@ -277,8 +288,8 @@ export function AccountBalanceCard() {
                                   {asset.total < 1 && asset.total > 0 && (
                                     <span className="mr-1">
                                       {asset.percentOfWhole !== undefined 
-                                        ? asset.percentOfWhole.toFixed(2) 
-                                        : (asset.total * 100).toFixed(2)}% of 1 {asset.currency}
+                                        ? asset.percentOfWhole.toFixed(4) 
+                                        : (asset.total * 100).toFixed(4)}% of 1 {asset.currency}
                                     </span>
                                   )}
                                   <div>
@@ -290,7 +301,11 @@ export function AccountBalanceCard() {
                               )}
                             </td>
                             <td className="py-0.5 text-right font-medium">
-                              <div className="text-primary text-base">${asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                              <div className="text-primary text-base">
+                                ${asset.valueUSD < 0.01 && asset.valueUSD > 0 
+                                  ? asset.valueUSD.toFixed(8) 
+                                  : asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                              </div>
                             </td>
                             <td className="py-0.5 w-1/3">
                               <div className="flex items-center gap-1">
