@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   Card, 
   CardContent, 
@@ -55,7 +56,8 @@ import {
   Check,
   AlertCircle,
   Clock,
-  X
+  X,
+  Key
 } from "lucide-react";
 import {
   LineChart,
@@ -83,15 +85,57 @@ export default function Bots() {
   const [showBotDetails, setShowBotDetails] = useState<boolean>(false);
   const [selectedTradingPair, setSelectedTradingPair] = useState<string>("");
   const [selectedSymbols, setSelectedSymbols] = useState<string[]>([]);
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState<boolean>(false);
   
-  // Use toast for notifications
+  // Use auth and toast hooks
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [location, setLocation] = useLocation();
+  
+  // Define API keys response type
+  interface ApiKeysResponse {
+    message: string;
+    apiKeys: {
+      okxApiKey: string | null;
+      okxSecretKey: string | null;
+      okxPassphrase: string | null;
+      defaultBroker: string;
+      useTestnet: boolean;
+    };
+  }
+  
+  // Fetch API keys status
+  const { data: apiKeysData, isLoading: apiKeysLoading } = useQuery<ApiKeysResponse>({
+    queryKey: ["/api/users/api-keys"],
+    enabled: isAuthenticated,
+    refetchOnWindowFocus: false,
+    retry: 0, // Don't retry on failure
+  });
   
   // Fetch bots data
   const { data: bots, isLoading, refetch } = useQuery<Bot[]>({
     queryKey: ['/api/bots'],
   });
+  
+  // Check if user needs to set up API keys (except for hindi1000hindi@gmail.com)
+  useEffect(() => {
+    if (isAuthenticated && !apiKeysLoading && user) {
+      const isHindi1000Hindi = user.email === "hindi1000hindi@gmail.com";
+      
+      // If user is not hindi1000hindi@gmail.com and doesn't have API keys set up
+      if (!isHindi1000Hindi && apiKeysData) {
+        // Check if API keys are missing
+        if (!apiKeysData.apiKeys || 
+            !apiKeysData.apiKeys.okxApiKey || 
+            !apiKeysData.apiKeys.okxSecretKey || 
+            !apiKeysData.apiKeys.okxPassphrase) {
+          // Show dialog
+          setShowApiKeyDialog(true);
+        }
+      }
+    }
+  }, [isAuthenticated, apiKeysLoading, apiKeysData, user]);
   
   // Start bot mutation
   const startBotMutation = useMutation({
@@ -1081,6 +1125,52 @@ export default function Bots() {
             </div>
             <Button variant="outline" onClick={() => setShowBotDetails(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* API Keys Dialog */}
+      <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5 text-primary" />
+              API Keys Required
+            </DialogTitle>
+            <DialogDescription>
+              You need to set up your API keys to use the trading bots.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="rounded-lg bg-muted/50 p-4 text-sm">
+              <p className="mb-2 font-medium">Why API Keys are needed:</p>
+              <ul className="list-disc space-y-1 pl-5">
+                <li>Connect securely to your exchange account</li>
+                <li>Allow the bot to execute trades on your behalf</li>
+                <li>Monitor your balance and trading history</li>
+              </ul>
+            </div>
+            
+            <p className="text-sm text-muted-foreground">
+              Your API keys are stored securely and are only used for the specific actions you authorize.
+            </p>
+          </div>
+          
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowApiKeyDialog(false)}>
+              Later
+            </Button>
+            <Button 
+              className="gap-1" 
+              onClick={() => {
+                setShowApiKeyDialog(false);
+                setLocation("/api-keys");
+              }}
+            >
+              <Key className="h-4 w-4" />
+              Set Up API Keys
             </Button>
           </DialogFooter>
         </DialogContent>

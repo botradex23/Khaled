@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useAuth } from "@/hooks/use-auth";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import { 
@@ -65,7 +66,18 @@ import {
   ArrowDownRight,
   AlertCircle,
   CheckCircle2,
+  Key,
+  ArrowRight
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 
 // Define form schema
 const botFormSchema = z.object({
@@ -88,8 +100,12 @@ export default function AIGridBot() {
   const [activeTab, setActiveTab] = useState("settings");
   const [botId, setBotId] = useState<number | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState<boolean>(false);
   const { toast } = useToast();
-  const [, navigate] = useLocation();
+  const [, setLocation] = useLocation();
+  
+  // Auth state
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
 
   // Popular trading pairs
   const tradingPairs = [
@@ -114,6 +130,45 @@ export default function AIGridBot() {
     },
   });
 
+  // Define API keys response type
+  interface ApiKeysResponse {
+    message: string;
+    apiKeys: {
+      okxApiKey: string | null;
+      okxSecretKey: string | null;
+      okxPassphrase: string | null;
+      defaultBroker: string;
+      useTestnet: boolean;
+    };
+  }
+  
+  // Fetch API keys status
+  const { data: apiKeysData, isLoading: apiKeysLoading } = useQuery<ApiKeysResponse>({
+    queryKey: ["/api/users/api-keys"],
+    enabled: isAuthenticated,
+    refetchOnWindowFocus: false,
+    retry: 0, // Don't retry on failure
+  });
+  
+  // Check if user needs to set up API keys (except for hindi1000hindi@gmail.com)
+  useEffect(() => {
+    if (isAuthenticated && !authLoading && !apiKeysLoading && user) {
+      const isHindi1000Hindi = user.email === "hindi1000hindi@gmail.com";
+      
+      // If user is not hindi1000hindi@gmail.com and doesn't have API keys set up
+      if (!isHindi1000Hindi && apiKeysData) {
+        // Check if API keys are missing
+        if (!apiKeysData.apiKeys || 
+            !apiKeysData.apiKeys.okxApiKey || 
+            !apiKeysData.apiKeys.okxSecretKey || 
+            !apiKeysData.apiKeys.okxPassphrase) {
+          // Show dialog
+          setShowApiKeyDialog(true);
+        }
+      }
+    }
+  }, [isAuthenticated, authLoading, apiKeysLoading, apiKeysData, user]);
+  
   // Get market data for the selected pair
   const selectedPair = form.watch("symbol");
   const { data: marketData = [] } = useQuery<any[]>({
@@ -752,5 +807,43 @@ export default function AIGridBot() {
         }
       `}} />
     </div>
+    
+    {/* API Keys Dialog */}
+    <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center">
+            <Key className="w-6 h-6 mr-2 text-primary" />
+            API Keys Required
+          </DialogTitle>
+          <DialogDescription>
+            You need to configure your OKX API keys before creating a trading bot.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="py-4">
+          <Alert className="mb-4">
+            <AlertTitle className="flex items-center">
+              <AlertCircle className="w-4 h-4 mr-2" />
+              Trading requires API access
+            </AlertTitle>
+            <p className="mt-2">To use the AI Grid Bot, you need to provide your OKX API keys with trading permissions.</p>
+          </Alert>
+          
+          <p className="mb-4">
+            Please set up your API keys to continue. This is required for the trading bot to execute trades on your behalf.
+          </p>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowApiKeyDialog(false)}>
+            Later
+          </Button>
+          <Button onClick={() => setLocation("/api-keys")} className="gap-2">
+            Set Up API Keys <ArrowRight className="w-4 h-4" />
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

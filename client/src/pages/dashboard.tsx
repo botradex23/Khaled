@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
@@ -42,13 +42,29 @@ import {
   BarChart4, 
   PieChart as PieChartIcon,
   Wallet,
-  RefreshCw
+  RefreshCw,
+  KeyRound,
+  AlertCircle
 } from "lucide-react";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function Dashboard() {
-  const { isAuthenticated, isLoading: authLoading, checkSession } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, checkSession, user } = useAuth();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   
   // Check if user is authenticated
   useEffect(() => {
@@ -70,10 +86,49 @@ export default function Dashboard() {
   }, [isAuthenticated, authLoading, checkSession, setLocation, toast]);
   
   // Fetch user's bots
-  const { data: bots, isLoading } = useQuery<Bot[]>({
+  const { data: bots, isLoading: botsLoading } = useQuery<Bot[]>({
     queryKey: ['/api/bots'],
     enabled: isAuthenticated // Only fetch if user is authenticated
   });
+  
+  // Define API keys response type
+  interface ApiKeysResponse {
+    message: string;
+    apiKeys: {
+      okxApiKey: string | null;
+      okxSecretKey: string | null;
+      okxPassphrase: string | null;
+      defaultBroker: string;
+      useTestnet: boolean;
+    };
+  }
+  
+  // Fetch API keys status
+  const { data: apiKeysData, isLoading: apiKeysLoading } = useQuery<ApiKeysResponse>({
+    queryKey: ["/api/users/api-keys"],
+    enabled: isAuthenticated,
+    refetchOnWindowFocus: false,
+    retry: 0, // Don't retry on failure
+  });
+  
+  // Check if user needs to set up API keys (except for hindi1000hindi@gmail.com)
+  useEffect(() => {
+    if (isAuthenticated && !authLoading && !apiKeysLoading && user) {
+      const isHindi1000Hindi = user.email === "hindi1000hindi@gmail.com";
+      
+      // If user is not hindi1000hindi@gmail.com and doesn't have API keys set up
+      if (!isHindi1000Hindi && apiKeysData) {
+        // Check if API keys are missing
+        if (!apiKeysData.apiKeys || 
+            !apiKeysData.apiKeys.okxApiKey || 
+            !apiKeysData.apiKeys.okxSecretKey || 
+            !apiKeysData.apiKeys.okxPassphrase) {
+          // Show dialog
+          setShowApiKeyDialog(true);
+        }
+      }
+    }
+  }, [isAuthenticated, authLoading, apiKeysLoading, apiKeysData, user]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -120,7 +175,7 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
+              {botsLoading ? (
                 <div className="py-10 text-center text-muted-foreground">Loading bots...</div>
               ) : bots && bots.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -204,6 +259,42 @@ export default function Dashboard() {
         </div>
       </main>
       <Footer />
+      
+      {/* API Key Setup Dialog */}
+      <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <KeyRound className="h-5 w-5 mr-2 text-primary" />
+              API Keys Required
+            </DialogTitle>
+            <DialogDescription>
+              You need to set up your OKX API keys to access trading functionality.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Alert className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Important</AlertTitle>
+              <AlertDescription>
+                Each user must configure their own API keys to access their personal OKX account data.
+              </AlertDescription>
+            </Alert>
+            
+            <p className="text-sm mb-6">
+              Without API keys, you won't be able to view your account balance, execute trades, or use automated trading bots.
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <Button onClick={() => setLocation("/api-keys")} className="w-full">
+              Set Up API Keys
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
