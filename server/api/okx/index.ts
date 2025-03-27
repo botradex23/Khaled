@@ -150,7 +150,24 @@ router.get('/account/balance', async (req: Request, res: Response) => {
 router.get('/trading/history', async (req: Request, res: Response) => {
   try {
     const history = await accountService.getTradingHistory();
-    res.json(history);
+    // Format the data for our React client to better handle it
+    const formattedHistory = Array.isArray(history) ? history.map((item: any) => {
+      // OKX returns a different format than what our frontend expects
+      // Map it to a consistent format
+      return {
+        id: item.tradeId || item.ordId || item.fillId || `okx-${Date.now()}`,
+        symbol: item.instId || 'BTC-USDT',
+        side: item.side || 'buy',
+        price: item.fillPx || item.px || '0',
+        size: item.fillSz || item.sz || '0',
+        status: 'בוצע',
+        timestamp: item.fillTime || item.cTime || item.uTime || new Date().toISOString(),
+        feeCurrency: item.feeCcy || 'USDT',
+        fee: item.fee || '0'
+      };
+    }) : [];
+    
+    res.json(formattedHistory);
   } catch (err) {
     // If the API call fails, return demo trading data so we can show some sample data in the UI
     const currentDate = new Date();

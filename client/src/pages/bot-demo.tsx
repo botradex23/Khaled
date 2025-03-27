@@ -222,22 +222,36 @@ export default function BotDemo() {
                         trades.map((trade, index) => (
                           <TableRow key={index} className="border-blue-800">
                             <TableCell className="text-blue-100">
-                              {new Date(trade.ts || trade.timestamp || Date.now()).toLocaleString()}
+                              {(() => {
+                                try {
+                                  return new Date(trade.timestamp).toLocaleString();
+                                } catch (e) {
+                                  return new Date().toLocaleString();
+                                }
+                              })()}
                             </TableCell>
                             <TableCell>
                               <Badge
                                 variant="outline" 
                                 className={
-                                  trade.side === 'buy' 
+                                  (trade.side || '').toLowerCase() === 'buy' 
                                     ? "border-green-500 text-green-400 bg-green-950" 
                                     : "border-red-500 text-red-400 bg-red-950"
                                 }
                               >
-                                {trade.side === 'buy' ? 'קנייה' : 'מכירה'}
+                                {(trade.side || '').toLowerCase() === 'buy' ? 'קנייה' : 'מכירה'}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-blue-100">${parseFloat(trade.price || trade.px || 0).toFixed(2)}</TableCell>
-                            <TableCell className="text-blue-100">{parseFloat(trade.size || trade.sz || 0).toFixed(5)}</TableCell>
+                            <TableCell className="text-blue-100">
+                              ${typeof trade.price === 'number' 
+                                ? trade.price.toFixed(2) 
+                                : parseFloat(trade.price || '0').toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-blue-100">
+                              {typeof trade.size === 'number' 
+                                ? trade.size.toFixed(5) 
+                                : parseFloat(trade.size || '0').toFixed(5)}
+                            </TableCell>
                             <TableCell>
                               <Badge variant="outline" className="border-green-500 text-green-400 bg-green-950">
                                 {trade.state || trade.status || 'בוצע'}
