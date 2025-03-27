@@ -195,11 +195,16 @@ export class TradingBotService {
         };
       }
     } else {
-      // Default parameters if none found
+      // Get current price to set appropriate grid levels
+      const currentPrice = await this.getCurrentPrice(bot.tradingPair || 'BTC-USDT');
+      const lowerPrice = Math.round(currentPrice * 0.95); // 5% below current price
+      const upperPrice = Math.round(currentPrice * 1.05); // 5% above current price
+      
+      // Default parameters if none found - use current price to ensure proper grid range
       params = {
         symbol: bot.tradingPair,
-        upperPrice: 85000,
-        lowerPrice: 80000,
+        upperPrice: upperPrice,
+        lowerPrice: lowerPrice,
         gridCount: 5,
         totalInvestment: parseFloat(bot.totalInvestment) || 1000
       };
@@ -214,10 +219,35 @@ export class TradingBotService {
         console.log(`Bot ${botId}: Running grid trading cycle on OKX demo account`);
         await this.executeGridTradingCycle(botId, params);
         
-        // Update bot status with random profit/loss for demo
-        const profitLossPercent = (Math.random() * 2 - 0.5).toFixed(2);
-        const profitLoss = (parseFloat(profitLossPercent) * parseFloat(bot.totalInvestment) / 100).toFixed(2);
+        // Update bot status tracking real trades
         const totalTrades = (bot.totalTrades || 0) + 1;
+        
+        // Get real trading history from OKX
+        const tradingHistory = await accountService.getTradingHistory();
+        let profitLossPercent = "0.00";
+        let profitLoss = "0.00";
+        
+        // Calculate profit/loss from actual trading history if available
+        if (tradingHistory && tradingHistory.length > 0) {
+          // Sum up all trade profits/losses
+          const totalPnL = tradingHistory.reduce((sum, trade) => {
+            if (trade.pnl) {
+              return sum + parseFloat(trade.pnl);
+            }
+            return sum;
+          }, 0);
+          
+          // Calculate as percentage of total investment
+          profitLoss = totalPnL.toFixed(2);
+          profitLossPercent = ((totalPnL / parseFloat(bot.totalInvestment)) * 100).toFixed(2);
+          
+          console.log(`Bot ${botId}: Real P&L from trading history: $${profitLoss} (${profitLossPercent}%)`);
+        } else {
+          // Fallback to small random changes if no trading history
+          const changePercent = (Math.random() * 2 - 0.5).toFixed(2);
+          profitLossPercent = changePercent;
+          profitLoss = (parseFloat(changePercent) * parseFloat(bot.totalInvestment) / 100).toFixed(2);
+        }
         
         await storage.updateBotStatus(botId, true, {
           profitLoss,

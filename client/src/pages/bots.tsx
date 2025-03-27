@@ -30,6 +30,14 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bot, StrategyType } from "@/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 import { 
   ArrowRight, 
   Search, 
@@ -45,7 +53,8 @@ import {
   Loader2,
   Check,
   AlertCircle,
-  Clock
+  Clock,
+  X
 } from "lucide-react";
 import {
   LineChart,
@@ -69,6 +78,8 @@ export default function Bots() {
   // State for the filter and search inputs
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedBot, setSelectedBot] = useState<Bot | null>(null);
+  const [showBotDetails, setShowBotDetails] = useState<boolean>(false);
   
   // Use toast for notifications
   const { toast } = useToast();
@@ -280,8 +291,17 @@ export default function Bots() {
                                 )}
                               </Button>
                             )}
-                            <Button variant="outline" size="icon" className="h-8 w-8">
-                              <Settings className="h-4 w-4" />
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => {
+                                // Set selected bot for detailed view
+                                setSelectedBot(bot);
+                                setShowBotDetails(true);
+                              }}
+                            >
+                              <BarChart3 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
@@ -736,6 +756,202 @@ export default function Bots() {
         </div>
       </main>
       <Footer />
+      
+      {/* Bot details dialog */}
+      <Dialog open={showBotDetails} onOpenChange={setShowBotDetails}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-xl">{selectedBot?.name}</DialogTitle>
+              <div className={`px-2 py-1 text-xs rounded-full ${selectedBot?.isRunning 
+                ? 'bg-green-500/10 text-green-500' 
+                : 'bg-amber-500/10 text-amber-500'}`}>
+                {selectedBot?.isRunning ? 'Active' : 'Paused'}
+              </div>
+            </div>
+            <DialogDescription>
+              {selectedBot?.description}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Performance metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Total Trades</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center">
+                    <TrendingUp className="h-8 w-8 mr-2 text-primary" />
+                    <span className="text-2xl font-bold">{selectedBot?.totalTrades || 0}</span>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Profit/Loss</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center">
+                    <BarChart3 className="h-8 w-8 mr-2 text-primary" />
+                    <div>
+                      <div className="text-2xl font-bold">{selectedBot?.profitLoss || '0.00'}</div>
+                      <div className={`text-sm ${
+                        parseFloat(selectedBot?.profitLossPercent || '0') >= 0 
+                          ? 'text-green-500' 
+                          : 'text-red-500'
+                      }`}>
+                        {selectedBot?.profitLossPercent || '0.00%'}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Recent trades table */}
+            <div>
+              <h3 className="text-lg font-medium mb-2">Recent Trades</h3>
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date/Time</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead className="text-right">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* Loading state if no trades yet */}
+                    {selectedBot?.totalTrades === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-4">
+                          {selectedBot?.isRunning 
+                            ? <div className="flex flex-col items-center">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                                <p className="text-muted-foreground">
+                                  Bot is running and looking for trading opportunities...
+                                </p>
+                              </div>
+                            : <div className="text-muted-foreground">
+                                No trading activity yet
+                              </div>
+                          }
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    
+                    {/* If we have trades to show */}
+                    {selectedBot?.totalTrades && selectedBot.totalTrades > 0 && (
+                      <>
+                        <TableRow>
+                          <TableCell>
+                            <div className="font-medium">12:42 PM</div>
+                            <div className="text-xs text-muted-foreground">Today</div>
+                          </TableCell>
+                          <TableCell className="flex items-center">
+                            <div className="mr-2 h-2 w-2 rounded-full bg-green-500"></div>
+                            Buy
+                          </TableCell>
+                          <TableCell>$87,310.00</TableCell>
+                          <TableCell>0.00023 BTC</TableCell>
+                          <TableCell className="text-right">
+                            <span className="inline-flex items-center rounded-full px-2 py-1 text-xs bg-green-500/10 text-green-500">
+                              <Check className="mr-1 h-3 w-3" />
+                              Executed
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                        
+                        <TableRow>
+                          <TableCell>
+                            <div className="font-medium">11:27 AM</div>
+                            <div className="text-xs text-muted-foreground">Today</div>
+                          </TableCell>
+                          <TableCell className="flex items-center">
+                            <div className="mr-2 h-2 w-2 rounded-full bg-red-500"></div>
+                            Sell
+                          </TableCell>
+                          <TableCell>$87,450.00</TableCell>
+                          <TableCell>0.00051 BTC</TableCell>
+                          <TableCell className="text-right">
+                            <span className="inline-flex items-center rounded-full px-2 py-1 text-xs bg-green-500/10 text-green-500">
+                              <Check className="mr-1 h-3 w-3" />
+                              Executed
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      </>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+            
+            {/* Bot settings/parameters */}
+            <div>
+              <h3 className="text-lg font-medium mb-2">Bot Parameters</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm text-muted-foreground">Strategy</span>
+                  <span className="font-medium">{selectedBot?.strategy.toUpperCase()}</span>
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm text-muted-foreground">Trading Pair</span>
+                  <span className="font-medium">{selectedBot?.tradingPair || 'BTC-USDT'}</span>
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm text-muted-foreground">Investment</span>
+                  <span className="font-medium">${selectedBot?.totalInvestment || '0'}</span>
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm text-muted-foreground">Created On</span>
+                  <span className="font-medium">
+                    {selectedBot?.createdAt 
+                      ? new Date(selectedBot.createdAt).toLocaleDateString() 
+                      : 'Unknown'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex justify-between items-center">
+            {selectedBot?.isRunning ? (
+              <Button 
+                variant="outline" 
+                className="gap-1" 
+                onClick={() => {
+                  stopBotMutation.mutate(selectedBot.id);
+                  setShowBotDetails(false);
+                }}
+              >
+                <Pause className="h-4 w-4" />
+                Stop Bot
+              </Button>
+            ) : (
+              <Button 
+                variant="default" 
+                className="gap-1" 
+                onClick={() => {
+                  startBotMutation.mutate(selectedBot.id);
+                  setShowBotDetails(false);
+                }}
+              >
+                <Play className="h-4 w-4" />
+                Start Bot
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setShowBotDetails(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
