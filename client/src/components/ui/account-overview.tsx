@@ -274,8 +274,9 @@ export function AccountBalanceCard() {
                           formattedAmount = asset.total.toFixed(precision);
                         }
                         
-                        // Calculate USD price per unit of cryptocurrency
-                        const pricePerUnit = asset.total > 0 ? asset.valueUSD / asset.total : 0;
+                        // Use the price per unit from the backend
+                        // This is the market price of the cryptocurrency, not the calculated value from total and USD value
+                        const pricePerUnit = asset.pricePerUnit || (asset.total > 0 ? asset.valueUSD / asset.total : 0);
                         
                         return (
                           <tr key={asset.currency} className={`${isMinorHolding ? 'text-muted-foreground' : ''}`}>
@@ -293,9 +294,9 @@ export function AccountBalanceCard() {
                                     </span>
                                   )}
                                   <div>
-                                    @${(asset.pricePerUnit !== undefined 
-                                        ? asset.pricePerUnit 
-                                        : pricePerUnit).toLocaleString(undefined, { maximumFractionDigits: 2 })}/unit
+                                    @${pricePerUnit.toLocaleString(undefined, { 
+                                      maximumFractionDigits: pricePerUnit > 1000 ? 0 : pricePerUnit > 1 ? 2 : 4 
+                                    })}/unit
                                   </div>
                                 </div>
                               )}

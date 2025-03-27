@@ -179,35 +179,38 @@ export class AccountService {
           const frozen = parseFloat(balance.frozenBal) || 0;
           const total = balance.bal ? parseFloat(balance.bal) : (available + frozen);
           
-          // Fix USD value calculation - always use real-time prices when available for accuracy
-          let valueUSD = parseFloat(balance.eq) || 0;
+          // Always get accurate currency prices from realtime market data
+          let valueUSD = 0;
+          let pricePerUnit = 0;
           
-          // Always prefer real-time pricing data for most accuracy
+          // First determine the price per unit of the currency
           if (currencyPrices[balance.ccy]) {
-            const realTimePrice = currencyPrices[balance.ccy];
-            const estimatedValue = total * realTimePrice;
-            
-            // Use real-time value instead of API value for better accuracy
-            if (valueUSD !== estimatedValue) {
-              // Only log significant differences to reduce noise
-              if (Math.abs(estimatedValue - valueUSD) > 0.1) {
-                console.log(`Updated ${balance.ccy} value from ${valueUSD} to ${estimatedValue} USD using real-time price: ${realTimePrice}`);
-              }
-              valueUSD = estimatedValue;
-            }
+            // Use real-time market price data (most accurate)
+            pricePerUnit = currencyPrices[balance.ccy];
           } 
           // Special case for stablecoins that might not have direct pair pricing
           else if (balance.ccy === 'USDT' || balance.ccy === 'USDC' || balance.ccy === 'BUSD' || balance.ccy === 'DAI') {
-            // Stablecoins should be valued at 1:1 with USD
-            valueUSD = total;
+            // Stablecoins are valued at 1:1 with USD
+            pricePerUnit = 1;
           }
-          // For any other currency with non-zero balance but missing valueUSD, log for debugging
-          else if (total > 0.00001 && valueUSD < 0.1) {
-            console.log(`Balance ${balance.ccy} has potential pricing issue (value: ${valueUSD}, amount: ${total})`);
+          // Fallback to API provided value (least accurate)
+          else {
+            // Attempt to derive price from API-provided balance.eq (USD value)
+            pricePerUnit = total > 0 ? parseFloat(balance.eq) / total : 0;
+            
+            // For any currency with non-zero balance but missing price, log for debugging
+            if (total > 0.00001 && pricePerUnit === 0) {
+              console.log(`Balance ${balance.ccy} is missing price data (amount: ${total})`);
+            }
           }
           
-          // Calculate price per unit
-          const pricePerUnit = total > 0 ? valueUSD / total : 0;
+          // Now calculate USD value based on the determined price per unit and total holdings
+          valueUSD = total * pricePerUnit;
+          
+          // Log significant price determinations for debugging
+          if (total > 0.01 && pricePerUnit > 0) {
+            console.log(`${balance.ccy}: ${total} units @ $${pricePerUnit} = $${valueUSD}`);
+          }
           
           // Calculate percentage of whole coin
           const percentOfWhole = total < 1 ? total * 100 : undefined;
@@ -287,8 +290,14 @@ export class AccountService {
     return DEFAULT_CURRENCIES.map(currency => {
       const balance = demoBalances[currency] || { total: 0, available: 0, frozen: 0 };
       const price = prices[currency] || 0;
-      // Calculate price per unit and percentage of whole for demo data too
-      const pricePerUnit = balance.total > 0 ? (balance.total * price) / balance.total : price;
+      
+      // Calculate USD value using proper price calculation
+      const valueUSD = balance.total * price;
+      
+      // Calculate price per unit ensuring it's the actual price per unit (not the value again)
+      const pricePerUnit = price; // The price per unit is simply the market price of the currency
+      
+      // Calculate percentage of whole for demo data too
       const percentOfWhole = balance.total < 1 ? balance.total * 100 : undefined;
       
       return {
@@ -296,7 +305,7 @@ export class AccountService {
         available: balance.available,
         frozen: balance.frozen,
         total: balance.total,
-        valueUSD: balance.total * price,
+        valueUSD: valueUSD,
         pricePerUnit: pricePerUnit,
         percentOfWhole: percentOfWhole
       };
