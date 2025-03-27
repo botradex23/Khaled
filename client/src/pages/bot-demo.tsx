@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Tabs, 
   TabsContent, 
@@ -18,211 +19,320 @@ import {
 } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import { 
   ArrowUpRight, 
+  ArrowDownRight, 
   Wallet, 
   Settings,
   History,
+  BarChart3,
+  TrendingUp,
+  Play,
+  Pause,
+  RefreshCw,
+  LineChart
 } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
 
 export default function BotDemo() {
-  const [activeTab, setActiveTab] = useState("balance");
+  const [selectedSymbols, setSelectedSymbols] = useState<string[]>(["BTC-USDT"]);
   
-  // Demo data
-  const portfolioValue = 10790.00;
-  const cryptocurrencies = [
-    { currency: "BTC", value: 5500.00, percentage: 51.0 },
-    { currency: "ETH", value: 2200.00, percentage: 20.4 },
-    { currency: "USDT", value: 1800.00, percentage: 16.7 },
-    { currency: "SOL", value: 1290.00, percentage: 11.9 },
-  ];
+  // Handle checkbox change for trading pairs
+  const handleSymbolChange = (symbol: string, checked: boolean) => {
+    if (checked) {
+      setSelectedSymbols(prev => [...prev, symbol]);
+    } else {
+      setSelectedSymbols(prev => prev.filter(s => s !== symbol));
+    }
+  };
   
-  const trades = [
-    { time: "2023-03-26 05:32:10", action: "BUY", pair: "BTC-USDT", amount: "0.02", price: "87742.5" },
-    { time: "2023-03-25 18:45:23", action: "SELL", pair: "SOL-USDT", amount: "5.0", price: "144.23" },
-    { time: "2023-03-25 12:21:05", action: "BUY", pair: "ETH-USDT", amount: "0.5", price: "2077.11" },
+  // Available trading pairs
+  const availableTradingPairs = [
+    "BTC-USDT",
+    "ETH-USDT",
+    "SOL-USDT",
+    "XRP-USDT",
+    "BNB-USDT"
   ];
   
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background dark">
       <Header />
-      <main className="flex-grow pt-16 pb-12 px-4">
+      <main className="flex-grow pt-16 pb-12 px-4 md:px-6">
         <div className="max-w-7xl mx-auto">
-          <Tabs defaultValue="balance" onValueChange={setActiveTab}>
-            <TabsList className="flex w-full space-x-1 mb-6">
-              <TabsTrigger value="balance" className="flex-1">
-                <Wallet className="h-4 w-4 mr-2" />
-                Account Balance
-              </TabsTrigger>
-              <TabsTrigger value="activity" className="flex-1">
-                <History className="h-4 w-4 mr-2" />
-                Trading Activity
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex-1">
-                <Settings className="h-4 w-4 mr-2" />
-                Bot Settings
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="balance" className="space-y-4">
-              <Card>
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            {/* Main Content - Performance Stats */}
+            <div className="md:col-span-8 space-y-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight">AI Grid Bot</h1>
+                  <p className="text-muted-foreground mt-1">
+                    Advanced AI-powered bot trading multiple cryptocurrencies
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 mt-4 md:mt-0">
+                  <Button variant="outline">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh Data
+                  </Button>
+                  <Button>
+                    <Play className="h-4 w-4 mr-2" />
+                    Start Bot
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Key Metrics Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Total Trades Card */}
+                <Card className="bg-blue-950 border-blue-800">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium text-blue-300">Total Trades</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center">
+                      <TrendingUp className="h-6 w-6 mr-2 text-blue-400" />
+                      <span className="text-3xl font-bold text-blue-100">0</span>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Profit/Loss Card */}
+                <Card className="bg-blue-950 border-blue-800">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium text-blue-300">Profit/Loss</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center">
+                      <BarChart3 className="h-6 w-6 mr-2 text-blue-400" />
+                      <span className="text-3xl font-bold text-blue-100">0</span>
+                      <span className="text-sm ml-2 text-blue-300">0%</span>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Bot Status Card */}
+                <Card className="bg-blue-950 border-blue-800">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium text-blue-300">Bot Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center">
+                      <Badge variant="outline" className="border-amber-500 text-amber-400 bg-amber-950">
+                        <Pause className="h-3 w-3 mr-1" />
+                        Paused
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Recent Trades Table */}
+              <Card className="bg-blue-950 border-blue-800">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold">Portfolio Value</CardTitle>
-                  <CardDescription>
-                    Managing 4 cryptocurrencies
-                  </CardDescription>
+                  <CardTitle className="text-xl font-semibold text-white">Recent Trades</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <span className="text-3xl font-bold">
-                        ${portfolioValue.toLocaleString()}
-                      </span>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-blue-800">
+                        <TableHead className="text-blue-300">Date/Time</TableHead>
+                        <TableHead className="text-blue-300">Type</TableHead>
+                        <TableHead className="text-blue-300">Price</TableHead>
+                        <TableHead className="text-blue-300">Amount</TableHead>
+                        <TableHead className="text-blue-300">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow className="border-blue-800">
+                        <TableCell colSpan={5} className="text-center py-8 text-blue-400">
+                          No trading activity yet
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+              
+              {/* Trade Performance Chart */}
+              <Card className="bg-blue-950 border-blue-800">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xl font-semibold text-white">Performance History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={[
+                          { time: '00:00', value: 1000 },
+                          { time: '04:00', value: 1000 },
+                          { time: '08:00', value: 1000 },
+                          { time: '12:00', value: 1000 },
+                          { time: '16:00', value: 1000 },
+                          { time: '20:00', value: 1000 },
+                          { time: '24:00', value: 1000 },
+                        ]}
+                        margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" />
+                        <XAxis 
+                          dataKey="time" 
+                          tick={{ fill: '#93c5fd' }} 
+                          stroke="#1e3a8a" 
+                        />
+                        <YAxis 
+                          tick={{ fill: '#93c5fd' }} 
+                          stroke="#1e3a8a" 
+                          domain={['dataMin - 100', 'dataMax + 100']} 
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: '#172554', 
+                            borderColor: '#1e3a8a',
+                            color: '#ffffff' 
+                          }} 
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="value" 
+                          stroke="#3b82f6" 
+                          fillOpacity={1}
+                          fill="url(#colorValue)" 
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Sidebar - Bot Parameters */}
+            <div className="md:col-span-4 space-y-6">
+              {/* Bot Parameters Card */}
+              <Card className="bg-blue-950 border-blue-800">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xl font-semibold text-white">Bot Parameters</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Strategy Section */}
+                  <div>
+                    <h3 className="text-lg font-medium text-white mb-2">Strategy</h3>
+                    <div className="p-3 rounded-md bg-blue-900/30 text-blue-100">
+                      GRID
                     </div>
-                    
+                  </div>
+                  
+                  {/* Trading Cryptocurrencies Section */}
+                  <div>
+                    <h3 className="text-lg font-medium text-white mb-2">Trading Cryptocurrencies</h3>
                     <div className="space-y-3">
-                      {cryptocurrencies.map((crypto) => (
-                        <div key={crypto.currency} className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span className="font-medium">{crypto.currency}</span>
-                            <span>${crypto.value.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Progress value={crypto.percentage} className="h-2" />
-                            <span className="text-xs text-muted-foreground w-12 text-right">
-                              {crypto.percentage.toFixed(1)}%
-                            </span>
-                          </div>
+                      {availableTradingPairs.map((pair) => (
+                        <div key={pair} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={pair} 
+                            checked={selectedSymbols.includes(pair)}
+                            onCheckedChange={(checked) => {
+                              if (typeof checked === 'boolean') {
+                                handleSymbolChange(pair, checked);
+                              }
+                            }}
+                            className="border-blue-400 text-blue-400 data-[state=checked]:bg-blue-600"
+                          />
+                          <label 
+                            htmlFor={pair}
+                            className="text-sm font-medium leading-none text-blue-100"
+                          >
+                            {pair}
+                          </label>
                         </div>
                       ))}
                     </div>
                   </div>
+                  
+                  {/* Investment Section */}
+                  <div>
+                    <h3 className="text-lg font-medium text-white mb-2">Investment</h3>
+                    <div className="p-3 rounded-md bg-blue-900/30 text-blue-100">
+                      $1000
+                    </div>
+                  </div>
+                  
+                  {/* Created On Section */}
+                  <div>
+                    <h3 className="text-lg font-medium text-white mb-2">Created On</h3>
+                    <div className="p-3 rounded-md bg-blue-900/30 text-blue-100">
+                      27.3.2025
+                    </div>
+                  </div>
+                  
+                  {/* Bot Controls */}
+                  <div className="pt-4 flex gap-3">
+                    <Button variant="outline" className="w-1/2 border-blue-400 text-blue-300 hover:bg-blue-900/50">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button className="w-1/2 bg-green-600 hover:bg-green-700">
+                      <Play className="h-4 w-4 mr-2" />
+                      Start
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
               
-              <Card>
+              {/* Market Overview Card */}
+              <Card className="bg-blue-950 border-blue-800">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold">Live Market Prices</CardTitle>
-                  <CardDescription>
-                    Key cryptocurrency pairs
-                  </CardDescription>
+                  <CardTitle className="text-xl font-semibold text-white">Market Overview</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="border rounded-lg overflow-hidden">
-                      <div className="p-4 flex justify-between items-center">
-                        <span className="font-medium">BTC-USDT</span>
-                        <div className="flex items-center">
-                          <span className="text-lg font-semibold mr-2">$87,750.00</span>
-                          <Badge variant="default" className="bg-green-500">
+                    {selectedSymbols.map((symbol) => (
+                      <div key={symbol} className="p-3 rounded-md bg-blue-900/30">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-blue-100">{symbol}</span>
+                          <Badge variant="outline" className="border-green-500 text-green-400 bg-green-950">
                             <ArrowUpRight className="h-3 w-3 mr-1" />
                             0.45%
                           </Badge>
                         </div>
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-xs h-8 px-2 -my-1"
-                        onClick={() => window.location.href = "/markets"}
-                      >
-                        View All Markets
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="activity">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold">Recent Bot Activity</CardTitle>
-                  <CardDescription>Latest trades executed by your bot</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {trades.map((trade, index) => (
-                      <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
-                        <div className="flex justify-between items-center">
-                          <div className="font-medium">{trade.pair}</div>
-                          <Badge variant={trade.action === "BUY" ? "default" : "destructive"}>
-                            {trade.action}
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                          <div>Amount: {trade.amount}</div>
-                          <div>Price: ${parseFloat(trade.price).toLocaleString()}</div>
-                          <div className="text-xs">{new Date(trade.time).toLocaleString()}</div>
+                        <div className="mt-2">
+                          <div className="text-2xl font-bold text-white">$87,750.00</div>
+                          <div className="text-xs text-blue-300 mt-1">Updated 1 min ago</div>
                         </div>
                       </div>
                     ))}
+                    
+                    {selectedSymbols.length === 0 && (
+                      <div className="text-center py-6 text-blue-300">
+                        <p>No cryptocurrencies selected</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-            
-            <TabsContent value="settings">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold">Bot Configuration</CardTitle>
-                  <CardDescription>Adjust your trading parameters</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium">Trading Pair</label>
-                        <div className="flex items-center mt-1 p-2 border rounded-md">
-                          <span>BTC-USDT</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium">Strategy Type</label>
-                        <div className="flex items-center mt-1 p-2 border rounded-md">
-                          <span>Grid Trading</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium">Upper Price Bound</label>
-                        <div className="flex items-center mt-1 p-2 border rounded-md">
-                          <span>$95,000</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium">Lower Price Bound</label>
-                        <div className="flex items-center mt-1 p-2 border rounded-md">
-                          <span>$80,000</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium">Grid Levels</label>
-                        <div className="flex items-center mt-1 p-2 border rounded-md">
-                          <span>10</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium">Investment Amount</label>
-                        <div className="flex items-center mt-1 p-2 border rounded-md">
-                          <span>$10,000</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="pt-4">
-                      <Button disabled className="w-full">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Save Changes
-                      </Button>
-                      <p className="text-xs text-muted-foreground text-center mt-2">
-                        Changes to bot configuration are disabled in demo mode
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            </div>
+          </div>
         </div>
       </main>
       <Footer />
