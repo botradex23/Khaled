@@ -101,14 +101,28 @@ export default function BotDemo() {
                       })
                       .then(res => {
                         if (res.ok) return res.json();
-                        throw new Error('Failed to start bot');
+                        return res.json().then(data => {
+                          // Handle case where bot is already running
+                          if (res.status === 400 && data.message?.includes("already running")) {
+                            // This is actually not an error - the bot is already running
+                            alert("בוט כבר פועל! מרענן את הדף להצגת נתונים עדכניים.");
+                            window.location.reload();
+                            // Throw a special "error" to break out of the chain but not show an error message
+                            throw new Error("BOT_ALREADY_RUNNING");
+                          } else {
+                            throw new Error(data.message || 'Failed to start bot');
+                          }
+                        });
                       })
                       .then(() => {
                         window.location.reload();
                       })
                       .catch(err => {
                         console.error('Error starting bot:', err);
-                        alert('Failed to start bot: ' + err.message);
+                        // Don't show an alert for the special case we handled above
+                        if (err.message !== "BOT_ALREADY_RUNNING") {
+                          alert('Failed to start bot: ' + err.message);
+                        }
                       });
                     }}
                   >
@@ -343,14 +357,28 @@ export default function BotDemo() {
                         })
                         .then(res => {
                           if (res.ok) return res.json();
-                          throw new Error('Failed to start bot');
+                          return res.json().then(data => {
+                            // Handle case where bot is already running
+                            if (res.status === 400 && data.message?.includes("already running")) {
+                              // This is actually not an error - the bot is already running
+                              alert("בוט כבר פועל! מרענן את הדף להצגת נתונים עדכניים.");
+                              window.location.reload();
+                              // Throw a special "error" to break out of the chain but not show an error message
+                              throw new Error("BOT_ALREADY_RUNNING");
+                            } else {
+                              throw new Error(data.message || 'Failed to start bot');
+                            }
+                          });
                         })
                         .then(() => {
                           window.location.reload();
                         })
                         .catch(err => {
                           console.error('Error with bot operation:', err);
-                          alert('Failed to start bot: ' + err.message);
+                          // Don't show an alert for the special case we handled above
+                          if (err.message !== "BOT_ALREADY_RUNNING") {
+                            alert('Failed to start bot: ' + err.message);
+                          }
                         });
                       }}
                     >

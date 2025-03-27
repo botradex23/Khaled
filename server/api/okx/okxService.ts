@@ -317,7 +317,8 @@ export class OkxService {
       formattedInterval = '1H';
     }
     
-    return this.makePublicRequest(`/api/v5/market/candles?instId=${symbol}&bar=${formattedInterval}&limit=${limit}`);
+    // UPDATE: OKX API now requires 'timeframe' parameter instead of 'bar' (which causes "Parameter bar error")
+    return this.makePublicRequest(`/api/v5/market/candles?instId=${symbol}&timeframe=${formattedInterval}&limit=${limit}`);
   }
   
   /**
