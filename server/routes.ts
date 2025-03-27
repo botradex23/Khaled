@@ -47,6 +47,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     res.json(bot);
   });
+  
+  // Update a bot's parameters
+  app.put("/api/bots/:id/parameters", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid bot ID" });
+    }
+    
+    const { upperPrice, lowerPrice, gridCount } = req.body;
+    
+    // Get the current bot
+    const bot = await storage.getBotById(id);
+    if (!bot) {
+      return res.status(404).json({ message: "Bot not found" });
+    }
+    
+    // Parse the current parameters
+    let currentParameters = {};
+    try {
+      currentParameters = JSON.parse(bot.parameters || '{}');
+    } catch (e) {
+      console.error("Error parsing bot parameters:", e);
+      return res.status(500).json({ message: "Error parsing bot parameters" });
+    }
+    
+    // Update the parameters
+    const updatedParameters = {
+      ...currentParameters,
+      upperPrice: upperPrice || currentParameters.upperPrice,
+      lowerPrice: lowerPrice || currentParameters.lowerPrice,
+      gridCount: gridCount || currentParameters.gridCount
+    };
+    
+    // Save the updated parameters
+    const updatedBot = await storage.updateBot(id, {
+      parameters: JSON.stringify(updatedParameters)
+    });
+    
+    // If the bot is running, restart it to apply new parameters
+    if (bot.isRunning) {
+      await storage.stopBot(id);
+      await storage.startBot(id);
+    }
+    
+    res.json(updatedBot);
+  });
 
   // Get all pricing plans
   app.get("/api/pricing", async (req, res) => {

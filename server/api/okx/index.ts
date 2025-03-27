@@ -350,4 +350,57 @@ router.get('/bots/:id/performance', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Update bot parameters
+ * Allows updating the grid levels and other bot parameters directly
+ */
+router.put('/bots/:id/parameters', async (req: Request, res: Response) => {
+  try {
+    const botId = parseInt(req.params.id);
+    const { parameters } = req.body;
+    
+    if (!parameters) {
+      return res.status(400).json({
+        error: 'Missing Parameters',
+        message: 'Required parameters: parameters object'
+      });
+    }
+    
+    // Get the current bot from storage
+    const bot = await storage.getBotById(botId);
+    if (!bot) {
+      return res.status(404).json({
+        error: 'Bot Not Found',
+        message: `Bot with ID ${botId} not found`
+      });
+    }
+    
+    // Update the bot parameters in storage
+    const updatedBot = await storage.updateBot(botId, {
+      parameters: JSON.stringify(parameters)
+    });
+    
+    if (!updatedBot) {
+      return res.status(500).json({
+        error: 'Update Failed',
+        message: 'Failed to update bot parameters'
+      });
+    }
+    
+    // If the bot is running, restart it with the new parameters
+    if (bot.isRunning) {
+      await tradingBotService.stopBot(botId);
+      await tradingBotService.startBot(botId);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Bot parameters updated successfully',
+      bot: updatedBot
+    });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
 export default router;
