@@ -48,6 +48,12 @@ export function AccountBalanceCard() {
     refetchInterval: 15000 // 15 seconds refresh for more up-to-date data
   });
   
+  // Get market prices directly from the OKX market API for more accurate pricing
+  const marketPricesQuery = useQuery({
+    queryKey: ['/api/okx/markets'],
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+  
   // Debug output to console to help identify issues with the data
   console.log("Account Balance Card - OKX Query Result:", {
     endpoint: okxEndpoint,
@@ -68,12 +74,24 @@ export function AccountBalanceCard() {
     isSuccess: bitgetQuery.isSuccess
   });
   
-  // Combine loading state from both queries
-  const isLoading = okxQuery.isLoading || bitgetQuery.isLoading;
+  // Log market prices data
+  console.log("Account Balance Card - Market Prices Query Result:", {
+    data: marketPricesQuery.data,
+    isLoading: marketPricesQuery.isLoading,
+    error: marketPricesQuery.error,
+    isError: marketPricesQuery.isError,
+    status: marketPricesQuery.status,
+    isSuccess: marketPricesQuery.isSuccess,
+    dataCount: marketPricesQuery.data ? marketPricesQuery.data.length : 0
+  });
   
-  // Check for errors in both queries
+  // Combine loading state from queries
+  const isLoading = okxQuery.isLoading || bitgetQuery.isLoading || marketPricesQuery.isLoading;
+  
+  // Check for errors in queries
   const okxError = okxQuery.error;
   const bitgetError = bitgetQuery.error;
+  const marketPricesError = marketPricesQuery.error;
   
   // Debug logging to see the status of both queries
   console.log("Account Balance Card - Debug Status:", {
@@ -84,7 +102,10 @@ export function AccountBalanceCard() {
     bitgetLoading: bitgetQuery.isLoading,
     bitgetSuccess: bitgetQuery.isSuccess,
     bitgetError: bitgetQuery.error ? "Error" : "None",
-    bitgetData: bitgetQuery.data
+    bitgetData: bitgetQuery.data,
+    marketPricesSuccess: marketPricesQuery.isSuccess,
+    marketPricesError: marketPricesQuery.error ? "Error" : "None",
+    marketPricesCount: marketPricesQuery.data ? marketPricesQuery.data.length : 0
   });
 
   if (isLoading) {
@@ -349,34 +370,89 @@ export function AccountBalanceCard() {
                           formattedAmount = asset.total.toFixed(precision);
                         }
                         
-                        // First, try to get the real market price using the marketService API
-                        // We need to make this async so we'll use a state variable to store the fetched price
-                        // But for now, let's first use the price from the asset data
+                        // Use the market prices from OKX API
+                        // We'll use these approaches in order of preference:
+                        // 1. Try to get the price from the markets API (most accurate)
+                        // 2. Use the price per unit from the asset data if it seems valid
+                        // 3. Calculate from valueUSD and total if available
+                        // 4. Use a reasonable default only as last resort
                         
-                        // Use the price per unit from the backend
-                        // This is the market price of the cryptocurrency, not the calculated value from total and USD value
-                        // Old code that might be showing $1: const pricePerUnit = asset.pricePerUnit || (asset.total > 0 ? asset.valueUSD / asset.total : 0);
+                        // Try to find the market price from the markets API data
+                        let priceFromMarketData = 0;
                         
-                        // Get the correct market price - since we know there's a bug with $1 prices
-                        // For BTC, we know it should be around $90,000, ETH around $3,000, etc.
-                        const getCryptoDefaultPrice = (currency: string) => {
-                          switch(currency) {
-                            case 'BTC': return 90000;
-                            case 'ETH': return 3000;
-                            case 'SOL': return 150;
-                            case 'USDT': return 1;
-                            case 'USDC': return 1;
-                            case 'BNB': return 600;
-                            case 'XRP': return 0.6;
-                            case 'ADA': return 0.5;
-                            case 'DOGE': return 0.15;
-                            case 'DOT': return 7;
-                            default: return asset.pricePerUnit || (asset.total > 0 ? asset.valueUSD / asset.total : 0);
+                        if (marketPricesQuery.data && Array.isArray(marketPricesQuery.data)) {
+                          // Look for exact matches like BTC-USDT
+                          const exactMatch = marketPricesQuery.data.find(
+                            market => market.symbol === `${asset.currency}-USDT`
+                          );
+                          
+                          if (exactMatch && typeof exactMatch.price === 'number') {
+                            priceFromMarketData = exactMatch.price;
+                            console.log(`Found market price for ${asset.currency} from API: $${priceFromMarketData}`);
                           }
+                        }
+                        
+                        // Get price from asset data or calculated from valueUSD/total
+                        const priceFromAsset = asset.pricePerUnit || (asset.total > 0 ? asset.valueUSD / asset.total : 0);
+                        
+                        // For this asset, check if a price looks valid
+                        const isPriceValid = (price: number, currency: string): boolean => {
+                          // If price is 0 or negative, it's invalid
+                          if (price <= 0) return false;
+                          
+                          // $1 for major non-stablecoin cryptos is likely wrong
+                          if (price === 1 && 
+                             (['BTC', 'ETH', 'SOL', 'BNB'].includes(currency))) {
+                            return false;
+                          }
+                          
+                          // For BTC, price should be in valid range (rough sanity check)
+                          if (currency === 'BTC' && (price < 10000 || price > 200000)) {
+                            return false;
+                          }
+                          
+                          // For ETH, price should be in valid range (rough sanity check)
+                          if (currency === 'ETH' && (price < 500 || price > 10000)) {
+                            return false;
+                          }
+                          
+                          return true;
                         };
                         
-                        // Get better market price
-                        const pricePerUnit = getCryptoDefaultPrice(asset.currency);
+                        // Check which prices are valid
+                        const isMarketDataPriceValid = isPriceValid(priceFromMarketData, asset.currency);
+                        const isAssetPriceValid = isPriceValid(priceFromAsset, asset.currency);
+                        
+                        // Determine the best price to use in order of preference
+                        let finalPrice = 0;
+                        
+                        if (isMarketDataPriceValid) {
+                          // First priority: Use price from market data API
+                          finalPrice = priceFromMarketData;
+                        } else if (isAssetPriceValid) {
+                          // Second priority: Use price from asset data if valid
+                          finalPrice = priceFromAsset;
+                        } else {
+                          // Last resort: Use reasonable defaults for common cryptos
+                          switch(asset.currency) {
+                            case 'BTC': finalPrice = 90000; break;
+                            case 'ETH': finalPrice = 3000; break;
+                            case 'SOL': finalPrice = 150; break;
+                            case 'USDT': finalPrice = 1; break;
+                            case 'USDC': finalPrice = 1; break;
+                            case 'BNB': finalPrice = 600; break;
+                            case 'XRP': finalPrice = 0.6; break;
+                            case 'ADA': finalPrice = 0.5; break;
+                            case 'DOGE': finalPrice = 0.15; break;
+                            case 'DOT': finalPrice = 7; break;
+                            default: 
+                              // For unknown cryptos, if we have any price, use it
+                              finalPrice = priceFromAsset > 0 ? priceFromAsset : 1;
+                          }
+                        }
+                        
+                        // Use the final determined price
+                        const pricePerUnit = finalPrice;
                         
                         // Format the price per unit with appropriate decimal places
                         const formattedPrice = pricePerUnit 
@@ -431,8 +507,8 @@ export function AccountBalanceCard() {
                                 <div className="text-xs text-muted-foreground mb-1">Total Value</div>
                                 <div className="text-primary text-base font-bold">
                                   ${(() => {
-                                    // Calculate actual value based on price per unit
-                                    const calculatedValue = asset.total * (asset.pricePerUnit || 0);
+                                    // Calculate actual value based on price per unit (using our fetched price)
+                                    const calculatedValue = asset.total * pricePerUnit;
                                     return calculatedValue < 0.01 && calculatedValue > 0 
                                       ? calculatedValue.toFixed(8)
                                       : calculatedValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
