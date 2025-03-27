@@ -138,7 +138,33 @@ function registerAuthRoutes(app: Express) {
 
   // Get current user
   app.get('/api/auth/user', (req: Request, res: Response) => {
-    if (req.isAuthenticated()) {
+    // Check for test user header first
+    if (req.headers['x-test-user-id']) {
+      const testUserId = parseInt(req.headers['x-test-user-id'] as string);
+      
+      // Get user from storage
+      storage.getUser(testUserId).then(user => {
+        if (user) {
+          return res.json({
+            isAuthenticated: true,
+            user,
+          });
+        } else {
+          return res.json({
+            isAuthenticated: false,
+            user: null,
+          });
+        }
+      }).catch(err => {
+        console.error('Error getting test user:', err);
+        return res.json({
+          isAuthenticated: false,
+          user: null,
+        });
+      });
+    } 
+    // Normal authentication check
+    else if (req.isAuthenticated()) {
       res.json({
         isAuthenticated: true,
         user: req.user,
@@ -157,6 +183,11 @@ function registerAuthRoutes(app: Express) {
 
 // Middleware to ensure a user is authenticated
 export function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
+  // First check for test header
+  if (req.headers['x-test-user-id']) {
+    return next();
+  }
+  // Then check for normal authentication
   if (req.isAuthenticated()) {
     return next();
   }

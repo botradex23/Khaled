@@ -219,6 +219,18 @@ export default function Login() {
                 Apple
               </Button>
             </div>
+            
+            <div className="mt-4">
+              <Button
+                variant="default"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                onClick={() => {
+                  setLocation("/test-login");
+                }}
+              >
+                משתמש בדיקה
+              </Button>
+            </div>
           </div>
           
           <div className="mt-6 text-center text-sm">

@@ -7,6 +7,7 @@ import okxRouter from "./api/okx";
 import bybitRouter from "./api/bybit";
 import bitgetRouter from "./api/bitget";
 import aiRouter from "./api/ai";
+import testAuthRouter from "./routes/test-auth";
 import { setupAuth, ensureAuthenticated } from "./auth";
 
 // Helper function to mask sensitive data (like API keys)
@@ -202,6 +203,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   // Set up authentication system
   setupAuth(app);
+  
+  // Test auth routes
+  app.use("/api/auth", testAuthRouter);
   
   // OKX API routes
   app.use("/api/okx", okxRouter);

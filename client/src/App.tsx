@@ -13,6 +13,7 @@ import Markets from "@/pages/markets";
 import MarketPrices from "@/pages/market-prices";
 import Register from "@/pages/register";
 import Login from "@/pages/login";
+import TestLogin from "@/pages/test-login";
 import BotDemo from "@/pages/bot-demo";
 import Learn from "@/pages/learn";
 import AIGridBot from "@/pages/ai-grid-bot";
@@ -42,6 +43,7 @@ function Router() {
       <Route path="/market-prices" component={MarketPrices} />
       <Route path="/register" component={Register} />
       <Route path="/login" component={Login} />
+      <Route path="/test-login" component={TestLogin} />
       <Route path="/complete-profile" component={CompleteProfile} />
       <Route path="/bot-demo" component={BotDemo} />
       <Route path="/learn" component={Learn} />
