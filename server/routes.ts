@@ -75,9 +75,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Update the parameters
     const updatedParameters = {
       ...currentParameters,
-      upperPrice: upperPrice || currentParameters.upperPrice,
-      lowerPrice: lowerPrice || currentParameters.lowerPrice,
-      gridCount: gridCount || currentParameters.gridCount
+      upperPrice: upperPrice || (currentParameters as any).upperPrice,
+      lowerPrice: lowerPrice || (currentParameters as any).lowerPrice,
+      gridCount: gridCount || (currentParameters as any).gridCount
     };
     
     // Save the updated parameters

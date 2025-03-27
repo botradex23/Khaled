@@ -178,18 +178,24 @@ export class TradingBotService {
         // Create grid parameters
         params = {
           symbol: bot.tradingPair,
-          upperPrice: parsedParams.upperPrice || 85000,
-          lowerPrice: parsedParams.lowerPrice || 80000,
+          upperPrice: parsedParams.upperPrice || 88000,
+          lowerPrice: parsedParams.lowerPrice || 87000,
           gridCount: parsedParams.gridCount || 5,
           totalInvestment: parseFloat(bot.totalInvestment) || 1000
         };
+        
+        // Log the loaded parameters for debugging
+        console.log(`Bot ${botId} loaded parameters:`, params);
       } catch (error) {
         console.error(`Error parsing bot parameters:`, error);
-        // Fallback to default parameters
+        // Get current market price to set more dynamic parameters
+        const currentPrice = await this.getCurrentPrice(bot.tradingPair || 'BTC-USDT');
+        
+        // Set grid around current price with a +/-500 range
         params = {
           symbol: bot.tradingPair,
-          upperPrice: 85000,
-          lowerPrice: 80000,
+          upperPrice: Math.round(currentPrice + 500),
+          lowerPrice: Math.round(currentPrice - 500),
           gridCount: 5,
           totalInvestment: parseFloat(bot.totalInvestment) || 1000
         };
@@ -197,14 +203,12 @@ export class TradingBotService {
     } else {
       // Get current price to set appropriate grid levels
       const currentPrice = await this.getCurrentPrice(bot.tradingPair || 'BTC-USDT');
-      const lowerPrice = Math.round(currentPrice * 0.95); // 5% below current price
-      const upperPrice = Math.round(currentPrice * 1.05); // 5% above current price
       
-      // Default parameters if none found - use current price to ensure proper grid range
+      // Set grid around current price with a +/-500 range
       params = {
         symbol: bot.tradingPair,
-        upperPrice: upperPrice,
-        lowerPrice: lowerPrice,
+        upperPrice: Math.round(currentPrice + 500),
+        lowerPrice: Math.round(currentPrice - 500),
         gridCount: 5,
         totalInvestment: parseFloat(bot.totalInvestment) || 1000
       };
@@ -475,13 +479,24 @@ export class TradingBotService {
         const tradesByDate = new Map<string, any[]>();
         
         tradingHistory.forEach(trade => {
-          const tradeDate = new Date(parseInt(trade.timestamp)).toISOString().split('T')[0];
-          
-          if (!tradesByDate.has(tradeDate)) {
-            tradesByDate.set(tradeDate, []);
+          try {
+            // Make sure timestamp is a valid number
+            const timestamp = parseInt(trade.timestamp);
+            if (isNaN(timestamp) || timestamp <= 0) {
+              console.log(`Invalid timestamp in trade:`, trade);
+              return; // Skip this trade
+            }
+            
+            const tradeDate = new Date(timestamp).toISOString().split('T')[0];
+            
+            if (!tradesByDate.has(tradeDate)) {
+              tradesByDate.set(tradeDate, []);
+            }
+            
+            tradesByDate.get(tradeDate)?.push(trade);
+          } catch (e) {
+            console.error(`Error processing trade data:`, e, trade);
           }
-          
-          tradesByDate.get(tradeDate)?.push(trade);
         });
         
         // Calculate daily performance based on trades
