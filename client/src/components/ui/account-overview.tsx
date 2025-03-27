@@ -246,7 +246,8 @@ export function AccountBalanceCard() {
                   <thead>
                     <tr className="text-xs text-muted-foreground">
                       <th className="text-left">Asset ({sortedBalances.length})</th>
-                      <th className="text-right">Quantity & Price</th>
+                      <th className="text-right">Current Price</th>
+                      <th className="text-right">Quantity</th>
                       <th className="text-right">Total Value</th>
                       <th>Distribution</th>
                     </tr>
@@ -278,53 +279,46 @@ export function AccountBalanceCard() {
                         // This is the market price of the cryptocurrency, not the calculated value from total and USD value
                         const pricePerUnit = asset.pricePerUnit || (asset.total > 0 ? asset.valueUSD / asset.total : 0);
                         
+                        // Format the price per unit with appropriate decimal places
+                        const formattedPrice = pricePerUnit 
+                          ? pricePerUnit.toLocaleString(undefined, { 
+                              maximumFractionDigits: pricePerUnit > 1000 ? 0 : pricePerUnit > 1 ? 2 : 6 
+                            })
+                          : "N/A";
+                        
                         return (
                           <tr key={asset.currency} className={`${isMinorHolding ? 'text-muted-foreground' : ''}`}>
-                            <td className="py-0.5 font-medium text-sm">{asset.currency}</td>
-                            <td className="py-0.5 text-sm text-right">
-                              {/* Special display for very tiny amounts - show price more prominently */}
+                            <td className="py-1 font-medium text-sm">{asset.currency}</td>
+                            
+                            {/* Current price column - standalone and prominent */}
+                            <td className="py-1 text-sm text-right">
+                              <div className="bg-muted/10 p-1 rounded-md inline-block min-w-[80px] text-center border border-muted/20">
+                                <span className="text-primary font-semibold">${formattedPrice}</span>
+                              </div>
+                            </td>
+                            
+                            {/* Quantity column */}
+                            <td className="py-1 text-sm text-right">
+                              {/* Special display for very tiny amounts */}
                               {asset.total < 0.0001 ? (
-                                <div className="bg-muted/20 p-2 rounded-md border border-muted/30">
-                                  <div className="text-xs text-muted-foreground mb-1">Amount</div>
-                                  <div className="font-medium text-xs opacity-80">{formattedAmount}</div>
-                                  <div className="text-sm font-medium mt-2 border-t border-primary/20 pt-1">
-                                    <div className="text-xs text-muted-foreground">Current Price</div>
-                                    <div className="text-base text-primary font-semibold">
-                                      ${pricePerUnit ? pricePerUnit.toLocaleString(undefined, { 
-                                        maximumFractionDigits: pricePerUnit > 1000 ? 0 : pricePerUnit > 1 ? 2 : 4 
-                                      }) : "N/A"}
-                                    </div>
-                                  </div>
+                                <div className="bg-muted/10 p-1 rounded-md inline-block min-w-[80px] text-center border border-muted/20">
+                                  <span className="text-xs text-muted-foreground">Tiny amount</span>
+                                  <div className="font-medium">{formattedAmount}</div>
                                 </div>
                               ) : (
-                                <>
-                                  {/* Amount section for normal values */}
-                                  <div className="font-medium">{formattedAmount}</div>
-                                  {asset.total > 0 && (
-                                    <div className="text-xs text-muted-foreground mt-0.5">
-                                      {/* Display percentage of a full coin */}
-                                      {asset.total < 1 && asset.total > 0 && (
-                                        <div className="mb-1">
-                                          {asset.percentOfWhole !== undefined 
-                                            ? asset.percentOfWhole.toFixed(2) 
-                                            : (asset.total * 100).toFixed(2)}% of 1 {asset.currency}
-                                        </div>
-                                      )}
-                                      {/* Unit price */}
-                                      <div className="border-t border-muted/30 pt-1 mt-1">
-                                        <span className="text-muted-foreground">Price: </span>
-                                        <span className="font-medium">
-                                          ${pricePerUnit.toLocaleString(undefined, { 
-                                            maximumFractionDigits: pricePerUnit > 1000 ? 0 : pricePerUnit > 1 ? 2 : 4 
-                                          })}/unit
-                                        </span>
-                                      </div>
-                                    </div>
-                                  )}
-                                </>
+                                <div className="font-medium">{formattedAmount}</div>
+                              )}
+                              
+                              {/* Display percentage of a full coin */}
+                              {asset.total < 1 && asset.total > 0 && (
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  {asset.percentOfWhole !== undefined 
+                                    ? asset.percentOfWhole.toFixed(2) 
+                                    : (asset.total * 100).toFixed(2)}% of 1 {asset.currency}
+                                </div>
                               )}
                             </td>
-                            <td className="py-0.5 text-right">
+                            <td className="py-1 text-right">
                               {/* Total value section with clear label */}
                               <div className="text-xs text-muted-foreground mb-1">Total Value</div>
                               <div className="text-primary text-base font-medium">
@@ -333,7 +327,7 @@ export function AccountBalanceCard() {
                                   : asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                               </div>
                             </td>
-                            <td className="py-0.5 w-1/3">
+                            <td className="py-1 w-1/3">
                               <div className="flex items-center gap-1">
                                 <Progress value={percentage} className="h-1.5" />
                                 <span className="text-xs text-muted-foreground w-10 text-right">
