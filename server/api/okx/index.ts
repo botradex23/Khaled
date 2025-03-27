@@ -114,9 +114,15 @@ router.get('/markets', async (req: Request, res: Response) => {
 router.get('/markets/:symbol', async (req: Request, res: Response) => {
   try {
     const { symbol } = req.params;
+    console.log(`[ROUTE DEBUG] Received request for market detail of ${symbol}`);
+    
     const marketDetail = await marketService.getMarketDetail(symbol);
-    res.json(marketDetail);
+    console.log(`[ROUTE DEBUG] Sending back market detail: ${JSON.stringify(marketDetail)}`);
+    
+    // Ensure we're sending an explicit 200 status with the content type
+    res.status(200).json(marketDetail);
   } catch (err) {
+    console.error(`[ROUTE ERROR] Error fetching market details for ${req.params.symbol}:`, err);
     handleApiError(err, res);
   }
 });

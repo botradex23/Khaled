@@ -140,20 +140,26 @@ export class MarketService {
    */
   async getMarketDetail(symbol: string): Promise<any> {
     try {
+      console.log(`[API DEBUG] Getting market detail for ${symbol}`);
       const response = await okxService.makePublicRequest<OkxResponse<MarketTicker>>(`/api/v5/market/ticker?instId=${symbol}`);
       
+      console.log(`[API DEBUG] Response received:`, JSON.stringify(response, null, 2));
+      
       if (response.code !== '0' || !response.data[0]) {
+        console.error(`[API ERROR] Failed API response:`, response);
         throw new Error(`Failed to fetch market detail: ${response.msg}`);
       }
       
       const ticker = response.data[0];
+      console.log(`[API DEBUG] Ticker data:`, JSON.stringify(ticker, null, 2));
+      
       const lastPrice = parseFloat(ticker.last);
       const openPrice = parseFloat(ticker.sodUtc0);
       const changePercent = openPrice > 0 
         ? ((lastPrice - openPrice) / openPrice) * 100 
         : 0;
       
-      return {
+      const result = {
         symbol: ticker.instId,
         price: lastPrice,
         change24h: parseFloat(changePercent.toFixed(2)),
@@ -163,6 +169,9 @@ export class MarketService {
         bidPrice: parseFloat(ticker.bidPx),
         askPrice: parseFloat(ticker.askPx)
       };
+      
+      console.log(`[API DEBUG] Formatted market detail:`, result);
+      return result;
     } catch (error) {
       console.error(`Failed to fetch market details for ${symbol}:`, error);
       throw error;
