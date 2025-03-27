@@ -21,14 +21,18 @@ export default function Account() {
   // Do not redirect - demo mode is enabled for non-authenticated users 
   // We're using demo data API endpoints that don't require authentication
 
-  // Calculate total portfolio value
+  // Calculate total portfolio value from the totalValue property
   const calculateTotalValue = () => {
     if (!balanceData || !Array.isArray(balanceData) || balanceData.length === 0) {
       return 0;
     }
     
-    // Sum up the USD value of all assets
-    return balanceData.reduce((total, asset) => total + asset.valueUSD, 0);
+    // Sum up the USD value of all assets using the totalValue USD property
+    return balanceData.reduce((total, asset) => {
+      // Make sure we're using the correct property for total value in USD
+      const assetValue = asset.totalValue || asset.valueUSD || 0;
+      return total + assetValue;
+    }, 0);
   };
   
   // Get the number of assets
@@ -65,10 +69,44 @@ export default function Account() {
           <div className="bg-blue-950 rounded-lg p-6 shadow-md">
             <h2 className="text-lg text-blue-300 font-medium mb-2">Current portfolio value</h2>
             <div className="flex justify-between items-center">
-              <span className="text-4xl font-bold text-white">${totalPortfolioValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              <span className="text-4xl font-bold text-white">${totalPortfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               <span className="bg-blue-900 text-blue-100 px-3 py-1 rounded-full text-sm">
                 {assetCount} {assetCount === 1 ? 'Asset' : 'Assets'}
               </span>
+            </div>
+
+            <div className="flex justify-between items-center mt-6">
+              <div className="flex items-center">
+                <div className="w-6 h-6 flex items-center justify-center mr-2 bg-blue-800 rounded-md">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="w-4 h-4 text-blue-200">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
+                  </svg>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-blue-300 text-xs">Available</span>
+                  <span className="text-white text-sm font-medium">${totalPortfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+              <div className="w-24 bg-blue-900 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-blue-500 h-full" style={{ width: '100%' }}></div>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center mt-3">
+              <div className="flex items-center">
+                <div className="w-6 h-6 flex items-center justify-center mr-2 bg-blue-800 rounded-md">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="w-4 h-4 text-blue-200">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                  </svg>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-blue-300 text-xs">Frozen</span>
+                  <span className="text-white text-sm font-medium">$0.00</span>
+                </div>
+              </div>
+              <div className="w-24 bg-blue-900 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-green-500 h-full" style={{ width: '0%' }}></div>
+              </div>
             </div>
           </div>
         </div>
