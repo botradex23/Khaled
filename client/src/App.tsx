@@ -17,6 +17,7 @@ import Learn from "@/pages/learn";
 import AIGridBot from "@/pages/ai-grid-bot";
 import ApiStatus from "@/pages/api-status";
 import ApiKeys from "@/pages/api-keys";
+import Account from "@/pages/account";
 import CompleteProfile from "@/pages/complete-profile";
 
 function Router() {
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/ai-grid-bot" component={AIGridBot} />
       <Route path="/api-status" component={ApiStatus} />
       <Route path="/api-keys" component={ApiKeys} />
+      <Route path="/account" component={Account} />
       <Route component={NotFound} />
     </Switch>
   );
