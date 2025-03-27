@@ -244,12 +244,27 @@ export function AccountBalanceCard() {
               <>
                 <table className="w-full mb-1">
                   <thead>
-                    <tr className="text-xs text-muted-foreground">
-                      <th className="text-left">Asset ({sortedBalances.length})</th>
-                      <th className="text-right">Current Price</th>
-                      <th className="text-right">Quantity</th>
-                      <th className="text-right">Total Value</th>
-                      <th>Distribution</th>
+                    <tr className="text-sm">
+                      <th className="text-left p-2 bg-muted/30 rounded-tl-md">
+                        <div className="font-semibold text-primary">Asset ({sortedBalances.length})</div>
+                        <div className="text-xs text-muted-foreground">Cryptocurrency</div>
+                      </th>
+                      <th className="text-center p-2 bg-muted/30">
+                        <div className="font-semibold text-primary">Market Price</div>
+                        <div className="text-xs text-muted-foreground">Current USD value</div>
+                      </th>
+                      <th className="text-center p-2 bg-muted/30">
+                        <div className="font-semibold text-primary">Amount</div>
+                        <div className="text-xs text-muted-foreground">Holdings quantity</div>
+                      </th>
+                      <th className="text-center p-2 bg-muted/30">
+                        <div className="font-semibold text-primary">Total Value</div>
+                        <div className="text-xs text-muted-foreground">USD equivalent</div>
+                      </th>
+                      <th className="text-center p-2 bg-muted/30 rounded-tr-md">
+                        <div className="font-semibold text-primary">Distribution</div>
+                        <div className="text-xs text-muted-foreground">% of Portfolio</div>
+                      </th>
                     </tr>
                   </thead>
                 </table>
@@ -290,41 +305,39 @@ export function AccountBalanceCard() {
                           <tr key={asset.currency} className={`${isMinorHolding ? 'text-muted-foreground' : ''}`}>
                             <td className="py-1 font-medium text-sm">{asset.currency}</td>
                             
-                            {/* Current price column - standalone and prominent */}
+                            {/* Current price column - standalone and very prominent */}
                             <td className="py-1 text-sm text-right">
-                              <div className="bg-muted/10 p-1 rounded-md inline-block min-w-[80px] text-center border border-muted/20">
-                                <span className="text-primary font-semibold">${formattedPrice}</span>
+                              <div className="bg-primary/10 p-2 rounded-md inline-block min-w-[120px] text-center border border-primary/30">
+                                <div className="text-xs text-muted-foreground mb-1">Current Price</div>
+                                <div className="text-primary text-lg font-bold">${formattedPrice}</div>
                               </div>
                             </td>
                             
                             {/* Quantity column */}
                             <td className="py-1 text-sm text-right">
-                              {/* Special display for very tiny amounts */}
-                              {asset.total < 0.0001 ? (
-                                <div className="bg-muted/10 p-1 rounded-md inline-block min-w-[80px] text-center border border-muted/20">
-                                  <span className="text-xs text-muted-foreground">Tiny amount</span>
-                                  <div className="font-medium">{formattedAmount}</div>
-                                </div>
-                              ) : (
+                              <div className="bg-muted/10 p-2 rounded-md inline-block text-center border border-muted/20">
+                                <div className="text-xs text-muted-foreground mb-1">Quantity</div>
                                 <div className="font-medium">{formattedAmount}</div>
-                              )}
-                              
-                              {/* Display percentage of a full coin */}
-                              {asset.total < 1 && asset.total > 0 && (
-                                <div className="text-xs text-muted-foreground mt-0.5">
-                                  {asset.percentOfWhole !== undefined 
-                                    ? asset.percentOfWhole.toFixed(2) 
-                                    : (asset.total * 100).toFixed(2)}% of 1 {asset.currency}
-                                </div>
-                              )}
+                                
+                                {/* Display percentage of a full coin */}
+                                {asset.total < 1 && asset.total > 0 && (
+                                  <div className="text-xs text-muted-foreground mt-1 border-t border-muted/20 pt-1">
+                                    {asset.percentOfWhole !== undefined 
+                                      ? asset.percentOfWhole.toFixed(2) 
+                                      : (asset.total * 100).toFixed(2)}% of 1 {asset.currency}
+                                  </div>
+                                )}
+                              </div>
                             </td>
                             <td className="py-1 text-right">
                               {/* Total value section with clear label */}
-                              <div className="text-xs text-muted-foreground mb-1">Total Value</div>
-                              <div className="text-primary text-base font-medium">
-                                ${asset.valueUSD < 0.01 && asset.valueUSD > 0 
-                                  ? asset.valueUSD.toFixed(8) 
-                                  : asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                              <div className="bg-muted/10 p-2 rounded-md inline-block min-w-[120px] text-center border border-muted/20">
+                                <div className="text-xs text-muted-foreground mb-1">Total Value</div>
+                                <div className="text-primary text-base font-bold">
+                                  ${asset.valueUSD < 0.01 && asset.valueUSD > 0 
+                                    ? asset.valueUSD.toFixed(8) 
+                                    : asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                                </div>
                               </div>
                             </td>
                             <td className="py-1 w-1/3">
@@ -496,12 +509,27 @@ export function TradingHistoryCard() {
           <>
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-muted-foreground">
-                  <th className="text-left font-normal">Trading Pair</th>
-                  <th className="text-center font-normal">Action</th>
-                  <th className="text-right font-normal">Price</th>
-                  <th className="text-right font-normal">Quantity</th>
-                  <th className="text-right font-normal">Profit/Loss</th>
+                <tr className="text-sm">
+                  <th className="text-left p-2 bg-muted/30 rounded-tl-md">
+                    <div className="font-semibold text-primary">Trading Pair</div>
+                    <div className="text-xs text-muted-foreground">Market</div>
+                  </th>
+                  <th className="text-center p-2 bg-muted/30">
+                    <div className="font-semibold text-primary">Action</div>
+                    <div className="text-xs text-muted-foreground">Buy/Sell</div>
+                  </th>
+                  <th className="text-center p-2 bg-muted/30">
+                    <div className="font-semibold text-primary">Price</div>
+                    <div className="text-xs text-muted-foreground">Per unit</div>
+                  </th>
+                  <th className="text-center p-2 bg-muted/30">
+                    <div className="font-semibold text-primary">Quantity</div>
+                    <div className="text-xs text-muted-foreground">Amount traded</div>
+                  </th>
+                  <th className="text-center p-2 bg-muted/30 rounded-tr-md">
+                    <div className="font-semibold text-primary">Profit/Loss</div>
+                    <div className="text-xs text-muted-foreground">Realized P&L</div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -513,45 +541,53 @@ export function TradingHistoryCard() {
                   return (
                     <tr key={trade.id} className={index !== tradesWithPnL.length - 1 ? "border-b border-muted/30" : ""}>
                       <td className="py-2">
-                        <div className="font-medium">{trade.symbol}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {tradeDate.toLocaleDateString()} {tradeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <div className="bg-muted/10 p-2 rounded-md inline-block min-w-[120px] text-center border border-muted/20">
+                          <div className="font-semibold text-primary">{trade.symbol}</div>
+                          <div className="text-xs text-muted-foreground mt-1 border-t border-muted/20 pt-1">
+                            {tradeDate.toLocaleDateString()} {tradeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
                         </div>
                       </td>
                       <td className="py-2 text-center">
-                        <Badge variant={trade.side === 'buy' ? 'default' : 'destructive'} className="text-xs">
-                          {trade.side.toUpperCase()}
-                        </Badge>
-                      </td>
-                      <td className="py-2 text-right">
-                        ${trade.price.toFixed(2)}
-                      </td>
-                      <td className="py-2 text-right">
-                        <div className="flex flex-col">
-                          <span>{trade.quantity.toFixed(5)}</span>
-                          {/* Show percentage of full coin */}
-                          {trade.quantity < 1 && trade.quantity > 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              {(trade.quantity * 100).toFixed(2)}% of 1 {trade.symbol.split('-')[0]}
-                            </span>
-                          )}
-                          <div className="text-xs text-muted-foreground">${trade.totalValue.toFixed(2)}</div>
+                        <div className="bg-muted/10 p-2 rounded-md inline-block min-w-[80px] text-center border border-muted/20">
+                          <Badge variant={trade.side === 'buy' ? 'default' : 'destructive'} className="text-xs px-3 py-1">
+                            {trade.side.toUpperCase()}
+                          </Badge>
                         </div>
                       </td>
-                      <td className="py-2 text-right">
+                      <td className="py-2 text-center">
+                        <div className="bg-muted/10 p-2 rounded-md inline-block min-w-[80px] text-center border border-muted/20">
+                          <div className="text-primary font-bold">${trade.price.toFixed(2)}</div>
+                        </div>
+                      </td>
+                      <td className="py-2 text-center">
+                        <div className="bg-muted/10 p-2 rounded-md inline-block min-w-[100px] text-center border border-muted/20">
+                          <div className="font-medium">{trade.quantity.toFixed(5)}</div>
+                          {/* Show percentage of full coin */}
+                          {trade.quantity < 1 && trade.quantity > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1 border-t border-muted/20 pt-1">
+                              {(trade.quantity * 100).toFixed(2)}% of 1 {trade.symbol.split('-')[0]}
+                            </div>
+                          )}
+                          <div className="text-xs text-muted-foreground mt-1">${trade.totalValue.toFixed(2)}</div>
+                        </div>
+                      </td>
+                      <td className="py-2 text-center">
                         {!isBreakEven ? (
-                          <div className="flex flex-col items-end">
-                            <span className={`${isProfitable ? "text-green-500" : "text-red-500"} font-medium text-base`}>
+                          <div className={isProfitable ? "bg-green-500/10 p-2 rounded-md inline-block min-w-[100px] text-center border border-green-500/30" : "bg-red-500/10 p-2 rounded-md inline-block min-w-[100px] text-center border border-red-500/30"}>
+                            <div className={isProfitable ? "text-green-500 font-bold text-base" : "text-red-500 font-bold text-base"}>
                               {isProfitable ? '+' : ''}{trade.estimatedPnL.toFixed(2)}
-                            </span>
+                            </div>
                             {/* Adding profit/loss percentage */}
-                            <span className={`text-xs ${isProfitable ? "text-green-500/70" : "text-red-500/70"}`}>
+                            <div className={isProfitable ? "text-xs text-green-500/70 mt-1 border-t border-green-500/20 pt-1" : "text-xs text-red-500/70 mt-1 border-t border-red-500/20 pt-1"}>
                               {isProfitable ? '+' : ''}
                               {Math.round((trade.estimatedPnL / trade.totalValue) * 100 * 100) / 100}%
-                            </span>
+                            </div>
                           </div>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <div className="bg-muted/10 p-2 rounded-md inline-block min-w-[100px] text-center border border-muted/20">
+                            <span className="text-muted-foreground">No P&L yet</span>
+                          </div>
                         )}
                       </td>
                     </tr>
