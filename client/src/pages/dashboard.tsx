@@ -186,6 +186,24 @@ export default function Dashboard() {
       <Header />
       <main className="flex-grow pt-24 pb-12 px-4 md:px-6">
         <div className="max-w-7xl mx-auto">
+          {/* API Key Warning Banner */}
+          {isAuthenticated && !authLoading && !apiKeysLoading && showApiKeyDialog && (
+            <Alert variant="warning" className="mb-6 bg-amber-50 border-amber-300 text-amber-800">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-800">API Keys Missing</AlertTitle>
+              <AlertDescription className="text-amber-700">
+                <p>You need to set up your OKX API keys to see your account data and use trading functionality.</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-3 bg-amber-100 hover:bg-amber-200 border-amber-300 text-amber-800"
+                  onClick={() => setLocation("/api-keys")}
+                >
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  Set Up API Keys
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* Chart Card */}
             <Card className="md:col-span-2">

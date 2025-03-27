@@ -1,10 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { okxService } from './okxService';
+import { okxService, createOkxServiceWithCustomCredentials } from './okxService';
 import { marketService } from './marketService';
 import { accountService } from './accountService';
 import { tradingBotService, getMinInvestmentForStrategy, getEstimatedReturnForStrategy, getRiskLevelForStrategy } from './tradingBotService';
 import { DEFAULT_PAIRS } from './config';
 import { storage } from '../../storage';
+import { ensureAuthenticated } from '../../auth';
 
 const router = Router();
 
@@ -136,20 +137,95 @@ router.get('/candles/:symbol', async (req: Request, res: Response) => {
   }
 });
 
-// Account endpoints
-router.get('/account/balance', async (req: Request, res: Response) => {
+// New middleware to get user's API keys and use them for OKX API calls
+async function withUserApiKeys(req: Request, res: Response, next: Function) {
+  if (!req.user || !req.user.id) {
+    return next(); // Continue with default keys
+  }
+  
   try {
-    const balances = await accountService.getAccountBalances();
-    res.json(balances);
+    // Get user's API keys
+    const userId = req.user.id;
+    const apiKeys = await storage.getUserApiKeys(userId);
+    
+    // Check if we have all needed keys and they're not empty
+    if (apiKeys && 
+        apiKeys.okxApiKey && 
+        apiKeys.okxSecretKey && 
+        apiKeys.okxPassphrase && 
+        apiKeys.okxApiKey.trim() !== '' && 
+        apiKeys.okxSecretKey.trim() !== '' && 
+        apiKeys.okxPassphrase.trim() !== '') {
+      
+      console.log(`Using custom OKX API keys for user ID ${userId}`);
+      
+      // Create a custom OKX service instance with user's keys
+      // We'll attach it to the request object
+      (req as any).customOkxService = createOkxServiceWithCustomCredentials(
+        apiKeys.okxApiKey,
+        apiKeys.okxSecretKey,
+        apiKeys.okxPassphrase,
+        apiKeys.useTestnet // Use testnet setting from user's preferences
+      );
+    } else {
+      console.log(`No custom OKX API keys found for user ID ${userId}, using default keys`);
+    }
+  } catch (error) {
+    console.error('Error getting user API keys:', error);
+  }
+  
+  next();
+}
+
+// Account endpoints
+router.get('/account/balance', ensureAuthenticated, withUserApiKeys, async (req: Request, res: Response) => {
+  try {
+    // Check if we have custom service from middleware
+    if ((req as any).customOkxService) {
+      // Using customOkxService directly instead of accountService
+      const customService = (req as any).customOkxService;
+      const response = await customService.makeAuthenticatedRequest('GET', '/api/v5/account/balance');
+      
+      // Process and format the response similar to accountService.getAccountBalances
+      if (!response.data[0]?.details) {
+        throw new Error('Invalid response format from OKX API');
+      }
+      
+      const balances = response.data[0].details.map((balance: any) => ({
+        currency: balance.ccy,
+        available: parseFloat(balance.availBal) || 0,
+        frozen: parseFloat(balance.frozenBal) || 0,
+        total: parseFloat(balance.bal) || 0,
+        valueUSD: parseFloat(balance.eq) || 0
+      }));
+      
+      res.json(balances);
+    } else {
+      // Fall back to default service
+      const balances = await accountService.getAccountBalances();
+      res.json(balances);
+    }
   } catch (err) {
     handleApiError(err, res);
   }
 });
 
 // Added this endpoint to support our new UI
-router.get('/trading/history', async (req: Request, res: Response) => {
+router.get('/trading/history', ensureAuthenticated, withUserApiKeys, async (req: Request, res: Response) => {
   try {
-    const history = await accountService.getTradingHistory();
+    let history;
+    
+    // Check if we have custom service from middleware
+    if ((req as any).customOkxService) {
+      // Using customOkxService directly
+      const customService = (req as any).customOkxService;
+      const response = await customService.makeAuthenticatedRequest('GET', '/api/v5/trade/fills');
+      history = response.data || [];
+    } else {
+      // Fall back to default service
+      history = await accountService.getTradingHistory();
+    }
+    
     // Format the data for our React client to better handle it
     const formattedHistory = Array.isArray(history) ? history.map((item: any) => {
       // OKX returns a different format than what our frontend expects
@@ -210,18 +286,42 @@ router.get('/trading/history', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/account/history', async (req: Request, res: Response) => {
+router.get('/account/history', ensureAuthenticated, withUserApiKeys, async (req: Request, res: Response) => {
   try {
-    const history = await accountService.getTradingHistory();
+    let history;
+    
+    // Check if we have custom service from middleware
+    if ((req as any).customOkxService) {
+      // Using customOkxService directly
+      const customService = (req as any).customOkxService;
+      const response = await customService.makeAuthenticatedRequest('GET', '/api/v5/trade/fills');
+      history = response.data || [];
+    } else {
+      // Fall back to default service
+      history = await accountService.getTradingHistory();
+    }
+    
     res.json(history);
   } catch (err) {
     handleApiError(err, res);
   }
 });
 
-router.get('/account/orders', async (req: Request, res: Response) => {
+router.get('/account/orders', ensureAuthenticated, withUserApiKeys, async (req: Request, res: Response) => {
   try {
-    const orders = await accountService.getOpenOrders();
+    let orders;
+    
+    // Check if we have custom service from middleware
+    if ((req as any).customOkxService) {
+      // Using customOkxService directly
+      const customService = (req as any).customOkxService;
+      const response = await customService.makeAuthenticatedRequest('GET', '/api/v5/trade/orders-pending');
+      orders = response.data || [];
+    } else {
+      // Fall back to default service
+      orders = await accountService.getOpenOrders();
+    }
+    
     res.json(orders);
   } catch (err) {
     handleApiError(err, res);
@@ -229,7 +329,7 @@ router.get('/account/orders', async (req: Request, res: Response) => {
 });
 
 // Order endpoints
-router.post('/order', async (req: Request, res: Response) => {
+router.post('/order', ensureAuthenticated, withUserApiKeys, async (req: Request, res: Response) => {
   try {
     const { symbol, side, type, amount, price } = req.body;
     
@@ -241,14 +341,38 @@ router.post('/order', async (req: Request, res: Response) => {
       });
     }
     
-    const result = await accountService.placeOrder(symbol, side, type, amount, price);
+    let result;
+    
+    // Check if we have custom service from middleware
+    if ((req as any).customOkxService) {
+      // Using customOkxService directly
+      const customService = (req as any).customOkxService;
+      const data: any = {
+        instId: symbol,
+        tdMode: 'cash',
+        side,
+        ordType: type,
+        sz: amount
+      };
+      
+      // Add price if it's a limit order
+      if (type === 'limit' && price) {
+        data.px = price;
+      }
+      
+      result = await customService.makeAuthenticatedRequest('POST', '/api/v5/trade/order', data);
+    } else {
+      // Fall back to default service
+      result = await accountService.placeOrder(symbol, side, type, amount, price);
+    }
+    
     res.json(result);
   } catch (err) {
     handleApiError(err, res);
   }
 });
 
-router.delete('/order', async (req: Request, res: Response) => {
+router.delete('/order', ensureAuthenticated, withUserApiKeys, async (req: Request, res: Response) => {
   try {
     const { symbol, orderId } = req.body;
     
@@ -260,7 +384,21 @@ router.delete('/order', async (req: Request, res: Response) => {
       });
     }
     
-    const result = await accountService.cancelOrder(symbol, orderId);
+    let result;
+    
+    // Check if we have custom service from middleware
+    if ((req as any).customOkxService) {
+      // Using customOkxService directly
+      const customService = (req as any).customOkxService;
+      result = await customService.makeAuthenticatedRequest('POST', '/api/v5/trade/cancel-order', {
+        instId: symbol,
+        ordId: orderId
+      });
+    } else {
+      // Fall back to default service
+      result = await accountService.cancelOrder(symbol, orderId);
+    }
+    
     res.json(result);
   } catch (err) {
     handleApiError(err, res);
@@ -268,7 +406,7 @@ router.delete('/order', async (req: Request, res: Response) => {
 });
 
 // Trading bot endpoints
-router.post('/bots', async (req: Request, res: Response) => {
+router.post('/bots', ensureAuthenticated, withUserApiKeys, async (req: Request, res: Response) => {
   try {
     const { userId, name, strategy, description, parameters } = req.body;
     
@@ -364,7 +502,7 @@ router.post('/bots', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/bots/:id/start', async (req: Request, res: Response) => {
+router.post('/bots/:id/start', ensureAuthenticated, withUserApiKeys, async (req: Request, res: Response) => {
   try {
     const botId = parseInt(req.params.id);
     const result = await tradingBotService.startBot(botId);
@@ -379,7 +517,7 @@ router.post('/bots/:id/start', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/bots/:id/stop', async (req: Request, res: Response) => {
+router.post('/bots/:id/stop', ensureAuthenticated, withUserApiKeys, async (req: Request, res: Response) => {
   try {
     const botId = parseInt(req.params.id);
     const result = await tradingBotService.stopBot(botId);
@@ -395,7 +533,7 @@ router.post('/bots/:id/stop', async (req: Request, res: Response) => {
 });
 
 // Update bot parameters (for changing trading pair, price levels, etc.)
-router.post('/bots/:id/parameters', async (req: Request, res: Response) => {
+router.post('/bots/:id/parameters', ensureAuthenticated, withUserApiKeys, async (req: Request, res: Response) => {
   try {
     const botId = parseInt(req.params.id);
     
@@ -430,7 +568,7 @@ router.post('/bots/:id/parameters', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/bots/:id/status', async (req: Request, res: Response) => {
+router.get('/bots/:id/status', ensureAuthenticated, withUserApiKeys, async (req: Request, res: Response) => {
   try {
     const botId = parseInt(req.params.id);
     const status = await tradingBotService.getBotStatus(botId);
@@ -440,7 +578,7 @@ router.get('/bots/:id/status', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/bots/:id/performance', async (req: Request, res: Response) => {
+router.get('/bots/:id/performance', ensureAuthenticated, withUserApiKeys, async (req: Request, res: Response) => {
   try {
     const botId = parseInt(req.params.id);
     const performance = await tradingBotService.getBotPerformance(botId);
@@ -454,7 +592,7 @@ router.get('/bots/:id/performance', async (req: Request, res: Response) => {
  * Update bot parameters
  * Allows updating the grid levels and other bot parameters directly
  */
-router.put('/bots/:id/parameters', async (req: Request, res: Response) => {
+router.put('/bots/:id/parameters', ensureAuthenticated, withUserApiKeys, async (req: Request, res: Response) => {
   try {
     const botId = parseInt(req.params.id);
     const { parameters } = req.body;

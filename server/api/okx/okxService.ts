@@ -25,30 +25,64 @@ interface OkxResponse<T> {
   data: T;
 }
 
+// Interface for Custom Credentials
+interface CustomCredentials {
+  apiKey: string;
+  secretKey: string;
+  passphrase: string;
+}
+
 // Main service class for OKX API
 export class OkxService {
   private baseUrl: string;
   private isDemo: boolean;
+  private apiKey: string;
+  private secretKey: string;
+  private passphrase: string;
+  private useCustomCredentials: boolean;
 
-  constructor(useDemo = true) {
+  constructor(
+    useDemo = true, 
+    customCredentials?: CustomCredentials
+  ) {
     this.isDemo = useDemo;
     this.baseUrl = useDemo ? OKX_DEMO_BASE_URL : OKX_BASE_URL;
     
-    // Check for API configuration
-    if (!isConfigured()) {
-      console.warn('OKX API credentials not configured properly');
+    // Check if custom credentials are provided and valid
+    this.useCustomCredentials = !!(
+      customCredentials && 
+      customCredentials.apiKey && 
+      customCredentials.secretKey && 
+      customCredentials.passphrase
+    );
+    
+    if (this.useCustomCredentials && customCredentials) {
+      this.apiKey = customCredentials.apiKey;
+      this.secretKey = customCredentials.secretKey;
+      this.passphrase = customCredentials.passphrase;
+      console.log('OKX Service: Using custom user-provided API credentials');
     } else {
-      // Check and log environment variables
-      console.log('Environment variables:');
-      console.log(`OKX_API_KEY env: ${process.env.OKX_API_KEY ? 'exists' : 'missing'}`);
-      console.log(`OKX_SECRET_KEY env: ${process.env.OKX_SECRET_KEY ? 'exists' : 'missing'}`);
-      console.log(`OKX_PASSPHRASE env: ${process.env.OKX_PASSPHRASE ? 'exists' : 'missing'}`);
+      // Use default credentials from config/environment variables
+      this.apiKey = API_KEY;
+      this.secretKey = SECRET_KEY;
+      this.passphrase = PASSPHRASE;
       
-      // Log config values
-      console.log('Config values:');
-      console.log(`API_KEY: ${API_KEY.substring(0, 4)}...${API_KEY.substring(API_KEY.length - 4)}`);
-      console.log(`SECRET_KEY: ${SECRET_KEY.substring(0, 4)}...${SECRET_KEY.substring(SECRET_KEY.length - 4)}`);
-      console.log(`PASSPHRASE: ${PASSPHRASE.substring(0, 2)}...${PASSPHRASE.substring(PASSPHRASE.length - 2)}`);
+      // Check for API configuration
+      if (!isConfigured()) {
+        console.warn('OKX API credentials not configured properly');
+      } else {
+        // Check and log environment variables
+        console.log('Environment variables:');
+        console.log(`OKX_API_KEY env: ${process.env.OKX_API_KEY ? 'exists' : 'missing'}`);
+        console.log(`OKX_SECRET_KEY env: ${process.env.OKX_SECRET_KEY ? 'exists' : 'missing'}`);
+        console.log(`OKX_PASSPHRASE env: ${process.env.OKX_PASSPHRASE ? 'exists' : 'missing'}`);
+        
+        // Log config values - mask middle parts for security
+        console.log('Config values:');
+        console.log(`API_KEY: ${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}`);
+        console.log(`SECRET_KEY: ${this.secretKey.substring(0, 4)}...${this.secretKey.substring(this.secretKey.length - 4)}`);
+        console.log(`PASSPHRASE: ${this.passphrase.substring(0, 2)}...${this.passphrase.substring(this.passphrase.length - 2)}`);
+      }
     }
   }
 
@@ -67,11 +101,11 @@ export class OkxService {
       console.log(`- Path: ${requestPath}`);
       console.log(`- Body Length: ${body.length} chars`);
       console.log(`- Message: ${timestamp + method + requestPath}[body omitted]`);
-      console.log(`- Secret Key Length: ${SECRET_KEY.length} chars`);
+      console.log(`- Secret Key Length: ${this.secretKey.length} chars`);
     }
     
     // Create HMAC SHA256 signature using the secret key
-    const signature = CryptoJS.HmacSHA256(message, SECRET_KEY).toString(CryptoJS.enc.Base64);
+    const signature = CryptoJS.HmacSHA256(message, this.secretKey).toString(CryptoJS.enc.Base64);
     
     if (requestPath.includes('account')) {
       console.log(`- Generated Signature: ${signature.substring(0, 10)}...`);
@@ -85,36 +119,22 @@ export class OkxService {
    * According to OKX API docs, we need to use the encoded passphrase for REST API calls
    */
   private getPassphrase(): string {
+    // Always use the instance passphrase (could be custom or default)
+    if (!this.passphrase) {
+      throw new Error('OKX passphrase is not configured');
+    }
+    
     // Log the format of the passphrase (only first and last characters for security)
-    const passFirst = PASSPHRASE.slice(0, 1);
-    const passLast = PASSPHRASE.slice(-1);
-    console.log(`Using passphrase format: ${passFirst}...${passLast} (length: ${PASSPHRASE.length})`);
+    const passFirst = this.passphrase.slice(0, 1);
+    const passLast = this.passphrase.slice(-1);
+    console.log(`Using passphrase format: ${passFirst}...${passLast} (length: ${this.passphrase.length})`);
     
     try {
-      // According to OKX API v5 docs, we need to try different formats:
-      // 1. Raw passphrase - most common format
-      // 2. MD5 hashed passphrase - sometimes needed for API v5
-      // 3. Base64 encoded passphrase - required for some endpoints
-
-      // For debug purposes, we'll try the raw passphrase first
-      // When we get the updated keys, we might need to experiment with different formats
-      
-      // If we're using environment variables, use the value as-is
-      if (process.env.OKX_PASSPHRASE) {
-        console.log('Using passphrase from environment variable');
-        return process.env.OKX_PASSPHRASE;
-      }
-      
-      // Otherwise use the hardcoded passphrase
-      console.log('Using hardcoded passphrase');
-      return PASSPHRASE;
-      
-      // If raw passphrase doesn't work, we can try these formats:
-      // 1. MD5 hash: CryptoJS.MD5(PASSPHRASE).toString()
-      // 2. Base64 encode: CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(PASSPHRASE))
+      // Use the instance passphrase (either custom or default)
+      return this.passphrase;
     } catch (error) {
       console.error('Error processing passphrase:', error);
-      return PASSPHRASE;
+      return this.passphrase;
     }
   }
 
@@ -126,8 +146,8 @@ export class OkxService {
     endpoint: string,
     data: any = {}
   ): Promise<T> {
-    // Verify API is configured
-    if (!isConfigured()) {
+    // Verify API is configured using the instance method (which checks both custom and default credentials)
+    if (!this.isConfigured()) {
       throw new OkxApiNotConfiguredError();
     }
 
@@ -144,14 +164,14 @@ export class OkxService {
     // Log request information
     console.log(`OKX API request: ${method} ${requestPath}`);
     
-    // Setup request configuration
+    // Setup request configuration with the instance's API key (which could be custom or default)
     const config: AxiosRequestConfig = {
       method,
       url: `${this.baseUrl}${requestPath}`,
       timeout: DEFAULT_TIMEOUT,
       headers: {
         'Content-Type': 'application/json',
-        'OK-ACCESS-KEY': API_KEY,
+        'OK-ACCESS-KEY': this.apiKey,
         'OK-ACCESS-SIGN': signature,
         'OK-ACCESS-TIMESTAMP': timestamp,
         'OK-ACCESS-PASSPHRASE': this.getPassphrase(),
@@ -274,6 +294,11 @@ export class OkxService {
    * Check if API is configured with proper credentials
    */
   isConfigured(): boolean {
+    // If we have custom credentials, check those
+    if (this.useCustomCredentials) {
+      return !!(this.apiKey && this.secretKey && this.passphrase);
+    }
+    // Otherwise check global config
     return isConfigured();
   }
   
@@ -378,6 +403,16 @@ export class OkxService {
   }
 }
 
-// Create and export default instance using demo mode
+// Create a function to create OkxService instances with custom credentials
+export function createOkxServiceWithCustomCredentials(
+  apiKey: string,
+  secretKey: string,
+  passphrase: string,
+  useDemo = true
+): OkxService {
+  return new OkxService(useDemo, { apiKey, secretKey, passphrase });
+}
+
+// Create and export default instance using demo mode and global env credentials
 // Since we're getting APIKey doesn't match environment error, let's try demo mode
 export const okxService = new OkxService(true);
