@@ -22,7 +22,7 @@ interface MarketTicker {
 
 export function MarketTickerCard({ symbol }: { symbol: string }) {
   const { data, isLoading, error } = useQuery({
-    queryKey: [`/api/bitget/markets/${symbol}`],
+    queryKey: [`/api/okx/markets/${symbol}`],
     refetchInterval: 30000 // 30 seconds refresh
   });
 
@@ -98,7 +98,8 @@ export function MarketTickerCard({ symbol }: { symbol: string }) {
 }
 
 export function MarketTickerGrid() {
-  const topCoins = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"];
+  // OKX uses format with hyphen (BTC-USDT) instead of combined format (BTCUSDT)
+  const topCoins = ["BTC-USDT", "ETH-USDT", "SOL-USDT", "BNB-USDT", "XRP-USDT"];
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">

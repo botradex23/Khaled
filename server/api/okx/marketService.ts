@@ -52,6 +52,10 @@ export class MarketService {
       // First, check if we need all USDT pairs (for asset valuation)
       const needAllUsdtPairs = symbols.some(s => s === 'ALL_USDT_PAIRS');
       
+      // Important debugging for market data
+      console.log(`Received ${response.data.length} market tickers from OKX API`);
+      console.log('Sample ticker data:', response.data[0]);
+      
       for (const ticker of response.data) {
         // Extract currency from trading pair (e.g., "BTC-USDT" => "BTC")
         const [baseCurrency, quoteCurrency] = ticker.instId.split('-');
@@ -69,14 +73,24 @@ export class MarketService {
             ? ((lastPrice - openPrice) / openPrice) * 100 
             : 0;
           
-          marketData.push({
-            symbol: ticker.instId,
-            price: lastPrice,
-            change24h: parseFloat(changePercent.toFixed(2)),
-            volume24h: parseFloat(ticker.vol24h),
-            high24h: parseFloat(ticker.high24h),
-            low24h: parseFloat(ticker.low24h)
-          });
+          // Validate price before adding (ensure it's a valid number and reasonable)
+          if (!isNaN(lastPrice) && lastPrice > 0) {
+            // Log major cryptocurrency prices for debugging
+            if (['BTC-USDT', 'ETH-USDT', 'SOL-USDT', 'XRP-USDT', 'BNB-USDT'].includes(ticker.instId)) {
+              console.log(`Market price for ${ticker.instId}: $${lastPrice}`);
+            }
+            
+            marketData.push({
+              symbol: ticker.instId,
+              price: lastPrice,
+              change24h: parseFloat(changePercent.toFixed(2)),
+              volume24h: parseFloat(ticker.vol24h),
+              high24h: parseFloat(ticker.high24h),
+              low24h: parseFloat(ticker.low24h)
+            });
+          } else {
+            console.warn(`Invalid price for ${ticker.instId}: ${ticker.last}`);
+          }
         }
       }
       

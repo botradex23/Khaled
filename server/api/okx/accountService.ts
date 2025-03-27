@@ -100,9 +100,9 @@ export class AccountService {
    * Make sure we have a fallback price for major cryptocurrencies
    */
   private ensureFallbackPrices(): void {
-    // Make sure we have prices for these major cryptocurrencies
+    // Make sure we have prices for these major cryptocurrencies with realistic values
     const fallbackPrices: Record<string, number> = {
-      'BTC': 87000,
+      'BTC': 87100,
       'ETH': 3050,
       'SOL': 173,
       'BNB': 630,
@@ -452,6 +452,8 @@ export class AccountService {
    * This provides realistic sample data when API authentication is unavailable
    */
   private async getEmptyBalanceResponse(): Promise<AccountBalance[]> {
+    console.log('Generating demo balances with current market prices...');
+    
     // Create realistic demo balances with random values
     const demoBalances: Record<string, { total: number, available: number, frozen: number }> = {
       'BTC': { total: 0.75, available: 0.7, frozen: 0.05 },
@@ -466,19 +468,28 @@ export class AccountService {
       'MATIC': { total: 3000, available: 3000, frozen: 0 }
     };
     
-    // Try to get real-time prices from OKX API
+    // Prepare current market prices based on cached or real-time data
     let prices: Record<string, number> = {
-      'BTC': 89000,   // Default fallback values in case API call fails
-      'ETH': 3100,
+      'BTC': 87100,   // Updated default fallback values in case API call fails
+      'ETH': 3050,
       'USDT': 1,
       'USDC': 1,
-      'SOL': 175,
-      'BNB': 635,
+      'SOL': 173,
+      'BNB': 630,
       'XRP': 0.58,
       'DOGE': 0.16,
       'ADA': 0.51,
       'MATIC': 0.72
     };
+    
+    // First try to use cached prices from our earlier real-time data calls
+    const DEFAULT_CURRENCIES = Object.keys(demoBalances);
+    DEFAULT_CURRENCIES.forEach(currency => {
+      if (this.cachedPrices[currency] && this.cachedPrices[currency] > 0) {
+        prices[currency] = this.cachedPrices[currency];
+        console.log(`Using cached price for ${currency}: $${prices[currency]}`);
+      }
+    });
     
     try {
       // Try to get real market data for key currencies
