@@ -40,13 +40,16 @@ export class OkxService {
   private secretKey: string;
   private passphrase: string;
   private useCustomCredentials: boolean;
+  private userId?: number; // Add user ID to track owner of these credentials
 
   constructor(
     useDemo = true, 
-    customCredentials?: CustomCredentials
+    customCredentials?: CustomCredentials,
+    userId?: number
   ) {
     this.isDemo = useDemo;
     this.baseUrl = useDemo ? OKX_DEMO_BASE_URL : OKX_BASE_URL;
+    this.userId = userId;
     
     // Check if custom credentials are provided and valid
     this.useCustomCredentials = !!(
@@ -60,7 +63,9 @@ export class OkxService {
       this.apiKey = customCredentials.apiKey;
       this.secretKey = customCredentials.secretKey;
       this.passphrase = customCredentials.passphrase;
-      console.log('OKX Service: Using custom user-provided API credentials');
+      
+      const userIdText = userId ? ` for user ID ${userId}` : '';
+      console.log(`OKX Service: Using custom user-provided API credentials${userIdText}`);
     } else {
       // Use default credentials from config/environment variables
       this.apiKey = API_KEY;
@@ -69,19 +74,15 @@ export class OkxService {
       
       // Check for API configuration
       if (!isConfigured()) {
-        console.warn('OKX API credentials not configured properly');
+        console.warn('OKX API credentials not configured properly - fallback credentials may not work');
       } else {
-        // Check and log environment variables
-        console.log('Environment variables:');
-        console.log(`OKX_API_KEY env: ${process.env.OKX_API_KEY ? 'exists' : 'missing'}`);
-        console.log(`OKX_SECRET_KEY env: ${process.env.OKX_SECRET_KEY ? 'exists' : 'missing'}`);
-        console.log(`OKX_PASSPHRASE env: ${process.env.OKX_PASSPHRASE ? 'exists' : 'missing'}`);
+        // Log a clear message about using global/fallback credentials
+        console.log('WARNING: Using global OKX credentials (fallback)');
         
-        // Log config values - mask middle parts for security
-        console.log('Config values:');
-        console.log(`API_KEY: ${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}`);
-        console.log(`SECRET_KEY: ${this.secretKey.substring(0, 4)}...${this.secretKey.substring(this.secretKey.length - 4)}`);
-        console.log(`PASSPHRASE: ${this.passphrase.substring(0, 2)}...${this.passphrase.substring(this.passphrase.length - 2)}`);
+        // If this is for a specific user, make that clear in the logs
+        if (userId) {
+          console.log(`Note: User ID ${userId} does not have valid API keys configured`);
+        }
       }
     }
   }
@@ -444,9 +445,10 @@ export function createOkxServiceWithCustomCredentials(
   apiKey: string,
   secretKey: string,
   passphrase: string,
-  useDemo = true
+  useDemo = true,
+  userId?: number
 ): OkxService {
-  return new OkxService(useDemo, { apiKey, secretKey, passphrase });
+  return new OkxService(useDemo, { apiKey, secretKey, passphrase }, userId);
 }
 
 // Create and export default instance using demo mode and global env credentials

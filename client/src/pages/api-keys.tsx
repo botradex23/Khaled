@@ -10,7 +10,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { ArrowRight, KeyRound, AlertCircle, Check, Lock, Shield } from "lucide-react";
+import { 
+  ArrowRight, 
+  KeyRound, 
+  AlertCircle, 
+  Check, 
+  Lock, 
+  Shield, 
+  Loader2, 
+  CheckCircle, 
+  XCircle
+} from "lucide-react";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -55,6 +65,13 @@ export default function ApiKeys() {
     useTestnet: true
   });
   const [isHindi1000Hindi, setIsHindi1000Hindi] = useState(false);
+  
+  // API Key validation states
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationResult, setValidationResult] = useState<{
+    isValid: boolean | null;
+    message: string;
+  }>({ isValid: null, message: "" });
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -199,6 +216,71 @@ export default function ApiKeys() {
     });
   };
 
+  // API key validation is now done directly in the validateApiKeys function
+  // So this mutation is no longer needed
+  
+  const validateApiKeys = async () => {
+    if (!formValues.okxApiKey || !formValues.okxSecretKey || !formValues.okxPassphrase) {
+      setValidationResult({
+        isValid: false,
+        message: "Please fill in all API key fields"
+      });
+      return false;
+    }
+    
+    setIsValidating(true);
+    setValidationResult({ isValid: null, message: "Validating API keys..." });
+    
+    try {
+      const response = await apiRequest("POST", "/api/validate-api-keys", {
+        okxApiKey: formValues.okxApiKey,
+        okxSecretKey: formValues.okxSecretKey,
+        okxPassphrase: formValues.okxPassphrase,
+        useTestnet: formValues.useTestnet
+      });
+      
+      if (response.success) {
+        setValidationResult({ 
+          isValid: true, 
+          message: `API keys validated successfully! ${response.demo ? '(Demo Mode)' : '(Live Mode)'}`
+        });
+        
+        // After successful validation, update the API keys
+        updateMutation.mutate(formValues);
+        return true;
+      } else {
+        setValidationResult({ 
+          isValid: false, 
+          message: response.message || "API key validation failed. Please check your credentials." 
+        });
+        
+        toast({
+          title: "API Key Validation Failed",
+          description: response.message || "Invalid API credentials. Please check your keys and try again.",
+          variant: "destructive",
+        });
+        
+        return false;
+      }
+    } catch (error) {
+      console.error("API key validation error:", error);
+      setValidationResult({ 
+        isValid: false, 
+        message: error instanceof Error ? error.message : "An unexpected error occurred during validation." 
+      });
+      
+      toast({
+        title: "Validation Error",
+        description: error instanceof Error ? error.message : "Failed to validate API keys. Please try again.",
+        variant: "destructive",
+      });
+      
+      return false;
+    } finally {
+      setIsValidating(false);
+    }
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -223,7 +305,11 @@ export default function ApiKeys() {
       return;
     }
     
-    updateMutation.mutate(formValues);
+    // First validate the API keys
+    const isValid = await validateApiKeys();
+    
+    // If validation is successful, the update will be triggered in the onSuccess handler
+    // If not, validation errors will be shown to the user
   };
 
   const handleDelete = () => {
@@ -269,6 +355,41 @@ export default function ApiKeys() {
                   
                   <CardContent>
                     <form onSubmit={handleSubmit}>
+                      {/* API Key validation status message */}
+                      {(validationResult.isValid !== null || isValidating) && (
+                        <div className={`p-3 mb-4 rounded-md ${
+                          isValidating 
+                            ? "bg-blue-50 border border-blue-200" 
+                            : validationResult.isValid 
+                              ? "bg-green-50 border border-green-200" 
+                              : "bg-red-50 border border-red-200"
+                        }`}>
+                          <div className="flex items-center">
+                            {isValidating && (
+                              <Loader2 className="animate-spin h-4 w-4 mr-2 text-blue-500" />
+                            )}
+                            
+                            {!isValidating && validationResult.isValid === true && (
+                              <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                            )}
+                            
+                            {!isValidating && validationResult.isValid === false && (
+                              <XCircle className="h-4 w-4 mr-2 text-red-500" />
+                            )}
+                            
+                            <span className={`text-sm ${
+                              isValidating 
+                                ? "text-blue-600" 
+                                : validationResult.isValid 
+                                  ? "text-green-600" 
+                                  : "text-red-600"
+                            }`}>
+                              {validationResult.message}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="grid gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="okxApiKey">API Key</Label>
@@ -279,7 +400,7 @@ export default function ApiKeys() {
                             placeholder={isHindi1000Hindi ? "Using environment variable" : "Enter your OKX API Key"}
                             value={formValues.okxApiKey}
                             onChange={handleInputChange}
-                            disabled={isHindi1000Hindi || updateMutation.isPending}
+                            disabled={isHindi1000Hindi || updateMutation.isPending || isValidating}
                             className={isHindi1000Hindi ? "bg-gray-100" : ""}
                           />
                         </div>
@@ -293,7 +414,7 @@ export default function ApiKeys() {
                             placeholder={isHindi1000Hindi ? "Using environment variable" : "Enter your OKX Secret Key"}
                             value={formValues.okxSecretKey}
                             onChange={handleInputChange}
-                            disabled={isHindi1000Hindi || updateMutation.isPending}
+                            disabled={isHindi1000Hindi || updateMutation.isPending || isValidating}
                             className={isHindi1000Hindi ? "bg-gray-100" : ""}
                           />
                         </div>
@@ -307,7 +428,7 @@ export default function ApiKeys() {
                             placeholder={isHindi1000Hindi ? "Using environment variable" : "Enter your OKX Passphrase"}
                             value={formValues.okxPassphrase}
                             onChange={handleInputChange}
-                            disabled={isHindi1000Hindi || updateMutation.isPending}
+                            disabled={isHindi1000Hindi || updateMutation.isPending || isValidating}
                             className={isHindi1000Hindi ? "bg-gray-100" : ""}
                           />
                         </div>
@@ -334,11 +455,12 @@ export default function ApiKeys() {
                       <div className="flex justify-between mt-6">
                         <Button
                           type="submit"
-                          disabled={updateMutation.isPending}
+                          disabled={updateMutation.isPending || isValidating}
                           className="flex items-center"
                         >
-                          {updateMutation.isPending ? "Saving..." : "Save API Keys"}
-                          {!updateMutation.isPending && <ArrowRight className="ml-2 h-4 w-4" />}
+                          {updateMutation.isPending ? "Saving..." : isValidating ? "Validating..." : "Save API Keys"}
+                          {!updateMutation.isPending && !isValidating && <ArrowRight className="ml-2 h-4 w-4" />}
+                          {isValidating && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                         </Button>
                         
                         {!isHindi1000Hindi && (

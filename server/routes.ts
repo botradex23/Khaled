@@ -9,6 +9,7 @@ import bitgetRouter from "./api/bitget";
 import aiRouter from "./api/ai";
 import testAuthRouter from "./routes/test-auth";
 import { setupAuth, ensureAuthenticated } from "./auth";
+import { createOkxServiceWithCustomCredentials } from "./api/okx/okxService";
 
 // Helper function to mask sensitive data (like API keys)
 function maskSecret(secret: string): string {
@@ -218,6 +219,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // AI API routes
   app.use("/api/ai", aiRouter);
+  
+  // API Key validation endpoint - validates the user-provided API keys
+  app.post("/api/validate-api-keys", ensureAuthenticated, async (req, res) => {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const { okxApiKey, okxSecretKey, okxPassphrase, useTestnet } = req.body;
+    
+    if (!okxApiKey || !okxSecretKey || !okxPassphrase) {
+      return res.status(400).json({ 
+        success: false,
+        message: "All API credentials are required"
+      });
+    }
+    
+    try {
+      console.log(`Validating OKX API keys for user ID ${req.user.id}`);
+      
+      // Create OKX service instance with provided credentials
+      const testService = createOkxServiceWithCustomCredentials(
+        okxApiKey,
+        okxSecretKey,
+        okxPassphrase,
+        useTestnet !== false, // Default to testnet if not specified
+        req.user.id // Pass user ID for logging
+      );
+      
+      // Test connection by making a simple API call
+      console.log("Testing OKX API connection...");
+      const pingResult = await testService.ping();
+      
+      if (!pingResult.success) {
+        console.log("API connection test failed:", pingResult.message);
+        return res.status(400).json({
+          success: false,
+          message: "API connection test failed. Please check your credentials."
+        });
+      }
+      
+      // Try an authenticated request
+      try {
+        console.log("Testing OKX API authentication...");
+        const accountInfo = await testService.getAccountInfo();
+        
+        if (!accountInfo || !accountInfo.data) {
+          throw new Error("Invalid response from OKX API");
+        }
+        
+        console.log("API authentication successful");
+        return res.json({
+          success: true,
+          message: "API keys validated successfully",
+          demo: useTestnet !== false
+        });
+      } catch (authError) {
+        console.error("API authentication failed:", authError.message);
+        return res.status(400).json({
+          success: false,
+          message: `API authentication failed: ${authError.message}`
+        });
+      }
+    } catch (error) {
+      console.error("API key validation error:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: `API key validation failed: ${error.message}`
+      });
+    }
+  });
   
   // API routes
   

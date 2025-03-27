@@ -419,7 +419,8 @@ async function withUserApiKeys(req: Request, res: Response, next: Function) {
         apiKeys.okxApiKey,
         apiKeys.okxSecretKey,
         apiKeys.okxPassphrase,
-        useTestnet // Use testnet setting from user's preferences
+        useTestnet, // Use testnet setting from user's preferences
+        userId // Pass the user ID for better logging and tracking
       );
       
       // Try a simple test request to verify connection
