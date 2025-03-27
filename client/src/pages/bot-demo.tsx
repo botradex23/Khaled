@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import { 
@@ -51,6 +51,22 @@ import {
 
 export default function BotDemo() {
   const [selectedSymbols, setSelectedSymbols] = useState<string[]>(["BTC-USDT"]);
+  const [trades, setTrades] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Fetch trading history when page loads
+  useEffect(() => {
+    setIsLoading(true);
+    fetch('/api/okx/trading/history')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setTrades(data.slice(0, 10)); // Get the 10 most recent trades
+        }
+      })
+      .catch(err => console.error('Error fetching trading history:', err))
+      .finally(() => setIsLoading(false));
+  }, []);
   
   // Handle checkbox change for trading pairs
   const handleSymbolChange = (symbol: string, checked: boolean) => {
@@ -194,11 +210,48 @@ export default function BotDemo() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      <TableRow className="border-blue-800">
-                        <TableCell colSpan={5} className="text-center py-8 text-blue-400">
-                          No trading activity yet
-                        </TableCell>
-                      </TableRow>
+                      {isLoading ? (
+                        <TableRow className="border-blue-800">
+                          <TableCell colSpan={5} className="text-center py-8 text-blue-400">
+                            <div className="flex justify-center">
+                              <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-400 border-t-transparent"></div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : trades.length > 0 ? (
+                        trades.map((trade, index) => (
+                          <TableRow key={index} className="border-blue-800">
+                            <TableCell className="text-blue-100">
+                              {new Date(trade.ts || trade.timestamp || Date.now()).toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline" 
+                                className={
+                                  trade.side === 'buy' 
+                                    ? "border-green-500 text-green-400 bg-green-950" 
+                                    : "border-red-500 text-red-400 bg-red-950"
+                                }
+                              >
+                                {trade.side === 'buy' ? 'קנייה' : 'מכירה'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-blue-100">${parseFloat(trade.price || trade.px || 0).toFixed(2)}</TableCell>
+                            <TableCell className="text-blue-100">{parseFloat(trade.size || trade.sz || 0).toFixed(5)}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="border-green-500 text-green-400 bg-green-950">
+                                {trade.state || trade.status || 'בוצע'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow className="border-blue-800">
+                          <TableCell colSpan={5} className="text-center py-8 text-blue-400">
+                            אין עדיין פעילות מסחר
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
