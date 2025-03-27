@@ -937,8 +937,8 @@ export default function Bots() {
                     <TableRow>
                       <TableHead>Date/Time</TableHead>
                       <TableHead>Type</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Amount</TableHead>
+                      <TableHead>Price (USD)</TableHead>
+                      <TableHead>Amount (Crypto)</TableHead>
                       <TableHead className="text-right">Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -974,8 +974,18 @@ export default function Bots() {
                             <div className="mr-2 h-2 w-2 rounded-full bg-green-500"></div>
                             Buy
                           </TableCell>
-                          <TableCell>$87,310.00</TableCell>
-                          <TableCell>0.00023 BTC</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">$87,310.00</span>
+                              <span className="text-xs text-muted-foreground">USD Value</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">0.00023</span>
+                              <span className="text-xs text-muted-foreground">BTC</span>
+                            </div>
+                          </TableCell>
                           <TableCell className="text-right">
                             <span className="inline-flex items-center rounded-full px-2 py-1 text-xs bg-green-500/10 text-green-500">
                               <Check className="mr-1 h-3 w-3" />
@@ -993,8 +1003,18 @@ export default function Bots() {
                             <div className="mr-2 h-2 w-2 rounded-full bg-red-500"></div>
                             Sell
                           </TableCell>
-                          <TableCell>$87,450.00</TableCell>
-                          <TableCell>0.00051 BTC</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">$87,450.00</span>
+                              <span className="text-xs text-muted-foreground">USD Value</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">0.00051</span>
+                              <span className="text-xs text-muted-foreground">BTC</span>
+                            </div>
+                          </TableCell>
                           <TableCell className="text-right">
                             <span className="inline-flex items-center rounded-full px-2 py-1 text-xs bg-green-500/10 text-green-500">
                               <Check className="mr-1 h-3 w-3" />
@@ -1102,14 +1122,14 @@ export default function Bots() {
                     });
                   } else if (selectedSymbols.length === 0) {
                     toast({
-                      title: "בחירת מטבעות נדרשת",
-                      description: "נא לבחור לפחות מטבע אחד לסחר",
+                      title: "Cryptocurrency Selection Required",
+                      description: "Please select at least one cryptocurrency to trade",
                       variant: "destructive"
                     });
                   } else {
                     toast({
-                      title: "אין שינוי",
-                      description: "לא נעשו שינויים בפרמטרים של הבוט"
+                      title: "No Changes Made",
+                      description: "Bot parameters remain unchanged"
                     });
                   }
                 }}

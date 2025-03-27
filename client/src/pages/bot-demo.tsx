@@ -354,9 +354,9 @@ export default function BotDemo() {
                       <TableRow className="border-blue-800">
                         <TableHead className="text-blue-300">Date/Time</TableHead>
                         <TableHead className="text-blue-300">Type</TableHead>
-                        <TableHead className="text-blue-300">Price</TableHead>
-                        <TableHead className="text-blue-300">Amount</TableHead>
-                        <TableHead className="text-blue-300">Value</TableHead>
+                        <TableHead className="text-blue-300">Price (USD)</TableHead>
+                        <TableHead className="text-blue-300">Amount (Crypto)</TableHead>
+                        <TableHead className="text-blue-300">Value (USD)</TableHead>
                         <TableHead className="text-blue-300">Status</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -429,7 +429,7 @@ export default function BotDemo() {
                                       : "border-red-500 text-red-400 bg-red-950"
                                   }
                                 >
-                                  {(trade.side || '').toLowerCase() === 'buy' ? 'קנייה' : 'מכירה'}
+                                  {(trade.side || '').toLowerCase() === 'buy' ? 'BUY' : 'SELL'}
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-blue-100">
@@ -438,13 +438,23 @@ export default function BotDemo() {
                                   : parseFloat(trade.price || '0').toFixed(2)}
                               </TableCell>
                               <TableCell className="text-blue-100">
-                                {typeof trade.size === 'number' 
-                                  ? trade.size.toFixed(5) 
-                                  : parseFloat(trade.size || '0').toFixed(5)}
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {typeof trade.size === 'number' 
+                                      ? trade.size.toFixed(5) 
+                                      : parseFloat(trade.size || '0').toFixed(5)}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    Crypto Units
+                                  </span>
+                                </div>
                               </TableCell>
                               <TableCell className="text-blue-100">
                                 <div className="flex flex-col">
-                                  <span>${value.toFixed(2)}</span>
+                                  <span className="font-medium">${value.toFixed(2)}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    USD Value
+                                  </span>
                                   {(trade.side || '').toLowerCase() === 'sell' && (
                                     <span className={`text-xs mt-1 ${isProfitable ? 'text-green-400' : 'text-red-400'}`}>
                                       {isProfitable ? '+' : ''}{profit.toFixed(2)}$
@@ -454,7 +464,7 @@ export default function BotDemo() {
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="border-green-500 text-green-400 bg-green-950">
-                                  {trade.state || trade.status || 'בוצע'}
+                                  {trade.state || trade.status || 'FILLED'}
                                 </Badge>
                               </TableCell>
                             </TableRow>
@@ -463,7 +473,7 @@ export default function BotDemo() {
                       ) : (
                         <TableRow className="border-blue-800">
                           <TableCell colSpan={6} className="text-center py-8 text-blue-400">
-                            אין עדיין פעילות מסחר
+                            No trading activity yet
                           </TableCell>
                         </TableRow>
                       )}
@@ -629,7 +639,7 @@ export default function BotDemo() {
                             // Handle case where bot is already running
                             if (res.status === 400 && data.message?.includes("already running")) {
                               // This is actually not an error - the bot is already running
-                              alert("בוט כבר פועל! מרענן את הדף להצגת נתונים עדכניים.");
+                              alert("Bot is already running! Refreshing the page to display updated data.");
                               window.location.reload();
                               // Throw a special "error" to break out of the chain but not show an error message
                               throw new Error("BOT_ALREADY_RUNNING");
