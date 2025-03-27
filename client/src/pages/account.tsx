@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Layout from '@/components/layout';
 import { useAuth } from '@/hooks/use-auth';
 import { useLocation } from 'wouter';
@@ -6,10 +6,17 @@ import { AccountBalanceCard, TradingHistoryCard } from '@/components/ui/account-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useQuery } from '@tanstack/react-query';
 
 export default function Account() {
   const { isAuthenticated, isLoading } = useAuth();
   const [, navigate] = useLocation();
+  
+  // Fetch account balance data to display total portfolio value
+  const { data: balanceData, isLoading: isBalanceLoading } = useQuery({
+    queryKey: ["/api/okx/demo/account/balance"],
+    refetchInterval: 15000 // 15 seconds refresh
+  });
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -18,7 +25,25 @@ export default function Account() {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  if (isLoading) {
+  // Calculate total portfolio value
+  const calculateTotalValue = () => {
+    if (!balanceData || !Array.isArray(balanceData) || balanceData.length === 0) {
+      return 0;
+    }
+    
+    // Sum up the USD value of all assets
+    return balanceData.reduce((total, asset) => total + asset.valueUSD, 0);
+  };
+  
+  // Get the number of assets
+  const getAssetCount = () => {
+    if (!balanceData || !Array.isArray(balanceData)) {
+      return 0;
+    }
+    return balanceData.length;
+  };
+
+  if (isLoading || isBalanceLoading) {
     return (
       <Layout>
         <div className="container py-6">
@@ -31,11 +56,26 @@ export default function Account() {
       </Layout>
     );
   }
+  
+  // Calculate the total portfolio value
+  const totalPortfolioValue = calculateTotalValue();
+  const assetCount = getAssetCount();
 
   return (
     <Layout>
       <div className="container py-6">
-        <h1 className="text-3xl font-bold mb-6">Account Overview</h1>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">Account Overview</h1>
+          <div className="bg-blue-950 rounded-lg p-6 shadow-md">
+            <h2 className="text-lg text-blue-300 font-medium mb-2">Current portfolio value</h2>
+            <div className="flex justify-between items-center">
+              <span className="text-4xl font-bold text-white">${totalPortfolioValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              <span className="bg-blue-900 text-blue-100 px-3 py-1 rounded-full text-sm">
+                {assetCount} {assetCount === 1 ? 'Asset' : 'Assets'}
+              </span>
+            </div>
+          </div>
+        </div>
         
         <Tabs defaultValue="overview" className="w-full space-y-6">
           <TabsList className="grid w-full md:w-auto grid-cols-2">

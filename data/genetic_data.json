@@ -1,1708 +1,1643 @@
 {
   "population": [
     {
-      "id": "chr_1743084066916_3350",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589282_6535",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3500433920854222,
-          "upperPrice": 2.5219416779684827,
+          "upperPrice": 117.76533994280886,
+          "lowerPrice": 112.15746661219892,
           "gridCount": 11,
-          "investmentPerGrid": 113.7033156378344
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
+        "stopLossPercent": 0.7107840497576419,
+        "takeProfitPercent": 10.285262532942657
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066916
+      "created": 1743098589282
     },
     {
-      "id": "chr_1743084066916_86",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589283_1284",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.344622863915943,
-          "upperPrice": 2.4618540071117403,
-          "gridCount": 9,
-          "investmentPerGrid": 148.5637073636969
-        },
-        "stopLossPercent": 3.4071649379211815,
-        "takeProfitPercent": 3.672125633252986
-      },
-      "fitness": 30.34033333333333,
-      "generation": 10,
-      "trades": [
-        {
-          "action": "BUY",
-          "price": 2.337,
-          "amount": 0.1,
-          "timestamp": 1743079860000
-        },
-        {
-          "action": "BUY",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
-        }
-      ],
-      "created": 1743084066916
-    },
-    {
-      "id": "chr_1743084066917_3713",
-      "strategyType": "GRID_MEDIUM",
-      "params": {
-        "gridParams": {
-          "lowerPrice": 2.4126306789745513,
-          "upperPrice": 2.433237539086967,
-          "gridCount": 9,
-          "investmentPerGrid": 85.87137983902075
-        },
-        "stopLossPercent": 4.021460396664231,
-        "takeProfitPercent": 3.9132887706554533
-      },
-      "fitness": 30.34033333333333,
-      "generation": 10,
-      "trades": [
-        {
-          "action": "BUY",
-          "price": 2.337,
-          "amount": 0.1,
-          "timestamp": 1743079860000
-        },
-        {
-          "action": "BUY",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
-        }
-      ],
-      "created": 1743084066917
-    },
-    {
-      "id": "chr_1743084066917_3621",
-      "strategyType": "GRID_MEDIUM",
-      "params": {
-        "gridParams": {
-          "lowerPrice": 2.3500433920854222,
-          "upperPrice": 2.5219416779684827,
+          "upperPrice": 117.76533994280886,
+          "lowerPrice": 112.15746661219892,
           "gridCount": 11,
-          "investmentPerGrid": 113.7033156378344
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
+        "stopLossPercent": 1.10112152766638,
+        "takeProfitPercent": 11.97162471142431
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066916
+      "created": 1743098589283
     },
     {
-      "id": "chr_1743084066919_2219",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589283_169",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.369615817688521,
-          "upperPrice": 2.5028546364901736,
+          "upperPrice": 117.76533994280886,
+          "lowerPrice": 112.15746661219892,
           "gridCount": 11,
-          "investmentPerGrid": 104.93122885994714
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 5.516399103489504,
-        "takeProfitPercent": 4.453950614876719
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066919
+      "created": 1743098589283
     },
     {
-      "id": "chr_1743084066921_2721",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589283_7198",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.369548889233483,
-          "upperPrice": 2.485694980425868,
+          "upperPrice": 117.76533994280886,
+          "lowerPrice": 112.15746661219892,
           "gridCount": 11,
-          "investmentPerGrid": 113.7033156378344
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 4.597970152941435,
-        "takeProfitPercent": 5.452327953885756
+        "stopLossPercent": 0.8290904550331744,
+        "takeProfitPercent": 9.616728998882916
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589283
     },
     {
-      "id": "chr_1743084066921_6026",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_614",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3757527010646244,
-          "upperPrice": 2.486546855071821,
-          "gridCount": 9,
-          "investmentPerGrid": 85.87137983902075
+          "upperPrice": 101.42145491698662,
+          "lowerPrice": 98.27132556367256,
+          "gridCount": 12,
+          "investmentPerGrid": 99.38604652755731
         },
-        "stopLossPercent": 4.021460396664231,
-        "takeProfitPercent": 3.9132887706554533
+        "stopLossPercent": 0.842198659656646,
+        "takeProfitPercent": 11.733642188195407
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_7983",
+      "id": "chr_1743098589288_6252",
       "strategyType": "GRID_MEDIUM",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.4126306789745513,
-          "upperPrice": 2.433237539086967,
-          "gridCount": 9,
-          "investmentPerGrid": 85.87137983902075
-        },
-        "stopLossPercent": 4.021460396664231,
-        "takeProfitPercent": 3.9132887706554533
-      },
-      "fitness": 30.34033333333333,
-      "generation": 10,
-      "trades": [
-        {
-          "action": "BUY",
-          "price": 2.337,
-          "amount": 0.1,
-          "timestamp": 1743079860000
-        },
-        {
-          "action": "BUY",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
-        }
-      ],
-      "created": 1743084066917
-    },
-    {
-      "id": "chr_1743084066921_7368",
-      "strategyType": "GRID_MEDIUM",
-      "params": {
-        "gridParams": {
-          "lowerPrice": 2.367066526245647,
-          "upperPrice": 2.5134106470147586,
-          "gridCount": 11,
-          "investmentPerGrid": 114.61100668882196
-        },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
-      },
-      "fitness": 30.34033333333333,
-      "generation": 10,
-      "trades": [
-        {
-          "action": "BUY",
-          "price": 2.337,
-          "amount": 0.1,
-          "timestamp": 1743079860000
-        },
-        {
-          "action": "BUY",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
-        }
-      ],
-      "created": 1743084066920
-    },
-    {
-      "id": "chr_1743084066921_4400",
-      "strategyType": "GRID_MEDIUM",
-      "params": {
-        "gridParams": {
-          "lowerPrice": 2.4093301826405504,
-          "upperPrice": 2.48563710818348,
+          "upperPrice": 105,
+          "lowerPrice": 95,
           "gridCount": 10,
-          "investmentPerGrid": 148.5637073636969
+          "investmentPerGrid": 100
         },
-        "stopLossPercent": 6.247031457509704,
-        "takeProfitPercent": 5.850286009890546
+        "stopLossPercent": 1.1574521539543179,
+        "takeProfitPercent": 11.017958823542232
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066920
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_1009",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_67",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.344622863915943,
-          "upperPrice": 2.4618540071117403,
-          "gridCount": 9,
-          "investmentPerGrid": 148.5637073636969
-        },
-        "stopLossPercent": 3.4071649379211815,
-        "takeProfitPercent": 3.672125633252986
-      },
-      "fitness": 30.34033333333333,
-      "generation": 10,
-      "trades": [
-        {
-          "action": "BUY",
-          "price": 2.337,
-          "amount": 0.1,
-          "timestamp": 1743079860000
-        },
-        {
-          "action": "BUY",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
-        }
-      ],
-      "created": 1743084066916
-    },
-    {
-      "id": "chr_1743084066921_318",
-      "strategyType": "GRID_MEDIUM",
-      "params": {
-        "gridParams": {
-          "lowerPrice": 2.3710093423533536,
-          "upperPrice": 2.4931758725644686,
+          "upperPrice": 117.76533994280886,
+          "lowerPrice": 112.15746661219892,
           "gridCount": 11,
-          "investmentPerGrid": 85.87137983902075
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 4.597970152941435,
-        "takeProfitPercent": 5.452327953885756
+        "stopLossPercent": 0.9883112614803087,
+        "takeProfitPercent": 9.454030355159924
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066920
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_2177",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_3044",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3931954781231313,
-          "upperPrice": 2.4610105671936053,
+          "upperPrice": 111.95185538774265,
+          "lowerPrice": 106.62081465499298,
+          "gridCount": 12,
+          "investmentPerGrid": 85.8419543671704
+        },
+        "stopLossPercent": 1.10112152766638,
+        "takeProfitPercent": 11.97162471142431
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589288
+    },
+    {
+      "id": "chr_1743098589288_3193",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 111.17889566501914,
+          "lowerPrice": 106.23123877198924,
+          "gridCount": 12,
+          "investmentPerGrid": 93.29996407803976
+        },
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589288
+    },
+    {
+      "id": "chr_1743098589288_8706",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 117.76533994280886,
+          "lowerPrice": 112.15746661219892,
           "gridCount": 11,
-          "investmentPerGrid": 85.87137983902075
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 4.597970152941435,
-        "takeProfitPercent": 5.452327953885756
+        "stopLossPercent": 0.8290904550331744,
+        "takeProfitPercent": 9.616728998882916
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_8499",
+      "id": "chr_1743098589288_4961",
       "strategyType": "GRID_MEDIUM",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.402645007037896,
-          "upperPrice": 2.4369123175812155,
-          "gridCount": 14,
-          "investmentPerGrid": 85.87137983902075
-        },
-        "stopLossPercent": 3.322565748478751,
-        "takeProfitPercent": 6.801200204685747
-      },
-      "fitness": 30.34033333333333,
-      "generation": 10,
-      "trades": [
-        {
-          "action": "BUY",
-          "price": 2.337,
-          "amount": 0.1,
-          "timestamp": 1743079860000
-        },
-        {
-          "action": "BUY",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
-        }
-      ],
-      "created": 1743084066921
-    },
-    {
-      "id": "chr_1743084066921_5523",
-      "strategyType": "GRID_MEDIUM",
-      "params": {
-        "gridParams": {
-          "lowerPrice": 2.389765699315266,
-          "upperPrice": 2.4764748192546824,
+          "upperPrice": 105,
+          "lowerPrice": 95,
           "gridCount": 10,
-          "investmentPerGrid": 85.87137983902075
+          "investmentPerGrid": 100
         },
-        "stopLossPercent": 6.247031457509704,
-        "takeProfitPercent": 5.850286009890546
+        "stopLossPercent": 1.1574521539543179,
+        "takeProfitPercent": 11.017958823542232
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_6965",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_6570",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3801497904310667,
-          "upperPrice": 2.4850370260426624,
+          "upperPrice": 117.76533994280886,
+          "lowerPrice": 112.15746661219892,
           "gridCount": 11,
-          "investmentPerGrid": 113.7033156378344
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 4.597970152941435,
-        "takeProfitPercent": 5.452327953885756
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_4524",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_8",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.385695831298844,
-          "upperPrice": 2.4429089552446706,
-          "gridCount": 9,
-          "investmentPerGrid": 114.61100668882196
+          "upperPrice": 115.84131963384954,
+          "lowerPrice": 110.76735437695925,
+          "gridCount": 11,
+          "investmentPerGrid": 85.8419543671704
         },
-        "stopLossPercent": 4.021460396664231,
-        "takeProfitPercent": 3.9132887706554533
+        "stopLossPercent": 0.7107840497576419,
+        "takeProfitPercent": 10.285262532942657
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_7480",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_1029",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3942420136724567,
-          "upperPrice": 2.4604068403246373,
-          "gridCount": 9,
-          "investmentPerGrid": 133.00819850822162
+          "upperPrice": 107.75964880613289,
+          "lowerPrice": 104.928315440377,
+          "gridCount": 12,
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 4.021460396664231,
-        "takeProfitPercent": 3.9132887706554533
+        "stopLossPercent": 1.10112152766638,
+        "takeProfitPercent": 11.97162471142431
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_1641",
+      "id": "chr_1743098589288_9314",
       "strategyType": "GRID_MEDIUM",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3598159523168234,
-          "upperPrice": 2.5297267961956797,
+          "upperPrice": 105,
+          "lowerPrice": 95,
           "gridCount": 10,
-          "investmentPerGrid": 137.84134108565152
+          "investmentPerGrid": 100
         },
-        "stopLossPercent": 3.9381412547134347,
-        "takeProfitPercent": 3.342358241693295
+        "stopLossPercent": 1.1574521539543179,
+        "takeProfitPercent": 11.017958823542232
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_575",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_1267",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3598159523168234,
-          "upperPrice": 2.5297267961956797,
+          "upperPrice": 107.57996013036882,
+          "lowerPrice": 104.07986638940444,
+          "gridCount": 12,
+          "investmentPerGrid": 91.07029070770416
+        },
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589288
+    },
+    {
+      "id": "chr_1743098589288_909",
+      "strategyType": "GRID_WIDE",
+      "params": {
+        "gridParams": {
+          "upperPrice": 105,
+          "lowerPrice": 95,
           "gridCount": 10,
-          "investmentPerGrid": 137.84134108565152
+          "investmentPerGrid": 100
         },
-        "stopLossPercent": 3.9381412547134347,
-        "takeProfitPercent": 3.342358241693295
+        "stopLossPercent": 1.026334840258026,
+        "takeProfitPercent": 10.82390186250926
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_8706",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_514",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3549396353133276,
-          "upperPrice": 2.4764280064042237,
+          "upperPrice": 116.49531718476172,
+          "lowerPrice": 110.94792112834449,
           "gridCount": 11,
-          "investmentPerGrid": 85.87137983902075
+          "investmentPerGrid": 85.8419543671704
         },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
+        "stopLossPercent": 1.10112152766638,
+        "takeProfitPercent": 11.97162471142431
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_2918",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_2633",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3751439833780283,
-          "upperPrice": 2.4708549900181227,
-          "gridCount": 14,
-          "investmentPerGrid": 133.00819850822162
+          "upperPrice": 110.50551221915691,
+          "lowerPrice": 106.80883143702798,
+          "gridCount": 12,
+          "investmentPerGrid": 93.29996407803976
         },
-        "stopLossPercent": 3.322565748478751,
-        "takeProfitPercent": 6.801200204685747
+        "stopLossPercent": 1.0826118599239007,
+        "takeProfitPercent": 12.865247505722023
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_2843",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_5597",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.4650319539911676,
-          "upperPrice": 2.588283551690726,
-          "gridCount": 9,
-          "investmentPerGrid": 144.93476636572083
-        },
-        "stopLossPercent": 4.091762359889294,
-        "takeProfitPercent": 3.7183918067715176
-      },
-      "fitness": 30.34033333333333,
-      "generation": 10,
-      "trades": [
-        {
-          "action": "BUY",
-          "price": 2.337,
-          "amount": 0.1,
-          "timestamp": 1743079860000
-        },
-        {
-          "action": "BUY",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
-        }
-      ],
-      "created": 1743084066921
-    },
-    {
-      "id": "chr_1743084066921_4995",
-      "strategyType": "GRID_MEDIUM",
-      "params": {
-        "gridParams": {
-          "lowerPrice": 2.3857598744616864,
-          "upperPrice": 2.4666815365290278,
+          "upperPrice": 117.76533994280886,
+          "lowerPrice": 112.15746661219892,
           "gridCount": 11,
-          "investmentPerGrid": 85.87137983902075
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_9945",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_5793",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3475172073892563,
-          "upperPrice": 2.4404330057510366,
-          "gridCount": 11,
-          "investmentPerGrid": 113.7033156378344
+          "upperPrice": 111.27871869422913,
+          "lowerPrice": 107.32879743466741,
+          "gridCount": 12,
+          "investmentPerGrid": 90.3191575701814
         },
-        "stopLossPercent": 4.597970152941435,
-        "takeProfitPercent": 5.452327953885756
+        "stopLossPercent": 1.086560338027095,
+        "takeProfitPercent": 13.606635262751366
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066920
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_1619",
+      "id": "chr_1743098589288_8213",
       "strategyType": "GRID_MEDIUM",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.4009883065965183,
-          "upperPrice": 2.491946360593163,
+          "upperPrice": 105,
+          "lowerPrice": 95,
           "gridCount": 10,
-          "investmentPerGrid": 139.38522578308815
+          "investmentPerGrid": 100
         },
-        "stopLossPercent": 6.247031457509704,
-        "takeProfitPercent": 5.850286009890546
+        "stopLossPercent": 1.1574521539543179,
+        "takeProfitPercent": 11.017958823542232
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066920
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_626",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_8758",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3910563252970642,
-          "upperPrice": 2.466465848533723,
-          "gridCount": 14,
-          "investmentPerGrid": 85.87137983902075
+          "upperPrice": 105.06266877445006,
+          "lowerPrice": 103.14862732213359,
+          "gridCount": 12,
+          "investmentPerGrid": 93.29996407803976
         },
-        "stopLossPercent": 3.322565748478751,
-        "takeProfitPercent": 6.801200204685747
+        "stopLossPercent": 1.10112152766638,
+        "takeProfitPercent": 11.97162471142431
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066920
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_9989",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_7168",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.367066526245647,
-          "upperPrice": 2.5134106470147586,
+          "upperPrice": 114.57515040637702,
+          "lowerPrice": 102.6470888933204,
+          "gridCount": 13,
+          "investmentPerGrid": 90.223573733008
+        },
+        "stopLossPercent": 1.1644140792236706,
+        "takeProfitPercent": 12.277443414021192
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589288
+    },
+    {
+      "id": "chr_1743098589288_1201",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 109.69732266781529,
+          "lowerPrice": 105.31047882415399,
+          "gridCount": 12,
+          "investmentPerGrid": 91.07029070770416
+        },
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589288
+    },
+    {
+      "id": "chr_1743098589288_234",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 111.64735201816225,
+          "lowerPrice": 106.9410811686048,
+          "gridCount": 12,
+          "investmentPerGrid": 85.8419543671704
+        },
+        "stopLossPercent": 1.086560338027095,
+        "takeProfitPercent": 13.606635262751366
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589288
+    },
+    {
+      "id": "chr_1743098589288_1921",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 111.58322206380953,
+          "lowerPrice": 107.00853092105561,
+          "gridCount": 12,
+          "investmentPerGrid": 90.3191575701814
+        },
+        "stopLossPercent": 1.10112152766638,
+        "takeProfitPercent": 11.97162471142431
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589288
+    },
+    {
+      "id": "chr_1743098589288_3563",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 117.76533994280886,
+          "lowerPrice": 112.15746661219892,
           "gridCount": 11,
-          "investmentPerGrid": 114.61100668882196
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
+        "stopLossPercent": 0.8290904550331744,
+        "takeProfitPercent": 9.616728998882916
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066920
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_2399",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_2368",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.344622863915943,
-          "upperPrice": 2.4618540071117403,
-          "gridCount": 9,
-          "investmentPerGrid": 148.5637073636969
-        },
-        "stopLossPercent": 3.4071649379211815,
-        "takeProfitPercent": 3.672125633252986
-      },
-      "fitness": 30.34033333333333,
-      "generation": 10,
-      "trades": [
-        {
-          "action": "BUY",
-          "price": 2.337,
-          "amount": 0.1,
-          "timestamp": 1743079860000
-        },
-        {
-          "action": "BUY",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
-        }
-      ],
-      "created": 1743084066916
-    },
-    {
-      "id": "chr_1743084066921_1431",
-      "strategyType": "GRID_MEDIUM",
-      "params": {
-        "gridParams": {
-          "lowerPrice": 2.361195741817425,
-          "upperPrice": 2.51946594328853,
+          "upperPrice": 117.76533994280886,
+          "lowerPrice": 112.15746661219892,
           "gridCount": 11,
-          "investmentPerGrid": 113.7033156378344
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
+        "stopLossPercent": 0.7107840497576419,
+        "takeProfitPercent": 10.285262532942657
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_8695",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_8796",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3513190570766507,
-          "upperPrice": 2.52165849028744,
-          "gridCount": 11,
-          "investmentPerGrid": 139.38522578308815
+          "upperPrice": 111.525438844172,
+          "lowerPrice": 106.53567861392717,
+          "gridCount": 12,
+          "investmentPerGrid": 92.69450906591034
         },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_8044",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_9021",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3724665973288768,
-          "upperPrice": 2.503621207120725,
-          "gridCount": 11,
-          "investmentPerGrid": 76.88878090064254
+          "upperPrice": 115.52366576828234,
+          "lowerPrice": 110.04814010800034,
+          "gridCount": 12,
+          "investmentPerGrid": 93.29996407803976
         },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
+        "stopLossPercent": 1.2526409181164837,
+        "takeProfitPercent": 10.830778751966726
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_4302",
+      "id": "chr_1743098589288_6556",
       "strategyType": "GRID_MEDIUM",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3650966814485557,
-          "upperPrice": 2.506178168439976,
-          "gridCount": 11,
-          "investmentPerGrid": 114.61100668882196
-        },
-        "stopLossPercent": 4.597970152941435,
-        "takeProfitPercent": 5.452327953885756
-      },
-      "fitness": 30.34033333333333,
-      "generation": 10,
-      "trades": [
-        {
-          "action": "BUY",
-          "price": 2.337,
-          "amount": 0.1,
-          "timestamp": 1743079860000
-        },
-        {
-          "action": "BUY",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
-        }
-      ],
-      "created": 1743084066921
-    },
-    {
-      "id": "chr_1743084066921_9576",
-      "strategyType": "GRID_MEDIUM",
-      "params": {
-        "gridParams": {
-          "lowerPrice": 2.367657064924198,
-          "upperPrice": 2.513301413462302,
+          "upperPrice": 105,
+          "lowerPrice": 95,
           "gridCount": 10,
-          "investmentPerGrid": 139.38522578308815
+          "investmentPerGrid": 100
         },
-        "stopLossPercent": 6.247031457509704,
-        "takeProfitPercent": 5.850286009890546
+        "stopLossPercent": 1.1574521539543179,
+        "takeProfitPercent": 11.017958823542232
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_1222",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_5442",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.4608613594576108,
-          "upperPrice": 2.5454813023713387,
-          "gridCount": 9,
-          "investmentPerGrid": 137.63092654684502
-        },
-        "stopLossPercent": 4.034733926089325,
-        "takeProfitPercent": 4.071123779560533
-      },
-      "fitness": 30.34033333333333,
-      "generation": 10,
-      "trades": [
-        {
-          "action": "BUY",
-          "price": 2.337,
-          "amount": 0.1,
-          "timestamp": 1743079860000
-        },
-        {
-          "action": "BUY",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
-        }
-      ],
-      "created": 1743084066921
-    },
-    {
-      "id": "chr_1743084066921_5050",
-      "strategyType": "GRID_MEDIUM",
-      "params": {
-        "gridParams": {
-          "lowerPrice": 2.3697569645229537,
-          "upperPrice": 2.5013824944238294,
+          "upperPrice": 117.76533994280886,
+          "lowerPrice": 112.15746661219892,
           "gridCount": 11,
-          "investmentPerGrid": 76.88878090064254
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
+        "stopLossPercent": 1.10112152766638,
+        "takeProfitPercent": 11.97162471142431
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_3694",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_8258",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3738332715051436,
-          "upperPrice": 2.502905923933862,
+          "upperPrice": 111.40626391215268,
+          "lowerPrice": 107.19464961775319,
+          "gridCount": 12,
+          "investmentPerGrid": 85.8419543671704
+        },
+        "stopLossPercent": 1.0826118599239007,
+        "takeProfitPercent": 12.865247505722023
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589288
+    },
+    {
+      "id": "chr_1743098589288_790",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 111.2257989036778,
+          "lowerPrice": 107.28972623730944,
+          "gridCount": 12,
+          "investmentPerGrid": 90.3191575701814
+        },
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589288
+    },
+    {
+      "id": "chr_1743098589288_7708",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 106.22642015669129,
+          "lowerPrice": 103.59863616201278,
+          "gridCount": 12,
+          "investmentPerGrid": 93.29996407803976
+        },
+        "stopLossPercent": 0.7107840497576419,
+        "takeProfitPercent": 10.285262532942657
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589288
+    },
+    {
+      "id": "chr_1743098589288_5953",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 113.81524164645111,
+          "lowerPrice": 108.39546823471534,
           "gridCount": 11,
-          "investmentPerGrid": 133.82025267236872
+          "investmentPerGrid": 85.8419543671704
         },
-        "stopLossPercent": 4.597970152941435,
-        "takeProfitPercent": 5.452327953885756
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_3659",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_8813",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3860800136639266,
-          "upperPrice": 2.473783070980109,
-          "gridCount": 14,
-          "investmentPerGrid": 113.7033156378344
+          "upperPrice": 115.90195368410039,
+          "lowerPrice": 110.38281303247656,
+          "gridCount": 12,
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 3.322565748478751,
-        "takeProfitPercent": 6.801200204685747
+        "stopLossPercent": 1.10112152766638,
+        "takeProfitPercent": 11.97162471142431
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_590",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_5537",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3822352449524296,
-          "upperPrice": 2.479436460476375,
-          "gridCount": 9,
-          "investmentPerGrid": 85.87137983902075
+          "upperPrice": 105.32551665918096,
+          "lowerPrice": 102.44603606725188,
+          "gridCount": 12,
+          "investmentPerGrid": 99.38604652755731
         },
-        "stopLossPercent": 4.021460396664231,
-        "takeProfitPercent": 3.9132887706554533
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_7250",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_5119",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.381810906536758,
-          "upperPrice": 2.478263422216252,
+          "upperPrice": 102.56506679648457,
+          "lowerPrice": 99.4942182433039,
+          "gridCount": 12,
+          "investmentPerGrid": 91.07029070770416
+        },
+        "stopLossPercent": 0.842198659656646,
+        "takeProfitPercent": 11.733642188195407
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589288
+    },
+    {
+      "id": "chr_1743098589288_9589",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 109.80126375870849,
+          "lowerPrice": 106.03102437781232,
+          "gridCount": 12,
+          "investmentPerGrid": 90.3191575701814
+        },
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589288
+    },
+    {
+      "id": "chr_1743098589288_7567",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 107.76836426141051,
+          "lowerPrice": 103.73472152901776,
+          "gridCount": 12,
+          "investmentPerGrid": 94.56501421136566
+        },
+        "stopLossPercent": 0.606936579241465,
+        "takeProfitPercent": 11.621697202584093
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589288
+    },
+    {
+      "id": "chr_1743098589288_8699",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 112.02324068814416,
+          "lowerPrice": 106.68880065537537,
           "gridCount": 11,
-          "investmentPerGrid": 85.87137983902075
+          "investmentPerGrid": 85.8419543671704
         },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_2006",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_2151",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.384369673177886,
-          "upperPrice": 2.4724040469758863,
-          "gridCount": 11,
-          "investmentPerGrid": 133.82025267236872
+          "upperPrice": 117.69395464240735,
+          "lowerPrice": 112.08948061181653,
+          "gridCount": 12,
+          "investmentPerGrid": 82.34982700627
         },
-        "stopLossPercent": 5.516399103489504,
-        "takeProfitPercent": 4.453950614876719
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_4242",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_6788",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3683886280501762,
-          "upperPrice": 2.489307407027989,
-          "gridCount": 11,
-          "investmentPerGrid": 104.93122885994714
+          "upperPrice": 106.36717492008708,
+          "lowerPrice": 102.93599914196625,
+          "gridCount": 12,
+          "investmentPerGrid": 99.38604652755731
         },
-        "stopLossPercent": 4.597970152941435,
-        "takeProfitPercent": 5.452327953885756
+        "stopLossPercent": 1.0348950139830713,
+        "takeProfitPercent": 11.58985794000338
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_6757",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_6129",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3692698466171604,
-          "upperPrice": 2.4990353820371136,
-          "gridCount": 11,
-          "investmentPerGrid": 85.87137983902075
+          "upperPrice": 102.63424012726836,
+          "lowerPrice": 99.41519281111076,
+          "gridCount": 12,
+          "investmentPerGrid": 91.07029070770416
         },
-        "stopLossPercent": 5.516399103489504,
-        "takeProfitPercent": 4.453950614876719
+        "stopLossPercent": 0.842198659656646,
+        "takeProfitPercent": 11.733642188195407
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_957",
-      "strategyType": "GRID_MEDIUM",
+      "id": "chr_1743098589288_1591",
+      "strategyType": "GRID_NARROW",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3684290603397704,
-          "upperPrice": 2.4897537483983037,
-          "gridCount": 11,
-          "investmentPerGrid": 85.87137983902075
+          "upperPrice": 117.27443446630416,
+          "lowerPrice": 111.68993758695633,
+          "gridCount": 12,
+          "investmentPerGrid": 96.93602989016935
         },
-        "stopLossPercent": 5.516399103489504,
-        "takeProfitPercent": 4.453950614876719
+        "stopLossPercent": 0.7753861737136117,
+        "takeProfitPercent": 11.267661485821064
       },
-      "fitness": 30.34033333333333,
+      "fitness": 30.34133333333333,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_1063",
+      "id": "chr_1743098589288_120",
       "strategyType": "GRID_MEDIUM",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3692294143275663,
-          "upperPrice": 2.4985890406667988,
-          "gridCount": 11,
-          "investmentPerGrid": 104.93122885994714
-        },
-        "stopLossPercent": 4.597970152941435,
-        "takeProfitPercent": 5.452327953885756
-      },
-      "fitness": 30.34033333333333,
-      "generation": 10,
-      "trades": [
-        {
-          "action": "BUY",
-          "price": 2.337,
-          "amount": 0.1,
-          "timestamp": 1743079860000
-        },
-        {
-          "action": "BUY",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
-        }
-      ],
-      "created": 1743084066921
-    },
-    {
-      "id": "chr_1743084066921_4384",
-      "strategyType": "GRID_MEDIUM",
-      "params": {
-        "gridParams": {
-          "lowerPrice": 2.3624714068086536,
-          "upperPrice": 2.519182755607487,
-          "gridCount": 11,
-          "investmentPerGrid": 139.38522578308815
-        },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
-      },
-      "fitness": 30.34033333333333,
-      "generation": 10,
-      "trades": [
-        {
-          "action": "BUY",
-          "price": 2.337,
-          "amount": 0.1,
-          "timestamp": 1743079860000
-        },
-        {
-          "action": "BUY",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": 0.0006999999999999674
-        }
-      ],
-      "created": 1743084066920
-    },
-    {
-      "id": "chr_1743084066921_3369",
-      "strategyType": "GRID_MEDIUM",
-      "params": {
-        "gridParams": {
-          "lowerPrice": 2.3402363243222806,
-          "upperPrice": 2.491838176731675,
+          "lowerPrice": 2.349140247469987,
+          "upperPrice": 2.4665972598434864,
           "gridCount": 10,
-          "investmentPerGrid": 113.7033156378344
+          "investmentPerGrid": 149.23188123805787
         },
-        "stopLossPercent": 6.247031457509704,
-        "takeProfitPercent": 5.850286009890546
+        "stopLossPercent": 1.2019211529867748,
+        "takeProfitPercent": 4.814523799268449
       },
-      "fitness": 23.842132666667332,
+      "fitness": 15.674666133333758,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.3405,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079800000,
-          "profit": 0.0003499999999999837
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         },
         {
           "action": "SELL",
-          "price": 2.3405,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079800000
+          "timestamp": 1743093840000
         },
         {
           "action": "SELL",
-          "price": 2.3384,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079740000,
-          "profit": 0.0002099999999999991
-        },
-        {
-          "action": "BUY",
-          "price": 2.3384,
-          "amount": 0.1,
-          "timestamp": 1743079740000
-        },
-        {
-          "action": "BUY",
-          "price": 2.3428,
-          "amount": 0.1,
-          "timestamp": 1743079500000,
-          "profit": 0.00043999999999999595
-        },
-        {
-          "action": "SELL",
-          "price": 2.3428,
-          "amount": 0.1,
-          "timestamp": 1743079500000
-        },
-        {
-          "action": "SELL",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": -0.00011999999999998679
+          "timestamp": 1743093840000,
+          "profit": 0
         }
       ],
-      "created": 1743084066921
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_3309",
+      "id": "chr_1743098589288_8287",
       "strategyType": "GRID_MEDIUM",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3390272933942917,
-          "upperPrice": 2.480817147888623,
-          "gridCount": 11,
-          "investmentPerGrid": 133.00819850822162
+          "lowerPrice": 2.349140247469987,
+          "upperPrice": 2.4665972598434864,
+          "gridCount": 10,
+          "investmentPerGrid": 149.23188123805787
         },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
+        "stopLossPercent": 0.8237396336579346,
+        "takeProfitPercent": 4.020960516809861
       },
-      "fitness": 23.836532853333676,
+      "fitness": 15.674666133333758,
       "generation": 10,
       "trades": [
         {
           "action": "BUY",
-          "price": 2.337,
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079860000
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.3405,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079800000,
-          "profit": 0.0003499999999999837
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         },
         {
           "action": "SELL",
-          "price": 2.3405,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079800000
+          "timestamp": 1743093840000
         },
         {
           "action": "SELL",
-          "price": 2.3384,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079740000,
-          "profit": 0.0002099999999999991
-        },
-        {
-          "action": "BUY",
-          "price": 2.3384,
-          "amount": 0.1,
-          "timestamp": 1743079740000
-        },
-        {
-          "action": "BUY",
-          "price": 2.34,
-          "amount": 0.1,
-          "timestamp": 1743079620000,
-          "profit": 0.0001599999999999824
-        },
-        {
-          "action": "SELL",
-          "price": 2.34,
-          "amount": 0.1,
-          "timestamp": 1743079620000
-        },
-        {
-          "action": "SELL",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": -0.0004000000000000004
+          "timestamp": 1743093840000,
+          "profit": 0
         }
       ],
-      "created": 1743084066920
+      "created": 1743098589288
     },
     {
-      "id": "chr_1743084066921_5818",
+      "id": "chr_1743098589288_6641",
       "strategyType": "GRID_MEDIUM",
       "params": {
         "gridParams": {
-          "lowerPrice": 2.3336091974365636,
-          "upperPrice": 2.3722220207884956,
-          "gridCount": 8,
-          "investmentPerGrid": 119.23984951805465
+          "lowerPrice": 2.349140247469987,
+          "upperPrice": 2.4665972598434864,
+          "gridCount": 10,
+          "investmentPerGrid": 149.23188123805787
         },
-        "stopLossPercent": 3.7854260309279963,
-        "takeProfitPercent": 3.789855430554412
+        "stopLossPercent": 1.0173006986000415,
+        "takeProfitPercent": 4.119436115807131
       },
-      "fitness": 20.999699753333424,
+      "fitness": 15.674666133333758,
       "generation": 10,
       "trades": [
         {
-          "action": "SELL",
-          "price": 2.3405,
+          "action": "BUY",
+          "price": 2.3415,
           "amount": 0.1,
-          "timestamp": 1743079800000
-        },
-        {
-          "action": "SELL",
-          "price": 2.3384,
-          "amount": 0.1,
-          "timestamp": 1743079740000,
-          "profit": 0.0002099999999999991
+          "timestamp": 1743094380000
         },
         {
           "action": "BUY",
-          "price": 2.3384,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079740000
-        },
-        {
-          "action": "BUY",
-          "price": 2.34,
-          "amount": 0.1,
-          "timestamp": 1743079620000,
-          "profit": 0.0001599999999999824
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
         },
         {
           "action": "SELL",
-          "price": 2.34,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079620000
+          "timestamp": 1743093840000
         },
         {
           "action": "SELL",
-          "price": 2.344,
+          "price": 2.3495,
           "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": -0.0004000000000000004
+          "timestamp": 1743093840000,
+          "profit": 0
         }
       ],
-      "created": 1743084066920
-    },
-    {
-      "id": "chr_1743084066921_4938",
-      "strategyType": "GRID_MEDIUM",
-      "params": {
-        "gridParams": {
-          "lowerPrice": 2.3363231896617074,
-          "upperPrice": 2.479826527894386,
-          "gridCount": 11,
-          "investmentPerGrid": 113.7033156378344
-        },
-        "stopLossPercent": 5.530057055571762,
-        "takeProfitPercent": 4.926484014453528
-      },
-      "fitness": 0.32633333333333364,
-      "generation": 10,
-      "trades": [
-        {
-          "action": "SELL",
-          "price": 2.337,
-          "amount": 0.1,
-          "timestamp": 1743079860000
-        },
-        {
-          "action": "SELL",
-          "price": 2.344,
-          "amount": 0.1,
-          "timestamp": 1743079260000,
-          "profit": -0.0006999999999999674
-        }
-      ],
-      "created": 1743084066921
+      "created": 1743098589288
     }
   ],
   "bestChromosomes": [
@@ -4145,8 +4080,1293 @@
         }
       ],
       "created": 1743084066916
+    },
+    {
+      "id": "chr_1743098578025_1396",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 84935.70201862029,
+          "upperPrice": 91213.27685803793,
+          "gridCount": 9,
+          "investmentPerGrid": 75.8056878958293
+        },
+        "stopLossPercent": 1.4234082055589727,
+        "takeProfitPercent": 5.732933321109368
+      },
+      "fitness": 133.69430899952582,
+      "generation": 1,
+      "trades": [
+        {
+          "action": "SELL",
+          "price": 87037.9,
+          "amount": 0.1,
+          "timestamp": 1743094080000
+        },
+        {
+          "action": "SELL",
+          "price": 87011.9,
+          "amount": 0.1,
+          "timestamp": 1743094020000,
+          "profit": 2.6
+        },
+        {
+          "action": "BUY",
+          "price": 87011.9,
+          "amount": 0.1,
+          "timestamp": 1743094020000
+        },
+        {
+          "action": "BUY",
+          "price": 87072,
+          "amount": 0.1,
+          "timestamp": 1743093960000,
+          "profit": 6.010000000000582
+        },
+        {
+          "action": "SELL",
+          "price": 87072,
+          "amount": 0.1,
+          "timestamp": 1743093960000
+        },
+        {
+          "action": "SELL",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 1.6600000000005821
+        }
+      ],
+      "created": 1743098578025
+    },
+    {
+      "id": "chr_1743098578028_5456",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 87345.15013942348,
+          "upperPrice": 94100.53705790118,
+          "gridCount": 10,
+          "investmentPerGrid": 149.19890941503934
+        },
+        "stopLossPercent": 1.3508226019345533,
+        "takeProfitPercent": 5.307210113345377
+      },
+      "fitness": 156.33333333333334,
+      "generation": 2,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 86929.4,
+          "amount": 0.1,
+          "timestamp": 1743094260000
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 12.600000000000001
+        }
+      ],
+      "created": 1743098578028
+    },
+    {
+      "id": "chr_1743098578028_5456",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 87345.15013942348,
+          "upperPrice": 94100.53705790118,
+          "gridCount": 10,
+          "investmentPerGrid": 149.19890941503934
+        },
+        "stopLossPercent": 1.3508226019345533,
+        "takeProfitPercent": 5.307210113345377
+      },
+      "fitness": 156.33333333333334,
+      "generation": 3,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 86929.4,
+          "amount": 0.1,
+          "timestamp": 1743094260000
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 12.600000000000001
+        }
+      ],
+      "created": 1743098578028
+    },
+    {
+      "id": "chr_1743098578028_5456",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 87345.15013942348,
+          "upperPrice": 94100.53705790118,
+          "gridCount": 10,
+          "investmentPerGrid": 149.19890941503934
+        },
+        "stopLossPercent": 1.3508226019345533,
+        "takeProfitPercent": 5.307210113345377
+      },
+      "fitness": 156.33333333333334,
+      "generation": 4,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 86929.4,
+          "amount": 0.1,
+          "timestamp": 1743094260000
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 12.600000000000001
+        }
+      ],
+      "created": 1743098578028
+    },
+    {
+      "id": "chr_1743098578028_5456",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 87345.15013942348,
+          "upperPrice": 94100.53705790118,
+          "gridCount": 10,
+          "investmentPerGrid": 149.19890941503934
+        },
+        "stopLossPercent": 1.3508226019345533,
+        "takeProfitPercent": 5.307210113345377
+      },
+      "fitness": 156.33333333333334,
+      "generation": 5,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 86929.4,
+          "amount": 0.1,
+          "timestamp": 1743094260000
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 12.600000000000001
+        }
+      ],
+      "created": 1743098578028
+    },
+    {
+      "id": "chr_1743098578033_8256",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 87096.97910682613,
+          "upperPrice": 92191.94628108245,
+          "gridCount": 9,
+          "investmentPerGrid": 83.94728677740416
+        },
+        "stopLossPercent": 1.378683597009092,
+        "takeProfitPercent": 4.774982855613569
+      },
+      "fitness": 285.7828020679259,
+      "generation": 6,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 86929.4,
+          "amount": 0.1,
+          "timestamp": 1743094260000
+        },
+        {
+          "action": "BUY",
+          "price": 87124.8,
+          "amount": 0.1,
+          "timestamp": 1743093900000,
+          "profit": 19.540000000000873
+        },
+        {
+          "action": "SELL",
+          "price": 87124.8,
+          "amount": 0.1,
+          "timestamp": 1743093900000
+        },
+        {
+          "action": "SELL",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 6.9400000000008735
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0
+        }
+      ],
+      "created": 1743098578033
+    },
+    {
+      "id": "chr_1743098578033_8256",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 87096.97910682613,
+          "upperPrice": 92191.94628108245,
+          "gridCount": 9,
+          "investmentPerGrid": 83.94728677740416
+        },
+        "stopLossPercent": 1.378683597009092,
+        "takeProfitPercent": 4.774982855613569
+      },
+      "fitness": 285.7828020679259,
+      "generation": 7,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 86929.4,
+          "amount": 0.1,
+          "timestamp": 1743094260000
+        },
+        {
+          "action": "BUY",
+          "price": 87124.8,
+          "amount": 0.1,
+          "timestamp": 1743093900000,
+          "profit": 19.540000000000873
+        },
+        {
+          "action": "SELL",
+          "price": 87124.8,
+          "amount": 0.1,
+          "timestamp": 1743093900000
+        },
+        {
+          "action": "SELL",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 6.9400000000008735
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0
+        }
+      ],
+      "created": 1743098578033
+    },
+    {
+      "id": "chr_1743098578033_8256",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 87096.97910682613,
+          "upperPrice": 92191.94628108245,
+          "gridCount": 9,
+          "investmentPerGrid": 83.94728677740416
+        },
+        "stopLossPercent": 1.378683597009092,
+        "takeProfitPercent": 4.774982855613569
+      },
+      "fitness": 285.7828020679259,
+      "generation": 8,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 86929.4,
+          "amount": 0.1,
+          "timestamp": 1743094260000
+        },
+        {
+          "action": "BUY",
+          "price": 87124.8,
+          "amount": 0.1,
+          "timestamp": 1743093900000,
+          "profit": 19.540000000000873
+        },
+        {
+          "action": "SELL",
+          "price": 87124.8,
+          "amount": 0.1,
+          "timestamp": 1743093900000
+        },
+        {
+          "action": "SELL",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 6.9400000000008735
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0
+        }
+      ],
+      "created": 1743098578033
+    },
+    {
+      "id": "chr_1743098578033_8256",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 87096.97910682613,
+          "upperPrice": 92191.94628108245,
+          "gridCount": 9,
+          "investmentPerGrid": 83.94728677740416
+        },
+        "stopLossPercent": 1.378683597009092,
+        "takeProfitPercent": 4.774982855613569
+      },
+      "fitness": 285.7828020679259,
+      "generation": 9,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 86929.4,
+          "amount": 0.1,
+          "timestamp": 1743094260000
+        },
+        {
+          "action": "BUY",
+          "price": 87124.8,
+          "amount": 0.1,
+          "timestamp": 1743093900000,
+          "profit": 19.540000000000873
+        },
+        {
+          "action": "SELL",
+          "price": 87124.8,
+          "amount": 0.1,
+          "timestamp": 1743093900000
+        },
+        {
+          "action": "SELL",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 6.9400000000008735
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0
+        }
+      ],
+      "created": 1743098578033
+    },
+    {
+      "id": "chr_1743098578033_8256",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 87096.97910682613,
+          "upperPrice": 92191.94628108245,
+          "gridCount": 9,
+          "investmentPerGrid": 83.94728677740416
+        },
+        "stopLossPercent": 1.378683597009092,
+        "takeProfitPercent": 4.774982855613569
+      },
+      "fitness": 285.7828020679259,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 86929.4,
+          "amount": 0.1,
+          "timestamp": 1743094260000
+        },
+        {
+          "action": "BUY",
+          "price": 87124.8,
+          "amount": 0.1,
+          "timestamp": 1743093900000,
+          "profit": 19.540000000000873
+        },
+        {
+          "action": "SELL",
+          "price": 87124.8,
+          "amount": 0.1,
+          "timestamp": 1743093900000
+        },
+        {
+          "action": "SELL",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 6.9400000000008735
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000
+        },
+        {
+          "action": "BUY",
+          "price": 87055.4,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0
+        }
+      ],
+      "created": 1743098578033
+    },
+    {
+      "id": "chr_1743098584453_7119",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 1933.5394257211526,
+          "upperPrice": 2047.4910513493119,
+          "gridCount": 7,
+          "investmentPerGrid": 103.4297214733304
+        },
+        "stopLossPercent": 5.872563207615924,
+        "takeProfitPercent": 7.140904660462081
+      },
+      "fitness": 31.353333333333314,
+      "generation": 1,
+      "trades": [
+        {
+          "action": "SELL",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000
+        },
+        {
+          "action": "SELL",
+          "price": 2009,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0.10199999999999819
+        }
+      ],
+      "created": 1743098584453
+    },
+    {
+      "id": "chr_1743098584453_7119",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 1933.5394257211526,
+          "upperPrice": 2047.4910513493119,
+          "gridCount": 7,
+          "investmentPerGrid": 103.4297214733304
+        },
+        "stopLossPercent": 5.872563207615924,
+        "takeProfitPercent": 7.140904660462081
+      },
+      "fitness": 31.353333333333314,
+      "generation": 2,
+      "trades": [
+        {
+          "action": "SELL",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000
+        },
+        {
+          "action": "SELL",
+          "price": 2009,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0.10199999999999819
+        }
+      ],
+      "created": 1743098584453
+    },
+    {
+      "id": "chr_1743098584454_5775",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2039.9609208572485,
+          "upperPrice": 2141.958966900111,
+          "gridCount": 8,
+          "investmentPerGrid": 181.4057431111601
+        },
+        "stopLossPercent": 1.378705056743626,
+        "takeProfitPercent": 5.881833679177533
+      },
+      "fitness": 36.25333333333341,
+      "generation": 3,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2003.08,
+          "amount": 0.1,
+          "timestamp": 1743094320000
+        },
+        {
+          "action": "BUY",
+          "price": 2009,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0.5920000000000073
+        }
+      ],
+      "created": 1743098584453
+    },
+    {
+      "id": "chr_1743098584455_3589",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2008.8156896928976,
+          "upperPrice": 2055.7185473564195,
+          "gridCount": 8,
+          "investmentPerGrid": 63.36286941630663
+        },
+        "stopLossPercent": 1.7154642697080709,
+        "takeProfitPercent": 6.905693972950854
+      },
+      "fitness": 38.62620432086802,
+      "generation": 4,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2003.08,
+          "amount": 0.1,
+          "timestamp": 1743094320000
+        },
+        {
+          "action": "BUY",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000,
+          "profit": 0.6940000000000055
+        },
+        {
+          "action": "SELL",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000
+        },
+        {
+          "action": "SELL",
+          "price": 2009,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0.10199999999999819
+        }
+      ],
+      "created": 1743098584455
+    },
+    {
+      "id": "chr_1743098584455_3589",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2008.8156896928976,
+          "upperPrice": 2055.7185473564195,
+          "gridCount": 8,
+          "investmentPerGrid": 63.36286941630663
+        },
+        "stopLossPercent": 1.7154642697080709,
+        "takeProfitPercent": 6.905693972950854
+      },
+      "fitness": 38.62620432086802,
+      "generation": 5,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2003.08,
+          "amount": 0.1,
+          "timestamp": 1743094320000
+        },
+        {
+          "action": "BUY",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000,
+          "profit": 0.6940000000000055
+        },
+        {
+          "action": "SELL",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000
+        },
+        {
+          "action": "SELL",
+          "price": 2009,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0.10199999999999819
+        }
+      ],
+      "created": 1743098584455
+    },
+    {
+      "id": "chr_1743098584455_3589",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2008.8156896928976,
+          "upperPrice": 2055.7185473564195,
+          "gridCount": 8,
+          "investmentPerGrid": 63.36286941630663
+        },
+        "stopLossPercent": 1.7154642697080709,
+        "takeProfitPercent": 6.905693972950854
+      },
+      "fitness": 38.62620432086802,
+      "generation": 6,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2003.08,
+          "amount": 0.1,
+          "timestamp": 1743094320000
+        },
+        {
+          "action": "BUY",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000,
+          "profit": 0.6940000000000055
+        },
+        {
+          "action": "SELL",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000
+        },
+        {
+          "action": "SELL",
+          "price": 2009,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0.10199999999999819
+        }
+      ],
+      "created": 1743098584455
+    },
+    {
+      "id": "chr_1743098584455_3589",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2008.8156896928976,
+          "upperPrice": 2055.7185473564195,
+          "gridCount": 8,
+          "investmentPerGrid": 63.36286941630663
+        },
+        "stopLossPercent": 1.7154642697080709,
+        "takeProfitPercent": 6.905693972950854
+      },
+      "fitness": 38.62620432086802,
+      "generation": 7,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2003.08,
+          "amount": 0.1,
+          "timestamp": 1743094320000
+        },
+        {
+          "action": "BUY",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000,
+          "profit": 0.6940000000000055
+        },
+        {
+          "action": "SELL",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000
+        },
+        {
+          "action": "SELL",
+          "price": 2009,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0.10199999999999819
+        }
+      ],
+      "created": 1743098584455
+    },
+    {
+      "id": "chr_1743098584455_3589",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2008.8156896928976,
+          "upperPrice": 2055.7185473564195,
+          "gridCount": 8,
+          "investmentPerGrid": 63.36286941630663
+        },
+        "stopLossPercent": 1.7154642697080709,
+        "takeProfitPercent": 6.905693972950854
+      },
+      "fitness": 38.62620432086802,
+      "generation": 8,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2003.08,
+          "amount": 0.1,
+          "timestamp": 1743094320000
+        },
+        {
+          "action": "BUY",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000,
+          "profit": 0.6940000000000055
+        },
+        {
+          "action": "SELL",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000
+        },
+        {
+          "action": "SELL",
+          "price": 2009,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0.10199999999999819
+        }
+      ],
+      "created": 1743098584455
+    },
+    {
+      "id": "chr_1743098584455_3589",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2008.8156896928976,
+          "upperPrice": 2055.7185473564195,
+          "gridCount": 8,
+          "investmentPerGrid": 63.36286941630663
+        },
+        "stopLossPercent": 1.7154642697080709,
+        "takeProfitPercent": 6.905693972950854
+      },
+      "fitness": 38.62620432086802,
+      "generation": 9,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2003.08,
+          "amount": 0.1,
+          "timestamp": 1743094320000
+        },
+        {
+          "action": "BUY",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000,
+          "profit": 0.6940000000000055
+        },
+        {
+          "action": "SELL",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000
+        },
+        {
+          "action": "SELL",
+          "price": 2009,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0.10199999999999819
+        }
+      ],
+      "created": 1743098584455
+    },
+    {
+      "id": "chr_1743098584455_3589",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2008.8156896928976,
+          "upperPrice": 2055.7185473564195,
+          "gridCount": 8,
+          "investmentPerGrid": 63.36286941630663
+        },
+        "stopLossPercent": 1.7154642697080709,
+        "takeProfitPercent": 6.905693972950854
+      },
+      "fitness": 38.62620432086802,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2003.08,
+          "amount": 0.1,
+          "timestamp": 1743094320000
+        },
+        {
+          "action": "BUY",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000,
+          "profit": 0.6940000000000055
+        },
+        {
+          "action": "SELL",
+          "price": 2010.02,
+          "amount": 0.1,
+          "timestamp": 1743093960000
+        },
+        {
+          "action": "SELL",
+          "price": 2009,
+          "amount": 0.1,
+          "timestamp": 1743093720000,
+          "profit": 0.10199999999999819
+        }
+      ],
+      "created": 1743098584455
+    },
+    {
+      "id": "chr_1743098589279_2245",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2.230781116608268,
+          "upperPrice": 2.4303140145154365,
+          "gridCount": 13,
+          "investmentPerGrid": 142.8930013088928
+        },
+        "stopLossPercent": 1.0871587081475453,
+        "takeProfitPercent": 9.317359015864751
+      },
+      "fitness": 23.836732786667113,
+      "generation": 1,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3411,
+          "amount": 0.1,
+          "timestamp": 1743094320000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3416,
+          "amount": 0.1,
+          "timestamp": 1743094260000,
+          "profit": 0.0000500000000000167
+        },
+        {
+          "action": "SELL",
+          "price": 2.3416,
+          "amount": 0.1,
+          "timestamp": 1743094260000
+        },
+        {
+          "action": "SELL",
+          "price": 2.3393,
+          "amount": 0.1,
+          "timestamp": 1743094200000,
+          "profit": 0.0002299999999999969
+        },
+        {
+          "action": "BUY",
+          "price": 2.3393,
+          "amount": 0.1,
+          "timestamp": 1743094200000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3447,
+          "amount": 0.1,
+          "timestamp": 1743094140000,
+          "profit": 0.0005399999999999849
+        },
+        {
+          "action": "SELL",
+          "price": 2.3447,
+          "amount": 0.1,
+          "timestamp": 1743094140000
+        },
+        {
+          "action": "SELL",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": -0.00047999999999999156
+        }
+      ],
+      "created": 1743098589279
+    },
+    {
+      "id": "chr_1743098589279_2245",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2.230781116608268,
+          "upperPrice": 2.4303140145154365,
+          "gridCount": 13,
+          "investmentPerGrid": 142.8930013088928
+        },
+        "stopLossPercent": 1.0871587081475453,
+        "takeProfitPercent": 9.317359015864751
+      },
+      "fitness": 23.836732786667113,
+      "generation": 2,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3411,
+          "amount": 0.1,
+          "timestamp": 1743094320000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3416,
+          "amount": 0.1,
+          "timestamp": 1743094260000,
+          "profit": 0.0000500000000000167
+        },
+        {
+          "action": "SELL",
+          "price": 2.3416,
+          "amount": 0.1,
+          "timestamp": 1743094260000
+        },
+        {
+          "action": "SELL",
+          "price": 2.3393,
+          "amount": 0.1,
+          "timestamp": 1743094200000,
+          "profit": 0.0002299999999999969
+        },
+        {
+          "action": "BUY",
+          "price": 2.3393,
+          "amount": 0.1,
+          "timestamp": 1743094200000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3447,
+          "amount": 0.1,
+          "timestamp": 1743094140000,
+          "profit": 0.0005399999999999849
+        },
+        {
+          "action": "SELL",
+          "price": 2.3447,
+          "amount": 0.1,
+          "timestamp": 1743094140000
+        },
+        {
+          "action": "SELL",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": -0.00047999999999999156
+        }
+      ],
+      "created": 1743098589279
+    },
+    {
+      "id": "chr_1743098589280_1283",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2.3031357636333807,
+          "upperPrice": 2.353220396607149,
+          "gridCount": 9,
+          "investmentPerGrid": 132.90350594418157
+        },
+        "stopLossPercent": 2.7922617024774805,
+        "takeProfitPercent": 9.381752911856527
+      },
+      "fitness": 30.34133333333333,
+      "generation": 3,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589280
+    },
+    {
+      "id": "chr_1743098589280_1283",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2.3031357636333807,
+          "upperPrice": 2.353220396607149,
+          "gridCount": 9,
+          "investmentPerGrid": 132.90350594418157
+        },
+        "stopLossPercent": 2.7922617024774805,
+        "takeProfitPercent": 9.381752911856527
+      },
+      "fitness": 30.34133333333333,
+      "generation": 4,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589280
+    },
+    {
+      "id": "chr_1743098589280_1283",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2.3031357636333807,
+          "upperPrice": 2.353220396607149,
+          "gridCount": 9,
+          "investmentPerGrid": 132.90350594418157
+        },
+        "stopLossPercent": 2.7922617024774805,
+        "takeProfitPercent": 9.381752911856527
+      },
+      "fitness": 30.34133333333333,
+      "generation": 5,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589280
+    },
+    {
+      "id": "chr_1743098589280_1283",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2.3031357636333807,
+          "upperPrice": 2.353220396607149,
+          "gridCount": 9,
+          "investmentPerGrid": 132.90350594418157
+        },
+        "stopLossPercent": 2.7922617024774805,
+        "takeProfitPercent": 9.381752911856527
+      },
+      "fitness": 30.34133333333333,
+      "generation": 6,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589280
+    },
+    {
+      "id": "chr_1743098589280_1283",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2.3031357636333807,
+          "upperPrice": 2.353220396607149,
+          "gridCount": 9,
+          "investmentPerGrid": 132.90350594418157
+        },
+        "stopLossPercent": 2.7922617024774805,
+        "takeProfitPercent": 9.381752911856527
+      },
+      "fitness": 30.34133333333333,
+      "generation": 7,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589280
+    },
+    {
+      "id": "chr_1743098589280_1283",
+      "strategyType": "GRID_MEDIUM",
+      "params": {
+        "gridParams": {
+          "lowerPrice": 2.3031357636333807,
+          "upperPrice": 2.353220396607149,
+          "gridCount": 9,
+          "investmentPerGrid": 132.90350594418157
+        },
+        "stopLossPercent": 2.7922617024774805,
+        "takeProfitPercent": 9.381752911856527
+      },
+      "fitness": 30.34133333333333,
+      "generation": 8,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589280
+    },
+    {
+      "id": "chr_1743098589282_6535",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 117.76533994280886,
+          "lowerPrice": 112.15746661219892,
+          "gridCount": 11,
+          "investmentPerGrid": 82.34982700627
+        },
+        "stopLossPercent": 0.7107840497576419,
+        "takeProfitPercent": 10.285262532942657
+      },
+      "fitness": 30.34133333333333,
+      "generation": 9,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589282
+    },
+    {
+      "id": "chr_1743098589282_6535",
+      "strategyType": "GRID_NARROW",
+      "params": {
+        "gridParams": {
+          "upperPrice": 117.76533994280886,
+          "lowerPrice": 112.15746661219892,
+          "gridCount": 11,
+          "investmentPerGrid": 82.34982700627
+        },
+        "stopLossPercent": 0.7107840497576419,
+        "takeProfitPercent": 10.285262532942657
+      },
+      "fitness": 30.34133333333333,
+      "generation": 10,
+      "trades": [
+        {
+          "action": "BUY",
+          "price": 2.3415,
+          "amount": 0.1,
+          "timestamp": 1743094380000
+        },
+        {
+          "action": "BUY",
+          "price": 2.3495,
+          "amount": 0.1,
+          "timestamp": 1743093840000,
+          "profit": 0.0008000000000000008
+        }
+      ],
+      "created": 1743098589282
     }
   ],
   "marketConditions": {},
-  "lastUpdated": "2025-03-27T14:01:06.921Z"
+  "lastUpdated": "2025-03-27T18:03:09.289Z"
 }
