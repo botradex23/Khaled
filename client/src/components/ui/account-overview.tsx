@@ -271,7 +271,11 @@ export function AccountBalanceCard() {
                               <div>{formattedAmount}</div>
                               {asset.total > 0 && (
                                 <div className="text-xs text-muted-foreground mt-0.5">
-                                  @${pricePerUnit.toLocaleString(undefined, { maximumFractionDigits: 2 })}/unit
+                                  {/* Display percentage of a full coin */}
+                                  {asset.total < 1 && asset.total > 0 && (
+                                    <span className="mr-1">{(asset.total * 100).toFixed(2)}% of 1 {asset.currency}</span>
+                                  )}
+                                  <div>@${pricePerUnit.toLocaleString(undefined, { maximumFractionDigits: 2 })}/unit</div>
                                 </div>
                               )}
                             </td>
@@ -478,8 +482,16 @@ export function TradingHistoryCard() {
                         ${trade.price.toFixed(2)}
                       </td>
                       <td className="py-2 text-right">
-                        <div>{trade.quantity.toFixed(5)}</div>
-                        <div className="text-xs text-muted-foreground">${trade.totalValue.toFixed(2)}</div>
+                        <div className="flex flex-col">
+                          <span>{trade.quantity.toFixed(5)}</span>
+                          {/* Show percentage of full coin */}
+                          {trade.quantity < 1 && trade.quantity > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              {(trade.quantity * 100).toFixed(2)}% of 1 {trade.symbol.split('-')[0]}
+                            </span>
+                          )}
+                          <div className="text-xs text-muted-foreground">${trade.totalValue.toFixed(2)}</div>
+                        </div>
                       </td>
                       <td className="py-2 text-right">
                         {!isBreakEven ? (

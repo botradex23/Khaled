@@ -444,6 +444,25 @@ export default function BotDemo() {
                                       ? trade.size.toFixed(5) 
                                       : parseFloat(trade.size || '0').toFixed(5)}
                                   </span>
+                                  
+                                  {/* Display percentage of full coin */}
+                                  {(() => {
+                                    const sizeNumber = typeof trade.size === 'number' 
+                                      ? trade.size 
+                                      : parseFloat(trade.size || '0');
+                                    
+                                    if (sizeNumber < 1 && sizeNumber > 0) {
+                                      const symbol = (trade.instId || '').split('-')[0] || 
+                                                    (trade.symbol || '').split('-')[0];
+                                      return (
+                                        <span className="text-xs text-green-300">
+                                          {(sizeNumber * 100).toFixed(2)}% of 1 {symbol}
+                                        </span>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                  
                                   <span className="text-xs text-muted-foreground">
                                     Crypto Units
                                   </span>
