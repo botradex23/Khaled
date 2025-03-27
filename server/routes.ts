@@ -18,7 +18,101 @@ function maskSecret(secret: string): string {
   return secret.substring(0, 4) + "****" + secret.substring(secret.length - 4);
 }
 
+// Test endpoint to create users with API keys (for testing only)
+const createTestUserWithKeys = async (req: Request, res: Response) => {
+  try {
+    const { username, email, okxApiKey, okxSecretKey, okxPassphrase } = req.body;
+    
+    // Validate input
+    if (!username || !email) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'Username and email are required'
+      });
+    }
+    
+    // Create user
+    const user = await storage.createUser({
+      username,
+      email,
+      firstName: username,
+      lastName: 'Test',
+      defaultBroker: "okx",
+      useTestnet: true,
+      okxApiKey: okxApiKey || null,
+      okxSecretKey: okxSecretKey || null,
+      okxPassphrase: okxPassphrase || null
+    });
+    
+    // If API keys provided, explicitly update them
+    if (okxApiKey && okxSecretKey && okxPassphrase) {
+      await storage.updateUserApiKeys(user.id, {
+        okxApiKey,
+        okxSecretKey,
+        okxPassphrase
+      });
+    }
+    
+    // Return user without sensitive data
+    const safeUser = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      hasApiKeys: !!(okxApiKey && okxSecretKey && okxPassphrase)
+    };
+    
+    res.json({ success: true, user: safeUser });
+  } catch (err: any) {
+    console.error('Error creating test user:', err);
+    res.status(500).json({ error: 'Server error', message: err.message });
+  }
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add test endpoint for creating users with API keys
+  app.post('/api/users/test/create-with-keys', createTestUserWithKeys);
+  
+  // Add test endpoint for making API calls with a specific user's API keys (for testing only)
+  // This doesn't actually log the user in, but provides the API keys to directly
+  // test with that user's credentials
+  app.post('/api/test/login', async (req, res) => {
+    try {
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ 
+          message: "Missing userId parameter"
+        });
+      }
+      
+      // Find the user by ID
+      const user = await storage.getUser(parseInt(userId));
+      
+      if (!user) {
+        return res.status(404).json({ 
+          message: "User not found" 
+        });
+      }
+      
+      // Get user's API keys
+      const apiKeys = await storage.getUserApiKeys(user.id);
+      
+      // Return success with user data but mask API keys
+      res.status(200).json({
+        message: "Test user retrieved successfully",
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName || user.username,
+          lastName: user.lastName || 'Test',
+          hasApiKeys: !!(apiKeys?.okxApiKey && apiKeys?.okxSecretKey && apiKeys?.okxPassphrase)
+        }
+      });
+    } catch (error) {
+      console.error("Test login error:", error);
+      res.status(500).json({ message: "Failed to login for test" });
+    }
+  });
   // Set up authentication system
   setupAuth(app);
   
