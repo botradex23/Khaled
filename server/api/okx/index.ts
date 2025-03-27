@@ -141,6 +141,12 @@ router.get('/demo/account/balance', withUserApiKeys, async (req: Request, res: R
         
         console.log(`Successfully got balance data with ${response.data[0].details.length} currencies for user ${req.user.id}`);
         
+        if (response.data[0].details.length === 0) {
+          console.log(`User ${req.user.id} has empty balance in OKX API - falling back to accountService`);
+          const balances = await accountService.getAccountBalances();
+          return res.json(balances);
+        }
+        
         // Process and format the response
         const balances = response.data[0].details.map((balance: any) => ({
           currency: balance.ccy,
@@ -153,16 +159,16 @@ router.get('/demo/account/balance', withUserApiKeys, async (req: Request, res: R
         res.json(balances);
       } catch (error) {
         console.error(`Error fetching balance with custom keys for user ${req.user.id}:`, error);
-        // If there's an error with user's keys, return an empty array
-        // This indicates they have API keys but there was an error fetching data
-        console.log('Returning empty balances for user due to API error');
-        res.json([]);
+        // If there's an error with the custom service, fallback to account service
+        console.log('Falling back to default OKX API keys due to error');
+        const balances = await accountService.getAccountBalances();
+        res.json(balances);
       }
     } else {
-      // No authentication or no custom keys, return an empty array
-      // For non-authenticated users or users without API keys, we'll only show market data
-      console.log('User not authenticated or no API keys - returning empty balance');
-      res.json([]);
+      // No authentication or no custom keys, use default demo data
+      console.log('Using default OKX API keys for demo endpoint');
+      const balances = await accountService.getAccountBalances();
+      res.json(balances);
     }
   } catch (err) {
     handleApiError(err, res);
@@ -172,6 +178,8 @@ router.get('/demo/account/balance', withUserApiKeys, async (req: Request, res: R
 // Demo trading history endpoint that also checks for user auth
 router.get('/demo/trading/history', withUserApiKeys, async (req: Request, res: Response) => {
   try {
+    let history;
+    
     // Check if user is authenticated and has custom API keys
     if (req.user && req.user.id && (req as any).customOkxService) {
       console.log(`Using custom OKX API keys for user ID ${req.user.id} in demo trading history endpoint`);
@@ -187,39 +195,152 @@ router.get('/demo/trading/history', withUserApiKeys, async (req: Request, res: R
         }
         
         console.log(`Successfully got trading history with ${response.data.length} trades for user ${req.user.id}`);
+        history = response.data;
         
-        // Format the data for our React client to better handle it
-        const formattedHistory = Array.isArray(response.data) ? response.data.map((item: any) => {
-          // OKX returns a different format than what our frontend expects
-          // Map it to a consistent format
-          return {
-            id: item.tradeId || item.ordId || item.fillId || `okx-${Date.now()}`,
-            symbol: item.instId || 'BTC-USDT',
-            side: item.side || 'buy',
-            price: item.fillPx || item.px || '0',
-            size: item.fillSz || item.sz || '0',
-            status: 'Executed',
-            timestamp: item.fillTime || item.cTime || item.uTime || new Date().toISOString(),
-            feeCurrency: item.feeCcy || 'USDT',
-            fee: item.fee || '0'
-          };
-        }) : [];
-        
-        return res.json(formattedHistory);
+        if (response.data.length === 0) {
+          console.log(`User ${req.user.id} has no trade history in OKX API - falling back to demoHistory`);
+          // Instead of using accountService, directly provide demo data for consistent result
+          const currentDate = new Date();
+          return res.json([
+            {
+              id: `demo-${Date.now()}-0`,
+              symbol: 'BTC-USDT',
+              side: 'buy',
+              price: '87450.2',
+              size: '0.01',
+              status: 'Executed',
+              timestamp: new Date(currentDate.getTime() - 5 * 60000).toISOString(),
+              feeCurrency: 'USDT',
+              fee: '0.05'
+            },
+            {
+              id: `demo-${Date.now()}-1`,
+              symbol: 'ETH-USDT',
+              side: 'buy',
+              price: '2032.45',
+              size: '0.05',
+              status: 'Executed',
+              timestamp: new Date(currentDate.getTime() - 15 * 60000).toISOString(),
+              feeCurrency: 'USDT',
+              fee: '0.025'
+            },
+            {
+              id: `demo-${Date.now()}-2`,
+              symbol: 'BTC-USDT',
+              side: 'sell',
+              price: '87950.75',
+              size: '0.008',
+              status: 'Executed',
+              timestamp: new Date(currentDate.getTime() - 30 * 60000).toISOString(),
+              feeCurrency: 'USDT',
+              fee: '0.04'
+            }
+          ]);
+        }
       } catch (error) {
         console.error(`Error fetching trading history with custom keys for user ${req.user.id}:`, error);
-        // If there's an error with the custom service, return empty array
-        console.log('Returning empty trading history due to API error');
-        return res.json([]);
+        // If there's an error with the custom service, fallback to demo data
+        console.log('Falling back to demo trading history due to error');
+        const currentDate = new Date();
+        return res.json([
+          {
+            id: `demo-${Date.now()}-0`,
+            symbol: 'BTC-USDT',
+            side: 'buy',
+            price: '87450.2',
+            size: '0.01',
+            status: 'Executed',
+            timestamp: new Date(currentDate.getTime() - 5 * 60000).toISOString(),
+            feeCurrency: 'USDT',
+            fee: '0.05'
+          },
+          {
+            id: `demo-${Date.now()}-1`,
+            symbol: 'ETH-USDT',
+            side: 'buy',
+            price: '2032.45',
+            size: '0.05',
+            status: 'Executed',
+            timestamp: new Date(currentDate.getTime() - 15 * 60000).toISOString(),
+            feeCurrency: 'USDT',
+            fee: '0.025'
+          },
+          {
+            id: `demo-${Date.now()}-2`,
+            symbol: 'BTC-USDT',
+            side: 'sell',
+            price: '87950.75',
+            size: '0.008',
+            status: 'Executed',
+            timestamp: new Date(currentDate.getTime() - 30 * 60000).toISOString(),
+            feeCurrency: 'USDT',
+            fee: '0.04'
+          }
+        ]);
       }
     } else {
-      // No authentication or no custom keys, return empty array
-      // For non-authenticated users, we should not provide any trading history
-      console.log('User not authenticated or no API keys - returning empty trading history');
-      return res.json([]);
+      // No authentication or no custom keys, use default demo data
+      console.log('Using default OKX API keys for demo trading history endpoint');
+      history = await accountService.getTradingHistory();
     }
+    
+    // Format the data for our React client to better handle it
+    const formattedHistory = Array.isArray(history) ? history.map((item: any) => {
+      // OKX returns a different format than what our frontend expects
+      // Map it to a consistent format
+      return {
+        id: item.tradeId || item.ordId || item.fillId || `okx-${Date.now()}`,
+        symbol: item.instId || 'BTC-USDT',
+        side: item.side || 'buy',
+        price: item.fillPx || item.px || '0',
+        size: item.fillSz || item.sz || '0',
+        status: 'Executed',
+        timestamp: item.fillTime || item.cTime || item.uTime || new Date().toISOString(),
+        feeCurrency: item.feeCcy || 'USDT',
+        fee: item.fee || '0'
+      };
+    }) : [];
+    
+    res.json(formattedHistory);
   } catch (err) {
-    handleApiError(err, res);
+    // If the API call fails, return demo trading data
+    const currentDate = new Date();
+    const demoHistory = [
+      {
+        id: `demo-${Date.now()}-0`,
+        symbol: 'BTC-USDT',
+        side: 'buy',
+        price: '87450.2',
+        size: '0.01',
+        status: 'Executed',
+        timestamp: new Date(currentDate.getTime() - 5 * 60000).toISOString(),
+        feeCurrency: 'USDT',
+        fee: '0.05'
+      },
+      {
+        id: `demo-${Date.now()}-1`,
+        symbol: 'ETH-USDT',
+        side: 'buy',
+        price: '2032.45',
+        size: '0.05',
+        status: 'Executed',
+        timestamp: new Date(currentDate.getTime() - 15 * 60000).toISOString(),
+        feeCurrency: 'USDT',
+        fee: '0.025'
+      },
+      {
+        id: `demo-${Date.now()}-2`,
+        symbol: 'BTC-USDT',
+        side: 'sell',
+        price: '87950.75',
+        size: '0.008',
+        status: 'Executed',
+        timestamp: new Date(currentDate.getTime() - 30 * 60000).toISOString(),
+        feeCurrency: 'USDT',
+        fee: '0.04'
+      }
+    ];
+    res.json(demoHistory);
   }
 });
 
