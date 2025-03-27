@@ -182,17 +182,33 @@ export function AccountBalanceCard() {
 
   const balances: AccountBalance[] = selectedData;
   
-  // Calculate the distribution between "Available" and "Frozen" funds
-  const totalAvailable = balances.reduce((sum, asset) => sum + asset.available, 0);
-  const totalFrozen = balances.reduce((sum, asset) => sum + asset.frozen, 0);
+  // Calculate the distribution by multiplying amount by price for more accurate values
+  const totalAvailable = balances.reduce((sum, asset) => {
+    // Calculate available value: available amount * price per unit
+    const availableValue = asset.available * (asset.pricePerUnit || 0);
+    console.log(`Available ${asset.currency}: ${asset.available} * ${asset.pricePerUnit} = ${availableValue}`);
+    return sum + availableValue;
+  }, 0);
+  
+  const totalFrozen = balances.reduce((sum, asset) => {
+    // Calculate frozen value: frozen amount * price per unit
+    const frozenValue = asset.frozen * (asset.pricePerUnit || 0);
+    console.log(`Frozen ${asset.currency}: ${asset.frozen} * ${asset.pricePerUnit} = ${frozenValue}`);
+    return sum + frozenValue;
+  }, 0);
   
   // Calculate total portfolio value (accounting for both available and frozen funds)
-  // Fixed: ensure the calculation includes frozen funds
   const totalValue = totalAvailable + totalFrozen;
+  console.log("Total portfolio value calculated:", totalValue);
   
-  // Sort by value (highest first) - show all assets regardless of balance
+  // Sort by calculated value (highest first) - show all assets regardless of balance
   const sortedBalances = [...balances]
-    .sort((a, b) => b.valueUSD - a.valueUSD);
+    .sort((a, b) => {
+      // Calculate real value by multiplying total amount by price per unit
+      const valueA = a.total * (a.pricePerUnit || 0);
+      const valueB = b.total * (b.pricePerUnit || 0);
+      return valueB - valueA;
+    });
     
   // Count total number of assets
   const assetsWithBalance = balances.length;
@@ -272,7 +288,9 @@ export function AccountBalanceCard() {
                   <table className="w-full">
                     <tbody>
                       {sortedBalances.map((asset) => {
-                        const percentage = (asset.valueUSD / totalValue) * 100;
+                        // Calculate accurate percentage based on asset's total × price per unit
+                        const assetValue = asset.total * (asset.pricePerUnit || 0);
+                        const percentage = totalValue > 0 ? (assetValue / totalValue) * 100 : 0;
                         const isMinorHolding = percentage < 0.1;
                         
                         // Calculate appropriate precision for unit quantity based on asset value
@@ -346,9 +364,13 @@ export function AccountBalanceCard() {
                               <div className="bg-muted/10 p-2 rounded-md inline-block min-w-[120px] text-center border border-muted/20">
                                 <div className="text-xs text-muted-foreground mb-1">Total Value</div>
                                 <div className="text-primary text-base font-bold">
-                                  ${asset.valueUSD < 0.01 && asset.valueUSD > 0 
-                                    ? asset.valueUSD.toFixed(8) 
-                                    : asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                                  ${(() => {
+                                    // Calculate actual value based on price per unit
+                                    const calculatedValue = asset.total * (asset.pricePerUnit || 0);
+                                    return calculatedValue < 0.01 && calculatedValue > 0 
+                                      ? calculatedValue.toFixed(8)
+                                      : calculatedValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
+                                  })()}
                                 </div>
                                 {/* Add calculation formula for transparency */}
                                 {pricePerUnit > 0 && (
