@@ -1131,8 +1131,21 @@ export default function Bots() {
       </Dialog>
 
       {/* API Keys Dialog */}
-      <Dialog open={showApiKeyDialog} onOpenChange={(open) => setShowApiKeyDialog(open)}>
-        <DialogContent className="sm:max-w-[500px]">
+      <Dialog 
+        open={showApiKeyDialog} 
+        onOpenChange={(open) => {
+          setShowApiKeyDialog(open);
+        }}
+      >
+        <DialogContent 
+          className="sm:max-w-[500px]"
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Key className="h-5 w-5 text-primary" />

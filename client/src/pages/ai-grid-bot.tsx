@@ -833,8 +833,21 @@ export default function AIGridBot() {
       <Footer />
       
       {/* API Keys Dialog */}
-      <Dialog open={showApiKeyDialog} onOpenChange={(open) => setShowApiKeyDialog(open)}>
-        <DialogContent className="sm:max-w-[500px]">
+      <Dialog 
+        open={showApiKeyDialog} 
+        onOpenChange={(open) => {
+          setShowApiKeyDialog(open);
+        }}
+      >
+        <DialogContent 
+          className="sm:max-w-[500px]"
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <Key className="w-6 h-6 mr-2 text-primary" />
@@ -863,7 +876,10 @@ export default function AIGridBot() {
             <Button variant="outline" onClick={() => setShowApiKeyDialog(false)}>
               Later
             </Button>
-            <Button onClick={() => setLocation("/api-keys")} className="gap-2">
+            <Button onClick={() => {
+              setShowApiKeyDialog(false);
+              setLocation("/api-keys");
+            }} className="gap-2">
               Set Up API Keys <ArrowRight className="w-4 h-4" />
             </Button>
           </DialogFooter>
