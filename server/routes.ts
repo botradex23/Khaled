@@ -36,15 +36,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // API routes
   
-  // Get all bots
+  // Get all bots (admin route that should be protected in production)
   app.get("/api/bots", async (req, res) => {
     const bots = await storage.getAllBots();
     res.json(bots);
   });
+  
+  // Get all bots for the current user
+  app.get("/api/user/bots", ensureAuthenticated, async (req, res) => {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const userId = req.user.id;
+    const bots = await storage.getUserBots(userId);
+    res.json(bots);
+  });
 
-  // Get a specific bot by ID
-  app.get("/api/bots/:id", async (req, res) => {
+  // Get a specific bot by ID - protected to ensure only bot owners can access them
+  app.get("/api/bots/:id", ensureAuthenticated, async (req, res) => {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const userId = req.user.id;
     const id = parseInt(req.params.id);
+    
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid bot ID" });
     }
@@ -54,12 +71,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Bot not found" });
     }
     
+    // Check if this bot belongs to the requesting user
+    if (bot.userId !== userId) {
+      return res.status(403).json({ message: "Access denied: You do not own this bot" });
+    }
+    
     res.json(bot);
   });
   
-  // Update a bot's parameters
-  app.put("/api/bots/:id/parameters", async (req, res) => {
+  // Update a bot's parameters - protected to ensure only bot owners can modify them
+  app.put("/api/bots/:id/parameters", ensureAuthenticated, async (req, res) => {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const userId = req.user.id;
     const id = parseInt(req.params.id);
+    
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid bot ID" });
     }
@@ -70,6 +98,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const bot = await storage.getBotById(id);
     if (!bot) {
       return res.status(404).json({ message: "Bot not found" });
+    }
+    
+    // Check if this bot belongs to the requesting user
+    if (bot.userId !== userId) {
+      return res.status(403).json({ message: "Access denied: You do not own this bot" });
     }
     
     // Parse the current parameters
@@ -103,6 +136,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(updatedBot);
   });
 
+  // Start bot - protected to ensure only bot owners can start them
+  app.post("/api/bots/:id/start", ensureAuthenticated, async (req, res) => {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const userId = req.user.id;
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid bot ID" });
+    }
+    
+    // Get the current bot to check ownership
+    const bot = await storage.getBotById(id);
+    if (!bot) {
+      return res.status(404).json({ message: "Bot not found" });
+    }
+    
+    // Check if this bot belongs to the requesting user
+    if (bot.userId !== userId) {
+      return res.status(403).json({ message: "Access denied: You do not own this bot" });
+    }
+    
+    const updatedBot = await storage.startBot(id);
+    res.json(updatedBot);
+  });
+  
+  // Stop bot - protected to ensure only bot owners can stop them
+  app.post("/api/bots/:id/stop", ensureAuthenticated, async (req, res) => {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const userId = req.user.id;
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid bot ID" });
+    }
+    
+    // Get the current bot to check ownership
+    const bot = await storage.getBotById(id);
+    if (!bot) {
+      return res.status(404).json({ message: "Bot not found" });
+    }
+    
+    // Check if this bot belongs to the requesting user
+    if (bot.userId !== userId) {
+      return res.status(403).json({ message: "Access denied: You do not own this bot" });
+    }
+    
+    const updatedBot = await storage.stopBot(id);
+    res.json(updatedBot);
+  });
+  
+  // Create a new bot for the current user
+  app.post("/api/user/bots", ensureAuthenticated, async (req, res) => {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const userId = req.user.id;
+    
+    try {
+      // Parse and validate the input using our schema
+      const botData = botSchema.parse({
+        ...req.body,
+        userId // Ensure the bot is assigned to the current user
+      });
+      
+      const newBot = await storage.createBot(botData);
+      res.status(201).json(newBot);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      console.error("Bot creation error:", error);
+      res.status(500).json({ message: "Failed to create bot" });
+    }
+  });
+  
   // Get all pricing plans
   app.get("/api/pricing", async (req, res) => {
     const plans = await storage.getAllPricingPlans();
