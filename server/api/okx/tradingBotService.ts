@@ -575,13 +575,8 @@ export class TradingBotService {
       // Get actual account balances from OKX
       const accountBalances = await accountService.getAccountBalances();
       
-      // Filter to show only the main trading currencies (BTC, ETH, USDT)
-      const relevantBalances = accountBalances.filter(
-        balance => ['BTC', 'ETH', 'USDT'].includes(balance.currency)
-      );
-      
-      // Format the account balances for display
-      const formattedBalances = relevantBalances.map(balance => ({
+      // Format all account balances with non-zero value for display
+      const formattedBalances = accountBalances.map(balance => ({
         currency: balance.currency,
         available: parseFloat(balance.available.toString()),
         frozen: parseFloat(balance.frozen.toString()),

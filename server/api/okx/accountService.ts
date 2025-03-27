@@ -163,17 +163,8 @@ export class AccountService {
         console.warn("Couldn't fetch real-time prices, using API provided values only");
       }
       
-      // Filter and format the response data - getting only non-zero balances to display relevant assets
+      // Format the response data - including ALL balances to show complete account information
       return response.data.data[0].details
-        .filter((balance: Balance) => {
-          // Show balances with non-zero values
-          const available = parseFloat(balance.availBal) || 0;
-          const frozen = parseFloat(balance.frozenBal) || 0;
-          const total = balance.bal ? parseFloat(balance.bal) : (available + frozen);
-          
-          // Filter out empty balances
-          return total > 0;
-        })
         .map((balance: Balance): AccountBalance => {
           // Calculate balance values
           const available = parseFloat(balance.availBal) || 0;

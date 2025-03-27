@@ -188,14 +188,12 @@ export function AccountBalanceCard() {
   // נתקן כאן - נוודא שהחישוב כולל גם את הכספים הקפואים
   const totalValue = totalAvailable + totalFrozen;
   
-  // Sort by value (highest first)
+  // Sort by value (highest first) - show all assets regardless of balance
   const sortedBalances = [...balances]
-    .filter(asset => asset.total > 0)
-    .sort((a, b) => b.valueUSD - a.valueUSD)
-    .slice(0, 5); // Top 5 assets
+    .sort((a, b) => b.valueUSD - a.valueUSD);
     
-  // Count assets with non-zero balance
-  const assetsWithBalance = balances.filter(asset => asset.total > 0).length;
+  // Count total number of assets
+  const assetsWithBalance = balances.length;
   
   // Calculate percentages for available/frozen donut chart
   const availablePercentage = totalValue > 0 ? (totalAvailable / totalValue) * 100 : 0;
@@ -239,30 +237,32 @@ export function AccountBalanceCard() {
           
           <Separator className="my-2" />
           
-          <div className="space-y-3">
+          <div className="space-y-2">
             {sortedBalances.length > 0 ? (
               <>
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Top Assets</span>
+                  <span>All Assets ({sortedBalances.length})</span>
                   <span>Value (USD)</span>
                 </div>
-                {sortedBalances.map((asset) => {
-                  const percentage = (asset.valueUSD / totalValue) * 100;
-                  return (
-                    <div key={asset.currency} className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium">{asset.currency}</span>
-                        <span>${asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                <div className="max-h-[300px] overflow-y-auto pr-1">
+                  {sortedBalances.map((asset) => {
+                    const percentage = (asset.valueUSD / totalValue) * 100;
+                    return (
+                      <div key={asset.currency} className="space-y-0.5 mb-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">{asset.currency}</span>
+                          <span>${asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Progress value={percentage} className="h-1.5" />
+                          <span className="text-xs text-muted-foreground w-12 text-right">
+                            {percentage.toFixed(1)}%
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Progress value={percentage} className="h-2" />
-                        <span className="text-xs text-muted-foreground w-12 text-right">
-                          {percentage.toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </>
             ) : (
               <div className="text-center py-4 text-muted-foreground">
