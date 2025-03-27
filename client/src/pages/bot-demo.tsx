@@ -86,11 +86,32 @@ export default function BotDemo() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 mt-4 md:mt-0">
-                  <Button variant="outline">
+                  <Button 
+                    variant="outline"
+                    onClick={() => window.location.reload()}
+                  >
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Refresh Data
                   </Button>
-                  <Button>
+                  <Button
+                    onClick={() => {
+                      fetch('/api/okx/bots/1/start', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                      })
+                      .then(res => {
+                        if (res.ok) return res.json();
+                        throw new Error('Failed to start bot');
+                      })
+                      .then(() => {
+                        window.location.reload();
+                      })
+                      .catch(err => {
+                        console.error('Error starting bot:', err);
+                        alert('Failed to start bot: ' + err.message);
+                      });
+                    }}
+                  >
                     <Play className="h-4 w-4 mr-2" />
                     Start Bot
                   </Button>
@@ -288,11 +309,51 @@ export default function BotDemo() {
                   
                   {/* Bot Controls */}
                   <div className="pt-4 flex gap-3">
-                    <Button variant="outline" className="w-1/2 border-blue-400 text-blue-300 hover:bg-blue-900/50">
+                    <Button 
+                      variant="outline" 
+                      className="w-1/2 border-blue-400 text-blue-300 hover:bg-blue-900/50"
+                      onClick={() => window.location.href = "/ai-grid-bot"}
+                    >
                       <Settings className="h-4 w-4 mr-2" />
                       Edit
                     </Button>
-                    <Button className="w-1/2 bg-green-600 hover:bg-green-700">
+                    <Button 
+                      className="w-1/2 bg-green-600 hover:bg-green-700"
+                      onClick={() => {
+                        // Update bot parameters with selected currencies
+                        fetch('/api/okx/bots/1/parameters', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            parameters: {
+                              symbols: selectedSymbols
+                            }
+                          })
+                        })
+                        .then(res => {
+                          if (res.ok) return res.json();
+                          throw new Error('Failed to update bot parameters');
+                        })
+                        .then(() => {
+                          // Then start the bot
+                          return fetch('/api/okx/bots/1/start', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                          });
+                        })
+                        .then(res => {
+                          if (res.ok) return res.json();
+                          throw new Error('Failed to start bot');
+                        })
+                        .then(() => {
+                          window.location.reload();
+                        })
+                        .catch(err => {
+                          console.error('Error with bot operation:', err);
+                          alert('Failed to start bot: ' + err.message);
+                        });
+                      }}
+                    >
                       <Play className="h-4 w-4 mr-2" />
                       Start
                     </Button>
