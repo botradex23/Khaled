@@ -121,22 +121,60 @@ router.get('/markets/:symbol', async (req: Request, res: Response) => {
   }
 });
 
-// Public demo account data endpoint (no authentication required)
-router.get('/demo/account/balance', async (req: Request, res: Response) => {
+// Demo account data endpoint that also checks for user auth
+router.get('/demo/account/balance', withUserApiKeys, async (req: Request, res: Response) => {
   try {
-    // Use accountService to get demo account data with throwError=false (default)
-    const balances = await accountService.getAccountBalances();
-    res.json(balances);
+    // Check if user is authenticated and has custom API keys
+    if (req.user && req.user.id && (req as any).customOkxService) {
+      console.log(`Using custom OKX API keys for user ID ${req.user.id} in demo endpoint`);
+      
+      // Use the custom OKX service with user's API keys
+      const customService = (req as any).customOkxService;
+      const response = await customService.makeAuthenticatedRequest('GET', '/api/v5/account/balance');
+      
+      // Process and format the response
+      if (!response.data[0]?.details) {
+        throw new Error('Invalid response format from OKX API');
+      }
+      
+      const balances = response.data[0].details.map((balance: any) => ({
+        currency: balance.ccy,
+        available: parseFloat(balance.availBal) || 0,
+        frozen: parseFloat(balance.frozenBal) || 0,
+        total: parseFloat(balance.bal) || 0,
+        valueUSD: parseFloat(balance.eq) || 0
+      }));
+      
+      res.json(balances);
+    } else {
+      // No authentication or no custom keys, use default demo data
+      console.log('Using default OKX API keys for demo endpoint');
+      const balances = await accountService.getAccountBalances();
+      res.json(balances);
+    }
   } catch (err) {
     handleApiError(err, res);
   }
 });
 
-// Public demo trading history endpoint (no authentication required)
-router.get('/demo/trading/history', async (req: Request, res: Response) => {
+// Demo trading history endpoint that also checks for user auth
+router.get('/demo/trading/history', withUserApiKeys, async (req: Request, res: Response) => {
   try {
-    // Use accountService to get demo trading history with throwError=false
-    const history = await accountService.getTradingHistory();
+    let history;
+    
+    // Check if user is authenticated and has custom API keys
+    if (req.user && req.user.id && (req as any).customOkxService) {
+      console.log(`Using custom OKX API keys for user ID ${req.user.id} in demo trading history endpoint`);
+      
+      // Use the custom OKX service with user's API keys
+      const customService = (req as any).customOkxService;
+      const response = await customService.makeAuthenticatedRequest('GET', '/api/v5/trade/fills');
+      history = response.data || [];
+    } else {
+      // No authentication or no custom keys, use default demo data
+      console.log('Using default OKX API keys for demo trading history endpoint');
+      history = await accountService.getTradingHistory();
+    }
     
     // Format the data for our React client to better handle it
     const formattedHistory = Array.isArray(history) ? history.map((item: any) => {
