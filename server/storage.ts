@@ -458,6 +458,8 @@ export class MemStorage implements IStorage {
       return false;
     }
     
+    console.log(`Clearing API keys for user ID ${userId} (${user.email || 'unknown email'})`);
+    
     // Clear all API keys
     const updatedUser: User = {
       ...user,
@@ -468,6 +470,7 @@ export class MemStorage implements IStorage {
     
     // Save the updated user
     this.users.set(userId, updatedUser);
+    console.log(`API keys cleared successfully for user ID ${userId}`);
     
     return true;
   }

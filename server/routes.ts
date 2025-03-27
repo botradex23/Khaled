@@ -69,6 +69,93 @@ const createTestUserWithKeys = async (req: Request, res: Response) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add a test endpoint to check API keys for a user
+  app.get('/api/test/user-api-keys', async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    try {
+      const userId = req.user.id;
+      console.log(`Test endpoint: Looking up API keys for user ID ${userId}`);
+      
+      // Get user-specific API keys
+      const apiKeys = await storage.getUserApiKeys(userId);
+      
+      // Return masked versions of the keys for security
+      const maskedKeys = {
+        okxApiKey: apiKeys?.okxApiKey ? maskSecret(apiKeys.okxApiKey) : null,
+        okxSecretKey: apiKeys?.okxSecretKey ? maskSecret(apiKeys.okxSecretKey) : null,
+        okxPassphrase: apiKeys?.okxPassphrase ? maskSecret(apiKeys.okxPassphrase) : null,
+        defaultBroker: apiKeys?.defaultBroker || null,
+        useTestnet: apiKeys?.useTestnet || null
+      };
+      
+      return res.json({
+        userId,
+        userEmail: req.user.email,
+        apiKeys: maskedKeys
+      });
+    } catch (error) {
+      console.error('Error in test endpoint:', error);
+      return res.status(500).json({ error: 'Server error', message: error.message });
+    }
+  });
+  
+  // Test endpoint to reset all API keys
+  app.post('/api/admin/reset-all-api-keys', async (req: Request, res: Response) => {
+    try {
+      console.log('Attempting to reset all user API keys');
+      
+      // Get all users (since we're using MemStorage, this is an internal method)
+      const memStorage = storage as any;
+      const users = Array.from(memStorage.users.values());
+      
+      console.log(`Found ${users.length} users to reset`);
+      
+      // Track successes and failures
+      const results = {
+        total: users.length,
+        successful: 0,
+        failed: 0,
+        details: [] as Array<{userId: number, email: string, success: boolean, error?: string}>
+      };
+      
+      // Process each user
+      for (const user of users) {
+        try {
+          const success = await storage.clearUserApiKeys(user.id);
+          results.details.push({
+            userId: user.id,
+            email: user.email || 'unknown',
+            success
+          });
+          
+          if (success) {
+            results.successful++;
+          } else {
+            results.failed++;
+          }
+        } catch (error) {
+          results.failed++;
+          results.details.push({
+            userId: user.id,
+            email: user.email || 'unknown',
+            success: false,
+            error: error.message
+          });
+        }
+      }
+      
+      return res.json({
+        message: `Reset API keys for ${results.successful} out of ${results.total} users`,
+        results
+      });
+    } catch (error) {
+      console.error('Error resetting API keys:', error);
+      return res.status(500).json({ error: 'Server error', message: error.message });
+    }
+  });
   // Add test endpoint for creating users with API keys
   app.post('/api/users/test/create-with-keys', createTestUserWithKeys);
   
@@ -478,6 +565,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // API Keys Management
+  
+  // This endpoint is implemented above
+  /*app.post("/api/admin/reset-all-api-keys", async (req, res) => {
+    // Implementation moved above
+  })*/
   
   // Get user API keys (masked)
   app.get("/api/users/api-keys", ensureAuthenticated, async (req, res) => {
