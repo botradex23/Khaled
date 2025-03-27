@@ -58,11 +58,25 @@ export default function BotDemo() {
     totalTrades: number;
     profitLoss: string;
     profitLossPercent: string;
+    accountBalance: {
+      totalValue: string;
+      balances: Array<{
+        currency: string;
+        available: number;
+        frozen: number;
+        total: number;
+        valueUSD: number;
+      }>;
+    };
   }>({
     isRunning: false,
     totalTrades: 0,
     profitLoss: "0",
-    profitLossPercent: "0"
+    profitLossPercent: "0",
+    accountBalance: {
+      totalValue: "0",
+      balances: []
+    }
   });
   
   // Function to fetch data
@@ -155,7 +169,11 @@ export default function BotDemo() {
         if (data && typeof data === 'object') {
           setBotStatus(prev => ({
             ...prev,
-            isRunning: data.isRunning || false
+            isRunning: data.running || false,
+            accountBalance: {
+              totalValue: data.stats?.totalValue || "0",
+              balances: data.balances || []
+            }
           }));
         }
       })
@@ -253,8 +271,43 @@ export default function BotDemo() {
                 </div>
               </div>
               
+              {/* Account Balance Card */}
+              <Card className="bg-blue-950 border-blue-800">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xl font-semibold text-white">Testnet Account Balance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex justify-between mb-3">
+                    <div className="text-blue-300">Total Value:</div>
+                    <div className="text-xl font-bold text-blue-50">${parseFloat(botStatus.accountBalance.totalValue).toLocaleString()}</div>
+                  </div>
+                  <div className="space-y-3">
+                    {botStatus.accountBalance.balances.map((balance, index) => (
+                      <div key={index} className="p-3 rounded-md bg-blue-900/30">
+                        <div className="flex justify-between mb-1">
+                          <div className="text-blue-300">{balance.currency}</div>
+                          <div className="font-bold text-blue-50">{balance.total.toFixed(8)}</div>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <div className="text-blue-400">Available:</div>
+                          <div className="text-blue-200">{balance.available.toFixed(8)}</div>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <div className="text-blue-400">In Use:</div>
+                          <div className="text-blue-200">{balance.frozen.toFixed(8)}</div>
+                        </div>
+                        <div className="flex justify-between text-sm pt-1 border-t border-blue-800 mt-1">
+                          <div className="text-blue-400">Value (USD):</div>
+                          <div className="text-blue-200">${balance.valueUSD.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Key Metrics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                 {/* Total Trades Card */}
                 <Card className="bg-blue-950 border-blue-800">
                   <CardHeader className="pb-2">
@@ -340,62 +393,113 @@ export default function BotDemo() {
                         <TableHead className="text-blue-300">Type</TableHead>
                         <TableHead className="text-blue-300">Price</TableHead>
                         <TableHead className="text-blue-300">Amount</TableHead>
+                        <TableHead className="text-blue-300">Value</TableHead>
                         <TableHead className="text-blue-300">Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {isLoading ? (
                         <TableRow className="border-blue-800">
-                          <TableCell colSpan={5} className="text-center py-8 text-blue-400">
+                          <TableCell colSpan={6} className="text-center py-8 text-blue-400">
                             <div className="flex justify-center">
                               <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-400 border-t-transparent"></div>
                             </div>
                           </TableCell>
                         </TableRow>
                       ) : trades.length > 0 ? (
-                        trades.map((trade, index) => (
-                          <TableRow key={index} className="border-blue-800">
-                            <TableCell className="text-blue-100">
-                              {(() => {
-                                try {
-                                  return new Date(trade.timestamp).toLocaleString();
-                                } catch (e) {
-                                  return new Date().toLocaleString();
-                                }
-                              })()}
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant="outline" 
-                                className={
-                                  (trade.side || '').toLowerCase() === 'buy' 
-                                    ? "border-green-500 text-green-400 bg-green-950" 
-                                    : "border-red-500 text-red-400 bg-red-950"
-                                }
-                              >
-                                {(trade.side || '').toLowerCase() === 'buy' ? 'קנייה' : 'מכירה'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-blue-100">
-                              ${typeof trade.price === 'number' 
-                                ? trade.price.toFixed(2) 
-                                : parseFloat(trade.price || '0').toFixed(2)}
-                            </TableCell>
-                            <TableCell className="text-blue-100">
-                              {typeof trade.size === 'number' 
-                                ? trade.size.toFixed(5) 
-                                : parseFloat(trade.size || '0').toFixed(5)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="border-green-500 text-green-400 bg-green-950">
-                                {trade.state || trade.status || 'בוצע'}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))
+                        trades.map((trade, index) => {
+                          // Calculate trade value
+                          const price = parseFloat(trade.price || '0');
+                          const size = parseFloat(trade.size || '0');
+                          const value = price * size;
+                          
+                          // Determine if this is a profitable trade
+                          // We'll consider trades with the same symbol and compare buy vs sell prices
+                          let profit = 0;
+                          let isProfitable = false;
+                          
+                          // For SELLS, calculate profit against the average buy price of this symbol
+                          if ((trade.side || '').toLowerCase() === 'sell') {
+                            // Find all buys of the same symbol
+                            const symbolBuys = trades.filter(t => 
+                              t.symbol === trade.symbol && 
+                              (t.side || '').toLowerCase() === 'buy'
+                            );
+                            
+                            if (symbolBuys.length > 0) {
+                              // Calculate average buy price
+                              let totalBuyValue = 0;
+                              let totalBuySize = 0;
+                              
+                              symbolBuys.forEach(buyTrade => {
+                                const buyPrice = parseFloat(buyTrade.price || '0');
+                                const buySize = parseFloat(buyTrade.size || '0');
+                                totalBuyValue += buyPrice * buySize;
+                                totalBuySize += buySize;
+                              });
+                              
+                              const avgBuyPrice = totalBuySize > 0 ? totalBuyValue / totalBuySize : 0;
+                              
+                              // Calculate profit
+                              profit = (price - avgBuyPrice) * size;
+                              isProfitable = profit > 0;
+                            }
+                          }
+                          
+                          return (
+                            <TableRow key={index} className="border-blue-800">
+                              <TableCell className="text-blue-100">
+                                {(() => {
+                                  try {
+                                    return new Date(parseInt(trade.timestamp)).toLocaleString();
+                                  } catch (e) {
+                                    return new Date().toLocaleString();
+                                  }
+                                })()}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="outline" 
+                                  className={
+                                    (trade.side || '').toLowerCase() === 'buy' 
+                                      ? "border-green-500 text-green-400 bg-green-950" 
+                                      : "border-red-500 text-red-400 bg-red-950"
+                                  }
+                                >
+                                  {(trade.side || '').toLowerCase() === 'buy' ? 'קנייה' : 'מכירה'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-blue-100">
+                                ${typeof trade.price === 'number' 
+                                  ? trade.price.toFixed(2) 
+                                  : parseFloat(trade.price || '0').toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-blue-100">
+                                {typeof trade.size === 'number' 
+                                  ? trade.size.toFixed(5) 
+                                  : parseFloat(trade.size || '0').toFixed(5)}
+                              </TableCell>
+                              <TableCell className="text-blue-100">
+                                <div className="flex flex-col">
+                                  <span>${value.toFixed(2)}</span>
+                                  {(trade.side || '').toLowerCase() === 'sell' && (
+                                    <span className={`text-xs mt-1 ${isProfitable ? 'text-green-400' : 'text-red-400'}`}>
+                                      {isProfitable ? '+' : ''}{profit.toFixed(2)}$
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="border-green-500 text-green-400 bg-green-950">
+                                  {trade.state || trade.status || 'בוצע'}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
                       ) : (
                         <TableRow className="border-blue-800">
-                          <TableCell colSpan={5} className="text-center py-8 text-blue-400">
+                          <TableCell colSpan={6} className="text-center py-8 text-blue-400">
                             אין עדיין פעילות מסחר
                           </TableCell>
                         </TableRow>
