@@ -119,6 +119,11 @@ export default function ApiKeys() {
         title: "API Keys Updated",
         description: "Your API keys have been successfully updated.",
       });
+      
+      // ניווט לדף הראשי/Dashboard אחרי העדכון המוצלח
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000); // המתנה של שנייה אחת כדי שהמשתמש יראה את הודעת ההצלחה
     },
     onError: (error: Error) => {
       toast({
@@ -155,6 +160,11 @@ export default function ApiKeys() {
         defaultBroker: "okx",
         useTestnet: true
       });
+      
+      // ניווט לדף הראשי/Dashboard אחרי המחיקה המוצלחת
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000); // המתנה של שנייה אחת כדי שהמשתמש יראה את הודעת ההצלחה
     },
     onError: (error: Error) => {
       toast({
