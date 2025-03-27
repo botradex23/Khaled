@@ -382,6 +382,61 @@ export class TradingBotService {
   }
   
   /**
+   * Update bot parameters
+   * This allows changing the trading pair and other strategy parameters
+   */
+  async updateBotParameters(botId: number, newParameters: Partial<BotParameters>): Promise<any> {
+    try {
+      // Get current bot details
+      const bot = await storage.getBotById(botId);
+      if (!bot) {
+        throw new Error(`Bot ${botId} not found`);
+      }
+      
+      // Parse existing parameters
+      let currentParams: any = {};
+      if (bot.parameters) {
+        try {
+          currentParams = JSON.parse(bot.parameters);
+        } catch (error) {
+          console.error(`Error parsing bot parameters:`, error);
+          // Initialize with defaults if parsing fails
+          currentParams = { symbol: bot.tradingPair || 'BTC-USDT' };
+        }
+      }
+      
+      // Merge the new parameters with existing ones
+      const updatedParams = { ...currentParams, ...newParameters };
+      console.log(`Updating bot ${botId} parameters:`, updatedParams);
+      
+      // If symbol is changed, update tradingPair as well
+      let updates: Partial<Bot> = {
+        parameters: JSON.stringify(updatedParams)
+      };
+      
+      if (newParameters.symbol && newParameters.symbol !== bot.tradingPair) {
+        updates.tradingPair = newParameters.symbol;
+      }
+      
+      // Update bot in storage
+      const updatedBot = await storage.updateBot(botId, updates);
+      
+      // If bot is running, we need to restart it to apply new parameters
+      const isRunning = this.runningBots.has(botId);
+      if (isRunning) {
+        console.log(`Bot ${botId} is running, restarting with new parameters`);
+        await this.stopBot(botId);
+        await this.startBot(botId);
+      }
+      
+      return updatedBot;
+    } catch (error) {
+      console.error(`Error updating bot parameters:`, error);
+      throw error;
+    }
+  }
+  
+  /**
    * Get bot status including account balance from OKX
    */
   async getBotStatus(botId: number): Promise<{ running: boolean; stats?: any; balances?: any; botDetails?: any }> {

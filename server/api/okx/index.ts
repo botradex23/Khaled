@@ -330,6 +330,42 @@ router.post('/bots/:id/stop', async (req: Request, res: Response) => {
   }
 });
 
+// Update bot parameters (for changing trading pair, price levels, etc.)
+router.post('/bots/:id/parameters', async (req: Request, res: Response) => {
+  try {
+    const botId = parseInt(req.params.id);
+    
+    if (isNaN(botId)) {
+      return res.status(400).json({
+        error: 'Invalid Bot ID',
+        message: 'Bot ID must be a number'
+      });
+    }
+    
+    const { parameters } = req.body;
+    
+    if (!parameters) {
+      return res.status(400).json({
+        error: 'Missing Parameters',
+        message: 'Parameters object is required'
+      });
+    }
+    
+    console.log(`Updating bot ${botId} parameters:`, parameters);
+    
+    // Call the service to update bot parameters
+    const updatedBot = await tradingBotService.updateBotParameters(botId, parameters);
+    
+    res.json({
+      success: true,
+      message: 'Bot parameters updated successfully',
+      bot: updatedBot
+    });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
 router.get('/bots/:id/status', async (req: Request, res: Response) => {
   try {
     const botId = parseInt(req.params.id);
@@ -366,32 +402,8 @@ router.put('/bots/:id/parameters', async (req: Request, res: Response) => {
       });
     }
     
-    // Get the current bot from storage
-    const bot = await storage.getBotById(botId);
-    if (!bot) {
-      return res.status(404).json({
-        error: 'Bot Not Found',
-        message: `Bot with ID ${botId} not found`
-      });
-    }
-    
-    // Update the bot parameters in storage
-    const updatedBot = await storage.updateBot(botId, {
-      parameters: JSON.stringify(parameters)
-    });
-    
-    if (!updatedBot) {
-      return res.status(500).json({
-        error: 'Update Failed',
-        message: 'Failed to update bot parameters'
-      });
-    }
-    
-    // If the bot is running, restart it with the new parameters
-    if (bot.isRunning) {
-      await tradingBotService.stopBot(botId);
-      await tradingBotService.startBot(botId);
-    }
+    // Use the tradingBotService's updateBotParameters method
+    const updatedBot = await tradingBotService.updateBotParameters(botId, parameters);
     
     res.json({
       success: true,

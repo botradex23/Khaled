@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import Header from "@/components/ui/header";
@@ -80,6 +80,7 @@ export default function Bots() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedBot, setSelectedBot] = useState<Bot | null>(null);
   const [showBotDetails, setShowBotDetails] = useState<boolean>(false);
+  const [selectedTradingPair, setSelectedTradingPair] = useState<string>("");
   
   // Use toast for notifications
   const { toast } = useToast();
@@ -149,6 +150,37 @@ export default function Bots() {
     }
   });
   
+  // Update bot parameters mutation
+  const updateBotParametersMutation = useMutation({
+    mutationFn: async ({ botId, parameters }: { botId: number, parameters: any }) => {
+      const response = await fetch(`/api/okx/bots/${botId}/parameters`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ parameters }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update bot parameters');
+      }
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "עדכון פרמטרים הצליח",
+        description: "הפרמטרים של הבוט עודכנו בהצלחה",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/bots'] });
+      setShowBotDetails(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "שגיאה בעדכון פרמטרים",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
   // Filter and search functionality
   const filteredBots = bots?.filter(bot => {
     // Filter by search query
@@ -190,6 +222,27 @@ export default function Bots() {
         return gridChartData;
     }
   };
+  
+  // Available trading pairs from OKX
+  const tradingPairs = [
+    "BTC-USDT",
+    "ETH-USDT",
+    "SOL-USDT",
+    "XRP-USDT",
+    "BNB-USDT"
+  ];
+  
+  // Handle trading pair change
+  const handleTradingPairChange = (pair: string) => {
+    setSelectedTradingPair(pair);
+  };
+  
+  // Effect to set the currently selected trading pair when bot changes
+  useEffect(() => {
+    if (selectedBot) {
+      setSelectedTradingPair(selectedBot.tradingPair || 'BTC-USDT');
+    }
+  }, [selectedBot]);
   
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -902,7 +955,19 @@ export default function Bots() {
                 </div>
                 <div className="flex flex-col space-y-1">
                   <span className="text-sm text-muted-foreground">Trading Pair</span>
-                  <span className="font-medium">{selectedBot?.tradingPair || 'BTC-USDT'}</span>
+                  <Select 
+                    value={selectedTradingPair} 
+                    onValueChange={handleTradingPairChange}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select trading pair" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tradingPairs.map(pair => (
+                        <SelectItem key={pair} value={pair}>{pair}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex flex-col space-y-1">
                   <span className="text-sm text-muted-foreground">Investment</span>
@@ -920,32 +985,62 @@ export default function Bots() {
             </div>
           </div>
           
-          <DialogFooter className="flex justify-between items-center">
-            {selectedBot?.isRunning ? (
+          <DialogFooter className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              {selectedBot?.isRunning ? (
+                <Button 
+                  variant="outline" 
+                  className="gap-1" 
+                  onClick={() => {
+                    stopBotMutation.mutate(selectedBot.id);
+                    setShowBotDetails(false);
+                  }}
+                >
+                  <Pause className="h-4 w-4" />
+                  Stop Bot
+                </Button>
+              ) : (
+                <Button 
+                  variant="default" 
+                  className="gap-1" 
+                  onClick={() => {
+                    startBotMutation.mutate(selectedBot?.id || 0);
+                    setShowBotDetails(false);
+                  }}
+                >
+                  <Play className="h-4 w-4" />
+                  Start Bot
+                </Button>
+              )}
               <Button 
-                variant="outline" 
+                variant="secondary" 
                 className="gap-1" 
                 onClick={() => {
-                  stopBotMutation.mutate(selectedBot.id);
-                  setShowBotDetails(false);
+                  // Update bot trading pair if it changed
+                  if (selectedBot && selectedTradingPair !== selectedBot.tradingPair) {
+                    updateBotParametersMutation.mutate({
+                      botId: selectedBot.id,
+                      parameters: {
+                        symbol: selectedTradingPair
+                      }
+                    });
+                  } else {
+                    toast({
+                      title: "אין שינוי",
+                      description: "לא נעשו שינויים בפרמטרים של הבוט"
+                    });
+                  }
                 }}
+                disabled={updateBotParametersMutation.isPending}
               >
-                <Pause className="h-4 w-4" />
-                Stop Bot
+                {updateBotParametersMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Settings className="h-4 w-4" />
+                )}
+                Update Parameters
               </Button>
-            ) : (
-              <Button 
-                variant="default" 
-                className="gap-1" 
-                onClick={() => {
-                  startBotMutation.mutate(selectedBot?.id || 0);
-                  setShowBotDetails(false);
-                }}
-              >
-                <Play className="h-4 w-4" />
-                Start Bot
-              </Button>
-            )}
+            </div>
             <Button variant="outline" onClick={() => setShowBotDetails(false)}>
               Close
             </Button>
