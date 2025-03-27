@@ -28,18 +28,19 @@ export default function Account() {
     }
   }, [balanceData]);
   
-  // Calculate total portfolio value by summing the valueUSD of all assets
+  // Calculate total portfolio value by multiplying available amount by price per unit
   const calculateTotalValue = () => {
     if (!balanceData || !Array.isArray(balanceData) || balanceData.length === 0) {
       return 0;
     }
     
-    // Based on the actual API response, we know that the value we need is in 'valueUSD' field
-    // Summing up all valueUSD fields from each asset
+    // Calculate the total by multiplying available amount * pricePerUnit for each asset
     const total = balanceData.reduce((sum, asset) => {
-      // Make sure valueUSD exists
-      if (asset && typeof asset.valueUSD === 'number') {
-        return sum + asset.valueUSD;
+      if (asset && typeof asset.available === 'number' && typeof asset.pricePerUnit === 'number') {
+        // For each asset, calculate: available amount * price per unit
+        const assetValue = asset.available * asset.pricePerUnit;
+        console.log(`${asset.currency}: ${asset.available} * ${asset.pricePerUnit} = ${assetValue}`);
+        return sum + assetValue;
       }
       return sum;
     }, 0);
