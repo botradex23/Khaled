@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { usePortfolioValue } from "@/hooks/use-portfolio-value";
 import { cn } from "@/lib/utils";
 import {
   BarChart3,
@@ -13,7 +14,9 @@ import {
   FlaskConical,
   Bot,
   LineChart,
-  BookOpen
+  BookOpen,
+  Wallet,
+  DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -64,8 +68,34 @@ export default function Layout({ children }: LayoutProps) {
     return location === href;
   };
 
+  // Get portfolio value from context
+  const { totalValue, isLoading: isPortfolioLoading } = usePortfolioValue();
+
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Portfolio Value Banner - only visible when authenticated and on larger screens */}
+      {isAuthenticated && (
+        <div className="bg-primary text-white py-2 hidden md:block">
+          <div className="container flex justify-between items-center">
+            <div className="flex items-center">
+              <DollarSign className="h-4 w-4 mr-1" />
+              <span className="text-sm font-medium mr-1">Total Portfolio Value:</span>
+              {isPortfolioLoading ? (
+                <Skeleton className="h-5 w-20 bg-primary-foreground/30" />
+              ) : (
+                <span className="text-sm font-bold">${totalValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              )}
+            </div>
+            <Link href="/account">
+              <Button variant="ghost" size="sm" className="text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/20">
+                <Wallet className="h-3 w-3 mr-1" />
+                View Details
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
@@ -97,6 +127,18 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           <div className="flex items-center">
+            {/* Portfolio Value Display for mobile */}
+            {isAuthenticated && isMobile && (
+              <div className="mr-3 flex items-center">
+                <Wallet className="h-4 w-4 text-primary mr-1" />
+                {isPortfolioLoading ? (
+                  <Skeleton className="h-4 w-16" />
+                ) : (
+                  <span className="text-xs font-semibold">${totalValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                )}
+              </div>
+            )}
+            
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
