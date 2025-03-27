@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { BadgeInfo, Wallet, Lock } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/use-auth";
 
 // Type definition
 interface AccountBalance {
@@ -25,6 +26,16 @@ interface AccountBalance {
 }
 
 export function AccountBalanceCard() {
+  // Get authentication status to determine which endpoint to use
+  const { isAuthenticated } = useAuth();
+  
+  // Use the authenticated endpoint if user is logged in, otherwise use demo endpoint
+  const okxEndpoint = isAuthenticated 
+    ? "/api/okx/account/balance"     // Authenticated endpoint with user-specific API keys
+    : "/api/okx/demo/account/balance"; // Demo endpoint with default keys
+  
+  console.log("Account Balance Card - Using endpoint:", okxEndpoint, "isAuthenticated:", isAuthenticated);
+  
   // We'll fetch balances from both exchanges and display them
   const bitgetQuery = useQuery({
     queryKey: ["/api/bitget/account/balance"],
@@ -32,12 +43,13 @@ export function AccountBalanceCard() {
   });
 
   const okxQuery = useQuery({
-    queryKey: ["/api/okx/demo/account/balance"],
+    queryKey: [okxEndpoint],
     refetchInterval: 15000 // 15 seconds refresh for more up-to-date data
   });
   
   // Debug output to console to help identify issues with the data
   console.log("Account Balance Card - OKX Query Result:", {
+    endpoint: okxEndpoint,
     data: okxQuery.data,
     isLoading: okxQuery.isLoading,
     error: okxQuery.error,
@@ -418,9 +430,19 @@ export function AccountBalanceCard() {
 }
 
 export function TradingHistoryCard() {
+  // Get authentication status to determine which endpoint to use
+  const { isAuthenticated } = useAuth();
+  
+  // Log which endpoint we're using for troubleshooting
+  const tradingHistoryEndpoint = isAuthenticated 
+    ? "/api/okx/trading/history" 
+    : "/api/okx/demo/trading/history";
+  
+  console.log("Trading History Card - Using endpoint:", tradingHistoryEndpoint, "isAuthenticated:", isAuthenticated);
+  
   // Query both OKX and Bitget data sources, but prioritize OKX
   const okxQuery = useQuery({
-    queryKey: ["/api/okx/demo/trading/history"],
+    queryKey: [tradingHistoryEndpoint],
     refetchInterval: 30000 // 30 second refresh for more up-to-date data
   });
   
@@ -439,7 +461,10 @@ export function TradingHistoryCard() {
   const hasBitgetData = bitgetQuery.data && Array.isArray(bitgetQuery.data) && bitgetQuery.data.length > 0;
   const useOkxData = hasOkxData;
   const selectedData = useOkxData ? okxQuery.data : bitgetQuery.data;
-  const dataSource = useOkxData ? "OKX Demo" : "Bitget";
+  // Show appropriate data source name based on authentication status
+  const dataSource = useOkxData 
+    ? (isAuthenticated ? "OKX" : "OKX Demo") 
+    : "Bitget";
 
   if (isLoading) {
     return (
