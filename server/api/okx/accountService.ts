@@ -136,76 +136,150 @@ export class AccountService {
     try {
       console.log('Fetching account balances from OKX API with demo mode enabled...');
       
-      // Prepare timestamp for the request
-      const timestamp = new Date().toISOString();
-      const method = 'GET';
-      const requestPath = '/api/v5/account/balance';
+      // IMPORTANT - USING MORE DETAILED ENDPOINT FOR MORE ACCURATE BALANCES
+      // First, get the main account balance to ensure we capture all currencies
+      // Then later we'll fetch funding account data as a secondary source to be thorough
       
-      // Generate signature as per the example code
-      const signature = okxService['generateSignature'](timestamp, method, requestPath);
+      // Make authenticated request using the service
+      const mainAccountResponse = await okxService.makeAuthenticatedRequest<OkxResponse<any>>(
+        'GET',
+        '/api/v5/account/balance'
+      );
       
-      // Make direct API call to ensure demo mode is properly set
-      const response = await axios.get(`${okxService.getBaseUrl()}${requestPath}`, {
-        headers: {
-          'OK-ACCESS-KEY': API_KEY,
-          'OK-ACCESS-SIGN': signature,
-          'OK-ACCESS-TIMESTAMP': timestamp,
-          'OK-ACCESS-PASSPHRASE': PASSPHRASE,
-          'x-simulated-trading': '1' // Ensure demo trading mode is enabled
-        },
-        timeout: DEFAULT_TIMEOUT
-      });
+      console.log('OKX Main Account API response code:', mainAccountResponse.code);
       
-      console.log('OKX API response status:', response.status);
-      
-      if (response.data.code !== '0') {
-        console.warn(`Failed to fetch account balances: ${response.data.msg} (Code: ${response.data.code})`);
+      if (mainAccountResponse.code !== '0') {
+        console.warn(`Failed to fetch main account balances: ${mainAccountResponse.msg} (Code: ${mainAccountResponse.code})`);
         if (throwError) {
-          throw new Error(`OKX API error (code ${response.data.code}): ${response.data.msg}`);
+          throw new Error(`OKX API error (code ${mainAccountResponse.code}): ${mainAccountResponse.msg}`);
         }
         return this.getEmptyBalanceResponse();
       }
       
-      if (!response.data.data[0]?.details) {
-        console.warn('Account balance data format unexpected - no details found');
+      if (!mainAccountResponse.data?.[0]?.details) {
+        console.warn('Main account balance data format unexpected - no details found');
         if (throwError) {
           throw new Error('Failed to parse OKX balance data - unexpected format');
         }
         return this.getEmptyBalanceResponse();
       }
       
-      console.log("Successfully retrieved balance data directly from API");
-      console.log("Sample balance:", JSON.stringify(response.data.data[0].details[0]));
+      console.log("Successfully retrieved main account balance data from API");
+      console.log("Sample balance item:", JSON.stringify(mainAccountResponse.data[0].details[0]));
+      
+      // Also get the funding account balances as secondary source
+      const fundingAccountResponse = await okxService.makeAuthenticatedRequest<OkxResponse<any>>(
+        'GET',
+        '/api/v5/asset/balances'
+      );
+      
+      // Store additional funding balances (if they exist)
+      const fundingBalances: Record<string, { availBal: string, frozenBal: string, bal: string }> = {};
+      
+      // If we successfully got funding account data, process it
+      if (fundingAccountResponse.code === '0' && fundingAccountResponse.data && Array.isArray(fundingAccountResponse.data)) {
+        console.log("Successfully retrieved funding account data from API");
+        
+        // Map currencies to their balances for easy lookup
+        fundingAccountResponse.data.forEach(item => {
+          if (item.ccy) {
+            fundingBalances[item.ccy] = {
+              availBal: item.availBal || '0',
+              frozenBal: item.frozenBal || '0',
+              bal: item.bal || '0'
+            };
+          }
+        });
+        
+        console.log(`Processed ${Object.keys(fundingBalances).length} funding account balances`);
+      }
       
       // Try to get real-time prices from market data for accurate valuation
+      // Using multiple sources for maximum reliability
       let currencyPrices: Record<string, number> = {};
       try {
-        // Get real-time market prices for better accuracy - get ALL USDT pairs to ensure comprehensive coverage
-        const marketData = await marketService.getMarketData(['ALL_USDT_PAIRS']);
+        // First source: Get real-time market prices from OKX ticker endpoint
+        const tickerResponse = await okxService.makePublicRequest<OkxResponse<any>>(
+          '/api/v5/market/tickers?instType=SPOT'
+        );
         
+        if (tickerResponse.code === '0' && Array.isArray(tickerResponse.data)) {
+          tickerResponse.data.forEach(ticker => {
+            if (ticker.instId && ticker.instId.endsWith('-USDT')) {
+              const currency = ticker.instId.split('-')[0];
+              if (currency && ticker.last) {
+                currencyPrices[currency] = parseFloat(ticker.last);
+              }
+            }
+          });
+          
+          console.log(`Retrieved ticker price data for ${Object.keys(currencyPrices).length} currencies`);
+        }
+        
+        // Second source: Get market data from our market service
+        const marketData = await marketService.getMarketData(['ALL_USDT_PAIRS']);
         marketData.forEach(data => {
-          // Extract the base currency from pairs like "BTC-USDT"
           const parts = data.symbol.split('-');
           if (parts.length === 2 && parts[1] === 'USDT') {
             const currency = parts[0];
-            if (currency) {
-              currencyPrices[currency] = data.price;
+            if (currency && data.price) {
+              // Update the price if we didn't have it yet, or prefer this source
+              if (!currencyPrices[currency] || data.price > 0) {
+                currencyPrices[currency] = data.price;
+              }
             }
           }
         });
         
-        console.log(`Retrieved real-time price data for ${Object.keys(currencyPrices).length} currencies`);
+        console.log(`Retrieved price data for ${Object.keys(currencyPrices).length} currencies total from all sources`);
       } catch (err) {
-        console.warn("Couldn't fetch real-time prices, using API provided values only", err);
+        console.warn("Couldn't fetch complete real-time prices, using partial data", err);
       }
       
+      // Check if we have any funding-only currencies that aren't in the main account
+      // This ensures we don't miss any crypto that might only be in the funding account
+      const mainAccountCurrencies = new Set(
+        mainAccountResponse.data[0].details.map((item: any) => item.ccy)
+      );
+      
+      // Identify currencies that are only in funding account
+      const fundingOnlyCurrencies = Object.keys(fundingBalances).filter(
+        ccy => !mainAccountCurrencies.has(ccy)
+      );
+      
+      // Combine main account balances with any funding-only balances
+      const combinedBalances = [
+        ...mainAccountResponse.data[0].details,
+        ...fundingOnlyCurrencies.map(ccy => ({
+          ccy,
+          availBal: fundingBalances[ccy].availBal,
+          frozenBal: fundingBalances[ccy].frozenBal,
+          bal: fundingBalances[ccy].bal,
+          eq: '0', // We'll calculate this
+        }))
+      ];
+      
       // Format the response data - including ALL balances to show complete account information
-      return response.data.data[0].details
+      // Use the combined balances from both main trading and funding accounts
+      return combinedBalances
         .map((balance: Balance): AccountBalance => {
-          // Calculate balance values
-          const available = parseFloat(balance.availBal) || 0;
-          const frozen = parseFloat(balance.frozenBal) || 0;
-          const total = balance.bal ? parseFloat(balance.bal) : (available + frozen);
+          // Calculate balance values from main trading account
+          const availableTrading = parseFloat(balance.availBal) || 0;
+          const frozenTrading = parseFloat(balance.frozenBal) || 0;
+          const totalTrading = balance.bal ? parseFloat(balance.bal) : (availableTrading + frozenTrading);
+          
+          // Check if there's also a balance in the funding account
+          const fundingBalance = fundingBalances[balance.ccy];
+          
+          // Calculate additional balances from funding account
+          const availableFunding = fundingBalance ? parseFloat(fundingBalance.availBal) || 0 : 0;
+          const frozenFunding = fundingBalance ? parseFloat(fundingBalance.frozenBal) || 0 : 0;
+          const totalFunding = fundingBalance?.bal ? parseFloat(fundingBalance.bal) : (availableFunding + frozenFunding);
+          
+          // Combine balances from both account types
+          const available = availableTrading + availableFunding;
+          const frozen = frozenTrading + frozenFunding;
+          const total = totalTrading + totalFunding;
           
           // Always get accurate currency prices from realtime market data
           let valueUSD = 0;
