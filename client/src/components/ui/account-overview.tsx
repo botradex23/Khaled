@@ -195,31 +195,59 @@ export function AccountBalanceCard() {
 
   const balances: AccountBalance[] = selectedData;
   
-  // Calculate the distribution by multiplying amount by price for more accurate values
-  const totalAvailable = balances.reduce((sum, asset) => {
-    // Calculate available value: available amount * price per unit
-    const availableValue = asset.available * (asset.pricePerUnit || 0);
-    console.log(`Available ${asset.currency}: ${asset.available} * ${asset.pricePerUnit} = ${availableValue}`);
-    return sum + availableValue;
-  }, 0);
+  // For OKX API format, each asset has a valueUSD property we can use directly
+  let totalAvailable = 0;
+  let totalFrozen = 0;
   
-  const totalFrozen = balances.reduce((sum, asset) => {
-    // Calculate frozen value: frozen amount * price per unit
-    const frozenValue = asset.frozen * (asset.pricePerUnit || 0);
-    console.log(`Frozen ${asset.currency}: ${asset.frozen} * ${asset.pricePerUnit} = ${frozenValue}`);
-    return sum + frozenValue;
-  }, 0);
+  // For debugging
+  console.log("Processing balances for total calculation:", balances);
+  
+  // Calculate total value by summing valueUSD directly
+  balances.forEach(asset => {
+    // Check if we have valueUSD directly (OKX format)
+    if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0) {
+      console.log(`Asset ${asset.currency}: direct valueUSD = ${asset.valueUSD}`);
+      // Add to total available (since OKX typically puts all value in available)
+      totalAvailable += asset.valueUSD;
+    } else {
+      // Fallback calculation with unit price
+      const value = asset.available * (asset.pricePerUnit || 0);
+      const frozenValue = asset.frozen * (asset.pricePerUnit || 0);
+      console.log(`Asset ${asset.currency}: calculated value = ${value}, frozen = ${frozenValue}`);
+      totalAvailable += value;
+      totalFrozen += frozenValue;
+    }
+  });
   
   // Calculate total portfolio value (accounting for both available and frozen funds)
   const totalValue = totalAvailable + totalFrozen;
   console.log("Total portfolio value calculated:", totalValue);
   
+  // Ensure we have total value for each asset
+  // For OKX data format, total is often 0 but we have available and valueUSD
+  const processedBalances = balances.map(asset => {
+    // Make sure total is set properly - if it's 0 but available is not, use available
+    if (asset.total === 0 && asset.available > 0) {
+      asset.total = asset.available;
+    }
+    
+    // If we have valueUSD but no pricePerUnit, calculate it
+    if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0 && (!asset.pricePerUnit || asset.pricePerUnit === 0)) {
+      // If total is non-zero, calculate price per unit
+      if (asset.total > 0) {
+        asset.pricePerUnit = asset.valueUSD / asset.total;
+      }
+    }
+    
+    return asset;
+  });
+  
   // Sort by calculated value (highest first) - show all assets regardless of balance
-  const sortedBalances = [...balances]
+  const sortedBalances = [...processedBalances]
     .sort((a, b) => {
-      // Calculate real value by multiplying total amount by price per unit
-      const valueA = a.total * (a.pricePerUnit || 0);
-      const valueB = b.total * (b.pricePerUnit || 0);
+      // For OKX data, use valueUSD directly if available
+      const valueA = typeof a.valueUSD === 'number' ? a.valueUSD : a.total * (a.pricePerUnit || 0);
+      const valueB = typeof b.valueUSD === 'number' ? b.valueUSD : b.total * (b.pricePerUnit || 0);
       return valueB - valueA;
     });
     
