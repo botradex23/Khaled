@@ -28,24 +28,26 @@ export default function Account() {
     }
   }, [balanceData]);
   
-  // Calculate total portfolio value from the totalValue property
+  // Calculate total portfolio value by summing the valueUSD of all assets
   const calculateTotalValue = () => {
     if (!balanceData || !Array.isArray(balanceData) || balanceData.length === 0) {
       return 0;
     }
     
-    // Sum up the USD value of all assets using the totalValue USD property
-    return balanceData.reduce((total, asset) => {
-      // Check each property that might contain the total USD value
-      const assetValue = 
-        // This is the main field we're looking for - the USD equivalent value
-        (asset.totalValueUSD !== undefined ? asset.totalValueUSD : 
-         // Alternative field names that might be used
-         (asset.totalValue !== undefined ? asset.totalValue : 
-          (asset.valueUSD !== undefined ? asset.valueUSD : 0)));
-      
-      return total + assetValue;
+    // Based on the actual API response, we know that the value we need is in 'valueUSD' field
+    // Summing up all valueUSD fields from each asset
+    const total = balanceData.reduce((sum, asset) => {
+      // Make sure valueUSD exists
+      if (asset && typeof asset.valueUSD === 'number') {
+        return sum + asset.valueUSD;
+      }
+      return sum;
     }, 0);
+    
+    // Log the total for debugging
+    console.log("Total portfolio value calculated:", total);
+    
+    return total;
   };
   
   // Get the number of assets
