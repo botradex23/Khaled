@@ -304,9 +304,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user API keys
   app.put("/api/users/api-keys", ensureAuthenticated, async (req, res) => {
     const apiKeysSchema = z.object({
-      okxApiKey: z.string().min(10, "API key must be valid").optional(),
-      okxSecretKey: z.string().min(10, "Secret key must be valid").optional(),
-      okxPassphrase: z.string().min(2, "Passphrase must be valid").optional(),
+      okxApiKey: z.string().min(1, "API key is required"),
+      okxSecretKey: z.string().min(1, "Secret key is required"),
+      okxPassphrase: z.string().min(1, "Passphrase is required"),
       defaultBroker: z.string().default("okx"),
       useTestnet: z.boolean().default(true)
     });

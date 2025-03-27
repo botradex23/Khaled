@@ -118,13 +118,19 @@ export default function Dashboard() {
       
       // If user is not hindi1000hindi@gmail.com and doesn't have API keys set up
       if (!isHindi1000Hindi && apiKeysData) {
-        // Check if API keys are missing
+        // Check if API keys are missing or empty
         if (!apiKeysData.apiKeys || 
             !apiKeysData.apiKeys.okxApiKey || 
+            apiKeysData.apiKeys.okxApiKey === "" || 
             !apiKeysData.apiKeys.okxSecretKey || 
-            !apiKeysData.apiKeys.okxPassphrase) {
+            apiKeysData.apiKeys.okxSecretKey === "" || 
+            !apiKeysData.apiKeys.okxPassphrase || 
+            apiKeysData.apiKeys.okxPassphrase === "") {
           // Show dialog
           setShowApiKeyDialog(true);
+        } else {
+          // API keys exist and are not empty - make sure dialog is closed
+          setShowApiKeyDialog(false);
         }
       }
     }
