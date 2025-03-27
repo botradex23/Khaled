@@ -18,12 +18,8 @@ export default function Account() {
     refetchInterval: 15000 // 15 seconds refresh
   });
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, isLoading, navigate]);
+  // Do not redirect - demo mode is enabled for non-authenticated users 
+  // We're using demo data API endpoints that don't require authentication
 
   // Calculate total portfolio value
   const calculateTotalValue = () => {
