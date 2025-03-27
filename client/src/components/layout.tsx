@@ -41,6 +41,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: "Dashboard", href: "/dashboard", icon: BarChart3, auth: true },
     { name: "AI Trading", href: "/bot-demo", icon: Bot, auth: true },
     { name: "Markets", href: "/markets", icon: CandlestickChart, auth: true },
+    { name: "Market Prices", href: "/market-prices", icon: LineChart },
     { name: "Bots", href: "/bots", icon: FlaskConical, auth: true },
     { name: "Learn", href: "/learn", icon: BookOpen },
   ];

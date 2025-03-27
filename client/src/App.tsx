@@ -10,6 +10,7 @@ import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Bots from "@/pages/bots";
 import Markets from "@/pages/markets";
+import MarketPrices from "@/pages/market-prices";
 import Register from "@/pages/register";
 import Login from "@/pages/login";
 import BotDemo from "@/pages/bot-demo";
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/bots" component={Bots} />
       <Route path="/markets" component={Markets} />
+      <Route path="/market-prices" component={MarketPrices} />
       <Route path="/register" component={Register} />
       <Route path="/login" component={Login} />
       <Route path="/complete-profile" component={CompleteProfile} />

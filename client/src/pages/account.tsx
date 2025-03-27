@@ -13,8 +13,10 @@ export default function Account() {
   const [, navigate] = useLocation();
   
   // Fetch account balance data to display total portfolio value
+  // For authenticated users, we'll get their specific account balance
+  // For non-authenticated users, we'll get empty arrays and show only market prices
   const { data: balanceData, isLoading: isBalanceLoading } = useQuery({
-    queryKey: ["/api/okx/demo/account/balance"],
+    queryKey: [isAuthenticated ? "/api/okx/account/balance" : "/api/okx/demo/account/balance"],
     refetchInterval: 15000 // 15 seconds refresh
   });
 

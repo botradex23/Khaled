@@ -30,6 +30,7 @@ export function AccountBalanceCard() {
   const { isAuthenticated } = useAuth();
   
   // Use the authenticated endpoint if user is logged in, otherwise use demo endpoint
+  // For demo endpoint, we'll show only prices, not account balance if user is not authenticated
   const okxEndpoint = isAuthenticated 
     ? "/api/okx/account/balance"     // Authenticated endpoint with user-specific API keys
     : "/api/okx/demo/account/balance"; // Demo endpoint with default keys
