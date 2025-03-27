@@ -30,11 +30,98 @@ interface AccountBalance {
 
 // Service for account-related operations
 export class AccountService {
+  // Cached cryptocurrency prices to ensure we always have values
+  private cachedPrices: Record<string, number> = {};
+
   /**
-   * Check API key format to help diagnose issues
-   * @param apiKey - The API key to check
-   * @returns Format description
+   * Pre-fetch current market prices for all major cryptocurrencies
+   * This ensures we have accurate price data even for zero-balance assets 
    */
+  private async prefetchPrices(): Promise<void> {
+    try {
+      // Major cryptocurrencies to prefetch (even if balance is zero)
+      const keySymbols = [
+        'BTC-USDT', 'ETH-USDT', 'USDC-USDT', 'SOL-USDT',
+        'XRP-USDT', 'BNB-USDT', 'ADA-USDT', 'DOGE-USDT',
+        'MATIC-USDT', 'DOT-USDT', 'LINK-USDT', 'AVAX-USDT',
+        'SHIB-USDT', 'LTC-USDT', 'UNI-USDT', 'ATOM-USDT'
+      ];
+      
+      console.log(`Pre-fetching current market prices for ${keySymbols.length} cryptocurrencies`);
+      
+      const tickerResponse = await okxService.makePublicRequest<OkxResponse<any>>(
+        `/api/v5/market/tickers?instType=SPOT`
+      );
+      
+      if (tickerResponse.code === '0' && Array.isArray(tickerResponse.data)) {
+        // Process all tickers, but prioritize key symbols
+        const processedSymbols = new Set<string>();
+        
+        // First process key symbols to ensure they're included
+        keySymbols.forEach(symbol => {
+          const matchingTicker = tickerResponse.data.find(t => t.instId === symbol);
+          if (matchingTicker && matchingTicker.last) {
+            const currency = symbol.split('-')[0];
+            const price = parseFloat(matchingTicker.last);
+            if (price > 0) {
+              this.cachedPrices[currency] = price;
+              processedSymbols.add(symbol);
+              console.log(`Pre-fetched ${currency} price: $${price}`);
+            }
+          }
+        });
+        
+        // Then process all remaining tickers
+        tickerResponse.data.forEach(ticker => {
+          if (ticker.instId && ticker.instId.endsWith('-USDT') && !processedSymbols.has(ticker.instId)) {
+            const currency = ticker.instId.split('-')[0];
+            if (currency && ticker.last) {
+              const price = parseFloat(ticker.last);
+              if (price > 0) {
+                this.cachedPrices[currency] = price;
+              }
+            }
+          }
+        });
+        
+        console.log(`Successfully pre-fetched ${Object.keys(this.cachedPrices).length} cryptocurrency prices`);
+      } else {
+        console.warn('Failed to pre-fetch market prices');
+      }
+    } catch (error) {
+      console.error('Error pre-fetching market prices:', error);
+    }
+    
+    // Ensure we have fallback prices for major cryptocurrencies
+    this.ensureFallbackPrices();
+  }
+  
+  /**
+   * Make sure we have a fallback price for major cryptocurrencies
+   */
+  private ensureFallbackPrices(): void {
+    // Make sure we have prices for these major cryptocurrencies
+    const fallbackPrices: Record<string, number> = {
+      'BTC': 87000,
+      'ETH': 3050,
+      'SOL': 173,
+      'BNB': 630,
+      'XRP': 0.58,
+      'DOGE': 0.16,
+      'ADA': 0.51,
+      'MATIC': 0.72,
+      'USDT': 1,
+      'USDC': 1,
+    };
+    
+    // Add fallback prices only if not already cached
+    Object.entries(fallbackPrices).forEach(([currency, price]) => {
+      if (!this.cachedPrices[currency]) {
+        this.cachedPrices[currency] = price;
+      }
+    });
+  }
+
   /**
    * Get a fallback price for a cryptocurrency when API data is unavailable
    * This is critical for displaying price information for cryptocurrencies with very small quantities
@@ -42,6 +129,11 @@ export class AccountService {
    * @returns Default price estimate based on current market conditions
    */
   private getDefaultFallbackPrice(currency: string): number {
+    // First check our cached prices from real-time data
+    if (this.cachedPrices[currency] && this.cachedPrices[currency] > 0) {
+      return this.cachedPrices[currency];
+    }
+    
     // These are approximate values that should be relatively close to current market prices
     const fallbackPrices: Record<string, number> = {
       'BTC': 87000,
@@ -145,6 +237,10 @@ export class AccountService {
         'GET',
         '/api/v5/account/balance'
       );
+      
+      // Pre-fetch market prices for common trading pairs - will be used later
+      // to ensure we always have price data even for zero-balance assets
+      await this.prefetchPrices();
       
       console.log('OKX Main Account API response code:', mainAccountResponse.code);
       

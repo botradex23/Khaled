@@ -308,8 +308,12 @@ export function AccountBalanceCard() {
                             {/* Current price column - standalone and very prominent */}
                             <td className="py-1 text-sm text-right">
                               <div className="bg-primary/10 p-2 rounded-md inline-block min-w-[120px] text-center border border-primary/30">
-                                <div className="text-xs text-muted-foreground mb-1">Current Price</div>
-                                <div className="text-primary text-lg font-bold">${formattedPrice}</div>
+                                <div className="text-xs text-muted-foreground mb-1">Market Price</div>
+                                <div className="text-primary text-lg font-bold">
+                                  {pricePerUnit > 0 
+                                    ? `$${formattedPrice}` 
+                                    : "N/A"}
+                                </div>
                               </div>
                             </td>
                             
@@ -317,7 +321,15 @@ export function AccountBalanceCard() {
                             <td className="py-1 text-sm text-right">
                               <div className="bg-muted/10 p-2 rounded-md inline-block text-center border border-muted/20">
                                 <div className="text-xs text-muted-foreground mb-1">Quantity</div>
-                                <div className="font-medium">{formattedAmount}</div>
+                                <div className="font-medium">
+                                  {formattedAmount}
+                                  {/* Add clear label if quantity is in scientific notation */}
+                                  {asset.total < 0.0001 && asset.total > 0 && (
+                                    <div className="text-xs text-yellow-500 mt-1">
+                                      {asset.total.toFixed(12)}
+                                    </div>
+                                  )}
+                                </div>
                                 
                                 {/* Display percentage of a full coin */}
                                 {asset.total < 1 && asset.total > 0 && (
@@ -338,6 +350,12 @@ export function AccountBalanceCard() {
                                     ? asset.valueUSD.toFixed(8) 
                                     : asset.valueUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                                 </div>
+                                {/* Add calculation formula for transparency */}
+                                {pricePerUnit > 0 && (
+                                  <div className="text-xs text-muted-foreground mt-1 border-t border-muted/20 pt-1">
+                                    {asset.total} × ${pricePerUnit.toFixed(pricePerUnit < 0.01 ? 6 : 2)}
+                                  </div>
+                                )}
                               </div>
                             </td>
                             <td className="py-1 w-1/3">
@@ -367,7 +385,9 @@ export function AccountBalanceCard() {
       {sortedBalances.length > 0 && (
         <CardFooter className="pt-0">
           <div className="text-xs text-muted-foreground w-full text-center">
-            Data from {dataSource} {useOkxData ? "(Demo Mode)" : ""} • Updated {new Date().toLocaleTimeString()}
+            Data from {dataSource} {useOkxData ? "(Demo Mode)" : ""} • 
+            Market prices updated {new Date().toLocaleTimeString()} • 
+            Refresh interval: {useOkxData ? "15 seconds" : "60 seconds"}
           </div>
         </CardFooter>
       )}
@@ -606,7 +626,9 @@ export function TradingHistoryCard() {
       {tradesWithPnL.length > 0 && (
         <CardFooter className="pt-0">
           <div className="text-xs text-muted-foreground w-full text-center">
-            Data from {dataSource} • Updated {new Date().toLocaleTimeString()}
+            Data from {dataSource} • 
+            Last updated: {new Date().toLocaleTimeString()} • 
+            Refresh interval: {useOkxData ? "30 seconds" : "60 seconds"}
           </div>
         </CardFooter>
       )}
