@@ -705,6 +705,16 @@ export class AITradingSystem {
     }
     
     try {
+      // בדיקה אם ה-API מוגדר כראוי (לאחר השינויים שעשינו לא להשתמש במפתחות גלובליים)
+      if (!okxService.isConfigured() || okxService.hasEmptyCredentials()) {
+        console.log(`Cannot execute trading decision - missing valid API credentials`);
+        return {
+          decision,
+          executed: false,
+          reason: 'API credentials not configured - running in simulation mode only'
+        };
+      }
+      
       // קביעת פרמטרים לפקודת מסחר
       const orderType = 'market'; // נשתמש בפקודות שוק לביצוע מיידי
       const amount = '0.001'; // כמות קטנה לדוגמה - בפועל יש לחשב לפי יתרת חשבון וניהול סיכונים
@@ -1060,6 +1070,21 @@ export class AITradingSystem {
     this.readyToTrade = false;
     
     try {
+      // בדוק אם יש אפשרות לקבל נתוני מחירים ציבוריים - אם לא, אל תמשיך
+      try {
+        const testTicker = await okxService.getTicker('BTC-USDT');
+        if (!testTicker?.data || !testTicker.data[0]) {
+          console.error('Cannot start AI trading system - unable to access market data');
+          this.isRunning = false;
+          this.readyToTrade = false;
+          return;
+        }
+      } catch (error) {
+        console.error('Cannot start AI trading system - error accessing market data:', error);
+        this.isRunning = false;
+        this.readyToTrade = false;
+        return;
+      }
       // הכנת המערכת - איסוף נתונים התחלתי
       console.log('Preparing system - collecting initial data...');
       

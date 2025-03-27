@@ -143,6 +143,13 @@ export class OkxService {
   ): Promise<T> {
     // Verify API is configured using the instance method (which checks both custom and default credentials)
     if (!this.isConfigured()) {
+      console.error('Attempted to make authenticated request but API keys not configured');
+      throw new OkxApiNotConfiguredError();
+    }
+    
+    // Additional verification that credentials are not empty strings
+    if (this.apiKey === '' || this.secretKey === '' || this.passphrase === '') {
+      console.error('Attempted to make authenticated request but API keys are empty');
       throw new OkxApiNotConfiguredError();
     }
 
@@ -295,6 +302,15 @@ export class OkxService {
     }
     // Otherwise check global config
     return isConfigured();
+  }
+  
+  /**
+   * Check if credentials are empty or just whitespace (for more specific error handling)
+   */
+  hasEmptyCredentials(): boolean {
+    if (!this.apiKey || !this.secretKey || !this.passphrase) return true;
+    if (this.apiKey.trim() === '' || this.secretKey.trim() === '' || this.passphrase.trim() === '') return true;
+    return false;
   }
   
   /**
