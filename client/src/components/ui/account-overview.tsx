@@ -20,6 +20,8 @@ interface AccountBalance {
   frozen: number;
   total: number;
   valueUSD: number;
+  percentOfWhole?: number; // Percentage of the whole coin (e.g., 0.1 BTC = 10%)
+  pricePerUnit?: number;   // Price per 1 unit of currency
 }
 
 export function AccountBalanceCard() {
@@ -271,11 +273,19 @@ export function AccountBalanceCard() {
                               <div>{formattedAmount}</div>
                               {asset.total > 0 && (
                                 <div className="text-xs text-muted-foreground mt-0.5">
-                                  {/* Display percentage of a full coin */}
+                                  {/* Display percentage of a full coin - use backend-calculated value if available */}
                                   {asset.total < 1 && asset.total > 0 && (
-                                    <span className="mr-1">{(asset.total * 100).toFixed(2)}% of 1 {asset.currency}</span>
+                                    <span className="mr-1">
+                                      {asset.percentOfWhole !== undefined 
+                                        ? asset.percentOfWhole.toFixed(2) 
+                                        : (asset.total * 100).toFixed(2)}% of 1 {asset.currency}
+                                    </span>
                                   )}
-                                  <div>@${pricePerUnit.toLocaleString(undefined, { maximumFractionDigits: 2 })}/unit</div>
+                                  <div>
+                                    @${(asset.pricePerUnit !== undefined 
+                                        ? asset.pricePerUnit 
+                                        : pricePerUnit).toLocaleString(undefined, { maximumFractionDigits: 2 })}/unit
+                                  </div>
                                 </div>
                               )}
                             </td>

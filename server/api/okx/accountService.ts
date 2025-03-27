@@ -24,6 +24,8 @@ interface AccountBalance {
   frozen: number;
   total: number;
   valueUSD: number;
+  percentOfWhole?: number; // Percentage of the whole coin (e.g., 0.1 BTC = 10%)
+  pricePerUnit?: number;   // Price per 1 unit of currency
 }
 
 // Service for account-related operations
@@ -204,12 +206,20 @@ export class AccountService {
             console.log(`Balance ${balance.ccy} has potential pricing issue (value: ${valueUSD}, amount: ${total})`);
           }
           
+          // Calculate price per unit
+          const pricePerUnit = total > 0 ? valueUSD / total : 0;
+          
+          // Calculate percentage of whole coin
+          const percentOfWhole = total < 1 ? total * 100 : undefined;
+          
           return {
             currency: balance.ccy,
             available: available,
             frozen: frozen,
             total: total,
-            valueUSD: valueUSD
+            valueUSD: valueUSD,
+            pricePerUnit: pricePerUnit,
+            percentOfWhole: percentOfWhole
           };
         })
         // Sort by highest value first
@@ -277,12 +287,18 @@ export class AccountService {
     return DEFAULT_CURRENCIES.map(currency => {
       const balance = demoBalances[currency] || { total: 0, available: 0, frozen: 0 };
       const price = prices[currency] || 0;
+      // Calculate price per unit and percentage of whole for demo data too
+      const pricePerUnit = balance.total > 0 ? (balance.total * price) / balance.total : price;
+      const percentOfWhole = balance.total < 1 ? balance.total * 100 : undefined;
+      
       return {
         currency,
         available: balance.available,
         frozen: balance.frozen,
         total: balance.total,
-        valueUSD: balance.total * price
+        valueUSD: balance.total * price,
+        pricePerUnit: pricePerUnit,
+        percentOfWhole: percentOfWhole
       };
     });
   }
