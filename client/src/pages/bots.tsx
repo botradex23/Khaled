@@ -846,7 +846,7 @@ export default function Bots() {
                     )}
                     
                     {/* If we have trades to show */}
-                    {selectedBot?.totalTrades && selectedBot.totalTrades > 0 && (
+                    {selectedBot?.totalTrades && selectedBot?.totalTrades > 0 && (
                       <>
                         <TableRow>
                           <TableCell>
@@ -938,7 +938,7 @@ export default function Bots() {
                 variant="default" 
                 className="gap-1" 
                 onClick={() => {
-                  startBotMutation.mutate(selectedBot.id);
+                  startBotMutation.mutate(selectedBot?.id || 0);
                   setShowBotDetails(false);
                 }}
               >

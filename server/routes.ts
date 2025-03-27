@@ -6,6 +6,7 @@ import { z } from "zod";
 import okxRouter from "./api/okx";
 import bybitRouter from "./api/bybit";
 import bitgetRouter from "./api/bitget";
+import aiRouter from "./api/ai";
 import { setupAuth, ensureAuthenticated } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -20,6 +21,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Bitget API routes
   app.use("/api/bitget", bitgetRouter);
+  
+  // AI API routes
+  app.use("/api/ai", aiRouter);
   
   // API routes
   
