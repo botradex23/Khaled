@@ -132,15 +132,46 @@ export default function Dashboard() {
         return;
       }
       
-      // Improved check for API keys
+      // Improved debug logging 
+      console.log("API keys data for dialog check:", {
+        hasApiKeysObject: !!apiKeysData.apiKeys,
+        apiKeyValue: apiKeysData.apiKeys?.okxApiKey, 
+        apiKeyType: typeof apiKeysData.apiKeys?.okxApiKey,
+        apiKeyNull: apiKeysData.apiKeys?.okxApiKey === null,
+        apiKeyEmpty: apiKeysData.apiKeys?.okxApiKey === "",
+        apiKeyLength: apiKeysData.apiKeys?.okxApiKey ? apiKeysData.apiKeys.okxApiKey.length : 0,
+        secretKeyPresent: !!apiKeysData.apiKeys?.okxSecretKey,
+        secretKeyType: typeof apiKeysData.apiKeys?.okxSecretKey,
+        passphrasePresent: !!apiKeysData.apiKeys?.okxPassphrase,
+        passphraseType: typeof apiKeysData.apiKeys?.okxPassphrase
+      });
+      
+      // Most robust check for API keys
+      // We need to verify that:
+      // 1. apiKeysData.apiKeys exists
+      // 2. Each required API key is present (not null or empty string)
+      // 3. Each key has a minimum valid length
       const hasValidApiKeys = (
+        // Check if apiKeys object exists
         apiKeysData.apiKeys && 
-        apiKeysData.apiKeys.okxApiKey && 
-        apiKeysData.apiKeys.okxApiKey.length > 5 &&
-        apiKeysData.apiKeys.okxSecretKey && 
-        apiKeysData.apiKeys.okxSecretKey.length > 5 && 
-        apiKeysData.apiKeys.okxPassphrase && 
-        apiKeysData.apiKeys.okxPassphrase.length > 0
+        
+        // Check if okxApiKey is valid
+        apiKeysData.apiKeys.okxApiKey !== null && 
+        apiKeysData.apiKeys.okxApiKey !== undefined &&
+        typeof apiKeysData.apiKeys.okxApiKey === 'string' &&
+        apiKeysData.apiKeys.okxApiKey.trim().length > 5 &&
+        
+        // Check if okxSecretKey is valid
+        apiKeysData.apiKeys.okxSecretKey !== null && 
+        apiKeysData.apiKeys.okxSecretKey !== undefined &&
+        typeof apiKeysData.apiKeys.okxSecretKey === 'string' &&
+        apiKeysData.apiKeys.okxSecretKey.trim().length > 5 && 
+        
+        // Check if okxPassphrase is valid
+        apiKeysData.apiKeys.okxPassphrase !== null && 
+        apiKeysData.apiKeys.okxPassphrase !== undefined &&
+        typeof apiKeysData.apiKeys.okxPassphrase === 'string' &&
+        apiKeysData.apiKeys.okxPassphrase.trim().length > 0
       );
       
       console.log("Has valid API keys:", hasValidApiKeys);

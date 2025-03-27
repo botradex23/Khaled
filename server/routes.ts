@@ -303,6 +303,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Update user API keys
   app.put("/api/users/api-keys", ensureAuthenticated, async (req, res) => {
+    console.log("API Keys Update - Request received");
+    
     const apiKeysSchema = z.object({
       okxApiKey: z.string().min(1, "API key is required"),
       okxSecretKey: z.string().min(1, "Secret key is required"),
@@ -313,14 +315,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       if (!req.user || !req.user.id) {
+        console.log("API Keys Update - Unauthorized: user not found in session");
         return res.status(401).json({ message: "Unauthorized" });
       }
       
       const userId = req.user.id;
+      console.log(`API Keys Update - Processing request for user ID: ${userId}`);
       
       // Check if it's the hindi1000hindi@gmail.com account
       const user = await storage.getUser(userId);
       if (user?.email === "hindi1000hindi@gmail.com") {
+        console.log("API Keys Update - Special handling for hindi1000hindi@gmail.com");
+        
         // Special case for this user - use environment variables
         const updatedUser = await storage.updateUserApiKeys(userId, {
           okxApiKey: process.env.OKX_API_KEY,
@@ -330,6 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           useTestnet: true
         });
         
+        console.log("API Keys Update - Successfully updated hindi1000hindi@gmail.com with env vars");
         return res.status(200).json({
           message: "API keys updated successfully with environment variables",
           success: true
@@ -337,9 +344,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validate input
+      console.log("API Keys Update - Validating input data", {
+        hasApiKey: !!req.body.okxApiKey,
+        hasSecretKey: !!req.body.okxSecretKey,
+        hasPassphrase: !!req.body.okxPassphrase,
+      });
+      
       const data = apiKeysSchema.parse(req.body);
       
       // Update the API keys
+      console.log("API Keys Update - Updating API keys in storage");
       const updatedUser = await storage.updateUserApiKeys(userId, {
         okxApiKey: data.okxApiKey,
         okxSecretKey: data.okxSecretKey,

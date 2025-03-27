@@ -270,7 +270,7 @@ export class MemStorage implements IStorage {
       
       // Default broker settings
       defaultBroker: insertUser.defaultBroker || "okx",
-      useTestnet: insertUser.useTestnet !== undefined ? insertUser.useTestnet : true
+      useTestnet: insertUser.useTestnet !== undefined ? !!insertUser.useTestnet : true
     };
     
     // Add optional OAuth fields if provided
@@ -336,18 +336,41 @@ export class MemStorage implements IStorage {
     const user = this.users.get(userId);
     
     if (!user) {
+      console.log(`updateUserApiKeys: User with ID ${userId} not found`);
       return undefined;
     }
+    
+    console.log(`updateUserApiKeys for user ${userId} (${user.email}):`);
+    console.log("  Received API key type:", typeof apiKeys.okxApiKey);
+    console.log("  Received API key undefined check:", apiKeys.okxApiKey === undefined);
+    console.log("  Received API key empty string check:", apiKeys.okxApiKey === "");
+    console.log("  Received API key length:", apiKeys.okxApiKey ? apiKeys.okxApiKey.length : "N/A");
+
+    // Handle the special case for empty strings to convert them to null
+    // This makes the API behavior more consistent across the app
+    const sanitizedOkxApiKey = apiKeys.okxApiKey === "" ? null : apiKeys.okxApiKey;
+    const sanitizedOkxSecretKey = apiKeys.okxSecretKey === "" ? null : apiKeys.okxSecretKey;
+    const sanitizedOkxPassphrase = apiKeys.okxPassphrase === "" ? null : apiKeys.okxPassphrase;
     
     // Update the API keys
     const updatedUser: User = {
       ...user,
-      okxApiKey: apiKeys.okxApiKey !== undefined ? apiKeys.okxApiKey : user.okxApiKey,
-      okxSecretKey: apiKeys.okxSecretKey !== undefined ? apiKeys.okxSecretKey : user.okxSecretKey,
-      okxPassphrase: apiKeys.okxPassphrase !== undefined ? apiKeys.okxPassphrase : user.okxPassphrase,
+      // Only update if value is not undefined (explicitly provided)
+      // This preserves previous values if a field wasn't specified
+      okxApiKey: sanitizedOkxApiKey !== undefined ? sanitizedOkxApiKey : user.okxApiKey,
+      okxSecretKey: sanitizedOkxSecretKey !== undefined ? sanitizedOkxSecretKey : user.okxSecretKey,
+      okxPassphrase: sanitizedOkxPassphrase !== undefined ? sanitizedOkxPassphrase : user.okxPassphrase,
       defaultBroker: apiKeys.defaultBroker || user.defaultBroker || "okx",
-      useTestnet: apiKeys.useTestnet !== undefined ? apiKeys.useTestnet : (user.useTestnet || true)
+      useTestnet: apiKeys.useTestnet !== undefined ? !!apiKeys.useTestnet : (user.useTestnet === null || user.useTestnet === undefined ? true : !!user.useTestnet)
     };
+    
+    console.log("updateUserApiKeys - User values after update:", {
+      hasApiKey: !!updatedUser.okxApiKey,
+      hasSecretKey: !!updatedUser.okxSecretKey,
+      hasPassphrase: !!updatedUser.okxPassphrase,
+      defaultBroker: updatedUser.defaultBroker,
+      useTestnet: updatedUser.useTestnet
+    });
     
     // Save the updated user
     this.users.set(userId, updatedUser);
@@ -356,33 +379,49 @@ export class MemStorage implements IStorage {
   }
   
   async getUserApiKeys(userId: number): Promise<{
-    okxApiKey?: string | null;
-    okxSecretKey?: string | null;
-    okxPassphrase?: string | null;
+    okxApiKey: string | null;
+    okxSecretKey: string | null;
+    okxPassphrase: string | null;
     defaultBroker: string;
     useTestnet: boolean;
   } | undefined> {
     const user = this.users.get(userId);
     
     if (!user) {
+      console.log(`getUserApiKeys: User with ID ${userId} not found`);
       return undefined;
     }
     
-    // Add debug log
-    console.log("User API keys in getUserApiKeys:", {
-      okxApiKey: user.okxApiKey,
-      okxSecretKey: user.okxSecretKey ? "****" : null,
-      okxPassphrase: user.okxPassphrase ? "****" : null
+    // Log the user properties and API key info for debugging
+    console.log(`getUserApiKeys for user ${userId} (${user.email}):`);
+    console.log("  API key type:", typeof user.okxApiKey);
+    console.log("  API key null check:", user.okxApiKey === null);
+    console.log("  API key undefined check:", user.okxApiKey === undefined);
+    console.log("  API key empty string check:", user.okxApiKey === "");
+    console.log("  API key length:", user.okxApiKey ? user.okxApiKey.length : "N/A");
+    
+    // Prepare for response ensuring type consistency
+    const apiKeyResponse = {
+      // Always return null if there's no meaningful value (null, undefined, or empty string)
+      // This ensures consistent return types and makes client-side checks more reliable
+      okxApiKey: !user.okxApiKey ? null : user.okxApiKey,
+      okxSecretKey: !user.okxSecretKey ? null : user.okxSecretKey, 
+      okxPassphrase: !user.okxPassphrase ? null : user.okxPassphrase,
+      defaultBroker: user.defaultBroker || "okx",
+      // Make sure we always return a boolean, never null or undefined
+      useTestnet: user.useTestnet === null || user.useTestnet === undefined ? true : !!user.useTestnet
+    };
+    
+    // Log what we're returning (excluding secret values) for debugging
+    console.log("getUserApiKeys return value:", {
+      hasApiKey: !!apiKeyResponse.okxApiKey,
+      hasSecretKey: !!apiKeyResponse.okxSecretKey,
+      hasPassphrase: !!apiKeyResponse.okxPassphrase,
+      defaultBroker: apiKeyResponse.defaultBroker,
+      useTestnet: apiKeyResponse.useTestnet
     });
     
-    return {
-      // Return the actual values, even if null or empty string
-      okxApiKey: user.okxApiKey,
-      okxSecretKey: user.okxSecretKey,
-      okxPassphrase: user.okxPassphrase,
-      defaultBroker: user.defaultBroker || "okx",
-      useTestnet: user.useTestnet !== undefined ? user.useTestnet : true
-    };
+    return apiKeyResponse;
   }
   
   async clearUserApiKeys(userId: number): Promise<boolean> {

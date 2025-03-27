@@ -111,9 +111,19 @@ export default function ApiKeys() {
   const updateMutation = useMutation({
     mutationFn: async (data: ApiKeyFormValues) => {
       try {
+        console.log("Sending API key update request with data:", {
+          hasApiKey: !!data.okxApiKey,
+          hasSecretKey: !!data.okxSecretKey,
+          hasPassphrase: !!data.okxPassphrase,
+          defaultBroker: data.defaultBroker,
+          useTestnet: data.useTestnet
+        });
+        
         // apiRequest כבר מחזיר את אובייקט ה-JSON ולא את Response
         // אם יש שגיאה, הפונקציה תזרוק אותה אוטומטית
-        return await apiRequest("PUT", "/api/users/api-keys", data);
+        const result = await apiRequest("PUT", "/api/users/api-keys", data);
+        console.log("API key update success response:", result);
+        return result;
       } catch (err) {
         console.error("API Key update error:", err);
         throw err;
