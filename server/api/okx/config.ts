@@ -60,7 +60,22 @@ export const DEFAULT_PAIRS = [
   'ETH-USDT',
   'SOL-USDT',
   'BNB-USDT',
-  'XRP-USDT'
+  'XRP-USDT',
+  'DOGE-USDT',
+  'ADA-USDT',
+  'MATIC-USDT',
+  'AVAX-USDT',
+  'DOT-USDT',
+  'UNI-USDT',
+  'LINK-USDT',
+  'SHIB-USDT',
+  'LTC-USDT',
+  'ATOM-USDT',
+  'NEAR-USDT',
+  'BCH-USDT',
+  'FIL-USDT',
+  'TRX-USDT',
+  'XLM-USDT'
 ];
 
 // Define allowed trading strategies

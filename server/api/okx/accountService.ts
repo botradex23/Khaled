@@ -150,17 +150,23 @@ export class AccountService {
       // Try to get real-time prices from market data for accurate valuation
       let currencyPrices: Record<string, number> = {};
       try {
-        // Get real-time market prices for better accuracy
-        const marketData = await marketService.getMarketData();
+        // Get real-time market prices for better accuracy - get ALL USDT pairs to ensure comprehensive coverage
+        const marketData = await marketService.getMarketData(['ALL_USDT_PAIRS']);
+        
         marketData.forEach(data => {
-          const currency = data.symbol.split('-')[0];
-          if (currency) {
-            currencyPrices[currency] = data.price;
+          // Extract the base currency from pairs like "BTC-USDT"
+          const parts = data.symbol.split('-');
+          if (parts.length === 2 && parts[1] === 'USDT') {
+            const currency = parts[0];
+            if (currency) {
+              currencyPrices[currency] = data.price;
+            }
           }
         });
-        console.log("Retrieved real-time price data for valuation");
+        
+        console.log(`Retrieved real-time price data for ${Object.keys(currencyPrices).length} currencies`);
       } catch (err) {
-        console.warn("Couldn't fetch real-time prices, using API provided values only");
+        console.warn("Couldn't fetch real-time prices, using API provided values only", err);
       }
       
       // Format the response data - including ALL balances to show complete account information

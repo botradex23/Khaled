@@ -35,10 +35,11 @@ interface MarketData {
 export class MarketService {
   /**
    * Get market tickers for default or specified trading pairs
+   * This function has been expanded to handle a wider range of coins
    */
   async getMarketData(symbols: string[] = DEFAULT_PAIRS): Promise<MarketData[]> {
     try {
-      // Get all tickers to avoid multiple API calls
+      // Get all tickers to avoid multiple API calls (getting ALL spot market data)
       const response = await okxService.makePublicRequest<OkxResponse<MarketTicker>>('/api/v5/market/tickers?instType=SPOT');
       
       if (response.code !== '0') {
@@ -48,27 +49,41 @@ export class MarketService {
       // Filter and format response data
       const marketData: MarketData[] = [];
       
+      // First, check if we need all USDT pairs (for asset valuation)
+      const needAllUsdtPairs = symbols.some(s => s === 'ALL_USDT_PAIRS');
+      
       for (const ticker of response.data) {
-        // Skip if not in our symbols list
-        if (!symbols.includes(ticker.instId)) {
-          continue;
+        // Extract currency from trading pair (e.g., "BTC-USDT" => "BTC")
+        const [baseCurrency, quoteCurrency] = ticker.instId.split('-');
+        
+        // For asset valuation, we want all pairs ending with USDT
+        const isTradingPair = symbols.includes(ticker.instId);
+        const isUsdtPair = quoteCurrency === 'USDT';
+        
+        // Include the ticker if it's either explicitly requested or we need all USDT pairs
+        if (isTradingPair || (needAllUsdtPairs && isUsdtPair)) {
+          // Calculate price change percentage
+          const lastPrice = parseFloat(ticker.last);
+          const openPrice = parseFloat(ticker.sodUtc0);
+          const changePercent = openPrice > 0 
+            ? ((lastPrice - openPrice) / openPrice) * 100 
+            : 0;
+          
+          marketData.push({
+            symbol: ticker.instId,
+            price: lastPrice,
+            change24h: parseFloat(changePercent.toFixed(2)),
+            volume24h: parseFloat(ticker.vol24h),
+            high24h: parseFloat(ticker.high24h),
+            low24h: parseFloat(ticker.low24h)
+          });
         }
-        
-        // Calculate price change percentage
-        const lastPrice = parseFloat(ticker.last);
-        const openPrice = parseFloat(ticker.sodUtc0);
-        const changePercent = openPrice > 0 
-          ? ((lastPrice - openPrice) / openPrice) * 100 
-          : 0;
-        
-        marketData.push({
-          symbol: ticker.instId,
-          price: lastPrice,
-          change24h: parseFloat(changePercent.toFixed(2)),
-          volume24h: parseFloat(ticker.vol24h),
-          high24h: parseFloat(ticker.high24h),
-          low24h: parseFloat(ticker.low24h)
-        });
+      }
+      
+      if (marketData.length === 0) {
+        console.warn(`No market data found for requested symbols: ${symbols.join(', ')}`);
+      } else {
+        console.log(`Retrieved market data for ${marketData.length} symbols`);
       }
       
       return marketData;
