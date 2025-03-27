@@ -1,4 +1,5 @@
 import { okxService } from './okxService';
+import { marketService } from './marketService';
 import { DEFAULT_CURRENCIES, API_KEY, SECRET_KEY, PASSPHRASE, DEFAULT_TIMEOUT } from './config';
 import axios from 'axios';
 
@@ -146,6 +147,22 @@ export class AccountService {
       console.log("Successfully retrieved balance data directly from API");
       console.log("Sample balance:", JSON.stringify(response.data.data[0].details[0]));
       
+      // Try to get real-time prices from market data for accurate valuation
+      let currencyPrices: Record<string, number> = {};
+      try {
+        // Get real-time market prices for better accuracy
+        const marketData = await marketService.getMarketData();
+        marketData.forEach(data => {
+          const currency = data.symbol.split('-')[0];
+          if (currency) {
+            currencyPrices[currency] = data.price;
+          }
+        });
+        console.log("Retrieved real-time price data for valuation");
+      } catch (err) {
+        console.warn("Couldn't fetch real-time prices, using API provided values only");
+      }
+      
       // Format the response data
       return response.data.data[0].details.map((balance: Balance): AccountBalance => {
         // Fix issue with total value sometimes being null (using available + frozen instead)
@@ -156,13 +173,25 @@ export class AccountService {
         // Fix USD value calculation, especially for BTC
         let valueUSD = parseFloat(balance.eq) || 0;
         
-        // Manual correction for BTC in demo account where eq value is sometimes wrong
-        if (balance.ccy === "BTC" && total > 0 && valueUSD < 10) {
-          // Current approximate BTC price
-          const btcCurrentPrice = 89000; // Current BTC price as of March 2024 (updated)
-          const estimatedBTCValue = total * btcCurrentPrice;
-          valueUSD = estimatedBTCValue;
-          console.log(`Corrected BTC value from ${balance.eq} to ${valueUSD} USD`);
+        // Manual correction for BTC or other currencies where eq value is sometimes wrong
+        if (total > 0 && (valueUSD < 10 || valueUSD / total < 10)) {
+          // First try using real-time price data
+          if (currencyPrices[balance.ccy]) {
+            const realTimePrice = currencyPrices[balance.ccy];
+            const estimatedValue = total * realTimePrice;
+            // Only update if the real-time valuation is significantly different
+            if (Math.abs(estimatedValue - valueUSD) / valueUSD > 0.1) { // 10% difference threshold
+              console.log(`Corrected ${balance.ccy} value from ${valueUSD} to ${estimatedValue} USD using real-time price: ${realTimePrice}`);
+              valueUSD = estimatedValue;
+            }
+          }
+          // Fallback to hardcoded values for known currencies if no real-time data
+          else if (balance.ccy === "BTC" && valueUSD < 10) {
+            const btcFallbackPrice = 89000; // Fallback price
+            const estimatedValue = total * btcFallbackPrice;
+            console.log(`Corrected BTC value from ${valueUSD} to ${estimatedValue} USD using fallback price: ${btcFallbackPrice}`);
+            valueUSD = estimatedValue;
+          }
         }
         
         return {
@@ -187,7 +216,7 @@ export class AccountService {
    * Return demo balance data for common currencies when API request fails
    * This provides realistic sample data when API authentication is unavailable
    */
-  private getEmptyBalanceResponse(): AccountBalance[] {
+  private async getEmptyBalanceResponse(): Promise<AccountBalance[]> {
     // Create realistic demo balances with random values
     const demoBalances: Record<string, { total: number, available: number, frozen: number }> = {
       'BTC': { total: 0.75, available: 0.7, frozen: 0.05 },
@@ -202,9 +231,9 @@ export class AccountService {
       'MATIC': { total: 3000, available: 3000, frozen: 0 }
     };
     
-    // Current prices to calculate USD value (approximate) - Updated March 2024
-    const prices: Record<string, number> = {
-      'BTC': 89000,
+    // Try to get real-time prices from OKX API
+    let prices: Record<string, number> = {
+      'BTC': 89000,   // Default fallback values in case API call fails
       'ETH': 3100,
       'USDT': 1,
       'USDC': 1,
@@ -215,6 +244,23 @@ export class AccountService {
       'ADA': 0.51,
       'MATIC': 0.72
     };
+    
+    try {
+      // Try to get real market data for key currencies
+      const marketDataResult = await marketService.getMarketData();
+      
+      // Update prices with real-time data
+      marketDataResult.forEach(data => {
+        // Extract currency from symbol (e.g., "BTC-USDT" => "BTC")
+        const currency = data.symbol.split('-')[0];
+        if (currency && DEFAULT_CURRENCIES.includes(currency)) {
+          prices[currency] = data.price;
+          console.log(`Using real-time price for ${currency}: ${data.price}`);
+        }
+      });
+    } catch (err) {
+      console.warn('Failed to get real-time prices for demo balances, using fallback values');
+    }
     
     return DEFAULT_CURRENCIES.map(currency => {
       const balance = demoBalances[currency] || { total: 0, available: 0, frozen: 0 };
