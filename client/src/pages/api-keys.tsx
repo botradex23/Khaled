@@ -91,14 +91,19 @@ export default function ApiKeys() {
 
   // Update form with current values (masked)
   useEffect(() => {
+    console.log("API keys data for form:", apiKeysData);
+    
     if (apiKeysData?.apiKeys) {
-      setFormValues({
-        okxApiKey: apiKeysData.apiKeys.okxApiKey || "",
-        okxSecretKey: apiKeysData.apiKeys.okxSecretKey || "",
-        okxPassphrase: apiKeysData.apiKeys.okxPassphrase || "",
+      const formData = {
+        okxApiKey: apiKeysData.apiKeys.okxApiKey ?? "",
+        okxSecretKey: apiKeysData.apiKeys.okxSecretKey ?? "",
+        okxPassphrase: apiKeysData.apiKeys.okxPassphrase ?? "",
         defaultBroker: apiKeysData.apiKeys.defaultBroker || "okx",
         useTestnet: apiKeysData.apiKeys.useTestnet !== undefined ? apiKeysData.apiKeys.useTestnet : true
-      });
+      };
+      
+      console.log("Setting form values:", formData);
+      setFormValues(formData);
     }
   }, [apiKeysData]);
 

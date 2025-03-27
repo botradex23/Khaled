@@ -32,9 +32,9 @@ export interface IStorage {
   ): Promise<User | undefined>;
   
   getUserApiKeys(userId: number): Promise<{ 
-    okxApiKey?: string; 
-    okxSecretKey?: string; 
-    okxPassphrase?: string;
+    okxApiKey?: string | null; 
+    okxSecretKey?: string | null; 
+    okxPassphrase?: string | null;
     defaultBroker: string;
     useTestnet: boolean;
   } | undefined>;
@@ -356,9 +356,9 @@ export class MemStorage implements IStorage {
   }
   
   async getUserApiKeys(userId: number): Promise<{
-    okxApiKey?: string;
-    okxSecretKey?: string;
-    okxPassphrase?: string;
+    okxApiKey?: string | null;
+    okxSecretKey?: string | null;
+    okxPassphrase?: string | null;
     defaultBroker: string;
     useTestnet: boolean;
   } | undefined> {
@@ -368,12 +368,20 @@ export class MemStorage implements IStorage {
       return undefined;
     }
     
+    // Add debug log
+    console.log("User API keys in getUserApiKeys:", {
+      okxApiKey: user.okxApiKey,
+      okxSecretKey: user.okxSecretKey ? "****" : null,
+      okxPassphrase: user.okxPassphrase ? "****" : null
+    });
+    
     return {
-      okxApiKey: user.okxApiKey || undefined,
-      okxSecretKey: user.okxSecretKey || undefined,
-      okxPassphrase: user.okxPassphrase || undefined,
+      // Return the actual values, even if null or empty string
+      okxApiKey: user.okxApiKey,
+      okxSecretKey: user.okxSecretKey,
+      okxPassphrase: user.okxPassphrase,
       defaultBroker: user.defaultBroker || "okx",
-      useTestnet: user.useTestnet || true
+      useTestnet: user.useTestnet !== undefined ? user.useTestnet : true
     };
   }
   
