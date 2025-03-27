@@ -163,45 +163,59 @@ export class AccountService {
         console.warn("Couldn't fetch real-time prices, using API provided values only");
       }
       
-      // Format the response data
-      return response.data.data[0].details.map((balance: Balance): AccountBalance => {
-        // Fix issue with total value sometimes being null (using available + frozen instead)
-        const available = parseFloat(balance.availBal) || 0;
-        const frozen = parseFloat(balance.frozenBal) || 0;
-        const total = balance.bal ? parseFloat(balance.bal) : (available + frozen);
-        
-        // Fix USD value calculation, especially for BTC
-        let valueUSD = parseFloat(balance.eq) || 0;
-        
-        // Manual correction for BTC or other currencies where eq value is sometimes wrong
-        if (total > 0 && (valueUSD < 10 || valueUSD / total < 10)) {
-          // First try using real-time price data
-          if (currencyPrices[balance.ccy]) {
-            const realTimePrice = currencyPrices[balance.ccy];
-            const estimatedValue = total * realTimePrice;
-            // Only update if the real-time valuation is significantly different
-            if (Math.abs(estimatedValue - valueUSD) / valueUSD > 0.1) { // 10% difference threshold
-              console.log(`Corrected ${balance.ccy} value from ${valueUSD} to ${estimatedValue} USD using real-time price: ${realTimePrice}`);
-              valueUSD = estimatedValue;
+      // Filter and format the response data - getting only non-zero balances to display relevant assets
+      return response.data.data[0].details
+        .filter((balance: Balance) => {
+          // Show balances with non-zero values
+          const available = parseFloat(balance.availBal) || 0;
+          const frozen = parseFloat(balance.frozenBal) || 0;
+          const total = balance.bal ? parseFloat(balance.bal) : (available + frozen);
+          
+          // Filter out empty balances
+          return total > 0;
+        })
+        .map((balance: Balance): AccountBalance => {
+          // Calculate balance values
+          const available = parseFloat(balance.availBal) || 0;
+          const frozen = parseFloat(balance.frozenBal) || 0;
+          const total = balance.bal ? parseFloat(balance.bal) : (available + frozen);
+          
+          // Fix USD value calculation
+          let valueUSD = parseFloat(balance.eq) || 0;
+          
+          // Use real-time price data for all currencies when possible
+          if (total > 0) {
+            if (currencyPrices[balance.ccy]) {
+              const realTimePrice = currencyPrices[balance.ccy];
+              const estimatedValue = total * realTimePrice;
+              
+              // Update if real-time valuation is significantly different or if API-provided value seems wrong
+              const hasSignificantDifference = valueUSD > 0 && Math.abs(estimatedValue - valueUSD) / valueUSD > 0.1;
+              const valueSeemsTooLow = valueUSD < 1 && total > 0.00001;
+              
+              if (hasSignificantDifference || valueSeemsTooLow) {
+                console.log(`Corrected ${balance.ccy} value from ${valueUSD} to ${estimatedValue} USD using real-time price: ${realTimePrice}`);
+                valueUSD = estimatedValue;
+              }
+            }
+            // For any unknown currency with non-zero balance but missing valueUSD, try to get price from market data
+            else if (valueUSD < 0.1 && total > 0.00001) {
+              // Try to find price by looking for this currency paired with USDT
+              // We can't use await here directly as we're inside a map function, so we'll set a flag for manual correction later
+              console.log(`Balance ${balance.ccy} has low USD value (${valueUSD}), will try to find price separately`);
             }
           }
-          // Fallback to hardcoded values for known currencies if no real-time data
-          else if (balance.ccy === "BTC" && valueUSD < 10) {
-            const btcFallbackPrice = 89000; // Fallback price
-            const estimatedValue = total * btcFallbackPrice;
-            console.log(`Corrected BTC value from ${valueUSD} to ${estimatedValue} USD using fallback price: ${btcFallbackPrice}`);
-            valueUSD = estimatedValue;
-          }
-        }
-        
-        return {
-          currency: balance.ccy,
-          available: available,
-          frozen: frozen,
-          total: total,
-          valueUSD: valueUSD
-        };
-      });
+          
+          return {
+            currency: balance.ccy,
+            available: available,
+            frozen: frozen,
+            total: total,
+            valueUSD: valueUSD
+          };
+        })
+        // Sort by highest value first
+        .sort((a: AccountBalance, b: AccountBalance) => b.valueUSD - a.valueUSD);
     } catch (error: unknown) {
       const err = error as Error & { response?: { data: unknown } };
       console.error('Failed to fetch account balances:', err.response?.data || err.message);

@@ -139,6 +139,31 @@ export class MarketService {
       throw error;
     }
   }
+  
+  /**
+   * Get the current price for a specific trading pair
+   * @param symbol - The trading pair symbol (e.g., BTC-USDT)
+   * @returns The current price as a number, or 0 if not found
+   */
+  async getMarketPrice(symbol: string): Promise<number> {
+    try {
+      console.log(`Fetching current price for ${symbol}...`);
+      const response = await okxService.makePublicRequest<OkxResponse<MarketTicker>>(`/api/v5/market/ticker?instId=${symbol}`);
+      
+      if (response.code !== '0' || !response.data[0]) {
+        console.warn(`Failed to fetch price for ${symbol}: ${response.msg}`);
+        return 0;
+      }
+      
+      const ticker = response.data[0];
+      const price = parseFloat(ticker.last);
+      console.log(`Current price for ${symbol}: ${price}`);
+      return price;
+    } catch (error) {
+      console.error(`Failed to fetch price for ${symbol}:`, error);
+      return 0;
+    }
+  }
 }
 
 // Create and export default instance
