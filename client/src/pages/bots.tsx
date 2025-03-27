@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link, useLocation } from "wouter";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import { 
@@ -41,7 +41,11 @@ import {
   Settings, 
   Trash2, 
   TrendingUp,
-  RefreshCw
+  RefreshCw,
+  Loader2,
+  Check,
+  AlertCircle,
+  Clock
 } from "lucide-react";
 import {
   LineChart,
@@ -54,16 +58,84 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
-import { gridChartData, dcaChartData, macdChartData } from "@/lib/chart-data";
+import { 
+  gridChartData, 
+  dcaChartData, 
+  macdChartData 
+} from "@/lib/chart-data";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Bots() {
   // State for the filter and search inputs
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   
+  // Use toast for notifications
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   // Fetch bots data
-  const { data: bots, isLoading } = useQuery<Bot[]>({
+  const { data: bots, isLoading, refetch } = useQuery<Bot[]>({
     queryKey: ['/api/bots'],
+  });
+  
+  // Start bot mutation
+  const startBotMutation = useMutation({
+    mutationFn: async (botId: number) => {
+      const response = await fetch(`/api/okx/bots/${botId}/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to start bot');
+      }
+      return await response.json();
+    },
+    onSuccess: (data, botId) => {
+      toast({
+        title: "בוט הופעל בהצלחה",
+        description: "הבוט שלך החל לסחור",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/bots'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "שגיאה בהפעלת הבוט",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Stop bot mutation
+  const stopBotMutation = useMutation({
+    mutationFn: async (botId: number) => {
+      const response = await fetch(`/api/okx/bots/${botId}/stop`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to stop bot');
+      }
+      return await response.json();
+    },
+    onSuccess: (data, botId) => {
+      toast({
+        title: "בוט הופסק בהצלחה",
+        description: "הבוט שלך הפסיק לסחור",
+        variant: "default",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/bots'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "שגיאה בעצירת הבוט",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   });
   
   // Filter and search functionality
@@ -73,8 +145,12 @@ export default function Bots() {
       bot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       bot.description.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // For now we don't have active/inactive status in the Bot type, so we just return all
-    const matchesStatus = statusFilter === "all" ? true : true;
+    // Filter by status
+    const matchesStatus = 
+      statusFilter === "all" ? true : 
+      statusFilter === "active" ? !!bot.isRunning : 
+      statusFilter === "paused" ? !bot.isRunning : 
+      true;
     
     return matchesSearch && matchesStatus;
   });
@@ -175,10 +251,36 @@ export default function Bots() {
                             </CardDescription>
                           </div>
                           <div className="flex items-center space-x-1">
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => window.alert(`${bot.name} is now active!`)}>
-                              <Play className="h-4 w-4 text-green-500" />
-                            </Button>
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => window.alert(`Settings for ${bot.name} coming soon!`)}>
+                            {bot.isRunning ? (
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="h-8 w-8" 
+                                onClick={() => stopBotMutation.mutate(bot.id)}
+                                disabled={stopBotMutation.isPending}
+                              >
+                                {stopBotMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Pause className="h-4 w-4 text-amber-500" />
+                                )}
+                              </Button>
+                            ) : (
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="h-8 w-8" 
+                                onClick={() => startBotMutation.mutate(bot.id)}
+                                disabled={startBotMutation.isPending}
+                              >
+                                {startBotMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Play className="h-4 w-4 text-green-500" />
+                                )}
+                              </Button>
+                            )}
+                            <Button variant="outline" size="icon" className="h-8 w-8">
                               <Settings className="h-4 w-4" />
                             </Button>
                           </div>

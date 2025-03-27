@@ -20,11 +20,22 @@ export type Bot = {
   name: string;
   strategy: StrategyType;
   description: string;
-  minInvestment: number;
-  monthlyReturn: number;
+  minInvestment: number | string;
+  monthlyReturn: number | string;
   riskLevel: number;
-  rating: number;
+  rating: number | string;
   isPopular: boolean;
+  userId?: number;
+  isRunning?: boolean;
+  tradingPair?: string;
+  totalInvestment?: string | number;
+  parameters?: string;
+  createdAt?: Date | string;
+  lastStartedAt?: Date | string | null;
+  lastStoppedAt?: Date | string | null;
+  profitLoss?: string;
+  profitLossPercent?: string;
+  totalTrades?: number;
 };
 
 // Pricing plan type
