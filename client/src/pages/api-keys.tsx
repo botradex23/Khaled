@@ -105,12 +105,32 @@ export default function ApiKeys() {
   // Mutation to update API keys
   const updateMutation = useMutation({
     mutationFn: async (data: ApiKeyFormValues) => {
-      const response = await apiRequest("PUT", "/api/users/api-keys", data);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update API keys");
+      try {
+        const response = await apiRequest("PUT", "/api/users/api-keys", data);
+        if (!response.ok) {
+          let errorMessage = "Failed to update API keys";
+          try {
+            const errorData = await response.json();
+            if (errorData && errorData.message) {
+              errorMessage = errorData.message;
+            }
+          } catch (e) {
+            console.error("Failed to parse error response:", e);
+          }
+          throw new Error(errorMessage);
+        }
+        
+        // Parse response only if it's ok
+        try {
+          return await response.json();
+        } catch (e) {
+          console.error("Error parsing response JSON:", e);
+          return { message: "API Keys updated successfully" };
+        }
+      } catch (err) {
+        console.error("API Key update error:", err);
+        throw err;
       }
-      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -130,12 +150,32 @@ export default function ApiKeys() {
   // Mutation to delete API keys
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("DELETE", "/api/users/api-keys");
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to delete API keys");
+      try {
+        const response = await apiRequest("DELETE", "/api/users/api-keys");
+        if (!response.ok) {
+          let errorMessage = "Failed to delete API keys";
+          try {
+            const errorData = await response.json();
+            if (errorData && errorData.message) {
+              errorMessage = errorData.message;
+            }
+          } catch (e) {
+            console.error("Failed to parse error response:", e);
+          }
+          throw new Error(errorMessage);
+        }
+        
+        // Parse response only if it's ok
+        try {
+          return await response.json();
+        } catch (e) {
+          console.error("Error parsing response JSON:", e);
+          return { message: "API Keys deleted successfully" };
+        }
+      } catch (err) {
+        console.error("API Key deletion error:", err);
+        throw err;
       }
-      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -370,6 +410,24 @@ export default function ApiKeys() {
                             <Check className="mr-2 h-4 w-4 text-green-500" />
                             <span>Trade permission</span>
                           </li>
+                          <li className="flex items-center">
+                            <Check className="mr-2 h-4 w-4 text-green-500" />
+                            <span>Spot trade</span>
+                          </li>
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm font-medium mb-2">Recommended Permissions</h3>
+                        <ul className="space-y-2">
+                          <li className="flex items-center">
+                            <Check className="mr-2 h-4 w-4 text-blue-400" />
+                            <span>Contract</span>
+                          </li>
+                          <li className="flex items-center">
+                            <Check className="mr-2 h-4 w-4 text-blue-400" />
+                            <span>Funding</span>
+                          </li>
                         </ul>
                       </div>
                       
@@ -380,6 +438,7 @@ export default function ApiKeys() {
                           <li>Navigate to "Settings" and then "API"</li>
                           <li>Click "Create API"</li>
                           <li>Enable "Read" and "Trade" permissions</li>
+                          <li>Enable "Spot" permission</li>
                           <li>Set the IP address restriction if desired</li>
                           <li>Create a passphrase</li>
                           <li>Complete verification</li>
@@ -395,6 +454,7 @@ export default function ApiKeys() {
                         <p className="text-xs text-gray-500">
                           Your API keys are securely stored and only used for executing trades on your behalf.
                           We recommend using API keys with appropriate permissions and IP restrictions.
+                          Never share your API keys with unauthorized parties.
                         </p>
                       </div>
                       
