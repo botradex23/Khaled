@@ -11885,9 +11885,96 @@
         "shortTerm": "SIDEWAYS",
         "longTerm": "SIDEWAYS"
       }
+    },
+    {
+      "action": "SELL",
+      "confidence": 0.8333333333333333,
+      "reason": "Multiple signals indicate selling opportunity",
+      "timestamp": 1743090404380,
+      "symbol": "BTC-USDT",
+      "price": 87150,
+      "strategy": "GRID_MEDIUM",
+      "parameters": {
+        "gridParams": {
+          "lowerPrice": 84538.95311899883,
+          "upperPrice": 87832.3240177502,
+          "gridCount": 10,
+          "investmentPerGrid": 55.602648996943444
+        },
+        "stopLossPercent": 4.979691148965948,
+        "takeProfitPercent": 8.55340986380248
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "BUY",
+        "genetic": "SELL",
+        "technicalIndicators": "SELL"
+      },
+      "marketState": "SIDEWAYS",
+      "predictions": {
+        "shortTerm": "SIDEWAYS",
+        "longTerm": "SIDEWAYS"
+      }
+    },
+    {
+      "action": "BUY",
+      "confidence": 0.51,
+      "reason": "Forced trade due to time interval - weighted buy signal",
+      "timestamp": 1743090406849,
+      "symbol": "ETH-USDT",
+      "price": 2022.58,
+      "strategy": "GRID_MEDIUM",
+      "parameters": {
+        "gridParams": {
+          "lowerPrice": 84538.95311899883,
+          "upperPrice": 87832.3240177502,
+          "gridCount": 10,
+          "investmentPerGrid": 55.602648996943444
+        },
+        "stopLossPercent": 4.979691148965948,
+        "takeProfitPercent": 8.55340986380248
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "HOLD",
+        "genetic": "BUY",
+        "technicalIndicators": "HOLD"
+      },
+      "marketState": "SIDEWAYS",
+      "predictions": {
+        "shortTerm": "SIDEWAYS",
+        "longTerm": "SIDEWAYS"
+      }
+    },
+    {
+      "action": "HOLD",
+      "confidence": 0.7,
+      "reason": "No clear signal, maintaining position",
+      "timestamp": 1743090409101,
+      "symbol": "XRP-USDT",
+      "price": 2.3548,
+      "strategy": "GRID_NARROW",
+      "parameters": {
+        "gridParams": {
+          "upperPrice": 103,
+          "lowerPrice": 97,
+          "gridCount": 10,
+          "investmentPerGrid": 100
+        },
+        "stopLossPercent": 2,
+        "takeProfitPercent": 5
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "HOLD",
+        "genetic": "BUY",
+        "technicalIndicators": "HOLD"
+      },
+      "marketState": "SIDEWAYS",
+      "predictions": {
+        "shortTerm": "SIDEWAYS",
+        "longTerm": "SIDEWAYS"
+      }
     }
   ],
   "executionHistory": [],
   "lastLearnTime": 1743084062650,
-  "lastSaved": "2025-03-27T15:44:51.162Z"
+  "lastSaved": "2025-03-27T15:46:51.102Z"
 }
