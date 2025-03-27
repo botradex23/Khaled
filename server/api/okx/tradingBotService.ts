@@ -46,6 +46,8 @@ export class TradingBotService {
     description: string,
     parameters: BotParameters
   ): Promise<Bot> {
+    console.log(`Creating bot with strategy: ${strategy}, parameters:`, parameters);
+    
     // Validate strategy
     if (!Object.values(TRADING_STRATEGIES).includes(strategy)) {
       throw new Error(`Invalid strategy: ${strategy}. Available strategies: ${Object.values(TRADING_STRATEGIES).join(', ')}`);
@@ -67,23 +69,82 @@ export class TradingBotService {
       totalInvestment = parameters.investmentAmount.toString();
     }
     
-    // Create the bot using storage
-    const bot = await storage.createBot({
-      name,
-      strategy,
-      description,
-      minInvestment: getMinInvestmentForStrategy(strategy).toString(),
-      monthlyReturn: getEstimatedReturnForStrategy(strategy).toString(),
-      riskLevel: getRiskLevelForStrategy(strategy),
-      rating: '4.5', // Default rating
-      isPopular: false,
-      userId,
-      tradingPair,
-      totalInvestment,
-      parameters: JSON.stringify(parameters)
-    });
+    // First get all existing bots to determine the highest ID
+    const existingBots = await storage.getAllBots();
+    let highestId = 0;
     
-    return bot;
+    // Find the highest ID
+    for (const bot of existingBots) {
+      if (bot.id > highestId) {
+        highestId = bot.id;
+      }
+    }
+    
+    // Use the next available ID (highest + 1)
+    const nextId = highestId + 1;
+    console.log(`Using ID ${nextId} for new bot (highest existing ID is ${highestId})`);
+    
+    // Create the bot using storage directly for consistency with the index.ts approach
+    const minInvestmentValue = getMinInvestmentForStrategy(strategy);
+    const monthlyReturnValue = getEstimatedReturnForStrategy(strategy);
+    const riskLevelValue = getRiskLevelForStrategy(strategy);
+    
+    // Create a new bot with our specified ID
+    const newBot: Bot = {
+      id: nextId,
+      name: name,
+      strategy: strategy,
+      description: description,
+      minInvestment: minInvestmentValue.toString(),
+      monthlyReturn: monthlyReturnValue.toString(),
+      riskLevel: riskLevelValue,
+      rating: '4.5',
+      isPopular: false,
+      userId: userId,
+      isRunning: false,
+      tradingPair: tradingPair,
+      totalInvestment: totalInvestment,
+      parameters: JSON.stringify(parameters),
+      createdAt: new Date(),
+      lastStartedAt: null,
+      lastStoppedAt: null,
+      profitLoss: "0",
+      profitLossPercent: "0",
+      totalTrades: 0
+    };
+    
+    console.log('Creating bot with data:', newBot);
+    
+    // Get the internal maps directly
+    const botMap = (storage as any).bots;
+    
+    if (!botMap) {
+      // Fall back to normal creation method if we can't access the internal map
+      console.log('Could not access internal bot map, falling back to normal creation');
+      const createBotData = {
+        name,
+        strategy,
+        description,
+        minInvestment: minInvestmentValue.toString(),
+        monthlyReturn: monthlyReturnValue.toString(),
+        riskLevel: riskLevelValue,
+        rating: '4.5',
+        isPopular: false,
+        userId,
+        tradingPair,
+        totalInvestment,
+        parameters: JSON.stringify(parameters)
+      };
+      const bot = await storage.createBot(createBotData);
+      console.log('Bot created successfully:', bot);
+      return bot;
+    }
+    
+    // Add the bot directly to the map
+    botMap.set(nextId, newBot);
+    console.log('Bot created successfully with ID:', nextId);
+    
+    return newBot;
   }
   
   /**
@@ -289,7 +350,7 @@ export class TradingBotService {
   /**
    * Get bot status including account balance from OKX
    */
-  async getBotStatus(botId: number): Promise<{ running: boolean; stats?: any; balances?: any }> {
+  async getBotStatus(botId: number): Promise<{ running: boolean; stats?: any; balances?: any; botDetails?: any }> {
     const isRunning = this.runningBots.has(botId);
     
     try {
@@ -343,7 +404,7 @@ export class TradingBotService {
           stoppedAt: bot.lastStoppedAt
         },
         balances: formattedBalances,
-        bot: {
+        botDetails: {
           id: bot.id,
           name: bot.name,
           strategy: bot.strategy,
@@ -471,8 +532,8 @@ export class TradingBotService {
   }
 }
 
-// Helper functions for bot creation
-function getMinInvestmentForStrategy(strategy: string): number {
+// Helper functions for bot creation (exported as module functions)
+export function getMinInvestmentForStrategy(strategy: string): number {
   switch (strategy) {
     case TRADING_STRATEGIES.GRID:
       return 500;
@@ -485,7 +546,7 @@ function getMinInvestmentForStrategy(strategy: string): number {
   }
 }
 
-function getEstimatedReturnForStrategy(strategy: string): number {
+export function getEstimatedReturnForStrategy(strategy: string): number {
   switch (strategy) {
     case TRADING_STRATEGIES.GRID:
       return 8.5;
@@ -498,7 +559,7 @@ function getEstimatedReturnForStrategy(strategy: string): number {
   }
 }
 
-function getRiskLevelForStrategy(strategy: string): number {
+export function getRiskLevelForStrategy(strategy: string): number {
   switch (strategy) {
     case TRADING_STRATEGIES.GRID:
       return 2;

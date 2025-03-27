@@ -2,8 +2,9 @@ import { Router, Request, Response } from 'express';
 import { okxService } from './okxService';
 import { marketService } from './marketService';
 import { accountService } from './accountService';
-import { tradingBotService } from './tradingBotService';
+import { tradingBotService, getMinInvestmentForStrategy, getEstimatedReturnForStrategy, getRiskLevelForStrategy } from './tradingBotService';
 import { DEFAULT_PAIRS } from './config';
+import { storage } from '../../storage';
 
 const router = Router();
 
@@ -215,16 +216,86 @@ router.post('/bots', async (req: Request, res: Response) => {
       });
     }
     
-    const bot = await tradingBotService.createBot(
-      userId,
-      name,
-      strategy,
-      description || '',
-      parameters
-    );
+    console.log('Creating new bot via OKX API:', { name, strategy, userId });
     
-    res.json(bot);
+    // Get all existing bots to find the next ID to use
+    const existingBots = await storage.getAllBots();
+    let nextId = 4; // Start with 4 since we already have 3 demo bots
+    
+    // If we have bots, find the max ID and increment
+    if (existingBots.length > 0) {
+      const maxId = Math.max(...existingBots.map(bot => bot.id));
+      nextId = maxId + 1;
+    }
+    
+    console.log(`Creating bot with ID ${nextId}`);
+    
+    // Create a new bot with simple ID
+    let tradingPair = 'BTC-USDT';
+    let totalInvestment = '1000';
+    
+    if ('symbol' in parameters) {
+      tradingPair = parameters.symbol;
+    }
+    
+    if ('totalInvestment' in parameters) {
+      totalInvestment = parameters.totalInvestment.toString();
+    } else if ('initialInvestment' in parameters) {
+      totalInvestment = parameters.initialInvestment.toString();
+    } else if ('investmentAmount' in parameters) {
+      totalInvestment = parameters.investmentAmount.toString();
+    }
+    
+    // Create the bot directly using the storage Map
+    const botMap = (storage as any).bots;
+    
+    if (botMap) {
+      const newBot = {
+        id: nextId,
+        name,
+        strategy,
+        description: description || '',
+        minInvestment: getMinInvestmentForStrategy(strategy).toString(),
+        monthlyReturn: getEstimatedReturnForStrategy(strategy).toString(),
+        riskLevel: getRiskLevelForStrategy(strategy),
+        rating: '4.5',
+        isPopular: false,
+        userId,
+        isRunning: false,
+        tradingPair,
+        totalInvestment,
+        parameters: JSON.stringify(parameters),
+        createdAt: new Date(),
+        lastStartedAt: null,
+        lastStoppedAt: null,
+        profitLoss: "0",
+        profitLossPercent: "0",
+        totalTrades: 0
+      };
+      
+      // Add bot to storage
+      botMap.set(nextId, newBot);
+      console.log(`Bot with ID ${nextId} created and added to storage directly`);
+      
+      // Get all bots after creation to verify
+      const allBotsAfter = await storage.getAllBots();
+      console.log(`Total bots after creation: ${allBotsAfter.length}`);
+      
+      res.json(newBot);
+    } else {
+      // Fall back to regular creation
+      const bot = await tradingBotService.createBot(
+        userId,
+        name,
+        strategy,
+        description || '',
+        parameters
+      );
+      
+      res.json(bot);
+    }
   } catch (err) {
+    console.error('Error creating bot via OKX API:', err);
     handleApiError(err, res);
   }
 });
