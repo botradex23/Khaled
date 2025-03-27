@@ -282,28 +282,46 @@ export function AccountBalanceCard() {
                           <tr key={asset.currency} className={`${isMinorHolding ? 'text-muted-foreground' : ''}`}>
                             <td className="py-0.5 font-medium text-sm">{asset.currency}</td>
                             <td className="py-0.5 text-sm text-right">
-                              {/* Amount section */}
-                              <div className="font-medium">{formattedAmount}</div>
-                              {asset.total > 0 && (
-                                <div className="text-xs text-muted-foreground mt-0.5">
-                                  {/* Display percentage of a full coin */}
-                                  {asset.total < 1 && asset.total > 0 && (
-                                    <div className="mb-1">
-                                      {asset.percentOfWhole !== undefined 
-                                        ? asset.percentOfWhole.toFixed(2) 
-                                        : (asset.total * 100).toFixed(2)}% of 1 {asset.currency}
-                                    </div>
-                                  )}
-                                  {/* Unit price */}
-                                  <div className="border-t border-muted/30 pt-1 mt-1">
-                                    <span className="text-muted-foreground">Price: </span>
-                                    <span className="font-medium">
+                              {/* Display price instead of tiny amounts for values with many zeros */}
+                              {asset.total < 0.0001 ? (
+                                <div>
+                                  <div className="text-xs text-muted-foreground mb-1">Actual Amount</div>
+                                  <div className="font-medium text-xs opacity-60">{formattedAmount}</div>
+                                  <div className="text-sm font-medium mt-2 border-t border-muted/30 pt-1">
+                                    <div className="text-xs text-muted-foreground">Current Price</div>
+                                    <div className="text-base">
                                       ${pricePerUnit.toLocaleString(undefined, { 
                                         maximumFractionDigits: pricePerUnit > 1000 ? 0 : pricePerUnit > 1 ? 2 : 4 
-                                      })}/unit
-                                    </span>
+                                      })}
+                                    </div>
                                   </div>
                                 </div>
+                              ) : (
+                                <>
+                                  {/* Amount section for normal values */}
+                                  <div className="font-medium">{formattedAmount}</div>
+                                  {asset.total > 0 && (
+                                    <div className="text-xs text-muted-foreground mt-0.5">
+                                      {/* Display percentage of a full coin */}
+                                      {asset.total < 1 && asset.total > 0 && (
+                                        <div className="mb-1">
+                                          {asset.percentOfWhole !== undefined 
+                                            ? asset.percentOfWhole.toFixed(2) 
+                                            : (asset.total * 100).toFixed(2)}% of 1 {asset.currency}
+                                        </div>
+                                      )}
+                                      {/* Unit price */}
+                                      <div className="border-t border-muted/30 pt-1 mt-1">
+                                        <span className="text-muted-foreground">Price: </span>
+                                        <span className="font-medium">
+                                          ${pricePerUnit.toLocaleString(undefined, { 
+                                            maximumFractionDigits: pricePerUnit > 1000 ? 0 : pricePerUnit > 1 ? 2 : 4 
+                                          })}/unit
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </>
                               )}
                             </td>
                             <td className="py-0.5 text-right">
