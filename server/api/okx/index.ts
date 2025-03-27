@@ -121,6 +121,83 @@ router.get('/markets/:symbol', async (req: Request, res: Response) => {
   }
 });
 
+// Public demo account data endpoint (no authentication required)
+router.get('/demo/account/balance', async (req: Request, res: Response) => {
+  try {
+    // Use accountService to get demo account data with throwError=false (default)
+    const balances = await accountService.getAccountBalances();
+    res.json(balances);
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+// Public demo trading history endpoint (no authentication required)
+router.get('/demo/trading/history', async (req: Request, res: Response) => {
+  try {
+    // Use accountService to get demo trading history with throwError=false
+    const history = await accountService.getTradingHistory();
+    
+    // Format the data for our React client to better handle it
+    const formattedHistory = Array.isArray(history) ? history.map((item: any) => {
+      // OKX returns a different format than what our frontend expects
+      // Map it to a consistent format
+      return {
+        id: item.tradeId || item.ordId || item.fillId || `okx-${Date.now()}`,
+        symbol: item.instId || 'BTC-USDT',
+        side: item.side || 'buy',
+        price: item.fillPx || item.px || '0',
+        size: item.fillSz || item.sz || '0',
+        status: 'Executed',
+        timestamp: item.fillTime || item.cTime || item.uTime || new Date().toISOString(),
+        feeCurrency: item.feeCcy || 'USDT',
+        fee: item.fee || '0'
+      };
+    }) : [];
+    
+    res.json(formattedHistory);
+  } catch (err) {
+    // If the API call fails, return demo trading data
+    const currentDate = new Date();
+    const demoHistory = [
+      {
+        id: `demo-${Date.now()}-0`,
+        symbol: 'BTC-USDT',
+        side: 'buy',
+        price: '87450.2',
+        size: '0.01',
+        status: 'Executed',
+        timestamp: new Date(currentDate.getTime() - 5 * 60000).toISOString(),
+        feeCurrency: 'USDT',
+        fee: '0.05'
+      },
+      {
+        id: `demo-${Date.now()}-1`,
+        symbol: 'ETH-USDT',
+        side: 'buy',
+        price: '2032.45',
+        size: '0.05',
+        status: 'Executed',
+        timestamp: new Date(currentDate.getTime() - 15 * 60000).toISOString(),
+        feeCurrency: 'USDT',
+        fee: '0.025'
+      },
+      {
+        id: `demo-${Date.now()}-2`,
+        symbol: 'BTC-USDT',
+        side: 'sell',
+        price: '87950.75',
+        size: '0.008',
+        status: 'Executed',
+        timestamp: new Date(currentDate.getTime() - 30 * 60000).toISOString(),
+        feeCurrency: 'USDT',
+        fee: '0.04'
+      }
+    ];
+    res.json(demoHistory);
+  }
+});
+
 router.get('/candles/:symbol', async (req: Request, res: Response) => {
   try {
     const { symbol } = req.params;

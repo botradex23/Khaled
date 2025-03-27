@@ -526,7 +526,7 @@ export class AccountService {
    * Get trading history
    * Returns demo data array if authentication fails
    */
-  async getTradingHistory(): Promise<any[]> {
+  async getTradingHistory(throwError = false): Promise<any[]> {
     // Check if OKX API is properly configured first
     if (!okxService.isConfigured()) {
       console.warn('OKX API credentials not configured - returning demo trading history');

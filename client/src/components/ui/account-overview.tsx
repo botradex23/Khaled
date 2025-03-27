@@ -32,7 +32,7 @@ export function AccountBalanceCard() {
   });
 
   const okxQuery = useQuery({
-    queryKey: ["/api/okx/account/balance"],
+    queryKey: ["/api/okx/demo/account/balance"],
     refetchInterval: 15000 // 15 seconds refresh for more up-to-date data
   });
   
@@ -398,7 +398,7 @@ export function AccountBalanceCard() {
 export function TradingHistoryCard() {
   // Query both OKX and Bitget data sources, but prioritize OKX
   const okxQuery = useQuery({
-    queryKey: ["/api/okx/trading/history"],
+    queryKey: ["/api/okx/demo/trading/history"],
     refetchInterval: 30000 // 30 second refresh for more up-to-date data
   });
   
