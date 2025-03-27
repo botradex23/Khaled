@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Bots from "@/pages/bots";
 import Markets from "@/pages/markets";
@@ -31,7 +32,8 @@ function Router() {
   
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={Landing} />
+      <Route path="/home" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/bots" component={Bots} />
       <Route path="/markets" component={Markets} />
