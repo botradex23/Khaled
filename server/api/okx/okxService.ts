@@ -123,16 +123,10 @@ export class OkxService {
     const passLast = this.passphrase.slice(-1);
     console.log(`Using passphrase format: ${passFirst}...${passLast} (length: ${this.passphrase.length})`);
     
-    // According to OKX API docs v5, the passphrase MUST be encoded with CryptoJS.enc.Base64
-    // Reference: https://www.okx.com/docs-v5/en/#rest-api-authentication-signature
-    try {
-      // Encode the passphrase using Base64 for OKX v5 API
-      return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(this.passphrase));
-    } catch (error) {
-      console.error('Error processing passphrase:', error);
-      // Fallback to raw passphrase if encoding fails
-      return this.passphrase;
-    }
+    // According to OKX API docs v5, the passphrase should be passed directly
+    // NOT encoded - only the API key during creation is encoded
+    // We use raw passphrase for OK-ACCESS-PASSPHRASE header
+    return this.passphrase;
   }
 
   /**
