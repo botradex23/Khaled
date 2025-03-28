@@ -25,6 +25,12 @@ export const users = pgTable("users", {
   
   // Whether to use demo/test mode
   useTestnet: boolean("use_testnet").default(true),
+  
+  // Stripe fields for payment integration
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  hasPremium: boolean("has_premium").default(false),
+  premiumExpiresAt: timestamp("premium_expires_at"),
 });
 
 export const insertUserSchema = createInsertSchema(users)
@@ -105,6 +111,27 @@ export const pricingPlans = pgTable("pricing_plans", {
 
 export const pricingPlanSchema = createInsertSchema(pricingPlans);
 
+// Payments table schema
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  amount: decimal("amount").notNull(),
+  currency: text("currency").notNull().default("usd"),
+  status: text("status").notNull(), // 'pending', 'succeeded', 'failed'
+  stripePaymentIntentId: text("stripe_payment_intent_id").notNull(),
+  planId: integer("plan_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  metadata: text("metadata"), // JSON string for additional data
+});
+
+export const paymentSchema = createInsertSchema(payments)
+  .omit({ 
+    id: true, 
+    createdAt: true, 
+    updatedAt: true 
+  });
+
 // Export types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -112,3 +139,5 @@ export type Bot = typeof bots.$inferSelect;
 export type InsertBot = z.infer<typeof botSchema>;
 export type PricingPlan = typeof pricingPlans.$inferSelect;
 export type InsertPricingPlan = z.infer<typeof pricingPlanSchema>;
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = z.infer<typeof paymentSchema>;

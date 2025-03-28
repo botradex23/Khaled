@@ -81,11 +81,9 @@ export default function ApiKeys() {
       navigate("/login");
     }
     
-    // Check if special user
-    if (user?.email === "hindi1000hindi@gmail.com") {
-      setIsHindi1000Hindi(true);
-    }
-  }, [isAuthenticated, navigate, user]);
+    // No longer checking for special user - all users should be able to enter API keys
+    setIsHindi1000Hindi(false);
+  }, [isAuthenticated, navigate]);
 
   // Define API keys response type
   interface ApiKeysResponse {
@@ -234,7 +232,7 @@ export default function ApiKeys() {
     setValidationResult({ isValid: null, message: "Validating API keys..." });
     
     try {
-      const response = await apiRequest("POST", "/api/validate-api-keys", {
+      const response = await apiRequest("POST", "/api/users/validate-api-keys", {
         okxApiKey: formValues.okxApiKey,
         okxSecretKey: formValues.okxSecretKey,
         okxPassphrase: formValues.okxPassphrase,
@@ -286,18 +284,7 @@ export default function ApiKeys() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // If it's the demo user, just update without requiring any values
-    if (isHindi1000Hindi) {
-      updateMutation.mutate({
-        ...formValues,
-        okxApiKey: "ENVIRONMENT",
-        okxSecretKey: "ENVIRONMENT",
-        okxPassphrase: "ENVIRONMENT",
-      });
-      return;
-    }
-    
-    // For other users, validate inputs
+    // Validate inputs for all users
     if (!formValues.okxApiKey || !formValues.okxSecretKey || !formValues.okxPassphrase) {
       toast({
         title: "Validation Error",
@@ -380,13 +367,7 @@ export default function ApiKeys() {
                       OKX API Credentials
                     </CardTitle>
                     <CardDescription>
-                      {isHindi1000Hindi ? (
-                        <span className="flex items-center text-green-500">
-                          <Check className="mr-1 h-4 w-4" /> Using environment credentials - no changes needed
-                        </span>
-                      ) : (
-                        <span>Enter your OKX API credentials to enable trading.</span>
-                      )}
+                      <span>Enter your OKX API credentials to enable trading.</span>
                     </CardDescription>
                   </CardHeader>
                   
@@ -434,11 +415,10 @@ export default function ApiKeys() {
                             id="okxApiKey"
                             name="okxApiKey"
                             type="text"
-                            placeholder={isHindi1000Hindi ? "Using environment variable" : "Enter your OKX API Key"}
+                            placeholder="Enter your OKX API Key"
                             value={formValues.okxApiKey}
                             onChange={handleInputChange}
-                            disabled={isHindi1000Hindi || updateMutation.isPending || isValidating}
-                            className={isHindi1000Hindi ? "bg-gray-100" : ""}
+                            disabled={updateMutation.isPending || isValidating}
                           />
                         </div>
                         
@@ -448,11 +428,10 @@ export default function ApiKeys() {
                             id="okxSecretKey"
                             name="okxSecretKey"
                             type="password"
-                            placeholder={isHindi1000Hindi ? "Using environment variable" : "Enter your OKX Secret Key"}
+                            placeholder="Enter your OKX Secret Key"
                             value={formValues.okxSecretKey}
                             onChange={handleInputChange}
-                            disabled={isHindi1000Hindi || updateMutation.isPending || isValidating}
-                            className={isHindi1000Hindi ? "bg-gray-100" : ""}
+                            disabled={updateMutation.isPending || isValidating}
                           />
                         </div>
                         
@@ -462,11 +441,10 @@ export default function ApiKeys() {
                             id="okxPassphrase"
                             name="okxPassphrase"
                             type="password"
-                            placeholder={isHindi1000Hindi ? "Using environment variable" : "Enter your OKX Passphrase"}
+                            placeholder="Enter your OKX Passphrase"
                             value={formValues.okxPassphrase}
                             onChange={handleInputChange}
-                            disabled={isHindi1000Hindi || updateMutation.isPending || isValidating}
-                            className={isHindi1000Hindi ? "bg-gray-100" : ""}
+                            disabled={updateMutation.isPending || isValidating}
                           />
                         </div>
                         
@@ -500,33 +478,31 @@ export default function ApiKeys() {
                           {isValidating && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                         </Button>
                         
-                        {!isHindi1000Hindi && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="destructive"
-                                type="button"
-                                disabled={deleteMutation.isPending || isLoadingKeys}
-                              >
-                                {deleteMutation.isPending ? "Deleting..." : "Delete API Keys"}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will delete your API keys. You will need to re-enter them to continue trading.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDelete}>
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              type="button"
+                              disabled={deleteMutation.isPending || isLoadingKeys}
+                            >
+                              {deleteMutation.isPending ? "Deleting..." : "Delete API Keys"}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will delete your API keys. You will need to re-enter them to continue trading.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDelete}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </form>
                   </CardContent>

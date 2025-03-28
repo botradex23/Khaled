@@ -4,7 +4,10 @@ import {
   type InsertUser, 
   type Bot,
   type InsertBot,
-  type PricingPlan 
+  type PricingPlan,
+  type Payment,
+  type InsertPayment,
+  payments
 } from "@shared/schema";
 
 // modify the interface with any CRUD methods
@@ -58,23 +61,41 @@ export interface IStorage {
   
   // Pricing plan related methods
   getAllPricingPlans(): Promise<PricingPlan[]>;
+  getPricingPlanById(id: number): Promise<PricingPlan | undefined>;
+  
+  // Payment related methods
+  createPayment(payment: InsertPayment): Promise<Payment>;
+  getPaymentById(id: number): Promise<Payment | undefined>;
+  getUserPayments(userId: number): Promise<Payment[]>;
+  updatePayment(id: number, updates: Partial<Payment>): Promise<Payment | undefined>;
+  
+  // Stripe related methods
+  updateUserStripeInfo(userId: number, stripeInfo: { 
+    stripeCustomerId: string;
+    stripeSubscriptionId?: string; 
+  }): Promise<User | undefined>;
+  updateUserPremiumStatus(userId: number, hasPremium: boolean, expiresAt?: Date): Promise<User | undefined>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private bots: Map<number, Bot>;
   private pricingPlans: Map<number, PricingPlan>;
+  private payments: Map<number, Payment>;
   currentId: number;
   botId: number;
   pricingPlanId: number;
+  paymentId: number;
 
   constructor() {
     this.users = new Map();
     this.bots = new Map();
     this.pricingPlans = new Map();
+    this.payments = new Map();
     this.currentId = 1;
     this.botId = 1;
     this.pricingPlanId = 1;
+    this.paymentId = 1;
     
     // Initialize with sample data
     this.initializeData();
@@ -101,7 +122,13 @@ export class MemStorage implements IStorage {
       
       // Default broker settings
       defaultBroker: "okx",
-      useTestnet: true
+      useTestnet: true,
+      
+      // Stripe related fields
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      hasPremium: false,
+      premiumExpiresAt: null
     };
     
     // Save default user
@@ -296,7 +323,13 @@ export class MemStorage implements IStorage {
       
       // Default broker settings
       defaultBroker: insertUser.defaultBroker || "okx",
-      useTestnet: insertUser.useTestnet !== undefined ? !!insertUser.useTestnet : true
+      useTestnet: insertUser.useTestnet !== undefined ? !!insertUser.useTestnet : true,
+      
+      // Stripe related fields
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      hasPremium: false,
+      premiumExpiresAt: null
     };
     
     // Add optional OAuth fields if provided
@@ -596,6 +629,92 @@ export class MemStorage implements IStorage {
   // Pricing plan related methods
   async getAllPricingPlans(): Promise<PricingPlan[]> {
     return Array.from(this.pricingPlans.values());
+  }
+  
+  async getPricingPlanById(id: number): Promise<PricingPlan | undefined> {
+    return this.pricingPlans.get(id);
+  }
+  
+  // Payment related methods
+  async createPayment(payment: InsertPayment): Promise<Payment> {
+    const id = this.paymentId++;
+    
+    const newPayment: Payment = {
+      id,
+      userId: payment.userId,
+      amount: payment.amount,
+      currency: payment.currency || "USD",
+      status: payment.status || "pending",
+      stripePaymentId: payment.stripePaymentId || null,
+      pricingPlanId: payment.pricingPlanId,
+      createdAt: new Date(),
+      completedAt: payment.completedAt || null
+    };
+    
+    this.payments.set(id, newPayment);
+    return newPayment;
+  }
+  
+  async getPaymentById(id: number): Promise<Payment | undefined> {
+    return this.payments.get(id);
+  }
+  
+  async getUserPayments(userId: number): Promise<Payment[]> {
+    return Array.from(this.payments.values()).filter(payment => payment.userId === userId);
+  }
+  
+  async updatePayment(id: number, updates: Partial<Payment>): Promise<Payment | undefined> {
+    const existingPayment = this.payments.get(id);
+    
+    if (!existingPayment) {
+      return undefined;
+    }
+    
+    const updatedPayment: Payment = {
+      ...existingPayment,
+      ...updates
+    };
+    
+    this.payments.set(id, updatedPayment);
+    return updatedPayment;
+  }
+  
+  // Stripe related methods
+  async updateUserStripeInfo(userId: number, stripeInfo: { 
+    stripeCustomerId: string;
+    stripeSubscriptionId?: string; 
+  }): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    const updatedUser: User = {
+      ...user,
+      stripeCustomerId: stripeInfo.stripeCustomerId,
+      stripeSubscriptionId: stripeInfo.stripeSubscriptionId || null
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+  
+  async updateUserPremiumStatus(userId: number, hasPremium: boolean, expiresAt?: Date): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    const updatedUser: User = {
+      ...user,
+      hasPremium,
+      premiumExpiresAt: expiresAt || null
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
   }
 }
 
