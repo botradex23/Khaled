@@ -47,6 +47,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: "Markets", href: "/markets", icon: CandlestickChart, auth: true },
     { name: "Market Prices", href: "/market-prices", icon: LineChart },
     { name: "Bots", href: "/bots", icon: FlaskConical, auth: true },
+    { name: "API Keys", href: "/api-keys", icon: Key, auth: true },
     { name: "Learn", href: "/learn", icon: BookOpen },
   ];
 
@@ -197,8 +198,13 @@ export default function Layout({ children }: LayoutProps) {
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t py-2">
           <div className="container grid grid-cols-5 gap-1">
-            {navigationItems.slice(0, 5).map((item) => {
-              if (item.auth && !isAuthenticated) return null;
+            {/* הראשון יהיה תמיד בית, שני הבא יהיה API Keys, והשאר לפי הסדר */}
+            {[
+              navigationItems[0], // Home
+              navigationItems.find(item => item.name === "API Keys"), // API Keys
+              ...navigationItems.filter(item => item.name !== "Home" && item.name !== "API Keys").slice(0, 3) // שלושת הפריטים הבאים
+            ].map((item) => {
+              if (!item || (item.auth && !isAuthenticated)) return null;
               return (
                 <Link key={item.name} href={item.href} className="flex flex-col items-center">
                   <Button

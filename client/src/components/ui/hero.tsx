@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { heroChartData } from "@/lib/chart-data";
 import { Link } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { Key } from "lucide-react";
 import { 
   Area, 
   AreaChart, 
@@ -11,6 +13,8 @@ import {
 } from "recharts";
 
 export default function Hero() {
+  const { isAuthenticated } = useAuth();
+  
   return (
     <section className="px-6 py-12 max-w-7xl mx-auto">
       <div className="grid md:grid-cols-2 gap-8 items-center">
@@ -25,22 +29,43 @@ export default function Hero() {
             Professional-grade automated crypto trading strategies with no coding required. 
             Start building your portfolio in minutes.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/register">
-              <Button size="lg" className="bg-primary hover:bg-primary/90">
-                Get Started
-              </Button>
-            </Link>
-            <Link href="/bot-demo">
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-muted hover:border-primary"
-              >
-                View Demo
-              </Button>
-            </Link>
-          </div>
+          
+          {isAuthenticated ? (
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link href="/api-keys">
+                <Button size="lg" className="bg-primary hover:bg-primary/90 flex items-center">
+                  <Key className="mr-2 h-5 w-5" />
+                  הגדרת מפתחות API
+                </Button>
+              </Link>
+              <Link href="/bot-demo">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="border-muted hover:border-primary"
+                >
+                  View Demo
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link href="/register">
+                <Button size="lg" className="bg-primary hover:bg-primary/90">
+                  Get Started
+                </Button>
+              </Link>
+              <Link href="/bot-demo">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="border-muted hover:border-primary"
+                >
+                  View Demo
+                </Button>
+              </Link>
+            </div>
+          )}
           
           <div className="mt-8 grid grid-cols-3 gap-4">
             <div className="text-center">
