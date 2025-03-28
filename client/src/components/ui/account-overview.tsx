@@ -79,10 +79,10 @@ export function AccountBalanceCard() {
     return currencies;
   }, [okxQuery.data, bitgetQuery.data]);
   
-  // Get market prices directly from the markets API for more accurate pricing
+  // Get market prices directly from our new API for more accurate pricing
   // כעת אנחנו מבקשים רק את המטבעות שיש בחשבון או את הפופולריים
   const marketPricesQuery = useQuery<MarketPricesResponse>({
-    queryKey: ['/api/markets/v2/prices', { symbols: allAssetCurrencies.join(',') }],
+    queryKey: ['/api/market/prices', { symbols: allAssetCurrencies.join(',') }],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
   

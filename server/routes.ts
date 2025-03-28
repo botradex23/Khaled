@@ -962,6 +962,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setHeader('Content-Type', 'application/json');
     
     try {
+      // Optional filter by symbols if provided in the query params
+      const symbolsParam = req.query.symbols;
+      const requestedSymbols = symbolsParam 
+        ? (typeof symbolsParam === 'string' ? symbolsParam.split(',') : [])
+        : [];
+      
       // Make a direct request to OKX ticker endpoint to get the latest prices
       const tickerResponse = await okxService.makePublicRequest<any>(
         '/api/v5/market/tickers?instType=SPOT'
@@ -991,24 +997,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pricesMap['USDT'] = 1.0;
       pricesMap['USDC'] = 1.0;
       
-      // Convert to array format
-      const prices = Object.entries(pricesMap).map(([currency, price]) => ({
-        currency,
+      // Filter by requested symbols if provided
+      let filteredPrices = Object.entries(pricesMap);
+      if (requestedSymbols.length > 0) {
+        const upperCaseSymbols = requestedSymbols.map(s => s.toUpperCase());
+        filteredPrices = filteredPrices.filter(([currency]) => 
+          upperCaseSymbols.includes(currency.toUpperCase())
+        );
+      }
+      
+      // Convert to array format matching the Market type expected by the frontend
+      const prices = filteredPrices.map(([currency, price]) => ({
+        symbol: currency,
         price,
-        lastUpdated: new Date().toISOString()
+        found: true,
+        source: 'OKX',
+        timestamp: Date.now()
       }));
       
-      // Return the prices data
+      // Return the prices data in the format expected by MarketPricesResponse
       res.json({
-        success: true,
+        timestamp: new Date().toISOString(),
+        totalRequested: requestedSymbols.length,
+        totalFound: prices.length,
         prices: prices
       });
     } catch (err: any) {
       console.error('Error fetching prices:', err);
       res.status(500).json({ 
-        success: false,
-        error: 'Failed to fetch cryptocurrency prices',
-        message: err.message 
+        timestamp: new Date().toISOString(),
+        totalRequested: 0,
+        totalFound: 0,
+        prices: [],
+        error: err.message
       });
     }
   });
