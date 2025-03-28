@@ -827,8 +827,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Check if the user has valid API keys
-      const hasValidApiKeys = !!(apiKeys.okxApiKey && apiKeys.okxSecretKey && apiKeys.okxPassphrase);
+      // Check if the user has valid API keys - make sure they are not empty strings
+      const hasValidApiKeys = !!(
+        apiKeys.okxApiKey && apiKeys.okxApiKey.trim() !== '' &&
+        apiKeys.okxSecretKey && apiKeys.okxSecretKey.trim() !== '' &&
+        apiKeys.okxPassphrase && apiKeys.okxPassphrase.trim() !== ''
+      );
+      
+      // Optional debug info
+      console.log(`API keys status for user ${userId}: ${hasValidApiKeys ? 'Valid' : 'Not valid'}`);
       
       res.status(200).json({
         hasValidApiKeys,

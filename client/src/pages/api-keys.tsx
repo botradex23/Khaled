@@ -220,10 +220,11 @@ export default function ApiKeys() {
   // So this mutation is no longer needed
   
   const validateApiKeys = async () => {
-    if (!formValues.okxApiKey || !formValues.okxSecretKey || !formValues.okxPassphrase) {
+    // Check if any API keys are missing or just empty strings (after trimming)
+    if (!formValues.okxApiKey?.trim() || !formValues.okxSecretKey?.trim() || !formValues.okxPassphrase?.trim()) {
       setValidationResult({
         isValid: false,
-        message: "Please fill in all API key fields"
+        message: "Please fill in all API key fields - empty values are not allowed"
       });
       return false;
     }
@@ -285,11 +286,11 @@ export default function ApiKeys() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate inputs for all users
-    if (!formValues.okxApiKey || !formValues.okxSecretKey || !formValues.okxPassphrase) {
+    // Validate inputs for all users - check if any field is empty or contains only whitespace
+    if (!formValues.okxApiKey?.trim() || !formValues.okxSecretKey?.trim() || !formValues.okxPassphrase?.trim()) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields.",
+        description: "Please fill in all required fields with valid values.",
         variant: "destructive",
       });
       return;

@@ -444,11 +444,11 @@ export class MemStorage implements IStorage {
     console.log("  Received API key empty string check:", apiKeys.okxApiKey === "");
     console.log("  Received API key length:", apiKeys.okxApiKey ? apiKeys.okxApiKey.length : "N/A");
 
-    // Handle the special case for empty strings to convert them to null
+    // Handle the special cases for empty strings or strings with only whitespace to convert them to null
     // This makes the API behavior more consistent across the app
-    const sanitizedOkxApiKey = apiKeys.okxApiKey === "" ? null : apiKeys.okxApiKey;
-    const sanitizedOkxSecretKey = apiKeys.okxSecretKey === "" ? null : apiKeys.okxSecretKey;
-    const sanitizedOkxPassphrase = apiKeys.okxPassphrase === "" ? null : apiKeys.okxPassphrase;
+    const sanitizedOkxApiKey = !apiKeys.okxApiKey || apiKeys.okxApiKey.trim() === "" ? null : apiKeys.okxApiKey;
+    const sanitizedOkxSecretKey = !apiKeys.okxSecretKey || apiKeys.okxSecretKey.trim() === "" ? null : apiKeys.okxSecretKey;
+    const sanitizedOkxPassphrase = !apiKeys.okxPassphrase || apiKeys.okxPassphrase.trim() === "" ? null : apiKeys.okxPassphrase;
     
     // Update the API keys
     const updatedUser: User = {
@@ -502,9 +502,9 @@ export class MemStorage implements IStorage {
     const apiKeyResponse = {
       // Always return null if there's no meaningful value (null, undefined, or empty string)
       // This ensures consistent return types and makes client-side checks more reliable
-      okxApiKey: !user.okxApiKey ? null : user.okxApiKey,
-      okxSecretKey: !user.okxSecretKey ? null : user.okxSecretKey, 
-      okxPassphrase: !user.okxPassphrase ? null : user.okxPassphrase,
+      okxApiKey: !user.okxApiKey || user.okxApiKey.trim() === '' ? null : user.okxApiKey,
+      okxSecretKey: !user.okxSecretKey || user.okxSecretKey.trim() === '' ? null : user.okxSecretKey, 
+      okxPassphrase: !user.okxPassphrase || user.okxPassphrase.trim() === '' ? null : user.okxPassphrase,
       defaultBroker: user.defaultBroker || "okx",
       // Make sure we always return a boolean, never null or undefined
       useTestnet: user.useTestnet === null || user.useTestnet === undefined ? true : !!user.useTestnet
