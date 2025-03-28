@@ -257,28 +257,18 @@ export function AccountBalanceCard() {
   // Calculate actual value for each asset using the same consistent method
   // This exact same calculation will be used in the table display as well
   processedBalances.forEach(asset => {
-    // Calculate actual total value based on the asset.total and market price
+    // פשוט תמיד נחשב את הערך בדרך פשוטה: כמות × מחיר
     let assetTotalValue = 0;
     
-    // First priority: Use market data if we have quantity and price
-    if (asset.total > 0 && asset.pricePerUnit && asset.pricePerUnit > 0) {
-      assetTotalValue = asset.total * asset.pricePerUnit;
-      console.log(`Asset ${asset.currency}: calculated value = ${assetTotalValue} (price: ${asset.pricePerUnit}, amount: ${asset.total})`);
-    }
-    // Second priority: Use valueUSD directly if it's a meaningful value
-    else if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0.01) {
+    // חישוב פשוט: כמות כפול מחיר - זו השיטה שתמיד תהיה בשימוש
+    assetTotalValue = asset.total * (asset.pricePerUnit || 0);
+    
+    // רק כשאין מחיר או כמות, אז נשתמש בערך שהתקבל ישירות מה-API
+    if (assetTotalValue === 0 && typeof asset.valueUSD === 'number' && asset.valueUSD > 0) {
       assetTotalValue = asset.valueUSD;
-      console.log(`Asset ${asset.currency}: direct valueUSD = ${asset.valueUSD}`);
-    }
-    // Last priority: Look for separate available/frozen values
-    else {
-      const value = (asset.available || 0) * (asset.pricePerUnit || 0);
-      const frozenValue = (asset.frozen || 0) * (asset.pricePerUnit || 0);
-      assetTotalValue = value + frozenValue;
-      console.log(`Asset ${asset.currency}: calculated value = ${value}, frozen = ${frozenValue}, total = ${assetTotalValue}`);
     }
     
-    // Store the calculated value on the asset for consistent use
+    // שמירת הערך המחושב לשימוש עקבי בכל מקום
     asset.calculatedTotalValue = assetTotalValue;
     
     // Determine how much is available vs frozen based on the calculated value
@@ -298,12 +288,12 @@ export function AccountBalanceCard() {
   
   // The processedBalances are already computed and ready to use for the rest of the calculations
   
-  // Sort by calculated value (highest first) - show all assets regardless of balance
+  // מיון לפי הערך המחושב (הגבוה ביותר תחילה) - גם כאן משתמשים באותה נוסחה פשוטה כמו בשאר המקומות
   const sortedBalances = [...processedBalances]
     .sort((a, b) => {
-      // For OKX data, use valueUSD directly if available
-      const valueA = typeof a.valueUSD === 'number' ? a.valueUSD : a.total * (a.pricePerUnit || 0);
-      const valueB = typeof b.valueUSD === 'number' ? b.valueUSD : b.total * (b.pricePerUnit || 0);
+      // תמיד לחשב כפשוט כמות × מחיר
+      const valueA = a.total * (a.pricePerUnit || 0);
+      const valueB = b.total * (b.pricePerUnit || 0);
       return valueB - valueA;
     });
     
@@ -385,111 +375,44 @@ export function AccountBalanceCard() {
                   <table className="w-full">
                     <tbody>
                       {sortedBalances.map((asset) => {
-                        // Use the stored calculated value for consistency across all calculations
-                        const assetValue = asset.calculatedTotalValue || 0;
+                        // ======= מחירים =======
+                        // קבלת מחיר השוק מה-API
+                        let marketPrice = 0;
+                        
+                        if (marketPricesQuery.data && Array.isArray(marketPricesQuery.data)) {
+                          const match = marketPricesQuery.data.find(
+                            market => market.symbol === `${asset.currency}-USDT`
+                          );
+                          
+                          if (match && typeof match.price === 'number') {
+                            marketPrice = match.price;
+                          }
+                        }
+                        
+                        // בחירת המחיר הטוב ביותר לשימוש
+                        const pricePerUnit = marketPrice > 0 ? marketPrice : 
+                          (asset.pricePerUnit || 
+                          (asset.currency === 'USDT' || asset.currency === 'USDC' ? 1 : 
+                          asset.currency === 'BTC' ? 90000 :
+                          asset.currency === 'ETH' ? 3000 : 0));
+                          
+                        // ======= חישובים =======
+                        // חישוב פשוט: כמות × מחיר תמיד!
+                        const assetValue = asset.total * (pricePerUnit || 0);
                         const percentage = totalValue > 0 ? (assetValue / totalValue) * 100 : 0;
                         const isMinorHolding = percentage < 0.1;
                         
-                        // Calculate appropriate precision for unit quantity based on asset value
-                        // For very small numbers (< 0.0001), use scientific notation
-                        // For small numbers (< 0.001), use 8 decimals
-                        // For medium numbers (< 1), use 6 decimals
-                        // For larger numbers, use 4 decimals
+                        // ======= פורמט הצגה =======
+                        // פורמט מותאם עבור הכמות
                         let formattedAmount;
-                        
                         if (asset.total < 0.0001 && asset.total > 0) {
-                          // Use scientific notation for extremely small values but with actual value
                           formattedAmount = asset.total.toExponential(4);
                         } else {
                           const precision = asset.total < 0.001 ? 8 : asset.total < 1 ? 6 : 4;
                           formattedAmount = asset.total.toFixed(precision);
                         }
                         
-                        // Use the market prices from OKX API
-                        // We'll use these approaches in order of preference:
-                        // 1. Try to get the price from the markets API (most accurate)
-                        // 2. Use the price per unit from the asset data if it seems valid
-                        // 3. Calculate from valueUSD and total if available
-                        // 4. Use a reasonable default only as last resort
-                        
-                        // Try to find the market price from the markets API data
-                        let priceFromMarketData = 0;
-                        
-                        if (marketPricesQuery.data && Array.isArray(marketPricesQuery.data)) {
-                          // Look for exact matches like BTC-USDT
-                          const exactMatch = marketPricesQuery.data.find(
-                            market => market.symbol === `${asset.currency}-USDT`
-                          );
-                          
-                          if (exactMatch && typeof exactMatch.price === 'number') {
-                            priceFromMarketData = exactMatch.price;
-                            console.log(`Found market price for ${asset.currency} from API: $${priceFromMarketData}`);
-                          }
-                        }
-                        
-                        // Get price from asset data or calculated from valueUSD/total
-                        const priceFromAsset = asset.pricePerUnit || (asset.total > 0 ? asset.valueUSD / asset.total : 0);
-                        
-                        // For this asset, check if a price looks valid
-                        const isPriceValid = (price: number, currency: string): boolean => {
-                          // If price is 0 or negative, it's invalid
-                          if (price <= 0) return false;
-                          
-                          // $1 for major non-stablecoin cryptos is likely wrong
-                          if (price === 1 && 
-                             (['BTC', 'ETH', 'SOL', 'BNB'].includes(currency))) {
-                            return false;
-                          }
-                          
-                          // For BTC, price should be in valid range (rough sanity check)
-                          if (currency === 'BTC' && (price < 10000 || price > 200000)) {
-                            return false;
-                          }
-                          
-                          // For ETH, price should be in valid range (rough sanity check)
-                          if (currency === 'ETH' && (price < 500 || price > 10000)) {
-                            return false;
-                          }
-                          
-                          return true;
-                        };
-                        
-                        // Check which prices are valid
-                        const isMarketDataPriceValid = isPriceValid(priceFromMarketData, asset.currency);
-                        const isAssetPriceValid = isPriceValid(priceFromAsset, asset.currency);
-                        
-                        // Determine the best price to use in order of preference
-                        let finalPrice = 0;
-                        
-                        if (isMarketDataPriceValid) {
-                          // First priority: Use price from market data API
-                          finalPrice = priceFromMarketData;
-                        } else if (isAssetPriceValid) {
-                          // Second priority: Use price from asset data if valid
-                          finalPrice = priceFromAsset;
-                        } else {
-                          // Last resort: Use reasonable defaults for common cryptos
-                          switch(asset.currency) {
-                            case 'BTC': finalPrice = 90000; break;
-                            case 'ETH': finalPrice = 3000; break;
-                            case 'SOL': finalPrice = 150; break;
-                            case 'USDT': finalPrice = 1; break;
-                            case 'USDC': finalPrice = 1; break;
-                            case 'BNB': finalPrice = 600; break;
-                            case 'XRP': finalPrice = 0.6; break;
-                            case 'ADA': finalPrice = 0.5; break;
-                            case 'DOGE': finalPrice = 0.15; break;
-                            case 'DOT': finalPrice = 7; break;
-                            default: 
-                              // For unknown cryptos, if we have any price, use it
-                              finalPrice = priceFromAsset > 0 ? priceFromAsset : 1;
-                          }
-                        }
-                        
-                        // Use the final determined price
-                        const pricePerUnit = finalPrice;
-                        
-                        // Format the price per unit with appropriate decimal places
+                        // פורמט מותאם עבור המחיר
                         const formattedPrice = pricePerUnit 
                           ? pricePerUnit.toLocaleString(undefined, { 
                               maximumFractionDigits: pricePerUnit > 1000 ? 0 : pricePerUnit > 1 ? 2 : 6 
@@ -542,11 +465,11 @@ export function AccountBalanceCard() {
                                 <div className="text-xs text-muted-foreground mb-1">Total Value</div>
                                 <div className="text-primary text-base font-bold">
                                   ${(() => {
-                                    // Use the pre-calculated value from our unified calculation method
-                                    const calculatedValue = asset.calculatedTotalValue || 0;
-                                    return calculatedValue < 0.01 && calculatedValue > 0 
-                                      ? calculatedValue.toFixed(8)
-                                      : calculatedValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
+                                    // התוצאה של asset.total * price
+                                    const simpleCalculation = asset.total * (pricePerUnit || 0);
+                                    return simpleCalculation < 0.01 && simpleCalculation > 0 
+                                      ? simpleCalculation.toFixed(8)
+                                      : simpleCalculation.toLocaleString(undefined, { maximumFractionDigits: 2 });
                                   })()}
                                 </div>
                                 {/* תמיד להציג את הנוסחה הבסיסית: כמות × מחיר */}
@@ -805,32 +728,31 @@ export function TradingHistoryCard() {
                         </div>
                       </td>
                       <td className="py-2 text-center">
-                        {!isBreakEven ? (
-                          <div className={isProfitable ? "bg-green-500/10 p-2 rounded-md inline-block min-w-[100px] text-center border border-green-500/30" : "bg-red-500/10 p-2 rounded-md inline-block min-w-[100px] text-center border border-red-500/30"}>
-                            <div className={isProfitable ? "text-green-500 font-bold text-base" : "text-red-500 font-bold text-base"}>
-                              {isProfitable ? '+' : ''}{trade.estimatedPnL.toFixed(2)}
-                            </div>
-                            {/* Adding profit/loss percentage */}
-                            <div className={isProfitable ? "text-xs text-green-500/70 mt-1 border-t border-green-500/20 pt-1" : "text-xs text-red-500/70 mt-1 border-t border-red-500/20 pt-1"}>
-                              {isProfitable ? '+' : ''}
-                              {Math.round((trade.estimatedPnL / trade.totalValue) * 100 * 100) / 100}%
-                            </div>
+                        <div className={`bg-muted/10 p-2 rounded-md inline-block min-w-[80px] text-center border ${isProfitable ? 'border-green-300' : isBreakEven ? 'border-muted/20' : 'border-red-300'}`}>
+                          <div className={`font-bold ${isProfitable ? 'text-green-500' : isBreakEven ? 'text-muted-foreground' : 'text-red-500'}`}>
+                            {isBreakEven ? 'No P/L' : `${isProfitable ? '+' : ''}$${Math.abs(trade.estimatedPnL).toFixed(2)}`}
                           </div>
-                        ) : (
-                          <div className="bg-muted/10 p-2 rounded-md inline-block min-w-[100px] text-center border border-muted/20">
-                            <span className="text-muted-foreground">No P&L yet</span>
-                          </div>
-                        )}
+                          {!isBreakEven && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {(Math.abs(trade.estimatedPnL) / trade.totalValue * 100).toFixed(2)}%
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+            {tradesWithPnL.length > 8 && (
+              <div className="text-center text-muted-foreground text-sm py-2">
+                Showing 8 of {tradesWithPnL.length} recent trades
+              </div>
+            )}
           </>
         ) : (
-          <div className="text-center py-6 text-muted-foreground">
-            No recent trading activity
+          <div className="text-center py-4 text-muted-foreground">
+            No trading history found
           </div>
         )}
       </CardContent>
@@ -838,9 +760,7 @@ export function TradingHistoryCard() {
       {tradesWithPnL.length > 0 && (
         <CardFooter className="pt-0">
           <div className="text-xs text-muted-foreground w-full text-center">
-            Data from {dataSource} • 
-            Last updated: {new Date().toLocaleTimeString()} • 
-            Refresh interval: {useOkxData ? "30 seconds" : "60 seconds"}
+            Data from {dataSource} • Updated {new Date().toLocaleTimeString()} • Refresh: 30 seconds
           </div>
         </CardFooter>
       )}
