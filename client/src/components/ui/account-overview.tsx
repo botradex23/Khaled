@@ -50,9 +50,9 @@ export function AccountBalanceCard() {
     refetchInterval: 15000 // 15 seconds refresh for more up-to-date data
   });
   
-  // Get market prices directly from the OKX market API for more accurate pricing
+  // Get market prices directly from the markets API for more accurate pricing
   const marketPricesQuery = useQuery({
-    queryKey: ['/api/okx/markets'],
+    queryKey: ['/api/markets/v2/prices'],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
   
@@ -234,46 +234,13 @@ export function AccountBalanceCard() {
     
     // מקור #1: הגדרת מחיר מה-API של שער השוק - שיטה משופרת עם חיפוש במספר פורמטים
     let priceFromMarketApi = 0;
-    if (marketPricesQuery.data && Array.isArray(marketPricesQuery.data)) {
-      // ניסיון #1: חיפוש התאמה מדויקת בפורמט CURRENCY-USDT
-      let match = marketPricesQuery.data.find(
-        market => market.symbol === `${asset.currency}-USDT`
+    if (marketPricesQuery.data && marketPricesQuery.data.prices && Array.isArray(marketPricesQuery.data.prices)) {
+      // ניסיון #1: חיפוש התאמה מדויקת לפי סמל המטבע
+      let match = marketPricesQuery.data?.prices?.find(
+        market => market.symbol === asset.currency
       );
       
-      // ניסיון #2: חיפוש בפורמט אלטרנטיבי CURRENCY-USD
-      if (!match) {
-        match = marketPricesQuery.data.find(
-          market => market.symbol === `${asset.currency}-USD`
-        );
-      }
-      
-      // ניסיון #3: חיפוש בפורמט של מטבע מול ביטקוין (נדיר)
-      if (!match) {
-        match = marketPricesQuery.data.find(
-          market => market.symbol === `${asset.currency}-BTC`
-        );
-        
-        // אם מצאנו מחיר במונחי ביטקוין, צריך להמיר אותו לדולרים
-        if (match && typeof match.price === 'number') {
-          // מציאת מחיר הביטקוין
-          const btcPrice = marketPricesQuery.data.find(
-            btcMarket => btcMarket.symbol === 'BTC-USDT'
-          );
-          
-          if (btcPrice && typeof btcPrice.price === 'number') {
-            // המרה: מחיר נכס בביטקוין × מחיר ביטקוין בדולרים
-            priceFromMarketApi = match.price * btcPrice.price;
-            console.log(`Converted ${asset.currency}-BTC price to USD: $${priceFromMarketApi}`);
-          }
-        }
-      }
-      
-      // ניסיון #4: חיפוש מטבע באמצעות התאמה שאינה תלוית רישיות
-      if (!match && priceFromMarketApi === 0) {
-        match = marketPricesQuery.data.find(
-          market => market.symbol.toLowerCase().startsWith(asset.currency.toLowerCase() + '-')
-        );
-      }
+      // אם לא נמצאה התאמה לפי API החדש, נוכל למצוא מחיר לפי משתנים אחרים
       
       // אם מצאנו התאמה באחת משיטות החיפוש ועדיין אין לנו מחיר
       if (match && typeof match.price === 'number' && priceFromMarketApi === 0) {
