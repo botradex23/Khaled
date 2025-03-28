@@ -6,9 +6,13 @@
 // - https://www.okx.com (main website with API)
 // - https://api.okx.com (dedicated API endpoint)
 // - https://aws.okx.com (AWS hosted endpoint)
-// Demo trading is handled via the 'x-simulated-trading' header
-export const OKX_BASE_URL = 'https://www.okx.com'; // Base URL for API 
-export const OKX_DEMO_BASE_URL = 'https://www.okx.com'; // Use same URL for demo (handled via header)
+// Demo trading uses the same base URL but with 'x-simulated-trading' header
+
+// OKX Testnet URLs
+// https://www.okx.com/docs-v5/en/#overview-demo-trading-and-testing
+// According to OKX, the REST API for the demo trading environment is the same as the production environment
+export const OKX_BASE_URL = 'https://www.okx.com'; // Base URL for production API 
+export const OKX_DEMO_BASE_URL = 'https://www.okx.com'; // Use same URL with 'x-simulated-trading' header for demo/testnet
 
 // Use API credentials from environment variables with fallbacks
 // Check and log the environment variables

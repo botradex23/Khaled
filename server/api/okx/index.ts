@@ -90,7 +90,7 @@ router.get('/config', async (req: Request, res: Response) => {
       isPassphraseValid,
       isPassphraseHex,
       baseUrl: okxService.getBaseUrl(),
-      isDemoMode: true
+      isDemoMode: true, // We're always using OKX testnet mode
     });
   } catch (err) {
     handleApiError(err, res);
@@ -436,8 +436,10 @@ async function withUserApiKeys(req: Request, res: Response, next: Function) {
       
       console.log(`Creating custom OKX service with user ID ${userId}'s API keys`);
       
-      // Always use testnet for safety unless explicitly set to false
-      const useTestnet = apiKeys.useTestnet !== false;
+      // Always use testnet/demo mode for OKX
+      // Even if useTestnet is set to false in the database, 
+      // we enforce using testnet for safety in all environments
+      const useTestnet = true; // Force testnet mode regardless of user setting
       
       // Create a custom OKX service instance with user's keys
       // We'll attach it to the request object
@@ -445,7 +447,7 @@ async function withUserApiKeys(req: Request, res: Response, next: Function) {
         apiKeys.okxApiKey,
         apiKeys.okxSecretKey,
         apiKeys.okxPassphrase,
-        useTestnet, // Use testnet setting from user's preferences
+        useTestnet, // Always true - forced to use testnet/demo mode
         userId // Pass the user ID for better logging and tracking
       );
       
