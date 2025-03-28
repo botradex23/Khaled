@@ -254,35 +254,32 @@ export function AccountBalanceCard() {
     return asset;
   });
   
-  // Calculate actual value for each asset using the same consistent method
-  // This exact same calculation will be used in the table display as well
+  // חישוב הערך של כל נכס באופן עקבי
+  // יש להשתמש תמיד באותה נוסחה פשוטה: כמות × מחיר
+  // איפוס הערכים הכוללים
+  totalAvailable = 0;
+  totalFrozen = 0;
+  
+  // עיבוד כל הנכסים וחישוב ערכם
   processedBalances.forEach(asset => {
-    // פשוט תמיד נחשב את הערך בדרך פשוטה: כמות × מחיר
-    let assetTotalValue = 0;
-    
-    // חישוב פשוט: כמות כפול מחיר - זו השיטה שתמיד תהיה בשימוש
-    assetTotalValue = asset.total * (asset.pricePerUnit || 0);
-    
-    // רק כשאין מחיר או כמות, אז נשתמש בערך שהתקבל ישירות מה-API
-    if (assetTotalValue === 0 && typeof asset.valueUSD === 'number' && asset.valueUSD > 0) {
-      assetTotalValue = asset.valueUSD;
-    }
+    // הנוסחה הבסיסית: כמות × מחיר ליחידה
+    const assetTotalValue = asset.total * (asset.pricePerUnit || 0);
     
     // שמירת הערך המחושב לשימוש עקבי בכל מקום
     asset.calculatedTotalValue = assetTotalValue;
     
-    // Determine how much is available vs frozen based on the calculated value
+    // חישוב החלוקה בין זמין וקפוא לפי היחס
     if (asset.total > 0) {
       const availableRatio = (asset.available || 0) / asset.total;
       totalAvailable += assetTotalValue * availableRatio;
       totalFrozen += assetTotalValue * (1 - availableRatio);
     } else {
-      // If we don't have good ratio data, default to putting everything in available
+      // אם אין נתונים מדויקים, מוסיפים הכל לחלק הזמין
       totalAvailable += assetTotalValue;
     }
   });
   
-  // Calculate total portfolio value (accounting for both available and frozen funds)
+  // סכום התיק הכולל הוא סכום החלק הזמין והחלק הקפוא
   const totalValue = totalAvailable + totalFrozen;
   console.log("Total portfolio value calculated:", totalValue);
   
@@ -375,30 +372,12 @@ export function AccountBalanceCard() {
                   <table className="w-full">
                     <tbody>
                       {sortedBalances.map((asset) => {
-                        // ======= מחירים =======
-                        // קבלת מחיר השוק מה-API
-                        let marketPrice = 0;
+                        // בטבלה, אנחנו משתמשים באותו מחיר שהשתמשנו בו לחישוב סך התיק הכולל
+                        // באופן זה, הסכום של כל השורות בטבלה יהיה זהה לסכום הכולל למעלה
+                        const pricePerUnit = asset.pricePerUnit || 0;
                         
-                        if (marketPricesQuery.data && Array.isArray(marketPricesQuery.data)) {
-                          const match = marketPricesQuery.data.find(
-                            market => market.symbol === `${asset.currency}-USDT`
-                          );
-                          
-                          if (match && typeof match.price === 'number') {
-                            marketPrice = match.price;
-                          }
-                        }
-                        
-                        // בחירת המחיר הטוב ביותר לשימוש
-                        const pricePerUnit = marketPrice > 0 ? marketPrice : 
-                          (asset.pricePerUnit || 
-                          (asset.currency === 'USDT' || asset.currency === 'USDC' ? 1 : 
-                          asset.currency === 'BTC' ? 90000 :
-                          asset.currency === 'ETH' ? 3000 : 0));
-                          
-                        // ======= חישובים =======
-                        // חישוב פשוט: כמות × מחיר תמיד!
-                        const assetValue = asset.total * (pricePerUnit || 0);
+                        // חישוב פשוט: כמות × מחיר - בדיוק כמו שחישבנו את הסכום הכולל
+                        const assetValue = asset.total * pricePerUnit;
                         const percentage = totalValue > 0 ? (assetValue / totalValue) * 100 : 0;
                         const isMinorHolding = percentage < 0.1;
                         
