@@ -39,30 +39,29 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     if (data && Array.isArray(data) && data.length > 0) {
-      // Process the balances first to ensure we have all the data for accurate calculations
-      const processedBalances = data.map(asset => {
-        // Clone to avoid mutating the original data
-        const processedAsset = { ...asset };
+      // Create a deep copy of the data to avoid mutating the original data source
+      const processedBalances = JSON.parse(JSON.stringify(data));
+      let totalPortfolioValue = 0;
+      
+      // First pass: Process the balances and ensure all the data is properly set
+      for (let i = 0; i < processedBalances.length; i++) {
+        const asset = processedBalances[i];
         
         // Make sure total is set properly - if it's 0 but available is not, use available
-        if (processedAsset.total === 0 && processedAsset.available > 0) {
-          processedAsset.total = processedAsset.available + (processedAsset.frozen || 0);
+        if (asset.total === 0 && asset.available > 0) {
+          asset.total = asset.available + (asset.frozen || 0);
         }
         
         // If we have valueUSD but no pricePerUnit, calculate it
-        if (typeof processedAsset.valueUSD === 'number' && processedAsset.valueUSD > 0 && 
-            (!processedAsset.pricePerUnit || processedAsset.pricePerUnit === 0)) {
+        if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0 && 
+            (!asset.pricePerUnit || asset.pricePerUnit === 0)) {
           // If total is non-zero, calculate price per unit
-          if (processedAsset.total > 0) {
-            processedAsset.pricePerUnit = processedAsset.valueUSD / processedAsset.total;
+          if (asset.total > 0) {
+            asset.pricePerUnit = asset.valueUSD / asset.total;
           }
         }
         
-        return processedAsset;
-      });
-      
-      // Calculate total value using our robust calculation algorithm
-      const calculated = processedBalances.reduce((sum, asset) => {
+        // Calculate the asset value using our robust calculation algorithm
         let assetValue = 0;
         
         // First priority: Use market data if we have quantity and price
@@ -84,12 +83,31 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
           assetValue = value + frozenValue;
         }
         
-        return sum + assetValue;
-      }, 0);
+        // Store the calculated value in the asset object for later use
+        asset.calculatedTotalValue = assetValue;
+        
+        // Add this asset's value to the running total
+        totalPortfolioValue += assetValue;
+      }
+      
+      // Update the data object to include calculated values
+      // This ensures all components using this data will use the same calculation
+      if (typeof data === 'object' && !Array.isArray(data)) {
+        // Handle the case where data is an object wrapping the array
+        (data as any).balances = processedBalances;
+      } else {
+        // Handle the case where data is directly the array
+        for (let i = 0; i < data.length; i++) {
+          data[i].calculatedTotalValue = processedBalances[i].calculatedTotalValue;
+        }
+      }
       
       // Round to 2 decimal places for better display
-      setTotalValue(Math.round(calculated * 100) / 100);
+      setTotalValue(Math.round(totalPortfolioValue * 100) / 100);
       setLastUpdated(new Date());
+      
+      // Simple logging of total value
+      console.log('Total portfolio value calculated:', totalPortfolioValue.toFixed(2));
     }
   }, [data]);
   

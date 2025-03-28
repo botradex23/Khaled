@@ -385,8 +385,8 @@ export function AccountBalanceCard() {
                   <table className="w-full">
                     <tbody>
                       {sortedBalances.map((asset) => {
-                        // Calculate accurate percentage based on asset's total × price per unit
-                        const assetValue = asset.total * (asset.pricePerUnit || 0);
+                        // Use the stored calculated value for consistency across all calculations
+                        const assetValue = asset.calculatedTotalValue || 0;
                         const percentage = totalValue > 0 ? (assetValue / totalValue) * 100 : 0;
                         const isMinorHolding = percentage < 0.1;
                         
@@ -542,17 +542,23 @@ export function AccountBalanceCard() {
                                 <div className="text-xs text-muted-foreground mb-1">Total Value</div>
                                 <div className="text-primary text-base font-bold">
                                   ${(() => {
-                                    // Calculate actual value based on price per unit (using our fetched price)
-                                    const calculatedValue = asset.total * pricePerUnit;
+                                    // Use the pre-calculated value from our unified calculation method
+                                    const calculatedValue = asset.calculatedTotalValue || 0;
                                     return calculatedValue < 0.01 && calculatedValue > 0 
                                       ? calculatedValue.toFixed(8)
                                       : calculatedValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
                                   })()}
                                 </div>
                                 {/* Add calculation formula for transparency */}
-                                {pricePerUnit > 0 && (
+                                {asset.total > 0 && pricePerUnit > 0 && (
                                   <div className="text-xs text-muted-foreground mt-1 border-t border-muted/20 pt-1">
                                     {asset.total} × ${pricePerUnit.toFixed(pricePerUnit < 0.01 ? 6 : 2)}
+                                    {/* If different from calculation, show note */}
+                                    {Math.abs((asset.total * pricePerUnit) - (asset.calculatedTotalValue || 0)) > 0.02 && (
+                                      <div className="text-amber-500 text-[10px] mt-1 truncate max-w-[120px]">
+                                        *Special calculation applied
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
