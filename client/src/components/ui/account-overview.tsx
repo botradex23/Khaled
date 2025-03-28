@@ -324,11 +324,32 @@ export function AccountBalanceCard() {
     let priceFromMarketApi = 0;
     if (marketPricesQuery.data && marketPricesQuery.data.prices && Array.isArray(marketPricesQuery.data.prices)) {
       // ניסיון #1: חיפוש התאמה מדויקת לפי סמל המטבע
-      let match = marketPricesQuery.data?.prices?.find(
-        market => market.symbol === asset.currency
+      let match = marketPricesQuery.data.prices.find(
+        (market: Market) => market.symbol === asset.currency
       );
       
-      // אם לא נמצאה התאמה לפי API החדש, נוכל למצוא מחיר לפי משתנים אחרים
+      // ניסיון #2: חיפוש התאמה חלקית (התחלה זהה)
+      if (!match) {
+        match = marketPricesQuery.data.prices.find(
+          (market: Market) => market.symbol.startsWith(asset.currency)
+        );
+      }
+      
+      // ניסיון #3: חיפוש התאמה בסימבול שמסתיים בדולר או USDT
+      if (!match) {
+        match = marketPricesQuery.data.prices.find(
+          (market: Market) => 
+            market.symbol.includes(asset.currency) && 
+            (market.symbol.endsWith('USD') || market.symbol.endsWith('USDT'))
+        );
+      }
+      
+      // ניסיון #4: חיפוש התאמה לא רגיש לגודל אותיות
+      if (!match) {
+        match = marketPricesQuery.data.prices.find(
+          (market: Market) => market.symbol.toUpperCase() === asset.currency.toUpperCase()
+        );
+      }
       
       // אם מצאנו התאמה באחת משיטות החיפוש ועדיין אין לנו מחיר
       if (match && typeof match.price === 'number' && priceFromMarketApi === 0) {
@@ -347,7 +368,25 @@ export function AccountBalanceCard() {
     // מקור #3: מחיר קיים שכבר מוגדר בנכס
     let existingPrice = asset.pricePerUnit || 0;
     
-    // מקור #4: ערכים ידועים עבור מטבעות נפוצים
+    // מקור #4: מחפש התאמות דומות בתוך נתוני ה-API
+    let similarMatch = null;
+    if (marketPricesQuery.data && marketPricesQuery.data.prices && Array.isArray(marketPricesQuery.data.prices) && priceFromMarketApi === 0) {
+      // חיפוש מטבע עם שם דומה (לדוגמה: אם יש BTC-USDT אבל מחפשים BTC)
+      const currencyLower = asset.currency.toLowerCase();
+      const possibleMatches = marketPricesQuery.data.prices.filter((market: Market) => 
+        market.symbol.toLowerCase().includes(currencyLower)
+      );
+  
+      if (possibleMatches.length > 0) {
+        // מיון לפי רלוונטיות - המטבעות עם שמות קצרים יותר סביר יותר שהם התאמה נכונה
+        possibleMatches.sort((a, b) => a.symbol.length - b.symbol.length);
+        similarMatch = possibleMatches[0];
+        console.log(`Found similar match for ${asset.currency} using ${similarMatch.symbol}: $${similarMatch.price}`);
+        priceFromMarketApi = similarMatch.price;
+      }
+    }
+
+    // מקור #5: ערכים ידועים עבור מטבעות נפוצים
     let knownPrice = 0;
     // סטייבלקוינים (מטבעות יציבים) - הערך שלהם בדרך כלל קרוב מאוד ל-1 דולר
     if (asset.currency === 'USDT' || asset.currency === 'USDC' || asset.currency === 'BUSD' || 
@@ -356,22 +395,61 @@ export function AccountBalanceCard() {
       knownPrice = 1;
       console.log(`Using stablecoin price of $1 for ${asset.currency}`);
     } 
-    // מטבעות מרכזיים - ערכי ברירת מחדל רק אם אין מקורות טובים יותר
-    else if (asset.currency === 'BTC') {
-      // בהתבסס על מחירי שוק נכון למרץ 2025
-      knownPrice = 83760;
-    } else if (asset.currency === 'ETH') {
-      knownPrice = 1870;
-    } else if (asset.currency === 'BNB') {
-      knownPrice = 622;
-    } else if (asset.currency === 'SOL') {
-      knownPrice = 130;
-    } else if (asset.currency === 'XRP') {
-      knownPrice = 2.17;
-    } else if (asset.currency === 'ADA') {
-      knownPrice = 0.69;
-    } else if (asset.currency === 'DOGE') {
-      knownPrice = 0.18;
+    // חפש את המחיר העדכני ביותר בנתוני API אם קיים
+    else if (marketPricesQuery.data?.prices) {
+      const commonCoins = {
+        'BTC': ['BTC', 'BITCOIN', 'XBT'],  
+        'ETH': ['ETH', 'ETHEREUM'],
+        'SOL': ['SOL', 'SOLANA'],
+        'XRP': ['XRP', 'RIPPLE'],
+        'ADA': ['ADA', 'CARDANO'],
+        'DOT': ['DOT', 'POLKADOT'],
+        'DOGE': ['DOGE', 'DOGECOIN'],
+        'AVAX': ['AVAX', 'AVALANCHE'],
+        'MATIC': ['MATIC', 'POLYGON'],
+        'LINK': ['LINK', 'CHAINLINK'],
+        'UNI': ['UNI', 'UNISWAP'],
+        'LTC': ['LTC', 'LITECOIN'],
+        'BCH': ['BCH', 'BITCOIN-CASH'],
+      };
+      
+      // בדוק אם המטבע הנוכחי מתאים לרשימת הסמלים הידועים
+      const coinFamily = Object.entries(commonCoins).find(([_, aliases]) => 
+        aliases.some(alias => asset.currency.toUpperCase() === alias));
+        
+      if (coinFamily) {
+        const primarySymbol = coinFamily[0]; // למשל BTC
+        // חפש את המחיר העדכני ביותר
+        const matchedCoin = marketPricesQuery.data.prices.find(
+          (price: Market) => price.symbol === primarySymbol || 
+            price.symbol.startsWith(primarySymbol + '-') ||
+            price.symbol.startsWith(primarySymbol + '/')
+        );
+        
+        if (matchedCoin) {
+          knownPrice = matchedCoin.price;
+          console.log(`Using market price for known coin ${asset.currency}: $${knownPrice} (matched to ${matchedCoin.symbol})`);
+        }
+      }
+    }
+    
+    // עדיין אין מחיר? השתמש בערכי ברירת מחדל
+    if (knownPrice === 0) {
+      if (asset.currency === 'BTC') {
+        knownPrice = 83760;
+      } else if (asset.currency === 'ETH') {
+        knownPrice = 1870;
+      } else if (asset.currency === 'BNB') {
+        knownPrice = 622;
+      } else if (asset.currency === 'SOL') {
+        knownPrice = 130;
+      } else if (asset.currency === 'XRP') {
+        knownPrice = 2.17;
+      } else if (asset.currency === 'ADA') {
+        knownPrice = 0.69;
+      } else if (asset.currency === 'DOGE') {
+        knownPrice = 0.18;
+      }
     }
     
     // קביעת המחיר הסופי לפי סדר עדיפות
