@@ -217,8 +217,11 @@ async function refreshPriceCache(): Promise<void> {
           source = 'CALCULATED';
         }
         
-        // טיפול מיוחד בסטייבלקוינים
-        if (isStablecoin(base)) {
+        // טיפול מיוחד בסטייבלקוינים - רק אם הם הבסיס ולא מטבע ציטוט
+        // אם הסטייבלקוין הוא מטבע הבסיס, אז נקבע את המחיר ל-1
+        // אך אם הוא משמש כמטבע ציטוט, אז נשאיר את המחיר המקורי
+        if (isStablecoin(base) && !symbol.includes('-')) {
+          // קובעים מחיר קבוע רק עבור סטייבלקוינים שמחושבים כמטבע בסיס עצמאי
           price = 1.0; // סטייבלקוינים כגון USDT, USDC שווים בערך 1 דולר
           source = 'FIXED';
         }
@@ -249,6 +252,9 @@ async function refreshPriceCache(): Promise<void> {
                                 !(existingEntry.quote === 'USDT' || existingEntry.quote === 'USD' || existingEntry.quote === 'USDC');
           
           if (shouldOverwrite) {
+            // רק אם המטבע הבסיסי אינו סטייבלקוין או אם זה צמד מסחר לגיטימי, שמור את המחיר
+          // כדי למנוע מצב שכל המטבעות שווים 1$
+          if (!isStablecoin(base) || symbol.includes('-')) {
             // שמירת המטבע הבסיסי עם המחיר העדכני
             newCache.set(base, {
               symbol: base,
@@ -258,6 +264,7 @@ async function refreshPriceCache(): Promise<void> {
               timestamp: Date.now(),
               source
             });
+          }
           }
         }
       } catch (err) {
