@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,15 +7,51 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { 
+  Input 
+} from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Menu, X, User, Gauge, BarChart3, BookOpen, Grid, Activity, LayoutGrid, Settings } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Menu, 
+  X, 
+  User, 
+  Gauge, 
+  BarChart3, 
+  BookOpen, 
+  Grid, 
+  Activity, 
+  LayoutGrid, 
+  Settings,
+  ExternalLink,
+  KeyRound,
+  Save,
+  Loader2
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function Header() {
   const [location] = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = React.useState(false);
+  const [showBinanceDialog, setShowBinanceDialog] = useState(false);
+  const [binanceApiKey, setBinanceApiKey] = useState("");
+  const [binanceSecretKey, setBinanceSecretKey] = useState("");
+  const [useTestnet, setUseTestnet] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -23,6 +59,75 @@ export default function Header() {
 
   const closeMenu = () => {
     setIsOpen(false);
+  };
+
+  // Function to save Binance API keys
+  const saveBinanceApiKeys = async () => {
+    // Validate inputs
+    if (!binanceApiKey.trim()) {
+      toast({
+        title: "שגיאה",
+        description: "נא להזין מפתח API תקין",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!binanceSecretKey.trim()) {
+      toast({
+        title: "שגיאה",
+        description: "נא להזין מפתח סודי תקין",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Call the API endpoint to save the Binance API keys
+      const response = await fetch("/api/users/binance-api-keys", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          apiKey: binanceApiKey,
+          secretKey: binanceSecretKey,
+          testnet: useTestnet
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "מצוין!",
+          description: "מפתחות API של Binance נשמרו בהצלחה",
+          variant: "default"
+        });
+        
+        // Close the dialog and reset fields
+        setShowBinanceDialog(false);
+        setBinanceApiKey("");
+        setBinanceSecretKey("");
+      } else {
+        toast({
+          title: "שגיאה בשמירת המפתחות",
+          description: data.message || "אירעה שגיאה בלתי צפויה",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error saving Binance API keys:", error);
+      toast({
+        title: "שגיאה בשמירת המפתחות",
+        description: "אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const navLinks = [
@@ -68,6 +173,27 @@ export default function Header() {
           <div className="flex items-center">
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
+                {/* Binance Button with "NEW" Badge */}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center mr-2 font-medium border-yellow-500 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700"
+                  onClick={() => {
+                    // Open Binance API modal
+                    setShowBinanceDialog(true);
+                  }}
+                >
+                  <img 
+                    src="https://bin.bnbstatic.com/static/images/common/favicon.ico" 
+                    alt="Binance Logo" 
+                    className="w-4 h-4 mr-1.5"
+                  />
+                  Binance
+                  <Badge variant="outline" className="ml-1.5 py-0 h-4 text-[10px] font-bold px-1.5 bg-yellow-100 text-yellow-800 border-yellow-400">
+                    חדש
+                  </Badge>
+                </Button>
+                
                 {!isMobile && (
                   <div className="text-sm text-muted-foreground flex items-center">
                     <span className="mr-2">Welcome,</span>
@@ -141,6 +267,27 @@ export default function Header() {
         {isMobile && isOpen && (
           <div className="md:hidden mt-4 py-4 border-t border-border">
             <nav className="flex flex-col space-y-4">
+              {/* Binance option for mobile */}
+              {isAuthenticated && (
+                <div 
+                  className="flex items-center cursor-pointer text-sm font-medium text-yellow-600 hover:text-yellow-700"
+                  onClick={() => {
+                    closeMenu();
+                    setShowBinanceDialog(true);
+                  }}
+                >
+                  <img 
+                    src="https://bin.bnbstatic.com/static/images/common/favicon.ico" 
+                    alt="Binance Logo" 
+                    className="w-4 h-4 mr-2"
+                  />
+                  Binance
+                  <Badge variant="outline" className="ml-1.5 py-0 h-4 text-[10px] font-bold px-1.5 bg-yellow-100 text-yellow-800 border-yellow-400">
+                    חדש
+                  </Badge>
+                </div>
+              )}
+              
               {navLinks.map((link) => (
                 <Link key={link.to} href={link.to} onClick={closeMenu}>
                   <span
@@ -159,6 +306,96 @@ export default function Header() {
           </div>
         )}
       </div>
+    
+      {/* Binance API Modal */}
+      <Dialog open={showBinanceDialog} onOpenChange={setShowBinanceDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <img 
+                src="https://bin.bnbstatic.com/static/images/common/favicon.ico" 
+                alt="Binance Logo" 
+                className="w-5 h-5 mr-2"
+              />
+              הגדר מפתחות API של Binance
+            </DialogTitle>
+            <DialogDescription>
+              הזן את מפתחות ה-API של Binance שלך כדי להתחיל לקבל ולנתח ממשק לחשבון שלך ב-Binance.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="binance-api-key" className="text-right">
+                API Key
+              </Label>
+              <Input
+                id="binance-api-key"
+                value={binanceApiKey}
+                onChange={(e) => setBinanceApiKey(e.target.value)}
+                className="col-span-3"
+                placeholder="הזן את מפתח ה-API של Binance שלך"
+                autoComplete="off"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="binance-secret-key" className="text-right">
+                Secret Key
+              </Label>
+              <Input
+                id="binance-secret-key"
+                value={binanceSecretKey}
+                onChange={(e) => setBinanceSecretKey(e.target.value)}
+                className="col-span-3"
+                type="password"
+                placeholder="הזן את המפתח הסודי של Binance שלך"
+                autoComplete="off"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="useTestnet" className="text-right">
+                סביבת בדיקות
+              </Label>
+              <div className="flex items-center col-span-3">
+                <Switch
+                  id="useTestnet"
+                  checked={useTestnet}
+                  onCheckedChange={setUseTestnet}
+                />
+                <Label htmlFor="useTestnet" className="ml-2">
+                  {useTestnet ? 'משתמש בסביבת בדיקות' : 'משתמש בסביבת הייצור (אמיתי)'}
+                </Label>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBinanceDialog(false)}>
+              ביטול
+            </Button>
+            <Button 
+              type="submit" 
+              onClick={saveBinanceApiKeys}
+              disabled={isSaving}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  שומר...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  שמור מפתחות
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
