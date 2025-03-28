@@ -314,7 +314,8 @@ export function AccountBalanceCard() {
   console.log("Processing balances for total calculation:", balances);
   
   // עיבוד וניתוח של נתוני המאזן
-  const processedBalances = balances.map(asset => {
+  // וודא שיש לנו מערך לפני שאנחנו מבצעים map
+  const processedBalances = (Array.isArray(balances) ? balances : []).map(asset => {
     // וידוא שהכמות הכוללת מחושבת כראוי
     if (asset.total === 0 && asset.available > 0) {
       asset.total = asset.available + (asset.frozen || 0);
@@ -576,7 +577,7 @@ export function AccountBalanceCard() {
     });
     
   // Count total number of assets
-  const assetsWithBalance = balances.length;
+  const assetsWithBalance = Array.isArray(balances) ? balances.length : 0;
   
   // Calculate percentages for available/frozen donut chart
   const availablePercentage = totalValue > 0 ? (totalAvailable / totalValue) * 100 : 0;
@@ -884,7 +885,7 @@ export function TradingHistoryCard() {
   const tradingHistory = Array.isArray(selectedData) ? selectedData : [];
   
   // Calculate profit/loss for each trade when possible
-  const tradesWithPnL = tradingHistory.map(trade => {
+  const tradesWithPnL = (Array.isArray(tradingHistory) ? tradingHistory : []).map(trade => {
     // First standardize field names between OKX and Bitget
     const standardizedTrade = {
       id: trade.id || trade.ordId || trade.tradeId || `trade-${Math.random().toString(36).substring(2, 10)}`,
