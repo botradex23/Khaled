@@ -312,6 +312,44 @@ export default function ApiKeys() {
       useTestnet: checked,
     });
   };
+  
+  // Admin keys copy function
+  const copyAdminKeysMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/auth/copy-admin-keys', {
+        targetEmail: user?.email
+      });
+      return response;
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({
+          title: "API Keys Imported",
+          description: "Admin API keys have been copied to your account. You can now use the full platform features.",
+          variant: "default",
+        });
+        // Refresh the page to get updated API keys data
+        window.location.reload();
+      } else {
+        toast({
+          title: "Import Failed",
+          description: data.message || "Failed to import admin API keys.",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Import Error",
+        description: `Error importing admin keys: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleCopyAdminKeys = () => {
+    copyAdminKeysMutation.mutate();
+  };
 
   return (
     <Layout>
@@ -468,42 +506,75 @@ export default function ApiKeys() {
                         </div>
                       </div>
                       
-                      <div className="flex justify-between mt-6">
-                        <Button
-                          type="submit"
-                          disabled={updateMutation.isPending || isValidating}
-                          className="flex items-center"
-                        >
-                          {updateMutation.isPending ? "Saving..." : isValidating ? "Validating..." : "Save API Keys"}
-                          {!updateMutation.isPending && !isValidating && <ArrowRight className="ml-2 h-4 w-4" />}
-                          {isValidating && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                        </Button>
-                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="destructive"
-                              type="button"
-                              disabled={deleteMutation.isPending || isLoadingKeys}
-                            >
-                              {deleteMutation.isPending ? "Deleting..." : "Delete API Keys"}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will delete your API keys. You will need to re-enter them to continue trading.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleDelete}>
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                      <div className="flex flex-col space-y-4 mt-6">
+                        {/* כפתור השתמש במפתחות אדמין */}
+                        <div className="bg-amber-50 border border-amber-200 p-3 rounded-md">
+                          <div className="flex items-center mb-2">
+                            <AlertCircle className="h-4 w-4 text-amber-500 mr-2" />
+                            <h3 className="text-sm font-medium text-amber-700">השתמש במפתחות מוכנים</h3>
+                          </div>
+                          <p className="text-xs text-amber-700 mb-3">
+                            מאפשר להעתיק את מפתחות ה-API של מנהל המערכת לחשבונך כדי לחסוך בזמן. 
+                            אופציה זו מומלצת לבדיקת המערכת מבלי להגדיר מפתחות משלך.
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full text-amber-700 border-amber-300 bg-amber-100 hover:bg-amber-200"
+                            onClick={handleCopyAdminKeys}
+                            disabled={copyAdminKeysMutation.isPending}
+                          >
+                            {copyAdminKeysMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                מעתיק מפתחות...
+                              </>
+                            ) : (
+                              <>
+                                <KeyRound className="mr-2 h-4 w-4" />
+                                העתק מפתחות מנהל
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      
+                        <div className="flex justify-between">
+                          <Button
+                            type="submit"
+                            disabled={updateMutation.isPending || isValidating}
+                            className="flex items-center"
+                          >
+                            {updateMutation.isPending ? "Saving..." : isValidating ? "Validating..." : "Save API Keys"}
+                            {!updateMutation.isPending && !isValidating && <ArrowRight className="ml-2 h-4 w-4" />}
+                            {isValidating && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                          </Button>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="destructive"
+                                type="button"
+                                disabled={deleteMutation.isPending || isLoadingKeys}
+                              >
+                                {deleteMutation.isPending ? "Deleting..." : "Delete API Keys"}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will delete your API keys. You will need to re-enter them to continue trading.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDelete}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                     </form>
                   </CardContent>
