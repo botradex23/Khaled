@@ -88,23 +88,22 @@ export class OkxService {
     // Pre-encode the message for signature
     const message = timestamp + method + requestPath + body;
     
-    // Log signature components for debugging
-    if (requestPath.includes('account')) {
-      console.log('Generating OKX signature with:');
-      console.log(`- Timestamp: ${timestamp}`);
-      console.log(`- Method: ${method}`);
-      console.log(`- Path: ${requestPath}`);
-      console.log(`- Body Length: ${body.length} chars`);
-      console.log(`- Message: ${timestamp + method + requestPath}[body omitted]`);
-      console.log(`- Secret Key Length: ${this.secretKey.length} chars`);
-    }
+    // Log signature components more verbosely for debugging
+    console.log('【OKX Signature】 Generating signature with:');
+    console.log(`- Timestamp: ${timestamp}`);
+    console.log(`- Method: ${method}`);
+    console.log(`- Path: ${requestPath}`);
+    console.log(`- Body Length: ${body.length} chars`);
+    console.log(`- Message Format: ${timestamp + method + requestPath}[body omitted for security]`);
+    console.log(`- Secret Key Length: ${this.secretKey.length} chars`);
+    
+    // According to OKX API docs:
+    // The signature should be BASE64-encoded HMAC-SHA256 of (timestamp + method + requestPath + body) using the SecretKey
     
     // Create HMAC SHA256 signature using the secret key
     const signature = CryptoJS.HmacSHA256(message, this.secretKey).toString(CryptoJS.enc.Base64);
     
-    if (requestPath.includes('account')) {
-      console.log(`- Generated Signature: ${signature.substring(0, 10)}...`);
-    }
+    console.log(`- Generated Signature (first 10 chars): ${signature.substring(0, 10)}...`);
     
     return signature;
   }
@@ -289,7 +288,17 @@ export class OkxService {
    * Get account information
    */
   async getAccountInfo() {
-    return this.makeAuthenticatedRequest('GET', '/api/v5/account/balance');
+    console.log("OKX getAccountInfo: Attempting to call /api/v5/account/balance");
+    console.log(`Using API credentials (masked): ${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}`);
+    console.log(`Using demo mode: ${this.isDemo ? "YES" : "NO"}`);
+    try {
+      const result = await this.makeAuthenticatedRequest('GET', '/api/v5/account/balance');
+      console.log("OKX getAccountInfo: SUCCESS - received valid account balance response");
+      return result;
+    } catch (error: any) {
+      console.error("OKX getAccountInfo: FAILED with error:", error.message || 'Unknown error');
+      throw error;
+    }
   }
   
   /**

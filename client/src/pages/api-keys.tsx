@@ -232,7 +232,8 @@ export default function ApiKeys() {
     setValidationResult({ isValid: null, message: "Validating API keys..." });
     
     try {
-      const response = await apiRequest("POST", "/api/users/validate-api-keys", {
+      console.log("Validating API keys with /api/validate-api-keys endpoint");
+      const response = await apiRequest("POST", "/api/validate-api-keys", {
         okxApiKey: formValues.okxApiKey,
         okxSecretKey: formValues.okxSecretKey,
         okxPassphrase: formValues.okxPassphrase,

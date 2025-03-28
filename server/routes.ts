@@ -229,35 +229,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI API routes
   app.use("/api/ai", aiRouter);
   
-  // API Key validation endpoint - forwards requests to the main handler in userApiKeysRouter
+  // Direct API Key validation endpoint - No forwarding to avoid internal network issues
   app.post("/api/validate-api-keys", ensureAuthenticated, async (req, res) => {
-    console.log("Received API validation request at /api/validate-api-keys, forwarding to /api/users/validate-api-keys");
+    console.log("Received API validation request at /api/validate-api-keys");
     
-    // Forward the request to the proper endpoint
-    const apiUrl = 'http://localhost:' + (process.env.PORT || 3000) + '/api/users/validate-api-keys';
     try {
-      const response = await axios.post(apiUrl, req.body, {
-        headers: {
-          'Cookie': req.headers.cookie || '',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      // Return the response from the proper handler
-      return res.status(response.status).json(response.data);
-    } catch (error) {
-      console.error("Error forwarding API validation request:", error);
-      
-      // If we have a response from the API, forward it
-      if (error.response) {
-        return res.status(error.response.status).json(error.response.data);
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ message: "Unauthorized" });
       }
       
-      // Otherwise return a generic error
-      return res.status(500).json({
-        success: false,
-        message: "Failed to validate API keys: Internal error"
+      const validationSchema = z.object({
+        okxApiKey: z.string().min(1, "API key is required"),
+        okxSecretKey: z.string().min(1, "Secret key is required"),
+        okxPassphrase: z.string().min(1, "Passphrase is required"),
+        useTestnet: z.boolean().default(true)
       });
+      
+      // Validate input
+      const data = validationSchema.parse(req.body);
+      
+      try {
+        console.log("Testing OKX API connection...");
+        const testService = createOkxServiceWithCustomCredentials(
+          data.okxApiKey,
+          data.okxSecretKey, 
+          data.okxPassphrase,
+          data.useTestnet
+        );
+        
+        // Test a simple request first to make sure the connection works
+        const connectionTest = await testService.ping();
+        
+        if (!connectionTest.success) {
+          console.error("API connection test failed:", connectionTest.message);
+          return res.status(400).json({
+            success: false,
+            message: "API connection test failed. Please check your credentials."
+          });
+        }
+        
+        // Try an authenticated request
+        try {
+          console.log("Testing OKX API authentication...");
+          const accountInfo = await testService.getAccountInfo();
+          
+          if (!accountInfo || !accountInfo.data) {
+            throw new Error("Invalid response from OKX API");
+          }
+          
+          console.log("API authentication successful");
+          return res.json({
+            success: true,
+            message: "API keys validated successfully",
+            demo: data.useTestnet !== false
+          });
+        } catch (authError: any) {
+          console.error("API authentication failed:", authError.message);
+          return res.status(400).json({
+            success: false,
+            message: `API authentication failed: ${authError.message}`
+          });
+        }
+      } catch (error: any) {
+        console.error("API key validation error:", error.message);
+        return res.status(500).json({
+          success: false,
+          message: `API key validation failed: ${error.message}`
+        });
+      }
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      console.error("API key validation error:", error);
+      res.status(500).json({ message: "Failed to validate API keys" });
     }
   });
   
