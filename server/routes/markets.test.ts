@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
-import * as marketPriceService from '../../api/okx/marketPriceService';
-import { log } from '../../vite';
+import * as marketPriceService from '../../server/api/okx/marketPriceService';
+import { log } from '../../server/vite';
 
 const router = Router();
 
@@ -163,7 +163,7 @@ router.post('/v2/batch-prices', async (req: Request, res: Response) => {
  */
 router.post('/v2/refresh-cache', async (req: Request, res: Response) => {
   try {
-    await marketPriceService.refreshPriceCache();
+    await marketPriceService.default.refreshPriceCache();
     const prices = await marketPriceService.getAllCurrencyPrices();
     
     res.json({

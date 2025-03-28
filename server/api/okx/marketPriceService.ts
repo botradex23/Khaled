@@ -23,6 +23,22 @@ let priceCache = new Map<string, CurrencyPrice>();
 let lastCacheRefresh = 0;
 const CACHE_REFRESH_INTERVAL = 60000; // 60 שניות
 
+// פונקציה להדפסת מצב המטמון - לצורכי דיבוג
+export function printCacheStatus() {
+  console.log(`\n-------- מצב מטמון המחירים --------`);
+  console.log(`מספר מטבעות במטמון: ${priceCache.size}`);
+  console.log(`זמן הרענון האחרון: ${new Date(lastCacheRefresh).toISOString()}`);
+  
+  // הדפסת דוגמאות מחירים
+  console.log(`\nדוגמאות מחירים:`);
+  const examples = ['BTC', 'ETH', 'XRP', 'BTC-USDT', 'ETH-USDT'];
+  examples.forEach(symbol => {
+    const price = priceCache.get(symbol);
+    console.log(`${symbol}: ${price ? JSON.stringify(price) : 'לא נמצא'}`);
+  });
+  console.log(`------------------------------------\n`);
+}
+
 /**
  * השגת מחיר מטבע ספציפי
  * @param currency סמל המטבע לחיפוש (לדוגמה: BTC, ETH)
@@ -219,15 +235,30 @@ async function refreshPriceCache(): Promise<void> {
         
         // אחסון גם לפי שם המטבע עצמו (לדוגמה: BTC במקום BTC-USDT)
         // כדי לאפשר חיפוש פשוט יותר
-        if (!newCache.has(base) && (quote === 'USDT' || quote === 'USD' || quote === 'USDC')) {
-          newCache.set(base, {
-            symbol: base,
-            price,
-            base,
-            quote,
-            timestamp: Date.now(),
-            source
-          });
+        // נעדיף צמדים עם USDT/USD/USDC אך נשמור גם אחרים אם אין ברירה
+        
+        // שיטה 1: אם המטבע צמוד למטבע ציטוט מועדף, נשמור אותו תמיד
+        const isPreferredQuote = quote === 'USDT' || quote === 'USD' || quote === 'USDC';
+        
+        if (isPreferredQuote || !newCache.has(base)) {
+          // אם הצמד הנוכחי הוא צמד מועדף, או עדיין אין לנו רשומה של המטבע הבסיסי
+          const existingEntry = newCache.get(base);
+          
+          const shouldOverwrite = !existingEntry || 
+                                isPreferredQuote && 
+                                !(existingEntry.quote === 'USDT' || existingEntry.quote === 'USD' || existingEntry.quote === 'USDC');
+          
+          if (shouldOverwrite) {
+            // שמירת המטבע הבסיסי עם המחיר העדכני
+            newCache.set(base, {
+              symbol: base,
+              price,
+              base,
+              quote,
+              timestamp: Date.now(),
+              source
+            });
+          }
         }
       } catch (err) {
         console.error(`Error processing ticker for ${ticker.instId}:`, err);

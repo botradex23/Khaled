@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
-import * as marketPriceService from '../../api/okx/marketPriceService';
-import { log } from '../../vite';
+import * as marketPriceService from '../../server/api/okx/marketPriceService';
+import { log } from '../../server/vite';
 
 const router = Router();
 
@@ -244,7 +244,7 @@ router.get('/trading-pair/:symbol', async (req: Request, res: Response) => {
 router.post('/refresh-cache', async (req: Request, res: Response) => {
   try {
     // רענון המטמון
-    await marketPriceService.refreshPriceCache();
+    await marketPriceService.default.refreshPriceCache();
     
     // שליפת המחירים המעודכנים
     const prices = await marketPriceService.getAllCurrencyPrices();
