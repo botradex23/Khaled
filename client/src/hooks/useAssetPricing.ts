@@ -154,15 +154,16 @@ export function useAssetPricing(currencies?: string[]) {
     isLoading,
     isError,
     error 
-  } = useQuery<{ success: boolean, prices: CryptoPriceData[] }>({
+  } = useQuery<{ success: boolean, prices: CryptoPriceData[], message?: string }>({
     queryKey: [queryUrl],
     queryFn: getQueryFn({ on401: "returnNull" }),
     refetchInterval: 60000, // Refresh every minute
     staleTime: 30000,     // Consider data stale after 30 seconds
   });
   
-  // Extract prices from the response
-  const prices = response?.success && response?.prices ? response.prices : [];
+  // Extract prices from the response ONLY if success is true
+  // Don't display any data when the OKX API connection fails
+  const prices = response?.success === true && Array.isArray(response?.prices) ? response.prices : [];
   
   // Get price for a specific currency
   const getPrice = (currency: string): number => {

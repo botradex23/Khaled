@@ -33,7 +33,7 @@ export class OkxService {
    * Check if the service is properly configured with API keys
    * @returns boolean indicating if API keys are configured
    */
-  get isConfigured(): boolean {
+  isConfigured(): boolean {
     return !!(this.apiKey && this.secretKey && this.passphrase);
   }
   
@@ -79,6 +79,23 @@ export class OkxService {
    */
   async getTicker(symbol: string) {
     return this.makePublicRequest<any>(`/api/v5/market/ticker?instId=${symbol}`);
+  }
+  
+  /**
+   * Get market tickers for all available trading pairs
+   * @returns Array of market tickers
+   */
+  async getMarketTickers() {
+    try {
+      const response = await this.makePublicRequest<any>('/api/v5/market/tickers?instType=SPOT');
+      if (response && response.code === '0' && Array.isArray(response.data)) {
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching market tickers:', error);
+      return [];
+    }
   }
   
   /**

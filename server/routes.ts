@@ -968,19 +968,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? (typeof symbolsParam === 'string' ? symbolsParam.split(',') : [])
         : [];
       
-      // Make a direct request to OKX ticker endpoint to get the latest prices
-      const tickerResponse = await okxService.makePublicRequest<any>(
-        '/api/v5/market/tickers?instType=SPOT'
-      );
+      // Get data using the okxService.getMarketTickers method 
+      const marketData = await okxService.getMarketTickers();
       
-      if (tickerResponse.code !== '0' || !Array.isArray(tickerResponse.data)) {
-        throw new Error('Failed to fetch cryptocurrency prices');
+      if (!marketData || !marketData.length) {
+        // Don't return any approximate data if the API fails
+        return res.status(503).json({
+          success: false,
+          timestamp: new Date().toISOString(),
+          message: 'Unable to fetch real-time market data',
+          error: 'Market data service unavailable'
+        });
       }
       
       // Process all pairs and extract price data
       const pricesMap: Record<string, number> = {};
       
-      tickerResponse.data.forEach((ticker: any) => {
+      marketData.forEach((ticker: any) => {
         // Handle both USDT pairs (most common) and USD pairs
         if (ticker.instId && (ticker.instId.includes('-USDT') || ticker.instId.includes('-USD'))) {
           const parts = ticker.instId.split('-');
@@ -1017,6 +1021,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Return the prices data in the format expected by MarketPricesResponse
       res.json({
+        success: true,
         timestamp: new Date().toISOString(),
         totalRequested: requestedSymbols.length,
         totalFound: prices.length,
@@ -1025,6 +1030,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err: any) {
       console.error('Error fetching prices:', err);
       res.status(500).json({ 
+        success: false,
         timestamp: new Date().toISOString(),
         totalRequested: 0,
         totalFound: 0,
