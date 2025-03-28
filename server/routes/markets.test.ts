@@ -20,14 +20,9 @@ router.get('/v2/prices', async (req: Request, res: Response) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
     const symbols = req.query.symbols ? (req.query.symbols as string).split(',') : undefined;
     
-    // רשימת מטבעות ברירת מחדל למקרה שלא צוינו סמלים
-    const defaultCoins = [
-      'BTC', 'ETH', 'XRP', 'USDT', 'SOL', 'DOGE', 'DOT', 'ADA', 'AVAX', 'LINK',
-      'BSV', 'OKB', 'BCH', 'SUI', 'BSC', 'RUNE', 'ZIL', 'COMP', 'ZKS', 'DENT', 'TRB', 'PEOPLE'
-    ];
-    
-    // שימוש ברשימת ברירת מחדל אם לא סופקו סמלים
-    const targetSymbols = symbols && symbols.length > 0 ? symbols : defaultCoins;
+    // אם לא צוינו סמלים ספציפיים, נקבל את כל המחירים הזמינים
+    // ולא נשתמש ברשימת ברירת מחדל, כך שנוכל לספק מחירים לכל מטבע שיכול להיות במערכת
+    const targetSymbols = symbols && symbols.length > 0 ? symbols : [];
     
     // קבלת מחירים (עם רענון מטמון אם נדרש)
     const allPrices = await marketPriceService.getAllCurrencyPrices(forceRefresh);

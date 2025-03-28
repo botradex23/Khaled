@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -66,9 +67,47 @@ export function AccountBalanceCard() {
     refetchInterval: 15000 // 15 seconds refresh for more up-to-date data
   });
   
+  // אסוף את רשימת כל המטבעות מהבאלאנס כדי לבקש את המחירים שלהם ספציפית
+  // כך נקבל תמיד את מחיר השוק לכל מטבע שיש באקאונט
+  const allAssetCurrencies = useMemo(() => {
+    const currencies: string[] = [];
+    
+    // מבאלאנס של OKX
+    const okxBalances = okxQuery.data || [];
+    if (Array.isArray(okxBalances)) {
+      okxBalances.forEach(asset => {
+        if (asset.currency && !currencies.includes(asset.currency)) {
+          currencies.push(asset.currency);
+        }
+      });
+    }
+    
+    // מבאלאנס של Bitget
+    const bitgetBalances = bitgetQuery.data || [];
+    if (Array.isArray(bitgetBalances)) {
+      bitgetBalances.forEach(asset => {
+        if (asset.currency && !currencies.includes(asset.currency)) {
+          currencies.push(asset.currency);
+        }
+      });
+    }
+    
+    // מוסיף את המטבעות הפופולריים תמיד (גיבוי)
+    const popularCoins = ['BTC', 'ETH', 'XRP', 'USDT', 'SOL', 'DOGE', 'DOT', 'ADA', 'AVAX', 'LINK'];
+    popularCoins.forEach(coin => {
+      if (!currencies.includes(coin)) {
+        currencies.push(coin);
+      }
+    });
+    
+    console.log("Requesting prices for all balance currencies:", currencies);
+    return currencies;
+  }, [okxQuery.data, bitgetQuery.data]);
+  
   // Get market prices directly from the markets API for more accurate pricing
+  // כעת אנחנו מבקשים רק את המטבעות שיש בחשבון או את הפופולריים
   const marketPricesQuery = useQuery<MarketPricesResponse>({
-    queryKey: ['/api/markets/v2/prices'],
+    queryKey: ['/api/markets/v2/prices', { symbols: allAssetCurrencies.join(',') }],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
   
