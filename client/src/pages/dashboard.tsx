@@ -185,10 +185,9 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <AppSidebar />
       <div className="flex flex-col flex-1">
         <Header />
-        <main className="flex-grow pt-24 pb-12 px-4 md:px-6 ml-0 md:ml-64">
+        <main className="flex-grow pt-24 pb-12 px-4 md:px-6">
           <div className="max-w-7xl mx-auto">
           {/* API Key Warning Banner */}
           {isAuthenticated && !authLoading && !apiKeysLoading && showApiKeyDialog && (

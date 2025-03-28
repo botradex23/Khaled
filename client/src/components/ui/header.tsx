@@ -306,7 +306,7 @@ export default function Header() {
           </div>
         )}
       </div>
-    
+      
       {/* Binance API Modal */}
       <Dialog open={showBinanceDialog} onOpenChange={setShowBinanceDialog}>
         <DialogContent className="sm:max-w-md">
