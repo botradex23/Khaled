@@ -232,9 +232,9 @@ export class AccountService {
       // First, get the main account balance to ensure we capture all currencies
       // Then later we'll fetch funding account data as a secondary source to be thorough
       
-      // Make authenticated request using the service
+      // Make authenticated request using the service - fixed format for correct HTTP method
       const mainAccountResponse = await okxService.makeAuthenticatedRequest<OkxResponse<any>>(
-        'GET',
+        'GET', 
         '/api/v5/account/balance'
       );
       
@@ -807,7 +807,7 @@ export class AccountService {
     console.log('Running comprehensive OKX API connection check...');
     
     // First, check base configuration
-    const apiKeyConfigured = okxService.isConfigured;
+    const apiKeyConfigured = !!okxService.apiKey && !!okxService.secretKey && !!okxService.passphrase;
     const isDemo = true; // We're using demo mode by default
     const apiUrl = okxService.getBaseUrl();
     
@@ -868,7 +868,7 @@ export class AccountService {
         
         // Before checking balances, we need to verify if the OKX API authentication actually works
         // Make a direct call that requires authentication to test auth status
-        const authTest = await okxService.makeAuthenticatedRequest('GET', '/api/v5/account/config');
+        const authTest = await okxService.makeAuthenticatedRequest<OkxResponse<any>>('GET', '/api/v5/account/config');
         
         // If we reach here without an error, authentication was successful
         if (!authTest || typeof authTest !== 'object' || !('code' in authTest) || authTest.code !== '0') {

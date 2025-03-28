@@ -7,9 +7,9 @@ import axios, { AxiosRequestConfig } from 'axios';
  */
 export class OkxService {
   private baseUrl: string;
-  private apiKey: string;
-  private secretKey: string;
-  private passphrase: string;
+  apiKey: string;
+  secretKey: string;
+  passphrase: string;
   private isTestnet: boolean;
 
   constructor(
@@ -33,7 +33,7 @@ export class OkxService {
    * Check if the service is properly configured with API keys
    * @returns boolean indicating if API keys are configured
    */
-  isConfigured(): boolean {
+  get isConfigured(): boolean {
     return !!(this.apiKey && this.secretKey && this.passphrase);
   }
   
@@ -70,7 +70,7 @@ export class OkxService {
    * Requires authentication
    */
   async getAccountInfo() {
-    return this.makeAuthenticatedRequest<any>('/api/v5/account/balance');
+    return this.makeAuthenticatedRequest<any>('GET', '/api/v5/account/balance');
   }
   
   /**
@@ -133,7 +133,7 @@ export class OkxService {
       params.px = price;
     }
 
-    return this.makeAuthenticatedRequest<any>('/api/v5/trade/order', 'POST', params);
+    return this.makeAuthenticatedRequest<any>('POST', '/api/v5/trade/order', params);
   }
 
   /**
@@ -142,7 +142,7 @@ export class OkxService {
    * @param orderId Order ID to cancel
    */
   async cancelOrder(symbol: string, orderId: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/api/v5/trade/cancel-order', 'POST', {
+    return this.makeAuthenticatedRequest<any>('POST', '/api/v5/trade/cancel-order', {
       instId: symbol,
       ordId: orderId
     });
@@ -182,18 +182,19 @@ export class OkxService {
 
   /**
    * Make an authenticated request to the OKX API
-   * @param endpoint The API endpoint to request
    * @param method The HTTP method to use
+   * @param endpoint The API endpoint to request
    * @param params Optional parameters to include in the request
    */
   async makeAuthenticatedRequest<T>(
+    method: 'GET' | 'POST',
     endpoint: string,
-    method: 'GET' | 'POST' = 'GET',
     params: Record<string, any> = {}
   ): Promise<T> {
     try {
       const timestamp = new Date().toISOString();
-      const requestPath = endpoint;
+      // Fix the endpoint to ensure it's lowercase to avoid HTTP method errors
+      const requestPath = endpoint.toLowerCase();
       const body = method === 'GET' ? '' : JSON.stringify(params);
 
       // Create the signature according to OKX authentication requirements
@@ -215,7 +216,8 @@ export class OkxService {
         headers['x-simulated-trading'] = '1';
       }
 
-      const url = `${this.baseUrl}${endpoint}`;
+      // Make sure URL uses lowercase endpoint to avoid HTTP method errors
+      const url = `${this.baseUrl}${requestPath}`;
       const config: AxiosRequestConfig = {
         method,
         url,
