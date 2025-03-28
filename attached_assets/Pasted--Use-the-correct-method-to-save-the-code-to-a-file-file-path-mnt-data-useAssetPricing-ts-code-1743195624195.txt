@@ -1,0 +1,95 @@
+# Use the correct method to save the code to a file
+file_path = "/mnt/data/useAssetPricing.ts"
+
+code = """
+// useAssetPricing.ts
+import { Market } from "@/types/market";
+import { AccountBalance } from "@/types/balance";
+
+// טווח של סמלים שמייצגים סטייבלקוינים
+const STABLECOINS = ['USDT', 'USDC', 'DAI', 'TUSD', 'USDP', 'GUSD', 'BUSD', 'USDK', 'USDN'];
+
+const KNOWN_PRICES: Record<string, number> = {
+  BTC: 83760,
+  ETH: 1870,
+  BNB: 622,
+  SOL: 130,
+  XRP: 2.17,
+  ADA: 0.69,
+  DOGE: 0.18,
+};
+
+// פונקציה עוזרת - האם המטבע הוא סטייבלקוין
+function isStablecoin(symbol: string): boolean {
+  return STABLECOINS.includes(symbol.toUpperCase());
+}
+
+// פונקציה למציאת המחיר למטבע
+export function getPriceForAsset(asset: AccountBalance, marketPrices: Market[]): number {
+  const symbol = asset.currency.toUpperCase();
+
+  // 1. חיפוש מדויק
+  let price = marketPrices.find(m => m.symbol === symbol)?.price;
+
+  // 2. חיפוש לפי התחלה
+  if (!price) price = marketPrices.find(m => m.symbol.startsWith(symbol))?.price;
+
+  // 3. חיפוש לפי הכללה וסיומת
+  if (!price) price = marketPrices.find(m => m.symbol.includes(symbol) && (m.symbol.endsWith("USDT") || m.symbol.endsWith("USD")))?.price;
+
+  // 4. חיפוש לא רגיש לאותיות
+  if (!price) price = marketPrices.find(m => m.symbol.toUpperCase() === symbol)?.price;
+
+  // 5. מחיר מחושב מהערך הכולל
+  if (!price && asset.valueUSD && asset.total) {
+    price = asset.valueUSD / asset.total;
+  }
+
+  // 6. מחיר ידוע
+  if (!price && isStablecoin(symbol)) {
+    price = 1;
+  } else if (!price && KNOWN_PRICES[symbol]) {
+    price = KNOWN_PRICES[symbol];
+  }
+
+  return price || 0;
+}
+
+// חישוב ערכים לכל התיק
+export function enrichBalancesWithPrices(balances: AccountBalance[], marketPrices: Market[]): AccountBalance[] {
+  return balances.map(asset => {
+    const price = getPriceForAsset(asset, marketPrices);
+    const total = asset.total || asset.available + (asset.frozen || 0);
+    const calculatedValue = total * price;
+
+    return {
+      ...asset,
+      total,
+      pricePerUnit: price,
+      calculatedTotalValue: calculatedValue,
+      percentOfWhole: total < 1 ? total * 100 : undefined,
+    };
+  });
+}
+
+// סכום כולל
+export function calculateTotalValue(balances: AccountBalance[]): { total: number; available: number; frozen: number } {
+  let total = 0, available = 0, frozen = 0;
+
+  balances.forEach(asset => {
+    const value = asset.total * (asset.pricePerUnit || 0);
+    total += value;
+
+    const ratio = asset.total > 0 ? (asset.available / asset.total) : 1;
+    available += value * ratio;
+    frozen += value * (1 - ratio);
+  });
+
+  return { total, available, frozen };
+}
+"""
+
+with open(file_path, "w") as f:
+    f.write(code)
+
+file_path

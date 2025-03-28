@@ -27,7 +27,28 @@ router.get('/v2/prices', async (req: Request, res: Response) => {
     // קבלת מחירים (עם רענון מטמון אם נדרש)
     const allPrices = await marketPriceService.getAllCurrencyPrices(forceRefresh);
     
-    // סינון המחירים לפי הסמלים המבוקשים
+    // אם לא סופקו סמלים ספציפיים, נחזיר את כל המחירים הזמינים
+    if (targetSymbols.length === 0) {
+      // נחזיר את כל המחירים ללא סינון
+      const allResults = allPrices.map(price => ({
+        symbol: price.base || price.symbol.split('-')[0] || price.symbol,
+        price: price.price,
+        found: true,
+        source: price.source || "API",
+        timestamp: price.timestamp || Date.now()
+      }));
+      
+      // בניית התשובה המובנית - כל המחירים
+      res.json({
+        timestamp: new Date().toISOString(),
+        totalRequested: 0, // בקשה כללית ללא סמלים ספציפיים
+        totalFound: allResults.length,
+        prices: allResults
+      });
+      return;
+    }
+    
+    // סינון המחירים לפי הסמלים המבוקשים (אם סופקו סמלים)
     const filteredPrices = marketPriceService.filterCurrencyPrices(allPrices, targetSymbols);
     
     // מיפוי לפורמט התשובה

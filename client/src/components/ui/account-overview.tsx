@@ -14,34 +14,9 @@ import { BadgeInfo, Wallet, Lock } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
-
-// Type definitions
-interface Market {
-  symbol: string;
-  price: number;
-  found: boolean;
-  source: string;
-  timestamp: number;
-}
-
-interface MarketPricesResponse {
-  timestamp: string;
-  totalRequested: number;
-  totalFound: number;
-  prices: Market[];
-}
-
-interface AccountBalance {
-  currency: string;
-  available: number;
-  frozen: number;
-  total: number;
-  valueUSD: number;
-  percentOfWhole?: number; // Percentage of the whole coin (e.g., 0.1 BTC = 10%)
-  pricePerUnit?: number;   // Price per 1 unit of currency
-  calculatedTotalValue?: number; // Total calculated value in USD
-  isRealAccount?: boolean; // Whether this is real account data or demo data
-}
+import { Market, MarketPricesResponse } from "@/types/market";
+import { AccountBalance } from "@/types/balance";
+import { enrichBalancesWithPrices, calculateTotalValue } from "@/hooks/useAssetPricing";
 
 export function AccountBalanceCard() {
   // Get authentication status to determine which endpoint to use
@@ -345,276 +320,32 @@ export function AccountBalanceCard() {
 
   const balances: AccountBalance[] = selectedData;
   
-  // For OKX API format, each asset has a valueUSD property we can use directly
-  let totalAvailable = 0;
-  let totalFrozen = 0;
-  
   // For debugging
   console.log("Processing balances for total calculation:", balances);
   
-  // עיבוד וניתוח של נתוני המאזן
-  // וודא שיש לנו מערך לפני שאנחנו מבצעים map
-  const processedBalances = (Array.isArray(balances) ? balances : []).map(asset => {
-    // וידוא שהכמות הכוללת מחושבת כראוי
-    if (asset.total === 0 && asset.available > 0) {
-      asset.total = asset.available + (asset.frozen || 0);
-    }
+  // Get market prices from the query
+  const marketPrices = (marketPricesQuery.data?.prices && Array.isArray(marketPricesQuery.data.prices)) 
+    ? marketPricesQuery.data.prices 
+    : [];
     
-    // מקור #1: הגדרת מחיר מה-API של שער השוק - שיטה משופרת עם חיפוש במספר פורמטים
-    let priceFromMarketApi = 0;
-    if (marketPricesQuery.data && marketPricesQuery.data.prices && Array.isArray(marketPricesQuery.data.prices)) {
-      // ניסיון #1: חיפוש התאמה מדויקת לפי סמל המטבע
-      let match = marketPricesQuery.data.prices.find(
-        (market: Market) => market.symbol === asset.currency
-      );
-      
-      // ניסיון #2: חיפוש התאמה חלקית (התחלה זהה)
-      if (!match) {
-        match = marketPricesQuery.data.prices.find(
-          (market: Market) => market.symbol.startsWith(asset.currency)
-        );
-      }
-      
-      // ניסיון #3: חיפוש התאמה בסימבול שמסתיים בדולר או USDT
-      if (!match) {
-        match = marketPricesQuery.data.prices.find(
-          (market: Market) => 
-            market.symbol.includes(asset.currency) && 
-            (market.symbol.endsWith('USD') || market.symbol.endsWith('USDT'))
-        );
-      }
-      
-      // ניסיון #4: חיפוש התאמה לא רגיש לגודל אותיות
-      if (!match) {
-        match = marketPricesQuery.data.prices.find(
-          (market: Market) => market.symbol.toUpperCase() === asset.currency.toUpperCase()
-        );
-      }
-      
-      // אם מצאנו התאמה באחת משיטות החיפוש ועדיין אין לנו מחיר
-      if (match && typeof match.price === 'number' && priceFromMarketApi === 0) {
-        priceFromMarketApi = match.price;
-        console.log(`Found market price for ${asset.currency} from API (${match.symbol}): $${priceFromMarketApi}`);
-      }
-    }
-    
-    // מקור #2: חישוב מחיר מהערך בדולרים מחולק בכמות
-    let priceFromValueCalculation = 0;
-    if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0 && asset.total > 0) {
-      priceFromValueCalculation = asset.valueUSD / asset.total;
-      console.log(`Calculated price for ${asset.currency} from value: $${priceFromValueCalculation}`);
-    }
-    
-    // מקור #3: מחיר קיים שכבר מוגדר בנכס
-    let existingPrice = asset.pricePerUnit || 0;
-    
-    // מקור #4: מחפש התאמות דומות בתוך נתוני ה-API
-    let similarMatch = null;
-    if (marketPricesQuery.data && marketPricesQuery.data.prices && Array.isArray(marketPricesQuery.data.prices) && priceFromMarketApi === 0) {
-      // חיפוש מטבע עם שם דומה (לדוגמה: אם יש BTC-USDT אבל מחפשים BTC)
-      const currencyLower = asset.currency.toLowerCase();
-      
-      // במקום לטפל במטבעות באופן ספציפי, נבנה פתרון גנרי
-      // שיחפש את המטבע בכל צורה אפשרית בנתוני ה-API
-      
-      // שיטה 1: חיפוש התאמה מדויקת (מקרה שבו יש מחיר ישיר של המטבע)
-      let exactMatch = marketPricesQuery.data.prices.find(
-        (market: Market) => market.symbol === asset.currency
-      );
-      
-      // שיטה 2: חיפוש לפי זוגות מסחר נפוצים
-      if (!exactMatch) {
-        const commonPairs = ['-USDT', '-USD', '/USDT', '/USD', 'USDT', '-BTC', '/BTC', 'BTC'];
-        for (const pair of commonPairs) {
-          const symbolToCheck = asset.currency + pair;
-          const pairMatch = marketPricesQuery.data.prices.find(
-            (market: Market) => market.symbol === symbolToCheck
-          );
-          if (pairMatch) {
-            exactMatch = pairMatch;
-            console.log(`Found exact trading pair match for ${asset.currency} using ${pairMatch.symbol}: $${pairMatch.price}`);
-            break;
-          }
-        }
-      }
-      
-      // שיטה 3: חיפוש לפי צמד מסחר הפוך (במקרה שהמטבע הנוכחי הוא המטבע השני בזוג)
-      if (!exactMatch) {
-        const baseCoins = ['USDT-', 'USD-', 'BTC-'];
-        for (const base of baseCoins) {
-          const symbolToCheck = base + asset.currency;
-          const reverseMatch = marketPricesQuery.data.prices.find(
-            (market: Market) => market.symbol === symbolToCheck
-          );
-          if (reverseMatch) {
-            exactMatch = reverseMatch;
-            console.log(`Found reverse trading pair match for ${asset.currency} using ${reverseMatch.symbol}: $${reverseMatch.price}`);
-            break;
-          }
-        }
-      }
-      
-      // שיטה 4: חיפוש חלקי בכל סמלי המטבעות
-      if (!exactMatch) {
-        // חיפוש לפי התאמה גלובלית - בודק אם המטבע הנוכחי מוזכר בסמלי שוק אחרים
-        const possibleMatches = marketPricesQuery.data.prices.filter((market: Market) => 
-          market.symbol.toLowerCase().includes(currencyLower)
-        );
-    
-        if (possibleMatches.length > 0) {
-          // מיון לפי רלוונטיות - המטבעות עם שמות קצרים יותר סביר יותר שהם התאמה נכונה
-          possibleMatches.sort((a, b) => a.symbol.length - b.symbol.length);
-          similarMatch = possibleMatches[0];
-          console.log(`Found partial match for ${asset.currency} using ${similarMatch.symbol}: $${similarMatch.price}`);
-          priceFromMarketApi = similarMatch.price;
-        }
-      } else {
-        // אם מצאנו התאמה מדויקת באחת מהשיטות למעלה
-        priceFromMarketApi = exactMatch.price;
-      }
-    }
-
-    // מקור #5: ערכים ידועים עבור מטבעות נפוצים
-    let knownPrice = 0;
-    // סטייבלקוינים (מטבעות יציבים) - הערך שלהם בדרך כלל קרוב מאוד ל-1 דולר
-    if (asset.currency === 'USDT' || asset.currency === 'USDC' || asset.currency === 'BUSD' || 
-        asset.currency === 'DAI' || asset.currency === 'TUSD' || asset.currency === 'USDK' || 
-        asset.currency === 'USDP' || asset.currency === 'USDN' || asset.currency === 'GUSD') {
-      knownPrice = 1;
-      console.log(`Using stablecoin price of $1 for ${asset.currency}`);
-    } 
-    // חפש את המחיר העדכני ביותר בנתוני API אם קיים
-    else if (marketPricesQuery.data?.prices) {
-      const commonCoins = {
-        'BTC': ['BTC', 'BITCOIN', 'XBT'],  
-        'ETH': ['ETH', 'ETHEREUM'],
-        'SOL': ['SOL', 'SOLANA'],
-        'XRP': ['XRP', 'RIPPLE'],
-        'ADA': ['ADA', 'CARDANO'],
-        'DOT': ['DOT', 'POLKADOT'],
-        'DOGE': ['DOGE', 'DOGECOIN'],
-        'AVAX': ['AVAX', 'AVALANCHE'],
-        'MATIC': ['MATIC', 'POLYGON'],
-        'LINK': ['LINK', 'CHAINLINK'],
-        'UNI': ['UNI', 'UNISWAP'],
-        'LTC': ['LTC', 'LITECOIN'],
-        'BCH': ['BCH', 'BITCOIN-CASH'],
-      };
-      
-      // בדוק אם המטבע הנוכחי מתאים לרשימת הסמלים הידועים
-      const coinFamily = Object.entries(commonCoins).find(([_, aliases]) => 
-        aliases.some(alias => asset.currency.toUpperCase() === alias));
-        
-      if (coinFamily) {
-        const primarySymbol = coinFamily[0]; // למשל BTC
-        // חפש את המחיר העדכני ביותר
-        const matchedCoin = marketPricesQuery.data.prices.find(
-          (price: Market) => price.symbol === primarySymbol || 
-            price.symbol.startsWith(primarySymbol + '-') ||
-            price.symbol.startsWith(primarySymbol + '/')
-        );
-        
-        if (matchedCoin) {
-          knownPrice = matchedCoin.price;
-          console.log(`Using market price for known coin ${asset.currency}: $${knownPrice} (matched to ${matchedCoin.symbol})`);
-        }
-      }
-    }
-    
-    // עדיין אין מחיר? השתמש בערכי ברירת מחדל
-    if (knownPrice === 0) {
-      if (asset.currency === 'BTC') {
-        knownPrice = 83760;
-      } else if (asset.currency === 'ETH') {
-        knownPrice = 1870;
-      } else if (asset.currency === 'BNB') {
-        knownPrice = 622;
-      } else if (asset.currency === 'SOL') {
-        knownPrice = 130;
-      } else if (asset.currency === 'XRP') {
-        knownPrice = 2.17;
-      } else if (asset.currency === 'ADA') {
-        knownPrice = 0.69;
-      } else if (asset.currency === 'DOGE') {
-        knownPrice = 0.18;
-      }
-    }
-    
-    // קביעת המחיר הסופי לפי סדר עדיפות
-    let finalPrice = 0;
-    
-    // העדיפות הגבוהה ביותר: מחיר מה-API של השוק
-    if (priceFromMarketApi > 0) {
-      finalPrice = priceFromMarketApi;
-      console.log(`Using market API price for ${asset.currency}: $${finalPrice}`);
-    }
-    // עדיפות שניה: מחיר מחושב מהערך בדולרים
-    else if (priceFromValueCalculation > 0) {
-      finalPrice = priceFromValueCalculation;
-      console.log(`Using calculated price for ${asset.currency}: $${finalPrice}`);
-    }
-    // עדיפות שלישית: מחיר קיים שכבר מוגדר בנכס
-    else if (existingPrice > 0) {
-      finalPrice = existingPrice;
-      console.log(`Using existing price for ${asset.currency}: $${finalPrice}`);
-    }
-    // עדיפות אחרונה: ערכים ידועים עבור מטבעות נפוצים
-    else if (knownPrice > 0) {
-      finalPrice = knownPrice;
-      console.log(`Using known default price for ${asset.currency}: $${finalPrice}`);
-    }
-    
-    // עדכון המחיר הסופי לשימוש בשאר החישובים
-    asset.pricePerUnit = finalPrice;
-    
-    // חישוב אחוז ההחזקה יחסית למטבע שלם
-    if (asset.total > 0 && asset.total < 1) {
-      asset.percentOfWhole = asset.total * 100; // אחוז מתוך מטבע שלם
-    }
-    
-    return asset;
+  // Use our utility functions from useAssetPricing
+  // Process balances to add market prices
+  const processedBalances = enrichBalancesWithPrices(
+    (Array.isArray(balances) ? balances : []), 
+    marketPrices
+  );
+  
+  // Calculate total values
+  const { total: totalValue, available: totalAvailable, frozen: totalFrozen } = 
+    calculateTotalValue(processedBalances);
+  
+  // Sort balances by value (highest first)
+  const sortedBalances = [...processedBalances].sort((a, b) => {
+    const valueA = a.total * (a.pricePerUnit || 0);
+    const valueB = b.total * (b.pricePerUnit || 0);
+    return valueB - valueA;
   });
   
-  // חישוב הערך של כל נכס באופן עקבי
-  // יש להשתמש תמיד באותה נוסחה פשוטה: כמות × מחיר
-  // איפוס הערכים הכוללים
-  totalAvailable = 0;
-  totalFrozen = 0;
-  
-  // עיבוד כל הנכסים וחישוב ערכם
-  processedBalances.forEach(asset => {
-    // הנוסחה הבסיסית: כמות × מחיר ליחידה
-    const assetTotalValue = asset.total * (asset.pricePerUnit || 0);
-    
-    // שמירת הערך המחושב לשימוש עקבי בכל מקום
-    asset.calculatedTotalValue = assetTotalValue;
-    
-    // חישוב החלוקה בין זמין וקפוא לפי היחס
-    if (asset.total > 0) {
-      const availableRatio = (asset.available || 0) / asset.total;
-      totalAvailable += assetTotalValue * availableRatio;
-      totalFrozen += assetTotalValue * (1 - availableRatio);
-    } else {
-      // אם אין נתונים מדויקים, מוסיפים הכל לחלק הזמין
-      totalAvailable += assetTotalValue;
-    }
-  });
-  
-  // סכום התיק הכולל הוא סכום החלק הזמין והחלק הקפוא
-  const totalValue = totalAvailable + totalFrozen;
-  console.log("Total portfolio value calculated:", totalValue);
-  
-  // The processedBalances are already computed and ready to use for the rest of the calculations
-  
-  // מיון לפי הערך המחושב (הגבוה ביותר תחילה) - גם כאן משתמשים באותה נוסחה פשוטה כמו בשאר המקומות
-  const sortedBalances = [...processedBalances]
-    .sort((a, b) => {
-      // תמיד לחשב כפשוט כמות × מחיר
-      const valueA = a.total * (a.pricePerUnit || 0);
-      const valueB = b.total * (b.pricePerUnit || 0);
-      return valueB - valueA;
-    });
-    
   // Count total number of assets
   const assetsWithBalance = Array.isArray(balances) ? balances.length : 0;
   
@@ -931,139 +662,80 @@ export function TradingHistoryCard() {
       symbol: trade.symbol || trade.instId || 'Unknown Pair',
       side: trade.side || 'unknown', 
       price: parseFloat(trade.price || trade.px || trade.fillPx || '0'),
-      quantity: parseFloat(trade.quantity || trade.sz || trade.fillSz || '0'),
-      timestamp: trade.timestamp || trade.fillTime || trade.cTime || new Date().toISOString(),
+      quantity: parseFloat(trade.size || trade.fillSz || trade.quantity || '0'),
+      value: parseFloat(trade.value || '0'),
       fee: parseFloat(trade.fee || '0'),
-      feeCurrency: trade.feeCcy || 'USDT'
+      feeCcy: trade.feeCcy || '',
+      timestamp: new Date(trade.timestamp || trade.cTime || trade.fillTime || Date.now()).getTime()
     };
     
-    // Calculate total value and simple PnL estimate (in demo mode)
-    const totalValue = standardizedTrade.price * standardizedTrade.quantity;
-    
-    // Attempt to estimate PnL when possible based on side and market conditions
-    // This is purely demo functionality since real PnL would come from the API
-    const estimatedPnL = standardizedTrade.side === 'buy' 
-      ? 0 // Buys don't have immediate PnL
-      : (Math.random() > 0.4 ? 1 : -1) * (Math.random() * 0.05 * totalValue); // Random profit/loss for sells
-      
-    return {
-      ...standardizedTrade,
-      totalValue,
-      estimatedPnL
-    };
+    return standardizedTrade;
   });
-
+  
+  // Sort trades by timestamp (newest first)
+  const sortedTrades = tradesWithPnL.sort((a, b) => b.timestamp - a.timestamp);
+  
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold">Recent Trading Activity</CardTitle>
-        <CardDescription>Your latest trades</CardDescription>
+        <CardDescription>Latest trades from {dataSource}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {tradesWithPnL.length > 0 ? (
-          <>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-sm">
-                  <th className="text-left p-2 bg-muted/30 rounded-tl-md">
-                    <div className="font-semibold text-primary">Trading Pair</div>
-                    <div className="text-xs text-muted-foreground">Market</div>
-                  </th>
-                  <th className="text-center p-2 bg-muted/30">
-                    <div className="font-semibold text-primary">Action</div>
-                    <div className="text-xs text-muted-foreground">Buy/Sell</div>
-                  </th>
-                  <th className="text-center p-2 bg-muted/30">
-                    <div className="font-semibold text-primary">Price</div>
-                    <div className="text-xs text-muted-foreground">Per unit</div>
-                  </th>
-                  <th className="text-center p-2 bg-muted/30">
-                    <div className="font-semibold text-primary">Quantity</div>
-                    <div className="text-xs text-muted-foreground">Amount traded</div>
-                  </th>
-                  <th className="text-center p-2 bg-muted/30 rounded-tr-md">
-                    <div className="font-semibold text-primary">Profit/Loss</div>
-                    <div className="text-xs text-muted-foreground">Realized P&L</div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {tradesWithPnL.slice(0, 8).map((trade, index) => {
-                  const tradeDate = new Date(trade.timestamp);
-                  const isProfitable = trade.estimatedPnL > 0;
-                  const isBreakEven = trade.estimatedPnL === 0;
-                  
-                  return (
-                    <tr key={trade.id} className={index !== tradesWithPnL.length - 1 ? "border-b border-muted/30" : ""}>
-                      <td className="py-2">
-                        <div className="bg-muted/10 p-2 rounded-md inline-block min-w-[120px] text-center border border-muted/20">
-                          <div className="font-semibold text-primary">{trade.symbol}</div>
-                          <div className="text-xs text-muted-foreground mt-1 border-t border-muted/20 pt-1">
-                            {tradeDate.toLocaleDateString()} {tradeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-2 text-center">
-                        <div className="bg-muted/10 p-2 rounded-md inline-block min-w-[80px] text-center border border-muted/20">
-                          <Badge variant={trade.side === 'buy' ? 'default' : 'destructive'} className="text-xs px-3 py-1">
-                            {trade.side.toUpperCase()}
-                          </Badge>
-                        </div>
-                      </td>
-                      <td className="py-2 text-center">
-                        <div className="bg-muted/10 p-2 rounded-md inline-block min-w-[80px] text-center border border-muted/20">
-                          <div className="text-primary font-bold">${trade.price.toFixed(2)}</div>
-                        </div>
-                      </td>
-                      <td className="py-2 text-center">
-                        <div className="bg-muted/10 p-2 rounded-md inline-block min-w-[100px] text-center border border-muted/20">
-                          <div className="font-medium">{trade.quantity.toFixed(5)}</div>
-                          {/* Show percentage of full coin */}
-                          {trade.quantity < 1 && trade.quantity > 0 && (
-                            <div className="text-xs text-muted-foreground mt-1 border-t border-muted/20 pt-1">
-                              {(trade.quantity * 100).toFixed(2)}% of 1 {trade.symbol.split('-')[0]}
-                            </div>
-                          )}
-                          <div className="text-xs text-muted-foreground mt-1">${trade.totalValue.toFixed(2)}</div>
-                        </div>
-                      </td>
-                      <td className="py-2 text-center">
-                        <div className={`bg-muted/10 p-2 rounded-md inline-block min-w-[80px] text-center border ${isProfitable ? 'border-green-300' : isBreakEven ? 'border-muted/20' : 'border-red-300'}`}>
-                          <div className={`font-bold ${isProfitable ? 'text-green-500' : isBreakEven ? 'text-muted-foreground' : 'text-red-500'}`}>
-                            {isBreakEven ? 'No P/L' : `${isProfitable ? '+' : ''}$${Math.abs(trade.estimatedPnL).toFixed(2)}`}
-                          </div>
-                          {!isBreakEven && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {(Math.abs(trade.estimatedPnL) / trade.totalValue * 100).toFixed(2)}%
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {tradesWithPnL.length > 8 && (
-              <div className="text-center text-muted-foreground text-sm py-2">
-                Showing 8 of {tradesWithPnL.length} recent trades
+      <CardContent>
+        <div className="space-y-3">
+          {sortedTrades.length > 0 ? (
+            sortedTrades.slice(0, 5).map((trade) => (
+              <div 
+                key={trade.id} 
+                className={`p-3 rounded-md border ${
+                  trade.side === 'buy' ? 'border-green-200 bg-green-50/30' : 
+                  trade.side === 'sell' ? 'border-red-200 bg-red-50/30' : 
+                  'border-muted bg-muted/10'
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <div className="text-sm font-semibold">
+                    {trade.symbol} 
+                    <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-sm ${
+                      trade.side === 'buy' ? 'bg-green-100 text-green-800' : 
+                      trade.side === 'sell' ? 'bg-red-100 text-red-800' : 
+                      'bg-muted text-muted-foreground'
+                    }`}>
+                      {trade.side === 'buy' ? 'BUY' : trade.side === 'sell' ? 'SELL' : trade.side.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(trade.timestamp).toLocaleString()}
+                  </div>
+                </div>
+                <div className="flex justify-between mt-2 text-sm">
+                  <div>
+                    <span className="text-xs text-muted-foreground">Amount:</span> {trade.quantity}
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">Price:</span> ${trade.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  </div>
+                  {trade.fee > 0 && (
+                    <div>
+                      <span className="text-xs text-muted-foreground">Fee:</span> {trade.fee} {trade.feeCcy}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-4 text-muted-foreground">
-            No trading history found
-          </div>
-        )}
+            ))
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">
+              No recent trading activity found
+            </div>
+          )}
+          
+          {sortedTrades.length > 5 && (
+            <div className="text-center text-xs text-muted-foreground pt-2">
+              Showing the 5 most recent trades of {sortedTrades.length} total
+            </div>
+          )}
+        </div>
       </CardContent>
-      
-      {tradesWithPnL.length > 0 && (
-        <CardFooter className="pt-0">
-          <div className="text-xs text-muted-foreground w-full text-center">
-            Data from {dataSource} • Updated {new Date().toLocaleTimeString()} • Refresh: 30 seconds
-          </div>
-        </CardFooter>
-      )}
     </Card>
   );
 }
