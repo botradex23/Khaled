@@ -34,6 +34,14 @@ export class OkxService {
   }
   
   /**
+   * Check if the service is properly configured with API keys
+   * @returns boolean indicating if API keys are configured
+   */
+  isConfigured(): boolean {
+    return !!(this.apiKey && this.secretKey && this.passphrase);
+  }
+  
+  /**
    * Get the base URL
    * Used by diagnostic tools to check connectivity
    */
