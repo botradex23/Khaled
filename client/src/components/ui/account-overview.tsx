@@ -374,40 +374,63 @@ export function AccountBalanceCard() {
       // חיפוש מטבע עם שם דומה (לדוגמה: אם יש BTC-USDT אבל מחפשים BTC)
       const currencyLower = asset.currency.toLowerCase();
       
-      // בדיקה מיוחדת למטבעות בעייתיים שאין להם ערך בשוק או הם במצב מיוחד
-      const specialCaseCurrencies = {
-        'BSV': { estimatedPrice: 20.85 },  // Bitcoin SV
-        'OKB': { estimatedPrice: 17.5 },   // OKX Token
-        'BCH': { estimatedPrice: 221.87 }, // Bitcoin Cash
-        'SUI': { estimatedPrice: 3.24 },   // Sui
-        'BSC': { estimatedPrice: 13.52 },  // BSC Token
-        'RUNE': { estimatedPrice: 13.2 },  // THORChain
-        'ZIL': { estimatedPrice: 0.0387 }, // Zilliqa
-        'COMP': { estimatedPrice: 36.96 }, // Compound
-        'ZKS': { estimatedPrice: 0.0516 }, // ZKSpace
-        'DENT': { estimatedPrice: 0.00198 }, // Dent
-        'TRB': { estimatedPrice: 137.54 },  // Tellor
-        'PEOPLE': { estimatedPrice: 0.0298 } // ConstitutionDAO
-      };
+      // במקום לטפל במטבעות באופן ספציפי, נבנה פתרון גנרי
+      // שיחפש את המטבע בכל צורה אפשרית בנתוני ה-API
       
-      // אם המטבע הוא אחד מהמקרים המיוחדים
-      const specialCase = specialCaseCurrencies[asset.currency as keyof typeof specialCaseCurrencies];
-      if (specialCase) {
-        priceFromMarketApi = specialCase.estimatedPrice;
-        console.log(`Using special case price for ${asset.currency}: $${priceFromMarketApi}`);
+      // שיטה 1: חיפוש התאמה מדויקת (מקרה שבו יש מחיר ישיר של המטבע)
+      let exactMatch = marketPricesQuery.data.prices.find(
+        (market: Market) => market.symbol === asset.currency
+      );
+      
+      // שיטה 2: חיפוש לפי זוגות מסחר נפוצים
+      if (!exactMatch) {
+        const commonPairs = ['-USDT', '-USD', '/USDT', '/USD', 'USDT', '-BTC', '/BTC', 'BTC'];
+        for (const pair of commonPairs) {
+          const symbolToCheck = asset.currency + pair;
+          const pairMatch = marketPricesQuery.data.prices.find(
+            (market: Market) => market.symbol === symbolToCheck
+          );
+          if (pairMatch) {
+            exactMatch = pairMatch;
+            console.log(`Found exact trading pair match for ${asset.currency} using ${pairMatch.symbol}: $${pairMatch.price}`);
+            break;
+          }
+        }
       }
       
-      // חיפוש לפי התאמה גלובלית - בודק אם המטבע הנוכחי מוזכר בסמלי שוק אחרים
-      const possibleMatches = marketPricesQuery.data.prices.filter((market: Market) => 
-        market.symbol.toLowerCase().includes(currencyLower)
-      );
-  
-      if (possibleMatches.length > 0) {
-        // מיון לפי רלוונטיות - המטבעות עם שמות קצרים יותר סביר יותר שהם התאמה נכונה
-        possibleMatches.sort((a, b) => a.symbol.length - b.symbol.length);
-        similarMatch = possibleMatches[0];
-        console.log(`Found similar match for ${asset.currency} using ${similarMatch.symbol}: $${similarMatch.price}`);
-        priceFromMarketApi = similarMatch.price;
+      // שיטה 3: חיפוש לפי צמד מסחר הפוך (במקרה שהמטבע הנוכחי הוא המטבע השני בזוג)
+      if (!exactMatch) {
+        const baseCoins = ['USDT-', 'USD-', 'BTC-'];
+        for (const base of baseCoins) {
+          const symbolToCheck = base + asset.currency;
+          const reverseMatch = marketPricesQuery.data.prices.find(
+            (market: Market) => market.symbol === symbolToCheck
+          );
+          if (reverseMatch) {
+            exactMatch = reverseMatch;
+            console.log(`Found reverse trading pair match for ${asset.currency} using ${reverseMatch.symbol}: $${reverseMatch.price}`);
+            break;
+          }
+        }
+      }
+      
+      // שיטה 4: חיפוש חלקי בכל סמלי המטבעות
+      if (!exactMatch) {
+        // חיפוש לפי התאמה גלובלית - בודק אם המטבע הנוכחי מוזכר בסמלי שוק אחרים
+        const possibleMatches = marketPricesQuery.data.prices.filter((market: Market) => 
+          market.symbol.toLowerCase().includes(currencyLower)
+        );
+    
+        if (possibleMatches.length > 0) {
+          // מיון לפי רלוונטיות - המטבעות עם שמות קצרים יותר סביר יותר שהם התאמה נכונה
+          possibleMatches.sort((a, b) => a.symbol.length - b.symbol.length);
+          similarMatch = possibleMatches[0];
+          console.log(`Found partial match for ${asset.currency} using ${similarMatch.symbol}: $${similarMatch.price}`);
+          priceFromMarketApi = similarMatch.price;
+        }
+      } else {
+        // אם מצאנו התאמה מדויקת באחת מהשיטות למעלה
+        priceFromMarketApi = exactMatch.price;
       }
     }
 
