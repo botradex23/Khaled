@@ -48,9 +48,10 @@ export function AccountBalanceCard() {
   
   // Use the authenticated endpoint if user is logged in, otherwise use demo endpoint
   // For demo endpoint, we'll show only prices, not account balance if user is not authenticated
+  // Regardless, we'll show market prices for cryptocurrencies at minimum
   const okxEndpoint = isAuthenticated 
     ? "/api/okx/account/balance"     // Authenticated endpoint with user-specific API keys
-    : "/api/okx/demo/account/balance"; // Demo endpoint with default keys
+    : "/api/okx/account/balance"; // Use authenticated endpoint always, but it will return empty if not logged in
   
   console.log("Account Balance Card - Using endpoint:", okxEndpoint, "isAuthenticated:", isAuthenticated);
   
@@ -66,7 +67,7 @@ export function AccountBalanceCard() {
   });
   
   // Get market prices directly from the markets API for more accurate pricing
-  const marketPricesQuery = useQuery({
+  const marketPricesQuery = useQuery<MarketPricesResponse>({
     queryKey: ['/api/markets/v2/prices'],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
@@ -154,8 +155,78 @@ export function AccountBalanceCard() {
   const hasOkxData = okxQuery.data && Array.isArray(okxQuery.data) && okxQuery.data.length > 0;
   const hasBitgetData = bitgetQuery.data && Array.isArray(bitgetQuery.data) && bitgetQuery.data.length > 0;
   
-  // If neither API has data and they're both done loading, show an error
+  // If neither API has data and they're not loading, create a fake minimal portfolio with market prices
   if (!hasOkxData && !hasBitgetData && !isLoading) {
+    // Check if we have market prices data
+    const hasMarketPrices = marketPricesQuery.data?.prices && Array.isArray(marketPricesQuery.data.prices) && marketPricesQuery.data.prices.length > 0;
+    
+    // If we have market prices, we'll create mock balances for display purposes
+    if (hasMarketPrices) {
+      console.log("Creating minimal portfolio from market prices");
+      
+      // We'll just create a minimal portfolio with 0 balances but real market prices
+      const minimalPortfolio: AccountBalance[] = [];
+      
+      // Add major cryptocurrencies to the display
+      const popularCrypto = ["BTC", "ETH", "SOL", "XRP", "USDT"];
+      
+      if (marketPricesQuery.data && marketPricesQuery.data.prices) {
+        marketPricesQuery.data.prices.forEach((price: Market) => {
+          if (popularCrypto.includes(price.symbol)) {
+            minimalPortfolio.push({
+              currency: price.symbol,
+              available: 0,
+              frozen: 0,
+              total: 0,
+              valueUSD: 0,
+              pricePerUnit: price.price
+            });
+          }
+        });
+      }
+      
+      // Use the minimal portfolio for our calculations
+      const dummyBalances: AccountBalance[] = minimalPortfolio;
+      if (dummyBalances.length > 0) {
+        // Don't reassign the outer balances variable, use dummyBalances directly
+        // Continue rendering with the normal path
+        return (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold">Cryptocurrency Prices</CardTitle>
+              <CardDescription>Current market prices (view only)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-sm">
+                      <th className="text-left p-2 bg-muted/30 rounded-l-md font-semibold">Cryptocurrency</th>
+                      <th className="text-right p-2 bg-muted/30 rounded-r-md font-semibold">Market Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dummyBalances.map((asset) => (
+                      <tr key={asset.currency} className="text-sm border-b border-muted-foreground/10 last:border-0">
+                        <td className="p-2 font-medium">{asset.currency}</td>
+                        <td className="p-2 text-right">${asset.pricePerUnit?.toLocaleString(undefined, { 
+                          maximumFractionDigits: asset.pricePerUnit > 1000 ? 0 : asset.pricePerUnit > 1 ? 2 : 6
+                        })}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="text-center text-xs text-muted-foreground mt-4">
+                  <p>Log in and configure API keys to see your account balances</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      }
+    }
+    
+    // Otherwise show the error UI
     return (
       <Card>
         <CardHeader className="pb-2">
