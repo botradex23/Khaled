@@ -1,143 +1,204 @@
-import { Market } from "@/types/market";
-import { AccountBalance, calculateTotalValue as calculateTotal, isStablecoin } from "@/types/balance";
+// useAssetPricing.ts - A dynamic hook for fetching cryptocurrency prices
+import { useQuery } from '@tanstack/react-query';
+import { AccountBalance } from '@/types/balance';
+import { getQueryFn } from '@/lib/queryClient';
 
-/**
- * Gets the best price for a given cryptocurrency asset using market data
- * This function tries multiple approaches to find the most accurate price
- * @param asset The account balance object for the asset
- * @param marketPrices Array of market prices from API
- * @returns The price of the asset in USD
- */
-export function getPriceForAsset(asset: AccountBalance, marketPrices: Market[]): number {
-  // Method 1: Check if it's a stablecoin (these are always worth $1)
-  if (isStablecoin(asset.currency)) {
-    return 1.0;
-  }
-  
-  // Method 2: Direct symbol match (for non-stablecoins)
-  const exactMatch = marketPrices.find(market => market.symbol === asset.currency);
-  if (exactMatch && exactMatch.price > 0) {
-    return exactMatch.price;
-  }
-  
-  // Method 3: Try common trading pair formats (e.g., BTC-USDT, BTC/USDT)
-  const commonPairs = ['-USDT', '-USD', '/USDT', '/USD', 'USDT', '-BTC', '/BTC', 'BTC'];
-  for (const pair of commonPairs) {
-    // If we're looking for a USD pair and it contains a stablecoin identifier, return 1.0
-    if (asset.currency === 'USD' && (pair.includes('USDT') || pair.includes('USDC') || pair.includes('USD'))) {
-      return 1.0;
-    }
-    
-    const symbolToCheck = asset.currency + pair;
-    const pairMatch = marketPrices.find(market => market.symbol === symbolToCheck);
-    if (pairMatch && pairMatch.price > 0) {
-      return pairMatch.price;
-    }
-  }
-  
-  // Method 4: Try reverse pairs (e.g., USDT-BTC)
-  const baseCoins = ['USDT-', 'USD-', 'BTC-'];
-  for (const base of baseCoins) {
-    // Special case for USD-related base coins
-    if ((base === 'USDT-' || base === 'USD-') && (asset.currency === 'USD' || isStablecoin(asset.currency))) {
-      return 1.0;
-    }
-    
-    const symbolToCheck = base + asset.currency;
-    const reverseMatch = marketPrices.find(market => market.symbol === symbolToCheck);
-    if (reverseMatch && reverseMatch.price > 0) {
-      return reverseMatch.price;
-    }
-  }
-  
-  // Method 5: Try partial matches (substrings)
-  // One more check for stablecoins in case we missed any above
-  if (asset.currency.toUpperCase().includes('USD') || 
-      asset.currency.toUpperCase().endsWith('ST') || // For BUST, WUST, etc.
-      asset.currency.toUpperCase() === 'DAI') {
-    return 1.0;
-  }
-  
-  const currencyLower = asset.currency.toLowerCase();
-  const possibleMatches = marketPrices.filter(market => 
-    market.symbol.toLowerCase().includes(currencyLower)
-  );
-  
-  if (possibleMatches.length > 0) {
-    // Sort by relevance - shorter names are likely more relevant
-    possibleMatches.sort((a, b) => a.symbol.length - b.symbol.length);
-    return possibleMatches[0].price;
-  }
-  
-  // Method 6: Use known defaults for common cryptocurrencies
-  const knownPrices: Record<string, number> = {
-    'BTC': 83760,
-    'ETH': 1870,
-    'BNB': 622,
-    'SOL': 130,
-    'XRP': 2.17,
-    'ADA': 0.69,
-    'DOGE': 0.18
-  };
-  
-  if (knownPrices[asset.currency]) {
-    return knownPrices[asset.currency];
-  }
-  
-  // If we can use the valueUSD, derive price from it
-  if (asset.valueUSD > 0 && asset.total > 0) {
-    return asset.valueUSD / asset.total;
-  }
-  
-  // Last resort: return existing price or 0
-  return asset.pricePerUnit || 0;
+// Interface for cryptocurrency price data
+export interface CryptoPriceData {
+  currency: string;
+  price: number;
+  lastUpdated: string;
+}
+
+// List of known stablecoins that should always have a price of 1.0 USD
+const STABLECOINS = ['USDT', 'USDC', 'DAI', 'TUSD', 'USDP', 'GUSD', 'BUSD', 'USDK', 'USDN'];
+
+// Helper function to check if a cryptocurrency is a stablecoin
+export function isStablecoin(symbol: string): boolean {
+  return STABLECOINS.includes(symbol.toUpperCase());
 }
 
 /**
- * Enriches a list of account balances with price information
- * @param balances Array of account balances
- * @param marketPrices Array of market prices from API
- * @returns The account balances with updated price and value information
+ * Get the price for a specific cryptocurrency
+ * Uses multiple matching strategies to find the best price
+ */
+export function getPriceForAsset(
+  currency: string, 
+  prices: CryptoPriceData[]
+): number {
+  if (!currency) return 0;
+  
+  const symbol = currency.toUpperCase();
+  
+  // 1. Special case: Stablecoins always return 1.0
+  if (isStablecoin(symbol)) {
+    return 1.0;
+  }
+  
+  // 2. Direct match by currency symbol
+  const directMatch = prices.find(p => p.currency.toUpperCase() === symbol);
+  if (directMatch) return directMatch.price;
+  
+  // 3. Try to find a match where the currency is the base asset in a trading pair
+  // This is a fallback for when we don't have direct price data
+  const pairMatch = prices.find(p => {
+    const priceCurrency = p.currency.toUpperCase();
+    return priceCurrency.startsWith(symbol + '-') || priceCurrency.endsWith('-' + symbol);
+  });
+  
+  if (pairMatch) return pairMatch.price;
+  
+  // 4. If we still don't have a price, return 0
+  return 0;
+}
+
+/**
+ * Calculates portfolio value and enriches account balances with price data
  */
 export function enrichBalancesWithPrices(
-  balances: AccountBalance[],
-  marketPrices: Market[]
+  balances: AccountBalance[], 
+  prices: CryptoPriceData[]
 ): AccountBalance[] {
-  return balances.map(asset => {
-    // Special case for stablecoins - ALWAYS set price to 1.0 directly
-    if (isStablecoin(asset.currency)) {
-      asset.pricePerUnit = 1.0;
-    } else {
-      // For non-stablecoins, get the best price using our price discovery process
-      asset.pricePerUnit = asset.pricePerUnit || getPriceForAsset(asset, marketPrices);
-    }
+  if (!balances || !balances.length) return [];
+  
+  // Calculate total value of all assets to compute percentages
+  let totalPortfolioValue = 0;
+  
+  // First pass: calculate values
+  const enrichedBalances = balances.map(asset => {
+    const price = asset.pricePerUnit || getPriceForAsset(asset.currency, prices);
     
-    // Make sure we have a total
-    if (asset.total === 0 && asset.available > 0) {
-      asset.total = asset.available + (asset.frozen || 0);
-    }
+    // In some cases the total might be zero but available balance exists
+    const total = asset.total > 0 ? asset.total : (asset.available + (asset.frozen || 0));
     
-    // Calculate the total value
-    const calculatedTotalValue = asset.total * asset.pricePerUnit;
+    // Calculate value in USD
+    const valueUSD = total * price;
+    totalPortfolioValue += valueUSD;
     
-    // Calculate percentage of whole coin if it's a fraction
-    const percentOfWhole = asset.total < 1 ? asset.total * 100 : undefined;
-    
-    // Return the enriched asset
     return {
       ...asset,
-      pricePerUnit: asset.pricePerUnit,
-      calculatedTotalValue,
-      percentOfWhole
+      total,
+      pricePerUnit: price,
+      valueUSD
     };
   });
+  
+  // Second pass: add percentage of portfolio
+  return enrichedBalances.map(asset => ({
+    ...asset,
+    percentOfPortfolio: totalPortfolioValue > 0 
+      ? (asset.valueUSD / totalPortfolioValue) * 100 
+      : 0
+  }));
 }
 
 /**
- * Calculates the total value of a portfolio from balances
- * @param balances Array of account balances
- * @returns Object with total, available, and frozen values
+ * Calculate the total value of a portfolio
  */
-export function calculateTotalValue(balances: AccountBalance[]) {
-  return calculateTotal(balances);
+export function calculateTotalValue(
+  balances: AccountBalance[]
+): { total: number; available: number; frozen: number } {
+  let total = 0, available = 0, frozen = 0;
+
+  if (!balances || !balances.length) {
+    return { total: 0, available: 0, frozen: 0 };
+  }
+
+  balances.forEach(asset => {
+    // Get price, either from the asset itself or use 0 as fallback
+    const price = asset.pricePerUnit || 0;
+    
+    // Calculate values
+    const assetTotal = asset.total * price;
+    const assetAvailable = asset.available * price;
+    const assetFrozen = (asset.frozen || 0) * price;
+    
+    // Add to totals
+    total += assetTotal;
+    available += assetAvailable;
+    frozen += assetFrozen;
+  });
+
+  return { 
+    total: parseFloat(total.toFixed(2)), 
+    available: parseFloat(available.toFixed(2)), 
+    frozen: parseFloat(frozen.toFixed(2)) 
+  };
 }
+
+/**
+ * React hook for fetching and managing cryptocurrency price data
+ * @param currencies Optional list of specific currencies to fetch prices for
+ * @returns Object containing price data and utility functions
+ */
+export function useAssetPricing(currencies?: string[]) {
+  // Build the query URL with the optional currencies parameter
+  const queryUrl = currencies && currencies.length 
+    ? `/api/okx/market/prices?symbols=${currencies.join(',')}`
+    : '/api/okx/market/prices';
+  
+  // Fetch cryptocurrency prices
+  const { 
+    data: prices, 
+    isLoading,
+    isError,
+    error 
+  } = useQuery<CryptoPriceData[]>({
+    queryKey: [queryUrl],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    refetchInterval: 60000, // Refresh every minute
+    staleTime: 30000,     // Consider data stale after 30 seconds
+  });
+  
+  // Get price for a specific currency
+  const getPrice = (currency: string): number => {
+    if (!prices || !currency) return 0;
+    return getPriceForAsset(currency, prices);
+  };
+  
+  // Format price with the specified number of decimal places
+  const formatPrice = (price: number, decimals = 2): string => {
+    if (price >= 1000) {
+      return price.toLocaleString('en-US', { 
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      });
+    } else if (price >= 100) {
+      return price.toLocaleString('en-US', { 
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    } else if (price >= 1) {
+      return price.toLocaleString('en-US', { 
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    } else if (price >= 0.01) {
+      return price.toLocaleString('en-US', { 
+        minimumFractionDigits: decimals + 1,
+        maximumFractionDigits: decimals + 1
+      });
+    } else if (price > 0) {
+      return price.toLocaleString('en-US', { 
+        minimumFractionDigits: decimals + 2,
+        maximumFractionDigits: decimals + 3
+      });
+    } else {
+      return '0.00';
+    }
+  };
+  
+  return {
+    prices: prices || [],
+    isLoading,
+    isError,
+    error,
+    getPrice,
+    formatPrice,
+    enrichBalancesWithPrices: (balances: AccountBalance[]) => 
+      enrichBalancesWithPrices(balances, prices || []),
+    calculateTotalValue
+  };
+}
+
+export default useAssetPricing;

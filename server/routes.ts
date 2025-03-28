@@ -13,6 +13,7 @@ import userApiKeysRouter from './routes/user-api-keys';
 import adminApiRouter from './routes/admin-api';
 import marketsRouter from './routes/markets';
 import marketsV2Router from './routes/markets.test';
+import marketsV3Router from './routes/markets-v3';
 import { setupAuth, ensureAuthenticated } from "./auth";
 import { createOkxServiceWithCustomCredentials } from "./api/okx/okxService";
 import updateApiKeysRouter from "./routes/update-api-keys";
@@ -226,6 +227,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Market data and prices routes
   app.use("/api/markets", marketsRouter);
   app.use("/api/markets", marketsV2Router);
+  
+  // Use the markets v3 router with better price endpoints
+  app.use("/api/markets", marketsV3Router);
   
   // OKX API routes
   app.use("/api/okx", okxRouter);

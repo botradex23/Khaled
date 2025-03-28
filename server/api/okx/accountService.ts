@@ -290,44 +290,40 @@ export class AccountService {
         console.log(`Processed ${Object.keys(fundingBalances).length} funding account balances`);
       }
       
-      // Try to get real-time prices from market data for accurate valuation
-      // Using multiple sources for maximum reliability
+      // Get real-time prices directly from OKX market ticker (most up-to-date source)
       let currencyPrices: Record<string, number> = {};
       try {
-        // First source: Get real-time market prices from OKX ticker endpoint
+        // Make a fresh request to OKX ticker endpoint - this is always the most current data
+        console.log("Fetching fresh real-time cryptocurrency prices from OKX API...");
         const tickerResponse = await okxService.makePublicRequest<OkxResponse<any>>(
           '/api/v5/market/tickers?instType=SPOT'
         );
         
         if (tickerResponse.code === '0' && Array.isArray(tickerResponse.data)) {
+          // Get a sample ticker for debugging
+          const sampleTicker = tickerResponse.data.length > 0 ? JSON.stringify(tickerResponse.data[0]) : 'none';
+          console.log(`Received ${tickerResponse.data.length} tickers from OKX. Sample: ${sampleTicker}`);
+          
+          // Process all pairs including USD, USDT, USDC and other quote currencies
           tickerResponse.data.forEach(ticker => {
-            if (ticker.instId && ticker.instId.endsWith('-USDT')) {
-              const currency = ticker.instId.split('-')[0];
+            // Handle both USDT pairs (most common) and USD pairs
+            if (ticker.instId && (ticker.instId.includes('-USDT') || ticker.instId.includes('-USD'))) {
+              const parts = ticker.instId.split('-');
+              const currency = parts[0];
               if (currency && ticker.last) {
-                currencyPrices[currency] = parseFloat(ticker.last);
+                const price = parseFloat(ticker.last);
+                currencyPrices[currency] = price;
+                
+                // For important currencies, log the current price
+                if (['BTC', 'ETH', 'SOL', 'XRP', 'DOGE'].includes(currency)) {
+                  console.log(`Current ${currency} price from OKX API: $${price}`);
+                }
               }
             }
           });
           
-          console.log(`Retrieved ticker price data for ${Object.keys(currencyPrices).length} currencies`);
+          console.log(`Retrieved real-time price data for ${Object.keys(currencyPrices).length} currencies from OKX`);
         }
-        
-        // Second source: Get market data from our market service
-        const marketData = await marketService.getMarketData(['ALL_USDT_PAIRS']);
-        marketData.forEach(data => {
-          const parts = data.symbol.split('-');
-          if (parts.length === 2 && parts[1] === 'USDT') {
-            const currency = parts[0];
-            if (currency && data.price) {
-              // Update the price if we didn't have it yet, or prefer this source
-              if (!currencyPrices[currency] || data.price > 0) {
-                currencyPrices[currency] = data.price;
-              }
-            }
-          }
-        });
-        
-        console.log(`Retrieved price data for ${Object.keys(currencyPrices).length} currencies total from all sources`);
       } catch (err) {
         console.warn("Couldn't fetch complete real-time prices, using partial data", err);
       }
