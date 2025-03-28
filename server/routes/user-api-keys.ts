@@ -261,10 +261,16 @@ router.get('/api-keys/status', ensureAuthenticated, async (req: Request, res: Re
       return res.status(404).json({ message: "User not found" });
     }
     
-    // Check if the user has API keys configured
-    const hasApiKeys = !!(apiKeys.okxApiKey && apiKeys.okxSecretKey && apiKeys.okxPassphrase);
+    // Check if the user has API keys configured - ensure none are empty strings
+    const hasApiKeys = !!(
+      apiKeys.okxApiKey && apiKeys.okxApiKey.trim() !== '' &&
+      apiKeys.okxSecretKey && apiKeys.okxSecretKey.trim() !== '' &&
+      apiKeys.okxPassphrase && apiKeys.okxPassphrase.trim() !== ''
+    );
     
-    // Only validate if the user has API keys
+    // By default, if the API keys exist and are not empty, we'll consider them valid
+    // until proven otherwise by the validation check
+    let hasValidApiKeys = hasApiKeys;
     let validationStatus = null;
     
     if (hasApiKeys) {
@@ -280,22 +286,39 @@ router.get('/api-keys/status', ensureAuthenticated, async (req: Request, res: Re
         // Try to make a simple authenticated request
         const accountInfo = await service.getAccountInfo();
         
+        // If we get here, the API keys are valid
         validationStatus = {
           valid: true,
           message: "API keys are valid and working",
           lastChecked: new Date().toISOString()
         };
+        
+        // Set the API keys validity flag to true since the validation succeeded
+        hasValidApiKeys = true;
       } catch (validationError: any) {
+        // The API keys exist but validation failed
         validationStatus = {
           valid: false,
           message: `API keys validation failed: ${validationError.message}`,
           lastChecked: new Date().toISOString()
         };
+        
+        // Since validation failed, mark the API keys as invalid
+        hasValidApiKeys = false;
+        
+        console.log(`API keys validation failed for user ${userId}: ${validationError.message}`);
       }
+    } else {
+      // No API keys configured or they are empty strings
+      hasValidApiKeys = false;
     }
+    
+    // Log the final validation status
+    console.log(`API keys status for user ${userId}: ${hasValidApiKeys ? 'Valid' : 'Not valid'}`);
     
     res.status(200).json({
       configured: hasApiKeys,
+      hasValidApiKeys: hasValidApiKeys,
       broker: apiKeys.defaultBroker,
       useTestnet: apiKeys.useTestnet,
       validation: validationStatus

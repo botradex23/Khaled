@@ -34,15 +34,17 @@ export default function ApiKeysBanner() {
     staleTime: 10000,
   });
 
-  // For debugging - log the current state
+  // For debugging - log the current state with ALL data properties
   console.log('ApiKeysBanner: Current state:', { 
     isAuthenticated, 
+    data,
     hasValidApiKeys: data?.hasValidApiKeys,
     isLoading,
     error
   });
 
-  const hasValidApiKeys = data?.hasValidApiKeys;
+  // Ensure we use strict equality check against true (not truthy check)
+  const hasValidApiKeys = data?.hasValidApiKeys === true;
   
   // Added force-cache invalidation - this helps refresh API keys data when they're updated
   React.useEffect(() => {
