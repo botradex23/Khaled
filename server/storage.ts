@@ -81,7 +81,7 @@ export class MemStorage implements IStorage {
   }
 
   private initializeData() {
-    // Create default user with API keys
+    // Create default user without API keys
     const defaultUser: User = {
       id: this.currentId++,
       username: "default_user",
@@ -94,10 +94,10 @@ export class MemStorage implements IStorage {
       profilePicture: null,
       createdAt: new Date(),
       
-      // Default API keys for OKX taken from environment variables
-      okxApiKey: process.env.OKX_API_KEY || null,
-      okxSecretKey: process.env.OKX_SECRET_KEY || null,
-      okxPassphrase: process.env.OKX_PASSPHRASE || null,
+      // No default API keys - user must set their own
+      okxApiKey: null,
+      okxSecretKey: null,
+      okxPassphrase: null,
       
       // Default broker settings
       defaultBroker: "okx",
@@ -289,11 +289,10 @@ export class MemStorage implements IStorage {
       profilePicture: null,
       createdAt: new Date(),
       
-      // API key fields with defaults from environment or null
-      // Any new registered user gets the API keys by default for easy demo
-      okxApiKey: process.env.OKX_API_KEY || null, 
-      okxSecretKey: process.env.OKX_SECRET_KEY || null,
-      okxPassphrase: process.env.OKX_PASSPHRASE || null,
+      // No default API keys - user must set their own
+      okxApiKey: null,
+      okxSecretKey: null,
+      okxPassphrase: null,
       
       // Default broker settings
       defaultBroker: insertUser.defaultBroker || "okx",
