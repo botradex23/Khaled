@@ -164,8 +164,9 @@ router.delete('/api-keys', ensureAuthenticated, async (req: Request, res: Respon
 
 /**
  * Validate API keys before saving them
+ * No authentication required for this endpoint to allow testing before login
  */
-router.post('/validate-api-keys', ensureAuthenticated, async (req: Request, res: Response) => {
+router.post('/validate-api-keys', async (req: Request, res: Response) => {
   const validationSchema = z.object({
     okxApiKey: z.string().min(1, "API key is required"),
     okxSecretKey: z.string().min(1, "Secret key is required"),
@@ -174,9 +175,8 @@ router.post('/validate-api-keys', ensureAuthenticated, async (req: Request, res:
   });
   
   try {
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    // API key validation can be performed without authentication
+    // to allow users to test their keys before login
     
     // Validate input
     const data = validationSchema.parse(req.body);
@@ -206,7 +206,7 @@ router.post('/validate-api-keys', ensureAuthenticated, async (req: Request, res:
         console.log("Testing OKX API authentication...");
         const accountInfo = await testService.getAccountInfo();
         
-        if (!accountInfo || !accountInfo.data) {
+        if (!accountInfo || !(accountInfo as any).data) {
           throw new Error("Invalid response from OKX API");
         }
         

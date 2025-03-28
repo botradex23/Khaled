@@ -101,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userEmail: req.user.email,
         apiKeys: maskedKeys
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in test endpoint:', error);
       return res.status(500).json({ error: 'Server error', message: error.message });
     }
@@ -129,10 +129,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process each user
       for (const user of users) {
         try {
-          const success = await storage.clearUserApiKeys(user.id);
+          const success = await storage.clearUserApiKeys((user as any).id);
           results.details.push({
-            userId: user.id,
-            email: user.email || 'unknown',
+            userId: (user as any).id,
+            email: (user as any).email || 'unknown',
             success
           });
           
@@ -141,11 +141,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             results.failed++;
           }
-        } catch (error) {
+        } catch (error: any) {
           results.failed++;
           results.details.push({
-            userId: user.id,
-            email: user.email || 'unknown',
+            userId: (user as any).id,
+            email: (user as any).email || 'unknown',
             success: false,
             error: error.message
           });
@@ -156,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `Reset API keys for ${results.successful} out of ${results.total} users`,
         results
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error resetting API keys:', error);
       return res.status(500).json({ error: 'Server error', message: error.message });
     }
@@ -229,14 +229,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI API routes
   app.use("/api/ai", aiRouter);
   
-  // Direct API Key validation endpoint - No forwarding to avoid internal network issues
-  app.post("/api/validate-api-keys", ensureAuthenticated, async (req, res) => {
+  // Direct API Key validation endpoint - No authentication required for validating API keys
+  app.post("/api/validate-api-keys", async (req, res) => {
     console.log("Received API validation request at /api/validate-api-keys");
     
     try {
-      if (!req.user || !req.user.id) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+      // API key validation can be performed without authentication
+      // to allow users to test their API keys before login
       
       const validationSchema = z.object({
         okxApiKey: z.string().min(1, "API key is required"),
@@ -273,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log("Testing OKX API authentication...");
           const accountInfo = await testService.getAccountInfo();
           
-          if (!accountInfo || !accountInfo.data) {
+          if (!accountInfo || !(accountInfo as any).data) {
             throw new Error("Invalid response from OKX API");
           }
           
