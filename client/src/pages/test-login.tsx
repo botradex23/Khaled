@@ -33,7 +33,9 @@ export default function TestLogin() {
           description: `התחברת בהצלחה כמשתמש בדיקה ${userId}`,
         });
         
-        navigate("/dashboard");
+        // Use replace to avoid adding to history stack
+        window.history.replaceState({}, document.title, '/dashboard');
+        navigate("/dashboard", { replace: true });
       } else {
         throw new Error("Invalid response from server");
       }

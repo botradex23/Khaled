@@ -11,23 +11,44 @@ export default function Register() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   
-  // Check if user is already authenticated
+  // Check if user is already authenticated - run once at mount
   useEffect(() => {
+    // Flag to track if component is mounted
+    let isMounted = true;
+    
     const checkAuth = async () => {
+      // Only proceed if the component is still mounted
+      if (!isMounted) return;
+      
       await checkSession();
       
-      // If user is already authenticated, redirect to dashboard
+      // After session check, verify component is still mounted before updates
+      if (!isMounted) return;
+      
+      // If user is already authenticated, redirect to dashboard once
       if (isAuthenticated && !isLoading) {
         toast({
           title: "Already Logged In",
           description: "You are already registered and logged in.",
         });
-        setLocation("/dashboard");
+        
+        // Use replace to avoid adding to history stack
+        window.history.replaceState({}, document.title, '/dashboard');
+        setLocation("/dashboard", { replace: true });
       }
     };
     
-    checkAuth();
-  }, [isAuthenticated, isLoading, checkSession, setLocation, toast]);
+    // Small delay to prevent race conditions
+    const timeoutId = setTimeout(() => {
+      checkAuth();
+    }, 100);
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
+  }, []);
   
   return (
     <div className="flex flex-col min-h-screen bg-background">

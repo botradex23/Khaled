@@ -217,7 +217,7 @@ export class AccountService {
    */
   async getAccountBalances(throwError = false): Promise<AccountBalance[]> {
     // Check if OKX API is properly configured first
-    if (!okxService.isConfigured()) {
+    if (!okxService.isConfigured) {
       console.warn('OKX API credentials not configured - returning empty balances');
       if (throwError) {
         throw new Error('OKX API credentials not configured');
@@ -535,7 +535,7 @@ export class AccountService {
    */
   async getTradingHistory(throwError = false): Promise<any[]> {
     // Check if OKX API is properly configured first
-    if (!okxService.isConfigured()) {
+    if (!okxService.isConfigured) {
       console.warn('OKX API credentials not configured - returning demo trading history');
       return this.getDemoTradingHistory();
     }
@@ -623,7 +623,7 @@ export class AccountService {
    */
   async getOpenOrders(): Promise<any[]> {
     // Check if OKX API is properly configured first
-    if (!okxService.isConfigured()) {
+    if (!okxService.isConfigured) {
       console.warn('OKX API credentials not configured - returning demo open orders');
       return this.getDemoOpenOrders();
     }
@@ -710,7 +710,7 @@ export class AccountService {
    */
   async placeOrder(symbol: string, side: 'buy' | 'sell', type: 'market' | 'limit', amount: string, price?: string): Promise<{ success: boolean; orderId?: string; message: string; error?: any }> {
     // Check if OKX API is properly configured first
-    if (!okxService.isConfigured()) {
+    if (!okxService.isConfigured) {
       return {
         success: false,
         message: 'OKX API credentials not configured - unable to place order'
@@ -753,7 +753,7 @@ export class AccountService {
    */
   async cancelOrder(symbol: string, orderId: string): Promise<{ success: boolean; message: string; error?: any }> {
     // Check if OKX API is properly configured first
-    if (!okxService.isConfigured()) {
+    if (!okxService.isConfigured) {
       return {
         success: false,
         message: 'OKX API credentials not configured - unable to cancel order'
@@ -807,7 +807,7 @@ export class AccountService {
     console.log('Running comprehensive OKX API connection check...');
     
     // First, check base configuration
-    const apiKeyConfigured = okxService.isConfigured();
+    const apiKeyConfigured = okxService.isConfigured;
     const isDemo = true; // We're using demo mode by default
     const apiUrl = okxService.getBaseUrl();
     

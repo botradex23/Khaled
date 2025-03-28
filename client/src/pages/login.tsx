@@ -28,22 +28,49 @@ export default function Login() {
   const { login, isAuthenticated, isLoading: authLoading, checkSession } = useAuth();
   
   // Check if user is already authenticated
+  // This effect will run only once when the component mounts
   useEffect(() => {
+    // Flag to track if component is mounted
+    let isMounted = true;
+    
     const checkAuth = async () => {
+      // Only proceed if the component is still mounted
+      if (!isMounted) return;
+      
+      // Check authentication status
       await checkSession();
       
-      // If user is already authenticated, redirect to dashboard
+      // After session check, verify component is still mounted before state updates
+      if (!isMounted) return;
+      
+      // If user is already authenticated, redirect to dashboard - but only once
       if (isAuthenticated && !authLoading) {
-        toast({
-          title: "Already Logged In",
-          description: "You are already logged in.",
-        });
-        setLocation("/dashboard");
+        // Clear any pending navigation attempts
+        if (window.history.state && window.history.state.key) {
+          // Only show toast and redirect if we haven't already
+          toast({
+            title: "Already Logged In",
+            description: "You are already logged in.",
+          });
+          
+          // Use replace instead of push to avoid adding to history stack
+          window.history.replaceState({}, document.title, '/dashboard');
+          setLocation("/dashboard", { replace: true });
+        }
       }
     };
     
-    checkAuth();
-  }, [isAuthenticated, authLoading, checkSession, setLocation, toast]);
+    // Execute the check once with a small delay to prevent initial loading race conditions
+    const timeoutId = setTimeout(() => {
+      checkAuth();
+    }, 100);
+    
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
+  }, []);
   
   // Check for error params in URL
   useEffect(() => {
