@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig,  } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import CryptoJS from 'crypto-js';
 import { 
   OKX_BASE_URL, 
@@ -123,14 +123,54 @@ export class OkxService {
     const passLast = this.passphrase.slice(-1);
     console.log(`Using passphrase format: ${passFirst}...${passLast} (length: ${this.passphrase.length})`);
     
-    // According to OKX API docs v5, for API v5, the passphrase needs to be Base64 encoded
-    // https://www.okx.com/docs-v5/en/#rest-api-authentication-signature
-    // "The passphrase you specified when creating the API key must be Base64 encoded"
-    const base64Passphrase = Buffer.from(this.passphrase).toString('base64');
-    
-    console.log(`Encoded passphrase (first/last 2 chars): ${base64Passphrase.slice(0, 2)}...${base64Passphrase.slice(-2)}`);
-    
-    return base64Passphrase;
+    try {
+      // Convert to string explicitly in case we received a non-string somehow
+      const originalPassphrase = String(this.passphrase);
+      
+      // Check for trailing dot
+      const endsWithDot = originalPassphrase.endsWith('.');
+      if (endsWithDot) {
+        console.log('DETECTED: Passphrase ends with dot - this is a known issue with OKX API');
+        
+        // Create modified version without trailing dot
+        const modifiedPassphrase = originalPassphrase.slice(0, -1); // Remove last character (the dot)
+        console.log('Created alternative passphrase without trailing dot');
+        
+        // For DETAILED DEBUG ONLY:
+        // Try using unencoded passphrase (not recommended for production)
+        // console.log('TRYING unencoded passphrase as fallback');
+        // return originalPassphrase;
+        
+        // Return OKX recommended encoding (base64) without the trailing dot
+        const modifiedEncoded = Buffer.from(modifiedPassphrase).toString('base64');
+        console.log('Trying modified passphrase encoding');
+        console.log(`Modified passphrase encoded (first/last 2 chars): ${modifiedEncoded.slice(0, 2)}...${modifiedEncoded.slice(-2)}`);
+
+        return modifiedEncoded;
+      }
+      
+      // Check for special characters that could cause issues
+      const hasSpecialChars = originalPassphrase !== encodeURIComponent(originalPassphrase);
+      if (hasSpecialChars) {
+        console.log('WARNING: Passphrase contains special characters - this can cause authentication issues with OKX API');
+      }
+      
+      // According to OKX API docs v5, the passphrase needs to be Base64 encoded
+      // https://www.okx.com/docs-v5/en/#rest-api-authentication-signature
+      const base64Passphrase = Buffer.from(originalPassphrase).toString('base64');
+      console.log(`Standard encoded passphrase (first/last 2 chars): ${base64Passphrase.slice(0, 2)}...${base64Passphrase.slice(-2)}`);
+      
+      // Log guidelines for API key creation
+      console.log('NOTE: When creating OKX API keys, the passphrase should NOT have special characters or trailing dots');
+      
+      return base64Passphrase;
+    } catch (error) {
+      console.error('Error encoding passphrase:', error);
+      
+      // As a last resort, try an unencoded passphrase (WARNING: only for desperate debugging)
+      console.log('ERROR FALLBACK: Sending raw passphrase without encoding');
+      return this.passphrase; 
+    }
   }
 
   /**
@@ -166,6 +206,14 @@ export class OkxService {
     // Log request information
     console.log(`OKX API request: ${method} ${requestPath}`);
     
+    // Get the encoded passphrase
+    const encodedPassphrase = this.getPassphrase();
+    
+    // Important: According to the latest OKX API documentation (v5), the passphrase 
+    // should be base64 encoded when creating the API key AND when making API calls.
+    // See: https://www.okx.com/docs-v5/en/#rest-api-authentication-signature
+    // Create fresh encodings in case the passphrase had issues before
+    
     // Setup request configuration with the instance's API key (which could be custom or default)
     const config: AxiosRequestConfig = {
       method,
@@ -176,12 +224,14 @@ export class OkxService {
         'OK-ACCESS-KEY': this.apiKey,
         'OK-ACCESS-SIGN': signature,
         'OK-ACCESS-TIMESTAMP': timestamp,
-        'OK-ACCESS-PASSPHRASE': this.getPassphrase(),
+        'OK-ACCESS-PASSPHRASE': encodedPassphrase,
         // Add demo trading header only when isDemo is true
         // OKX requires 'x-simulated-trading' header for demo mode
-        ...(this.isDemo ? { 'x-simulated-trading': '1' } : {})
+        ...(this.isDemo ? { 'x-simulated-trading': '1' } : {}),
+        // Add additional debugging headers
+        'User-Agent': 'OKX-API-Client'
       }
-    };
+    } as AxiosRequestConfig;
     
     // Add request body for non-GET requests
     if (method !== 'GET' && body) {
@@ -197,7 +247,17 @@ export class OkxService {
         timestampFormat: timestamp
       });
       
-      const response: AxiosResponse = await axios(config);
+      // Log detailed request information for debugging (excluding sensitive data)
+      console.log('Request headers:', {
+        'Content-Type': 'application/json',
+        'OK-ACCESS-KEY': `${this.apiKey.substring(0, 4)}...${this.apiKey.substring(this.apiKey.length - 4)}`,
+        'OK-ACCESS-TIMESTAMP': timestamp,
+        'x-simulated-trading': this.isDemo ? '1' : 'disabled',
+        'URL': `${this.baseUrl}${requestPath}`
+      });
+      
+      // Make the request
+      const response = await axios(config);
       
       // Check if the response contains an OKX API error
       if (response.data && response.data.code && response.data.code !== '0') {
@@ -213,8 +273,12 @@ export class OkxService {
           errorMessage += ". This typically means the timestamp is invalid or request timed out.";
         } else if (response.data.code === '50103') {
           errorMessage += ". This typically means the signature is invalid - check your SECRET_KEY format.";
-        } else if (response.data.code === '50104') {
-          errorMessage += ". This typically means the passphrase is incorrect.";
+        } else if (response.data.code === '50104' || response.data.code === '50105') {
+          errorMessage += ". This typically means the passphrase is incorrect or not properly encoded.";
+          
+          // Add special logging for passphrase issues
+          console.error('PASSPHRASE ERROR: Please ensure your passphrase was entered correctly when creating your API key');
+          console.error('When creating the API key on OKX, the passphrase should be plain text, our system does the encoding');
         }
         
         // Create an error object with the response data for better error handling
@@ -239,6 +303,13 @@ export class OkxService {
           console.log('Note: /account/balance endpoint requires Read permission on your API key');
         } else if (requestPath.includes('/trade/')) {
           console.log('Note: Trade-related endpoints require Trade permission on your API key');
+        }
+        
+        // Special handling for passphrase errors - very common issue
+        if (error.response.data.code === '50105') {
+          console.error('PASSPHRASE ERROR DETAILS: The passphrase should NOT be encoded when creating the API key.');
+          console.error('It should be entered as plain text in OKX, and our system will handle the encoding.');
+          console.error('Please try recreating your API key with a simple passphrase without special characters.');
         }
       } else {
         console.error('OKX API request failed:', error.message);

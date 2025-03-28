@@ -858,6 +858,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         passphraseLength: adminUser.okxPassphrase ? adminUser.okxPassphrase.length : 'N/A'
       });
       
+      // DEBUG: Log passphrase details for troubleshooting, but keep it secure
+      if (adminUser.okxPassphrase) {
+        const passFirst = adminUser.okxPassphrase.substring(0, 1);
+        const passLast = adminUser.okxPassphrase.substring(adminUser.okxPassphrase.length - 1);
+        console.log(`Admin passphrase format: ${passFirst}...${passLast} (length: ${adminUser.okxPassphrase.length})`);
+        
+        // Check if passphrase contains any special characters
+        const hasSpecialChars = adminUser.okxPassphrase !== encodeURIComponent(adminUser.okxPassphrase);
+        console.log(`Passphrase contains special characters: ${hasSpecialChars}`);
+        
+        // Check if passphrase ends with a dot/period - there's a known issue with this
+        const endsWithDot = adminUser.okxPassphrase.endsWith('.');
+        console.log(`Passphrase ends with dot: ${endsWithDot}`);
+        
+        // Show the base64 encoded version that will be used
+        const base64Passphrase = Buffer.from(adminUser.okxPassphrase).toString('base64');
+        console.log(`Base64 encoded passphrase (first/last 2 chars): ${base64Passphrase.substring(0, 2)}...${base64Passphrase.substring(base64Passphrase.length - 2)}`);
+      }
+      
       // Try to ping OKX API with admin keys
       const okxService = createOkxServiceWithCustomCredentials(
         adminUser.okxApiKey || '',
@@ -887,6 +906,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           success: false,
           message: 'OKX API connection failed with admin keys',
           error: apiError.message,
+          errorCode: apiError.code || 'unknown',
+          passphrase: {
+            hasPassphrase: !!adminUser.okxPassphrase,
+            endsWithDot: adminUser.okxPassphrase?.endsWith('.') || false,
+            hasSpecialChars: adminUser.okxPassphrase !== encodeURIComponent(adminUser.okxPassphrase || '')
+          },
+          encodedPassphrase: {
+            method: 'buffer.toString("base64")',
+            firstChars: adminUser.okxPassphrase ? 
+              Buffer.from(adminUser.okxPassphrase).toString('base64').substring(0, 4) : 'none'
+          },
           adminUser: {
             id: adminUser.id,
             username: adminUser.username,
