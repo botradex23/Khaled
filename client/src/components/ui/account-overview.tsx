@@ -373,6 +373,31 @@ export function AccountBalanceCard() {
     if (marketPricesQuery.data && marketPricesQuery.data.prices && Array.isArray(marketPricesQuery.data.prices) && priceFromMarketApi === 0) {
       // חיפוש מטבע עם שם דומה (לדוגמה: אם יש BTC-USDT אבל מחפשים BTC)
       const currencyLower = asset.currency.toLowerCase();
+      
+      // בדיקה מיוחדת למטבעות בעייתיים שאין להם ערך בשוק או הם במצב מיוחד
+      const specialCaseCurrencies = {
+        'BSV': { estimatedPrice: 20.85 },  // Bitcoin SV
+        'OKB': { estimatedPrice: 17.5 },   // OKX Token
+        'BCH': { estimatedPrice: 221.87 }, // Bitcoin Cash
+        'SUI': { estimatedPrice: 3.24 },   // Sui
+        'BSC': { estimatedPrice: 13.52 },  // BSC Token
+        'RUNE': { estimatedPrice: 13.2 },  // THORChain
+        'ZIL': { estimatedPrice: 0.0387 }, // Zilliqa
+        'COMP': { estimatedPrice: 36.96 }, // Compound
+        'ZKS': { estimatedPrice: 0.0516 }, // ZKSpace
+        'DENT': { estimatedPrice: 0.00198 }, // Dent
+        'TRB': { estimatedPrice: 137.54 },  // Tellor
+        'PEOPLE': { estimatedPrice: 0.0298 } // ConstitutionDAO
+      };
+      
+      // אם המטבע הוא אחד מהמקרים המיוחדים
+      const specialCase = specialCaseCurrencies[asset.currency as keyof typeof specialCaseCurrencies];
+      if (specialCase) {
+        priceFromMarketApi = specialCase.estimatedPrice;
+        console.log(`Using special case price for ${asset.currency}: $${priceFromMarketApi}`);
+      }
+      
+      // חיפוש לפי התאמה גלובלית - בודק אם המטבע הנוכחי מוזכר בסמלי שוק אחרים
       const possibleMatches = marketPricesQuery.data.prices.filter((market: Market) => 
         market.symbol.toLowerCase().includes(currencyLower)
       );
