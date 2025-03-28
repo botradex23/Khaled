@@ -549,31 +549,10 @@ export function AccountBalanceCard() {
                                       : calculatedValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
                                   })()}
                                 </div>
-                                {/* Only show advanced calculation details to help understand the value */}
+                                {/* תמיד להציג את הנוסחה הבסיסית: כמות × מחיר */}
                                 {asset.total > 0 && (
                                   <div className="text-xs text-muted-foreground mt-1 border-t border-muted/20 pt-1">
-                                    {(() => {
-                                      // Check if there's a significant difference between simple multiplication and actual value
-                                      const simpleCalculation = asset.total * pricePerUnit;
-                                      const calculatedValue = asset.calculatedTotalValue || 0;
-                                      const hasDifference = Math.abs(simpleCalculation - calculatedValue) > 0.02;
-                                      
-                                      if (hasDifference) {
-                                        if (['USDT', 'USDC', 'DAI', 'BUSD'].includes(asset.currency)) {
-                                          // For stablecoins, show special stablecoin calculation
-                                          return `Stablecoin value: $${asset.total.toFixed(2)}`;
-                                        } else if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0.01) {
-                                          // For assets with direct valueUSD from API
-                                          return `API reported value: $${asset.valueUSD.toFixed(2)}`;
-                                        } else {
-                                          // For special calculation cases
-                                          return `Advanced calculation: $${calculatedValue.toFixed(2)}`;
-                                        }
-                                      } else {
-                                        // Show standard calculation when it matches the actual value
-                                        return `${asset.total} × $${pricePerUnit.toFixed(pricePerUnit < 0.01 ? 6 : 2)}`;
-                                      }
-                                    })()}
+                                    {asset.total.toFixed(6)} × ${pricePerUnit.toFixed(2)}
                                   </div>
                                 )}
                               </div>

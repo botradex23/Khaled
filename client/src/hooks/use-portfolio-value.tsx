@@ -39,75 +39,55 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     if (data && Array.isArray(data) && data.length > 0) {
-      // Create a deep copy of the data to avoid mutating the original data source
-      const processedBalances = JSON.parse(JSON.stringify(data));
+      // בוא נעשה את זה פשוט וברור - התייחסות לכמות ולמחיר
+      const processedBalances = JSON.parse(JSON.stringify(data)); // יצירת העתק
       let totalPortfolioValue = 0;
       
-      // First pass: Process the balances and ensure all the data is properly set
+      // שלב 1: לוודא שיש לנו את הנתונים הנכונים (כמות ומחיר)
       for (let i = 0; i < processedBalances.length; i++) {
         const asset = processedBalances[i];
         
-        // Make sure total is set properly - if it's 0 but available is not, use available
+        // וידוא שסך הכל נקבע נכון - אם 0 אבל available לא 0, נחשב את סך הכל
         if (asset.total === 0 && asset.available > 0) {
           asset.total = asset.available + (asset.frozen || 0);
         }
         
-        // If we have valueUSD but no pricePerUnit, calculate it
-        if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0 && 
-            (!asset.pricePerUnit || asset.pricePerUnit === 0)) {
-          // If total is non-zero, calculate price per unit
-          if (asset.total > 0) {
+        // וידוא שיש מחיר
+        if (!asset.pricePerUnit || asset.pricePerUnit <= 0) {
+          // אם אין מחיר, ננסה לחשב מתוך valueUSD
+          if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0 && asset.total > 0) {
             asset.pricePerUnit = asset.valueUSD / asset.total;
+          } else if (['USDT', 'USDC', 'DAI', 'BUSD'].includes(asset.currency)) {
+            // סטייבלקוינס תמיד שווים בערך 1 דולר
+            asset.pricePerUnit = 1;
           }
         }
         
-        // Calculate the asset value using our robust calculation algorithm
-        let assetValue = 0;
+        // שלב 2: חישוב פשוט - כמות × מחיר
+        const simpleValue = asset.total * (asset.pricePerUnit || 0);
         
-        // First priority: Use market data if we have quantity and price
-        if (asset.total > 0 && asset.pricePerUnit && asset.pricePerUnit > 0) {
-          assetValue = asset.total * asset.pricePerUnit;
-        }
-        // Second priority: Use valueUSD directly if it's a meaningful value
-        else if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0.01) {
-          assetValue = asset.valueUSD;
-        }
-        // Third priority: Check for stablecoins which are always ~$1
-        else if (['USDT', 'USDC', 'DAI', 'BUSD'].includes(asset.currency)) {
-          assetValue = asset.total || asset.available || 0;
-        }
-        // Last priority: Look for separate available/frozen values
-        else {
-          const value = (asset.available || 0) * (asset.pricePerUnit || 0);
-          const frozenValue = (asset.frozen || 0) * (asset.pricePerUnit || 0);
-          assetValue = value + frozenValue;
-        }
+        // אחסון הערך המחושב במטבע
+        asset.calculatedTotalValue = simpleValue;
         
-        // Store the calculated value in the asset object for later use
-        asset.calculatedTotalValue = assetValue;
-        
-        // Add this asset's value to the running total
-        totalPortfolioValue += assetValue;
+        // הוספת הערך של המטבע הזה לסך הכולל של התיק
+        totalPortfolioValue += simpleValue;
       }
       
-      // Update the data object to include calculated values
-      // This ensures all components using this data will use the same calculation
+      // עדכון האובייקט המקורי עם הערכים המחושבים
       if (typeof data === 'object' && !Array.isArray(data)) {
-        // Handle the case where data is an object wrapping the array
         (data as any).balances = processedBalances;
       } else {
-        // Handle the case where data is directly the array
         for (let i = 0; i < data.length; i++) {
           data[i].calculatedTotalValue = processedBalances[i].calculatedTotalValue;
         }
       }
       
-      // Round to 2 decimal places for better display
+      // עיגול ל-2 ספרות עשרוניות לתצוגה נוחה
       setTotalValue(Math.round(totalPortfolioValue * 100) / 100);
       setLastUpdated(new Date());
       
-      // Simple logging of total value
-      console.log('Total portfolio value calculated:', totalPortfolioValue.toFixed(2));
+      // רישום לייעול באגים
+      console.log('Total portfolio value (simple calculation):', totalPortfolioValue.toFixed(2));
     }
   }, [data]);
   
