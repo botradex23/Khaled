@@ -36,9 +36,8 @@ router.post('/update-keys', ensureAuthenticated, async (req: Request, res: Respo
     // Validate the new keys immediately
     const testService = new OkxService(
       useTestnet, // Use testnet if requested
-      apiKey,
-      secretKey,
-      passphrase
+      { apiKey, secretKey, passphrase },
+      userId
     );
 
     // Attempt a simple authenticated request to validate credentials
@@ -98,9 +97,12 @@ router.get('/test-keys', ensureAuthenticated, async (req: Request, res: Response
     // Create a service instance with the user's API keys
     const testService = new OkxService(
       apiKeys.useTestnet,
-      apiKeys.okxApiKey,
-      apiKeys.okxSecretKey,
-      apiKeys.okxPassphrase
+      { 
+        apiKey: apiKeys.okxApiKey,
+        secretKey: apiKeys.okxSecretKey,
+        passphrase: apiKeys.okxPassphrase
+      },
+      userId
     );
 
     // Attempt a simple authenticated request to validate credentials

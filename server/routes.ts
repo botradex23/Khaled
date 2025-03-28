@@ -13,6 +13,7 @@ import userApiKeysRouter from './routes/user-api-keys';
 import adminApiRouter from './routes/admin-api';
 import { setupAuth, ensureAuthenticated } from "./auth";
 import { createOkxServiceWithCustomCredentials } from "./api/okx/okxService";
+import updateApiKeysRouter from "./routes/update-api-keys";
 
 // Helper function to mask sensitive data (like API keys)
 function maskSecret(secret: string): string {
@@ -213,6 +214,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // User API Keys routes
   app.use("/api/users", userApiKeysRouter);
+  
+  // API Key update and testing routes
+  app.use("/api/keys", updateApiKeysRouter);
   
   // Admin API routes
   app.use("/api/admin", adminApiRouter);
