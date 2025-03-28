@@ -21,7 +21,10 @@ router.get('/v2/prices', async (req: Request, res: Response) => {
     const symbols = req.query.symbols ? (req.query.symbols as string).split(',') : undefined;
     
     // רשימת מטבעות ברירת מחדל למקרה שלא צוינו סמלים
-    const defaultCoins = ['BTC', 'ETH', 'XRP', 'USDT', 'SOL', 'DOGE', 'DOT', 'ADA', 'AVAX', 'LINK'];
+    const defaultCoins = [
+      'BTC', 'ETH', 'XRP', 'USDT', 'SOL', 'DOGE', 'DOT', 'ADA', 'AVAX', 'LINK',
+      'BSV', 'OKB', 'BCH', 'SUI', 'BSC', 'RUNE', 'ZIL', 'COMP', 'ZKS', 'DENT', 'TRB', 'PEOPLE'
+    ];
     
     // שימוש ברשימת ברירת מחדל אם לא סופקו סמלים
     const targetSymbols = symbols && symbols.length > 0 ? symbols : defaultCoins;

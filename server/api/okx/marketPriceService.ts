@@ -195,34 +195,8 @@ async function refreshPriceCache(): Promise<void> {
     const btcUsdPrice = getBtcUsdPrice(marketData);
     console.log(`Current BTC/USD price: ${btcUsdPrice}`);
     
-    // הוספת מחירים פיקטיביים למטבעות שקשה לאתר באופן אוטומטי
-    // הערכים יתעדכנו רק אם לא נמצאו מחירים של המטבעות האלה דרך API
-    const hardcodedPrices = {
-      'BSV': 20.85,       // Bitcoin SV
-      'OKB': 17.5,        // OKX Token
-      'BCH': 221.87,      // Bitcoin Cash
-      'SUI': 3.24,        // Sui
-      'BSC': 13.52,       // BSC Token
-      'RUNE': 13.2,       // THORChain
-      'ZIL': 0.0387,      // Zilliqa 
-      'COMP': 36.96,      // Compound
-      'ZKS': 0.0516,      // ZKSpace
-      'DENT': 0.00198,    // Dent
-      'TRB': 137.54,      // Tellor
-      'PEOPLE': 0.0298    // ConstitutionDAO
-    };
-    
-    // הוספת המחירים הקבועים למטמון
-    Object.entries(hardcodedPrices).forEach(([symbol, price]) => {
-      newCache.set(symbol, {
-        symbol,
-        price,
-        base: symbol,
-        quote: 'USD',
-        timestamp: Date.now(),
-        source: 'HARDCODED'
-      });
-    });
+    // נשאב מחירים בזמן אמת מה-API בלבד, ללא מחירים קבועים
+    // נשתמש רק בשיטות החיפוש המתקדמות למציאת כל המטבעות
     
     // עיבוד כל הצמדים
     for (const ticker of marketData) {
