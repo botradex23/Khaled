@@ -216,9 +216,9 @@ export function PriceChart({ symbol = "BTCUSDT" }: { symbol?: string }) {
   
   return (
     <div className="space-y-4">
-      {/* API Keys Banner */}
+      {/* Show API Keys Banner for authenticated users without API keys */}
       {isAuthenticated && !apiKeysSetup && (
-        <Alert className="flex justify-between items-start bg-blue-50 border-blue-300 text-blue-900">
+        <Alert variant="destructive" className="flex justify-between items-start bg-blue-50 border-blue-300 text-blue-900">
           <div className="flex">
             <AlertTriangle className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
             <div>
@@ -238,7 +238,6 @@ export function PriceChart({ symbol = "BTCUSDT" }: { symbol?: string }) {
         </Alert>
       )}
       
-      {/* Price Chart Card */}
       <Card className="w-full">
         <CardHeader>
           <div className="flex justify-between items-center">
