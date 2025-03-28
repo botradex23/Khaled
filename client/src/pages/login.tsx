@@ -220,15 +220,51 @@ export default function Login() {
               </Button>
             </div>
             
-            <div className="mt-4">
+            <div className="mt-4 flex gap-4">
               <Button
                 variant="default"
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white"
                 onClick={() => {
                   setLocation("/test-login");
                 }}
               >
                 משתמש בדיקה
+              </Button>
+              
+              <Button
+                variant="default"
+                className="w-1/2 bg-red-600 hover:bg-red-700 text-white"
+                onClick={async () => {
+                  try {
+                    setIsLoading(true);
+                    // Call admin login endpoint
+                    const response = await apiRequest("POST", "/api/auth/login-as-admin");
+                    
+                    if (response && response.success) {
+                      // Refresh session after admin login
+                      await checkSession();
+                      
+                      toast({
+                        title: "Admin Login Successful",
+                        description: "You have been logged in as administrator.",
+                      });
+                      
+                      // Redirect to dashboard
+                      setLocation("/dashboard");
+                    }
+                  } catch (error) {
+                    console.error("Admin login error:", error);
+                    toast({
+                      title: "Admin Login Failed",
+                      description: error instanceof Error ? error.message : "An unknown error occurred",
+                      variant: "destructive"
+                    });
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+              >
+                התחבר כמנהל
               </Button>
             </div>
           </div>
