@@ -41,18 +41,25 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     if (data && Array.isArray(data) && data.length > 0) {
       // Calculate total value by summing all assets valueUSD or (amount * price)
       const calculated = data.reduce((sum, asset) => {
-        // Check if we have valueUSD directly (OKX format)
-        if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0) {
+        // Check if we have valueUSD directly (OKX format) and it's a meaningful value
+        // OKX sometimes returns extremely small valueUSD numbers (e.g. 0.000000123) that should be ignored
+        if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0.01) {
+          // Use valueUSD directly for significant values
           return sum + asset.valueUSD;
+        } else if (asset.total > 0 && asset.pricePerUnit) {
+          // For assets with valid quantity and price but small or missing valueUSD
+          // Calculate based on total and price per unit
+          return sum + (asset.total * asset.pricePerUnit);
         } else {
-          // Fallback calculation with unit price
+          // Fallback to separate available and frozen calculations
           const value = asset.available * (asset.pricePerUnit || 0);
           const frozenValue = asset.frozen * (asset.pricePerUnit || 0);
           return sum + value + frozenValue;
         }
       }, 0);
       
-      setTotalValue(calculated);
+      // Round to 2 decimal places for better display
+      setTotalValue(Math.round(calculated * 100) / 100);
       setLastUpdated(new Date());
     }
   }, [data]);

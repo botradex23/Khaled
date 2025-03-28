@@ -225,11 +225,25 @@ export function AccountBalanceCard() {
   
   // Calculate total value by summing valueUSD directly
   balances.forEach(asset => {
-    // Check if we have valueUSD directly (OKX format)
-    if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0) {
+    // Check if we have valueUSD directly (OKX format) and it's a meaningful value
+    // OKX sometimes returns extremely small valueUSD numbers (e.g. 0.000000123) that should be ignored
+    if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0.01) {
       console.log(`Asset ${asset.currency}: direct valueUSD = ${asset.valueUSD}`);
       // Add to total available (since OKX typically puts all value in available)
       totalAvailable += asset.valueUSD;
+    } else if (asset.total > 0 && asset.pricePerUnit > 0) {
+      // For assets with valid quantity and price but small or missing valueUSD
+      // Use a more accurate calculation based on total and price per unit
+      const totalValue = asset.total * asset.pricePerUnit;
+      console.log(`Asset ${asset.currency}: calculated with price data value = ${totalValue}`);
+      // Distribute based on available vs frozen ratio
+      if (asset.total > 0) {
+        const availableRatio = asset.available / asset.total;
+        totalAvailable += totalValue * availableRatio;
+        totalFrozen += totalValue * (1 - availableRatio);
+      } else {
+        totalAvailable += totalValue; // Default to available if ratios can't be calculated
+      }
     } else {
       // Fallback calculation with unit price
       const value = asset.available * (asset.pricePerUnit || 0);
