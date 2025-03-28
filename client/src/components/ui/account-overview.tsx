@@ -232,16 +232,53 @@ export function AccountBalanceCard() {
       asset.total = asset.available + (asset.frozen || 0);
     }
     
-    // מקור #1: הגדרת מחיר מה-API של שער השוק
+    // מקור #1: הגדרת מחיר מה-API של שער השוק - שיטה משופרת עם חיפוש במספר פורמטים
     let priceFromMarketApi = 0;
     if (marketPricesQuery.data && Array.isArray(marketPricesQuery.data)) {
-      const exactMatch = marketPricesQuery.data.find(
+      // ניסיון #1: חיפוש התאמה מדויקת בפורמט CURRENCY-USDT
+      let match = marketPricesQuery.data.find(
         market => market.symbol === `${asset.currency}-USDT`
       );
       
-      if (exactMatch && typeof exactMatch.price === 'number') {
-        priceFromMarketApi = exactMatch.price;
-        console.log(`Found market price for ${asset.currency} from API: $${priceFromMarketApi}`);
+      // ניסיון #2: חיפוש בפורמט אלטרנטיבי CURRENCY-USD
+      if (!match) {
+        match = marketPricesQuery.data.find(
+          market => market.symbol === `${asset.currency}-USD`
+        );
+      }
+      
+      // ניסיון #3: חיפוש בפורמט של מטבע מול ביטקוין (נדיר)
+      if (!match) {
+        match = marketPricesQuery.data.find(
+          market => market.symbol === `${asset.currency}-BTC`
+        );
+        
+        // אם מצאנו מחיר במונחי ביטקוין, צריך להמיר אותו לדולרים
+        if (match && typeof match.price === 'number') {
+          // מציאת מחיר הביטקוין
+          const btcPrice = marketPricesQuery.data.find(
+            btcMarket => btcMarket.symbol === 'BTC-USDT'
+          );
+          
+          if (btcPrice && typeof btcPrice.price === 'number') {
+            // המרה: מחיר נכס בביטקוין × מחיר ביטקוין בדולרים
+            priceFromMarketApi = match.price * btcPrice.price;
+            console.log(`Converted ${asset.currency}-BTC price to USD: $${priceFromMarketApi}`);
+          }
+        }
+      }
+      
+      // ניסיון #4: חיפוש מטבע באמצעות התאמה שאינה תלוית רישיות
+      if (!match && priceFromMarketApi === 0) {
+        match = marketPricesQuery.data.find(
+          market => market.symbol.toLowerCase().startsWith(asset.currency.toLowerCase() + '-')
+        );
+      }
+      
+      // אם מצאנו התאמה באחת משיטות החיפוש ועדיין אין לנו מחיר
+      if (match && typeof match.price === 'number' && priceFromMarketApi === 0) {
+        priceFromMarketApi = match.price;
+        console.log(`Found market price for ${asset.currency} from API (${match.symbol}): $${priceFromMarketApi}`);
       }
     }
     
@@ -257,12 +294,29 @@ export function AccountBalanceCard() {
     
     // מקור #4: ערכים ידועים עבור מטבעות נפוצים
     let knownPrice = 0;
-    if (asset.currency === 'USDT' || asset.currency === 'USDC') {
+    // סטייבלקוינים (מטבעות יציבים) - הערך שלהם בדרך כלל קרוב מאוד ל-1 דולר
+    if (asset.currency === 'USDT' || asset.currency === 'USDC' || asset.currency === 'BUSD' || 
+        asset.currency === 'DAI' || asset.currency === 'TUSD' || asset.currency === 'USDK' || 
+        asset.currency === 'USDP' || asset.currency === 'USDN' || asset.currency === 'GUSD') {
       knownPrice = 1;
-    } else if (asset.currency === 'BTC') {
-      knownPrice = 90000; // ערך ברירת מחדל אם אין מידע אחר
+      console.log(`Using stablecoin price of $1 for ${asset.currency}`);
+    } 
+    // מטבעות מרכזיים - ערכי ברירת מחדל רק אם אין מקורות טובים יותר
+    else if (asset.currency === 'BTC') {
+      // בהתבסס על מחירי שוק נכון למרץ 2025
+      knownPrice = 83760;
     } else if (asset.currency === 'ETH') {
-      knownPrice = 3000; // ערך ברירת מחדל אם אין מידע אחר
+      knownPrice = 1870;
+    } else if (asset.currency === 'BNB') {
+      knownPrice = 622;
+    } else if (asset.currency === 'SOL') {
+      knownPrice = 130;
+    } else if (asset.currency === 'XRP') {
+      knownPrice = 2.17;
+    } else if (asset.currency === 'ADA') {
+      knownPrice = 0.69;
+    } else if (asset.currency === 'DOGE') {
+      knownPrice = 0.18;
     }
     
     // קביעת המחיר הסופי לפי סדר עדיפות
