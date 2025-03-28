@@ -112,84 +112,13 @@ router.post('/login-as-admin', async (req: Request, res: Response) => {
   }
 });
 
-// Add a utility endpoint to copy admin API keys to another user
+// Feature REMOVED: no need to copy admin API keys
 router.post('/copy-admin-keys', async (req: Request, res: Response) => {
-  try {
-    const { targetEmail } = req.body;
-    
-    if (!targetEmail) {
-      return res.status(400).json({ 
-        error: 'Bad Request', 
-        message: 'Target email is required' 
-      });
-    }
-    
-    // Find the admin user to get API keys
-    const adminUser = await storage.getUserByUsername('admin');
-    
-    if (!adminUser) {
-      return res.status(404).json({ 
-        error: 'Not Found', 
-        message: 'Admin user not found' 
-      });
-    }
-    
-    // Verify admin has API keys
-    if (!adminUser.okxApiKey || !adminUser.okxSecretKey || !adminUser.okxPassphrase) {
-      return res.status(400).json({ 
-        error: 'Bad Request', 
-        message: 'Admin user does not have API keys configured' 
-      });
-    }
-    
-    // Find target user by email
-    const targetUser = await storage.getUserByEmail(targetEmail);
-    
-    if (!targetUser) {
-      return res.status(404).json({ 
-        error: 'Not Found', 
-        message: 'Target user not found' 
-      });
-    }
-    
-    console.log(`Copying API keys from admin (ID: ${adminUser.id}) to user ${targetUser.id} (${targetEmail})`);
-    
-    // Update target user API keys with admin keys
-    const updatedUser = await storage.updateUserApiKeys(targetUser.id, {
-      okxApiKey: adminUser.okxApiKey,
-      okxSecretKey: adminUser.okxSecretKey,
-      okxPassphrase: adminUser.okxPassphrase,
-      defaultBroker: 'okx',
-      useTestnet: true
-    });
-    
-    if (!updatedUser) {
-      return res.status(500).json({ 
-        error: 'Internal Server Error', 
-        message: 'Failed to update user API keys' 
-      });
-    }
-    
-    // Skip validation since the admin keys are known to work
-    console.log(`API keys copied from admin to user ${updatedUser.id} (${updatedUser.email})`);
-    
-    return res.json({
-      success: true,
-      message: `API keys copied from admin to ${targetEmail}. Now you can use the system with full broker access.`,
-      user: {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        hasApiKeys: !!(updatedUser.okxApiKey && updatedUser.okxSecretKey && updatedUser.okxPassphrase),
-        useTestnet: updatedUser.useTestnet
-      }
-    });
-  } catch (error) {
-    console.error('Error copying admin keys:', error);
-    res.status(500).json({ 
-      error: 'Internal Server Error', 
-      message: error instanceof Error ? error.message : 'An unknown error occurred' 
-    });
-  }
+  // Return error message explaining this feature has been removed
+  return res.status(403).json({
+    error: 'Feature Disabled',
+    message: 'This feature has been removed. Each user must configure their own API keys for security and data isolation purposes.'
+  });
 });
 
 export default router;
