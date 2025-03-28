@@ -14,7 +14,22 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 
-// Type definition
+// Type definitions
+interface Market {
+  symbol: string;
+  price: number;
+  found: boolean;
+  source: string;
+  timestamp: number;
+}
+
+interface MarketPricesResponse {
+  timestamp: string;
+  totalRequested: number;
+  totalFound: number;
+  prices: Market[];
+}
+
 interface AccountBalance {
   currency: string;
   available: number;
@@ -84,7 +99,8 @@ export function AccountBalanceCard() {
     isError: marketPricesQuery.isError,
     status: marketPricesQuery.status,
     isSuccess: marketPricesQuery.isSuccess,
-    dataCount: marketPricesQuery.data && Array.isArray(marketPricesQuery.data) ? marketPricesQuery.data.length : 0
+    dataCount: marketPricesQuery.data?.prices ? marketPricesQuery.data.prices.length : 0,
+    prices: marketPricesQuery.data?.prices
   });
   
   // Combine loading state from queries
@@ -107,7 +123,8 @@ export function AccountBalanceCard() {
     bitgetData: bitgetQuery.data,
     marketPricesSuccess: marketPricesQuery.isSuccess,
     marketPricesError: marketPricesQuery.error ? "Error" : "None",
-    marketPricesCount: marketPricesQuery.data && Array.isArray(marketPricesQuery.data) ? marketPricesQuery.data.length : 0
+    marketPricesCount: marketPricesQuery.data?.prices ? marketPricesQuery.data.prices.length : 0,
+    prices: marketPricesQuery.data?.prices
   });
 
   if (isLoading) {
