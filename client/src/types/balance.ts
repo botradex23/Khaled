@@ -12,8 +12,13 @@ export interface AccountBalance {
 
 // Helper functions for working with account balances
 export function isStablecoin(symbol: string): boolean {
-  const stablecoins = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDK', 'USDP', 'USDN', 'GUSD'];
-  return stablecoins.includes(symbol.toUpperCase());
+  const stablecoins = [
+    'USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 
+    'USDK', 'USDP', 'USDN', 'GUSD', 'USDD',
+    'USDJ', 'USDB', 'USDE', 'USD', 'USDS'
+  ];
+  return stablecoins.includes(symbol.toUpperCase()) || 
+         symbol.toUpperCase().includes('USD');
 }
 
 // Calculate total portfolio value from balances

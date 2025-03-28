@@ -9,20 +9,25 @@ import { AccountBalance, calculateTotalValue as calculateTotal, isStablecoin } f
  * @returns The price of the asset in USD
  */
 export function getPriceForAsset(asset: AccountBalance, marketPrices: Market[]): number {
-  // Method 1: Direct symbol match
+  // Method 1: Check if it's a stablecoin (these are always worth $1)
+  if (isStablecoin(asset.currency)) {
+    return 1.0;
+  }
+  
+  // Method 2: Direct symbol match (for non-stablecoins)
   const exactMatch = marketPrices.find(market => market.symbol === asset.currency);
   if (exactMatch && exactMatch.price > 0) {
     return exactMatch.price;
   }
   
-  // Method 2: Check if it's a stablecoin (usually worth $1)
-  if (isStablecoin(asset.currency)) {
-    return 1;
-  }
-  
   // Method 3: Try common trading pair formats (e.g., BTC-USDT, BTC/USDT)
   const commonPairs = ['-USDT', '-USD', '/USDT', '/USD', 'USDT', '-BTC', '/BTC', 'BTC'];
   for (const pair of commonPairs) {
+    // If we're looking for a USD pair and it contains a stablecoin identifier, return 1.0
+    if (asset.currency === 'USD' && (pair.includes('USDT') || pair.includes('USDC') || pair.includes('USD'))) {
+      return 1.0;
+    }
+    
     const symbolToCheck = asset.currency + pair;
     const pairMatch = marketPrices.find(market => market.symbol === symbolToCheck);
     if (pairMatch && pairMatch.price > 0) {
@@ -33,6 +38,11 @@ export function getPriceForAsset(asset: AccountBalance, marketPrices: Market[]):
   // Method 4: Try reverse pairs (e.g., USDT-BTC)
   const baseCoins = ['USDT-', 'USD-', 'BTC-'];
   for (const base of baseCoins) {
+    // Special case for USD-related base coins
+    if ((base === 'USDT-' || base === 'USD-') && (asset.currency === 'USD' || isStablecoin(asset.currency))) {
+      return 1.0;
+    }
+    
     const symbolToCheck = base + asset.currency;
     const reverseMatch = marketPrices.find(market => market.symbol === symbolToCheck);
     if (reverseMatch && reverseMatch.price > 0) {
@@ -41,6 +51,13 @@ export function getPriceForAsset(asset: AccountBalance, marketPrices: Market[]):
   }
   
   // Method 5: Try partial matches (substrings)
+  // One more check for stablecoins in case we missed any above
+  if (asset.currency.toUpperCase().includes('USD') || 
+      asset.currency.toUpperCase().endsWith('ST') || // For BUST, WUST, etc.
+      asset.currency.toUpperCase() === 'DAI') {
+    return 1.0;
+  }
+  
   const currencyLower = asset.currency.toLowerCase();
   const possibleMatches = marketPrices.filter(market => 
     market.symbol.toLowerCase().includes(currencyLower)
@@ -87,8 +104,13 @@ export function enrichBalancesWithPrices(
   marketPrices: Market[]
 ): AccountBalance[] {
   return balances.map(asset => {
-    // Get the best price for this asset
-    const pricePerUnit = asset.pricePerUnit || getPriceForAsset(asset, marketPrices);
+    // Special case for stablecoins - ALWAYS set price to 1.0 directly
+    if (isStablecoin(asset.currency)) {
+      asset.pricePerUnit = 1.0;
+    } else {
+      // For non-stablecoins, get the best price using our price discovery process
+      asset.pricePerUnit = asset.pricePerUnit || getPriceForAsset(asset, marketPrices);
+    }
     
     // Make sure we have a total
     if (asset.total === 0 && asset.available > 0) {
@@ -96,7 +118,7 @@ export function enrichBalancesWithPrices(
     }
     
     // Calculate the total value
-    const calculatedTotalValue = asset.total * pricePerUnit;
+    const calculatedTotalValue = asset.total * asset.pricePerUnit;
     
     // Calculate percentage of whole coin if it's a fraction
     const percentOfWhole = asset.total < 1 ? asset.total * 100 : undefined;
@@ -104,7 +126,7 @@ export function enrichBalancesWithPrices(
     // Return the enriched asset
     return {
       ...asset,
-      pricePerUnit,
+      pricePerUnit: asset.pricePerUnit,
       calculatedTotalValue,
       percentOfWhole
     };
