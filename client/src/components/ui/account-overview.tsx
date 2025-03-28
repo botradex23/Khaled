@@ -16,7 +16,11 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { Market, MarketPricesResponse } from "@/types/market";
 import { AccountBalance } from "@/types/balance";
-import { enrichBalancesWithPrices, calculateTotalValue } from "@/hooks/useAssetPricing";
+import { 
+  CryptoPriceData, 
+  enrichBalancesWithPrices, 
+  calculateTotalValue 
+} from "@/hooks/useAssetPricing";
 
 export function AccountBalanceCard() {
   // Get authentication status to determine which endpoint to use
@@ -328,11 +332,20 @@ export function AccountBalanceCard() {
     ? marketPricesQuery.data.prices 
     : [];
     
+  // Convert Market[] to CryptoPriceData[] format for compatibility
+  const pricesForEnrichment: CryptoPriceData[] = marketPrices.map(p => ({
+    symbol: p.symbol,
+    price: p.price,
+    found: p.found,
+    source: p.source,
+    timestamp: p.timestamp
+  }));
+    
   // Use our utility functions from useAssetPricing
   // Process balances to add market prices
   const processedBalances = enrichBalancesWithPrices(
     (Array.isArray(balances) ? balances : []), 
-    marketPrices
+    pricesForEnrichment
   );
   
   // Calculate total values

@@ -11,7 +11,6 @@ export class OkxService {
   private secretKey: string;
   private passphrase: string;
   private isTestnet: boolean;
-  public isConfigured: boolean;
 
   constructor(
     apiKey: string, 
@@ -23,9 +22,6 @@ export class OkxService {
     this.secretKey = secretKey;
     this.passphrase = passphrase;
     this.isTestnet = isTestnet;
-    
-    // Set if the service is configured with valid API keys
-    this.isConfigured = !!(apiKey && secretKey && passphrase);
     
     // Use testnet API endpoint if specified, otherwise use live API
     this.baseUrl = isTestnet
@@ -244,13 +240,20 @@ export class OkxService {
 /**
  * Create a OKX service with custom credentials
  * Used for validating API keys and testing connections
+ * @param apiKey The OKX API key
+ * @param secretKey The OKX API secret
+ * @param passphrase The OKX API passphrase
+ * @param useTestnet Whether to use testnet (default: true)
+ * @param userId Optional user ID for logging purposes
  */
 export function createOkxServiceWithCustomCredentials(
   apiKey: string,
   secretKey: string,
   passphrase: string,
-  useTestnet: boolean = true
+  useTestnet: boolean = true,
+  userId?: number
 ): OkxService {
+  // Just ignore the userId parameter - it's only used for logging
   return new OkxService(apiKey, secretKey, passphrase, useTestnet);
 }
 

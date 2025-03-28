@@ -5,9 +5,14 @@ import { getQueryFn } from '@/lib/queryClient';
 
 // Interface for cryptocurrency price data
 export interface CryptoPriceData {
-  currency: string;
+  // Support both the old format (currency) and the new format (symbol)
+  currency?: string;
+  symbol?: string;
   price: number;
-  lastUpdated: string;
+  lastUpdated?: string;
+  timestamp?: number;
+  found?: boolean;
+  source?: string;
 }
 
 // List of known stablecoins that should always have a price of 1.0 USD
@@ -36,13 +41,19 @@ export function getPriceForAsset(
   }
   
   // 2. Direct match by currency symbol
-  const directMatch = prices.find(p => p.currency.toUpperCase() === symbol);
+  // Handle both Market type (with symbol property) and legacy types (with currency property)
+  const directMatch = prices.find(p => {
+    const priceCurrency = p.symbol ? p.symbol.toUpperCase() : 
+                          p.currency ? p.currency.toUpperCase() : '';
+    return priceCurrency === symbol;
+  });
   if (directMatch) return directMatch.price;
   
   // 3. Try to find a match where the currency is the base asset in a trading pair
   // This is a fallback for when we don't have direct price data
   const pairMatch = prices.find(p => {
-    const priceCurrency = p.currency.toUpperCase();
+    const priceCurrency = p.symbol ? p.symbol.toUpperCase() : 
+                          p.currency ? p.currency.toUpperCase() : '';
     return priceCurrency.startsWith(symbol + '-') || priceCurrency.endsWith('-' + symbol);
   });
   
