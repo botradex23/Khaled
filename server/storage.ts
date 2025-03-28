@@ -131,8 +131,47 @@ export class MemStorage implements IStorage {
       premiumExpiresAt: null
     };
     
+    // Create an admin user with test API keys
+    const adminUser: User = {
+      id: this.currentId++,
+      username: "admin",
+      email: "admin@example.com",
+      firstName: "Admin",
+      lastName: "User",
+      password: "admin123", // Simple password for testing purposes
+      googleId: null,
+      appleId: null,
+      profilePicture: null,
+      createdAt: new Date(),
+      
+      // Add your OKX API keys here
+      okxApiKey: process.env.OKX_API_KEY || "",
+      okxSecretKey: process.env.OKX_SECRET_KEY || "",
+      okxPassphrase: process.env.OKX_PASSPHRASE || "",
+      
+      // Always use testnet for safety
+      defaultBroker: "okx",
+      useTestnet: true,
+      
+      // Admin should have premium
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      hasPremium: true,
+      premiumExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year from now
+    };
+    
+    console.log('Created admin user with API keys:', {
+      username: adminUser.username,
+      hasApiKey: !!adminUser.okxApiKey,
+      hasSecretKey: !!adminUser.okxSecretKey,
+      hasPassphrase: !!adminUser.okxPassphrase
+    });
+    
     // Save default user
     this.users.set(defaultUser.id, defaultUser);
+    
+    // Save admin user
+    this.users.set(adminUser.id, adminUser);
     
     // Sample bots
     const sampleBots: Bot[] = [

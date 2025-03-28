@@ -818,6 +818,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add a test endpoint to check admin API keys
+  app.get('/api/test-admin-keys', async (req: Request, res: Response) => {
+    try {
+      // Try to get the admin user
+      const adminUser = await storage.getUserByUsername('admin');
+      
+      if (!adminUser) {
+        return res.status(404).json({
+          error: 'Not Found',
+          message: 'Admin user not found'
+        });
+      }
+      
+      // Log API key status
+      console.log('Checking admin user API key status');
+      
+      // Check if we have API keys in environment
+      const envApiKey = process.env.OKX_API_KEY;
+      const envSecretKey = process.env.OKX_SECRET_KEY;
+      const envPassphrase = process.env.OKX_PASSPHRASE;
+      
+      console.log('Environment API keys:', {
+        hasApiKey: !!envApiKey,
+        hasSecretKey: !!envSecretKey,
+        hasPassphrase: !!envPassphrase,
+        apiKeyLength: envApiKey ? envApiKey.length : 'N/A',
+        secretKeyLength: envSecretKey ? envSecretKey.length : 'N/A',
+        passphraseLength: envPassphrase ? envPassphrase.length : 'N/A'
+      });
+      
+      // Check if admin has API keys
+      console.log('Admin user API keys:', {
+        hasApiKey: !!adminUser.okxApiKey,
+        hasSecretKey: !!adminUser.okxSecretKey,
+        hasPassphrase: !!adminUser.okxPassphrase,
+        apiKeyLength: adminUser.okxApiKey ? adminUser.okxApiKey.length : 'N/A',
+        secretKeyLength: adminUser.okxSecretKey ? adminUser.okxSecretKey.length : 'N/A',
+        passphraseLength: adminUser.okxPassphrase ? adminUser.okxPassphrase.length : 'N/A'
+      });
+      
+      // Try to ping OKX API with admin keys
+      const okxService = createOkxServiceWithCustomCredentials(
+        adminUser.okxApiKey || '',
+        adminUser.okxSecretKey || '',
+        adminUser.okxPassphrase || '',
+        true, // Always use testnet
+        adminUser.id
+      );
+      
+      // Try to get account info
+      try {
+        const accountInfo = await okxService.getAccountInfo();
+        console.log('OKX API account info test successful');
+        return res.json({
+          success: true,
+          message: 'OKX API connection successful with admin keys',
+          adminUser: {
+            id: adminUser.id,
+            username: adminUser.username,
+            hasApiKeys: !!adminUser.okxApiKey && !!adminUser.okxSecretKey && !!adminUser.okxPassphrase
+          },
+          accountInfo
+        });
+      } catch (apiError: any) {
+        console.error('OKX API account info test failed:', apiError.message);
+        return res.status(400).json({
+          success: false,
+          message: 'OKX API connection failed with admin keys',
+          error: apiError.message,
+          adminUser: {
+            id: adminUser.id,
+            username: adminUser.username,
+            hasApiKeys: !!adminUser.okxApiKey && !!adminUser.okxSecretKey && !!adminUser.okxPassphrase
+          }
+        });
+      }
+    } catch (error: any) {
+      console.error('Admin key test error:', error);
+      return res.status(500).json({
+        error: 'Internal Server Error',
+        message: error.message
+      });
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
   return httpServer;

@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosRequestConfig,  } from 'axios';
 import CryptoJS from 'crypto-js';
 import { 
   OKX_BASE_URL, 
