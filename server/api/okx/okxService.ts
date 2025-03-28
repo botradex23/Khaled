@@ -541,6 +541,33 @@ export class OkxService {
       return { success: false, message: 'API connection failed', error, demo: this.isDemo };
     }
   }
+  
+  /**
+   * Get all market tickers - useful for getting all available market pairs and prices
+   * Returns array of ticker data for all trading pairs
+   */
+  async getMarketTickers(): Promise<any[]> {
+    try {
+      const response = await this.makePublicRequest<{data: any[]}>('/api/v5/market/tickers?instType=SPOT');
+  
+      if (!response.data || !Array.isArray(response.data)) {
+        console.error('Invalid response from OKX market tickers endpoint:', response);
+        return [];
+      }
+      
+      // Log some debugging info about the data
+      console.log(`Received ${response.data.length} market tickers from OKX API`);
+      if (response.data.length > 0) {
+        console.log('Sample ticker data:', response.data[0]);
+      }
+      
+      // Return just the data array
+      return response.data;
+    } catch (error) {
+      console.error('Error getting market tickers:', error);
+      return [];
+    }
+  }
 }
 
 // Create a function to create OkxService instances with custom credentials

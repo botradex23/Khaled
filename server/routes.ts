@@ -11,6 +11,7 @@ import aiRouter from "./api/ai";
 import testAuthRouter from "./routes/test-auth";
 import userApiKeysRouter from './routes/user-api-keys';
 import adminApiRouter from './routes/admin-api';
+import marketsRouter from './routes/markets';
 import { setupAuth, ensureAuthenticated } from "./auth";
 import { createOkxServiceWithCustomCredentials } from "./api/okx/okxService";
 import updateApiKeysRouter from "./routes/update-api-keys";
@@ -220,6 +221,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Admin API routes
   app.use("/api/admin", adminApiRouter);
+  
+  // Market data and prices routes
+  app.use("/api/markets", marketsRouter);
   
   // OKX API routes
   app.use("/api/okx", okxRouter);
