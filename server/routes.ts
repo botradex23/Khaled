@@ -777,6 +777,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete API keys" });
     }
   });
+  
+  // Get API keys status (for API Keys Banner)
+  app.get("/api/users/api-keys/status", ensureAuthenticated, async (req, res) => {
+    try {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = req.user.id;
+      
+      // Get the user's API keys
+      const apiKeys = await storage.getUserApiKeys(userId);
+      
+      if (!apiKeys) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if the user has valid API keys
+      const hasValidApiKeys = !!(apiKeys.okxApiKey && apiKeys.okxSecretKey && apiKeys.okxPassphrase);
+      
+      res.status(200).json({
+        hasValidApiKeys,
+        useTestnet: apiKeys.useTestnet
+      });
+    } catch (error) {
+      console.error("API keys status check error:", error);
+      res.status(500).json({ message: "Failed to check API keys status" });
+    }
+  });
 
   // Create HTTP server
   const httpServer = createServer(app);
