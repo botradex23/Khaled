@@ -25,7 +25,7 @@ import {
   Tooltip,
   Legend
 } from "recharts";
-import { Bot, StrategyType } from "@/types";
+import { StrategyType, Bot } from "@/types";
 import { performanceChartData } from "@/lib/chart-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,8 @@ import {
   Wallet,
   RefreshCw,
   KeyRound,
-  AlertCircle
+  AlertCircle,
+  Bot as BotIcon
 } from "lucide-react";
 import {
   Alert,
@@ -309,6 +310,16 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
+                  {/* API Key Setup Button - Highlighted */}
+                  <Button 
+                    variant="default" 
+                    className="w-full justify-start bg-primary text-white hover:bg-primary/90" 
+                    onClick={() => window.location.href = "/api-keys"}
+                  >
+                    <KeyRound className="mr-2 h-4 w-4" />
+                    הגדר מפתחות API
+                  </Button>
+                  
                   <Button variant="outline" className="w-full justify-start" onClick={() => window.alert("Deposit funds functionality coming soon!")}>
                     <Wallet className="mr-2 h-4 w-4" />
                     Deposit Funds
@@ -356,28 +367,56 @@ export default function Dashboard() {
           </DialogHeader>
           
           <div className="py-4">
-            <Alert className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Important</AlertTitle>
-              <AlertDescription>
-                Each user must configure their own API keys to access their personal OKX account data.
+            <Alert className="mb-4 bg-primary/10 border-primary">
+              <AlertCircle className="h-4 w-4 text-primary" />
+              <AlertTitle className="text-primary-foreground font-bold">חשוב מאוד!</AlertTitle>
+              <AlertDescription className="text-primary-foreground">
+                כדי לגשת לנתוני המסחר האישיים שלך ב-OKX, עליך להגדיר את מפתחות ה-API שלך בחשבונך.
               </AlertDescription>
             </Alert>
             
-            <p className="text-sm mb-6">
-              Without API keys, you won't be able to view your account balance, execute trades, or use automated trading bots.
-            </p>
+            <div className="space-y-3 mb-6">
+              <div className="flex items-start">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 mt-0.5">
+                  <KeyRound className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-1">גישה לנתונים אישיים</h4>
+                  <p className="text-xs text-muted-foreground">צפייה ביתרת החשבון, היסטוריית מסחר ונתונים נוספים מחשבון ה-OKX שלך.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 mt-0.5">
+                  <BotIcon className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-1">הפעלת בוטים אוטומטיים</h4>
+                  <p className="text-xs text-muted-foreground">יכולת להפעיל בוטים אוטומטיים שיסחרו עבורך על פי אסטרטגיות מתקדמות.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 mt-0.5">
+                  <RefreshCw className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-1">עדכונים בזמן אמת</h4>
+                  <p className="text-xs text-muted-foreground">קבלת נתונים עדכניים ומדויקים מחשבון המסחר האישי שלך בכל רגע.</p>
+                </div>
+              </div>
+            </div>
           </div>
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowApiKeyDialog(false)}>
-              Later
+              אחר כך
             </Button>
             <Button onClick={() => {
               setShowApiKeyDialog(false);
               setLocation("/api-keys");
-            }} className="gap-2">
-              Set Up API Keys
+            }} className="gap-2 bg-primary hover:bg-primary/90">
+              הגדר מפתחות API עכשיו
               <ArrowRight className="h-4 w-4" />
             </Button>
           </DialogFooter>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { usePortfolioValue } from "@/hooks/use-portfolio-value";
@@ -18,6 +18,9 @@ import {
   Wallet,
   DollarSign
 } from "lucide-react";
+
+// Import the API Keys Banner
+import ApiKeysBanner from "@/components/ui/api-keys-banner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -128,6 +131,20 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           <div className="flex items-center">
+            {/* API Keys special button - visible for authenticated users that need to set up keys */}
+            {isAuthenticated && (
+              <Link href="/api-keys" className="mr-3">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-primary/10 border-primary text-primary hover:bg-primary/20 hidden md:flex"
+                >
+                  <Key className="h-4 w-4 mr-1" />
+                  הגדר מפתחות API
+                </Button>
+              </Link>
+            )}
+            
             {/* Portfolio Value Display for mobile */}
             {isAuthenticated && isMobile && (
               <div className="mr-3 flex items-center">
@@ -227,6 +244,10 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 pb-16">
+        {/* הצגת באנר אזהרה למשתמשים שאין להם מפתחות API */}
+        <div className="container mt-4">
+          <ApiKeysBanner />
+        </div>
         {children}
       </main>
 

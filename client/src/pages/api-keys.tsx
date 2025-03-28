@@ -19,7 +19,9 @@ import {
   Shield, 
   Loader2, 
   CheckCircle, 
-  XCircle
+  XCircle,
+  AlertTriangle,
+  Zap
 } from "lucide-react";
 import { 
   AlertDialog,
@@ -326,7 +328,42 @@ export default function ApiKeys() {
   return (
     <Layout>
       <div className="container mx-auto py-6">
-        <h1 className="text-3xl font-bold mb-6">API Key Management</h1>
+        <h1 className="text-3xl font-bold mb-4">API Key Management</h1>
+        
+        {/* הערה בולטת על חשיבות מפתחות API */}
+        <div className="mb-8 p-4 bg-primary/10 rounded-lg border border-primary/30">
+          <div className="flex items-start mb-3">
+            <AlertTriangle className="h-5 w-5 text-primary mt-0.5 mr-2" />
+            <h2 className="text-lg font-semibold text-primary">חשיבות הגדרת מפתחות API</h2>
+          </div>
+          <p className="mb-2 text-sm">
+            כדי לגשת לנתוני החשבון האישיים שלך ולהפעיל את פונקציות המסחר האוטומטיות, חובה להגדיר את מפתחות ה-API של חשבון ה-OKX שלך. 
+            <strong> ללא הגדרה זו, לא תוכל לצפות ביתרה האמיתית שלך, לבצע פעולות מסחר או להפעיל רובוטים אוטומטיים.</strong>
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+            <div className="bg-white/60 p-3 rounded-md shadow-sm">
+              <div className="flex items-center mb-2">
+                <KeyRound className="h-4 w-4 text-primary mr-2" />
+                <span className="font-medium text-sm">גישה פרטית</span>
+              </div>
+              <p className="text-xs text-gray-600">כל משתמש במערכת נדרש להגדיר את המפתחות האישיים שלו לצפייה בנתוניו.</p>
+            </div>
+            <div className="bg-white/60 p-3 rounded-md shadow-sm">
+              <div className="flex items-center mb-2">
+                <Lock className="h-4 w-4 text-primary mr-2" />
+                <span className="font-medium text-sm">אבטחה מלאה</span>
+              </div>
+              <p className="text-xs text-gray-600">המפתחות שלך מוצפנים ומאובטחים במערכת ומשמשים אך ורק עבור חשבונך.</p>
+            </div>
+            <div className="bg-white/60 p-3 rounded-md shadow-sm">
+              <div className="flex items-center mb-2">
+                <Zap className="h-4 w-4 text-primary mr-2" />
+                <span className="font-medium text-sm">תפעול אוטומטי</span>
+              </div>
+              <p className="text-xs text-gray-600">הבוטים האוטומטיים יכולים לפעול רק עם מפתחות API תקפים שהוגדרו מראש.</p>
+            </div>
+          </div>
+        </div>
         
         <Tabs defaultValue="okx" className="w-full">
           <TabsList className="mb-4">
