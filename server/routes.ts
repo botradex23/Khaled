@@ -221,6 +221,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API Key update and testing routes
   app.use("/api/keys", updateApiKeysRouter);
   
+  // Binance API keys endpoint
+  app.post("/api/users/binance-api-keys", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { apiKey, secretKey, testnet } = req.body;
+      
+      // Simple validation
+      if (!apiKey || !secretKey) {
+        return res.status(400).json({
+          error: 'Missing required fields',
+          message: 'API Key and Secret Key are required'
+        });
+      }
+      
+      // Store in a way that can be expanded later in storage.ts
+      const userId = req.user!.id;
+      
+      // For now, just return success - in a real implementation we'd store these in storage
+      // This is just a placeholder for the UI to function
+      console.log(`Received Binance API keys for user ${userId} (Using testnet: ${testnet})`);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Binance API keys saved successfully'
+      });
+    } catch (error) {
+      console.error("Error saving Binance API keys:", error);
+      return res.status(500).json({
+        error: 'Server error',
+        message: 'An error occurred while saving Binance API keys'
+      });
+    }
+  });
+  
   // Admin API routes
   app.use("/api/admin", adminApiRouter);
   

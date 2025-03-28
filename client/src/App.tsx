@@ -8,7 +8,8 @@ import { PortfolioProvider } from "@/hooks/use-portfolio-value";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Landing from "@/pages/landing";
-import Dashboard from "@/pages/dashboard";
+import Dashboard from "@/pages/dashboard-with-sidebar";
+import Binance from "@/pages/binance";
 import Bots from "@/pages/bots";
 import Markets from "@/pages/markets";
 import MarketPrices from "@/pages/market-prices";
@@ -52,6 +53,7 @@ function Router() {
       <Route path="/api-status" component={ApiStatus} />
       <Route path="/api-keys" component={ApiKeys} />
       <Route path="/account" component={Account} />
+      <Route path="/binance" component={Binance} />
       <Route component={NotFound} />
     </Switch>
   );
