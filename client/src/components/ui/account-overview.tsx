@@ -225,30 +225,76 @@ export function AccountBalanceCard() {
   // For debugging
   console.log("Processing balances for total calculation:", balances);
   
-  // Process the balances first to ensure we have all the data for accurate calculations
+  // עיבוד וניתוח של נתוני המאזן
   const processedBalances = balances.map(asset => {
-    // Make sure total is set properly - if it's 0 but available is not, use available
+    // וידוא שהכמות הכוללת מחושבת כראוי
     if (asset.total === 0 && asset.available > 0) {
       asset.total = asset.available + (asset.frozen || 0);
     }
     
-    // If we have valueUSD but no pricePerUnit, calculate it
-    if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0 && (!asset.pricePerUnit || asset.pricePerUnit === 0)) {
-      // If total is non-zero, calculate price per unit
-      if (asset.total > 0) {
-        asset.pricePerUnit = asset.valueUSD / asset.total;
-      }
-    }
-    
-    // Find market prices if they're available
-    if (marketPricesQuery.data && Array.isArray(marketPricesQuery.data) && !asset.pricePerUnit) {
+    // מקור #1: הגדרת מחיר מה-API של שער השוק
+    let priceFromMarketApi = 0;
+    if (marketPricesQuery.data && Array.isArray(marketPricesQuery.data)) {
       const exactMatch = marketPricesQuery.data.find(
         market => market.symbol === `${asset.currency}-USDT`
       );
       
       if (exactMatch && typeof exactMatch.price === 'number') {
-        asset.pricePerUnit = exactMatch.price;
+        priceFromMarketApi = exactMatch.price;
+        console.log(`Found market price for ${asset.currency} from API: $${priceFromMarketApi}`);
       }
+    }
+    
+    // מקור #2: חישוב מחיר מהערך בדולרים מחולק בכמות
+    let priceFromValueCalculation = 0;
+    if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0 && asset.total > 0) {
+      priceFromValueCalculation = asset.valueUSD / asset.total;
+      console.log(`Calculated price for ${asset.currency} from value: $${priceFromValueCalculation}`);
+    }
+    
+    // מקור #3: מחיר קיים שכבר מוגדר בנכס
+    let existingPrice = asset.pricePerUnit || 0;
+    
+    // מקור #4: ערכים ידועים עבור מטבעות נפוצים
+    let knownPrice = 0;
+    if (asset.currency === 'USDT' || asset.currency === 'USDC') {
+      knownPrice = 1;
+    } else if (asset.currency === 'BTC') {
+      knownPrice = 90000; // ערך ברירת מחדל אם אין מידע אחר
+    } else if (asset.currency === 'ETH') {
+      knownPrice = 3000; // ערך ברירת מחדל אם אין מידע אחר
+    }
+    
+    // קביעת המחיר הסופי לפי סדר עדיפות
+    let finalPrice = 0;
+    
+    // העדיפות הגבוהה ביותר: מחיר מה-API של השוק
+    if (priceFromMarketApi > 0) {
+      finalPrice = priceFromMarketApi;
+      console.log(`Using market API price for ${asset.currency}: $${finalPrice}`);
+    }
+    // עדיפות שניה: מחיר מחושב מהערך בדולרים
+    else if (priceFromValueCalculation > 0) {
+      finalPrice = priceFromValueCalculation;
+      console.log(`Using calculated price for ${asset.currency}: $${finalPrice}`);
+    }
+    // עדיפות שלישית: מחיר קיים שכבר מוגדר בנכס
+    else if (existingPrice > 0) {
+      finalPrice = existingPrice;
+      console.log(`Using existing price for ${asset.currency}: $${finalPrice}`);
+    }
+    // עדיפות אחרונה: ערכים ידועים עבור מטבעות נפוצים
+    else if (knownPrice > 0) {
+      finalPrice = knownPrice;
+      console.log(`Using known default price for ${asset.currency}: $${finalPrice}`);
+    }
+    
+    // עדכון המחיר הסופי לשימוש בשאר החישובים
+    asset.pricePerUnit = finalPrice;
+    
+    // חישוב אחוז ההחזקה יחסית למטבע שלם
+    if (asset.total > 0 && asset.total < 1) {
+      asset.percentOfWhole = asset.total * 100; // אחוז מתוך מטבע שלם
     }
     
     return asset;
