@@ -70,14 +70,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Create a debounced version of the checkSession function
     let authCheckTimeout: NodeJS.Timeout | null = null;
+    let isCheckingSession = false;
     
-    // Initial check
-    checkSession();
+    // Create a throttled check session function
+    const throttledCheckSession = async () => {
+      if (isCheckingSession) return; // Prevent multiple simultaneous checks
+      
+      isCheckingSession = true;
+      try {
+        await checkSession();
+      } finally {
+        isCheckingSession = false;
+      }
+    };
     
-    // Set up timer for refreshes - 30 seconds is more than enough
+    // Initial check - but add slight delay to prevent rapid calls during app init
+    setTimeout(() => {
+      throttledCheckSession();
+    }, 50);
+    
+    // Set up timer for refreshes - 45 seconds is more than enough and less frequent
     const refreshInterval = setInterval(() => {
-      checkSession();
-    }, 30000); // Check every 30 seconds instead of constantly
+      throttledCheckSession();
+    }, 45000); // Check less frequently to reduce API load
     
     // Cleanup on component unmount
     return () => {

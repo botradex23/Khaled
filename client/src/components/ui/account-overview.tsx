@@ -27,7 +27,7 @@ export function AccountBalanceCard() {
   // Regardless, we'll show market prices for cryptocurrencies at minimum
   const okxEndpoint = isAuthenticated 
     ? "/api/okx/account/balance"     // Authenticated endpoint with user-specific API keys
-    : "/api/okx/account/balance"; // Use authenticated endpoint always, but it will return empty if not logged in
+    : "/api/okx/demo/account/balance"; // Demo endpoint that doesn't require auth
   
   console.log("Account Balance Card - Using endpoint:", okxEndpoint, "isAuthenticated:", isAuthenticated);
   
