@@ -134,21 +134,24 @@ export function calculateTotalValue(
 export function useAssetPricing(currencies?: string[]) {
   // Build the query URL with the optional currencies parameter
   const queryUrl = currencies && currencies.length 
-    ? `/api/okx/market/prices?symbols=${currencies.join(',')}`
-    : '/api/okx/market/prices';
+    ? `/api/market/prices?symbols=${currencies.join(',')}`
+    : '/api/market/prices';
   
   // Fetch cryptocurrency prices
   const { 
-    data: prices, 
+    data: response, 
     isLoading,
     isError,
     error 
-  } = useQuery<CryptoPriceData[]>({
+  } = useQuery<{ success: boolean, prices: CryptoPriceData[] }>({
     queryKey: [queryUrl],
     queryFn: getQueryFn({ on401: "returnNull" }),
     refetchInterval: 60000, // Refresh every minute
     staleTime: 30000,     // Consider data stale after 30 seconds
   });
+  
+  // Extract prices from the response
+  const prices = response?.success && response?.prices ? response.prices : [];
   
   // Get price for a specific currency
   const getPrice = (currency: string): number => {

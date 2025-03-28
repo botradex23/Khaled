@@ -15,7 +15,7 @@ import marketsRouter from './routes/markets';
 import marketsV2Router from './routes/markets.test';
 import marketsV3Router from './routes/markets-v3';
 import { setupAuth, ensureAuthenticated } from "./auth";
-import { createOkxServiceWithCustomCredentials } from "./api/okx/okxService";
+import { createOkxServiceWithCustomCredentials, okxService } from "./api/okx/okxService";
 import updateApiKeysRouter from "./routes/update-api-keys";
 
 // Helper function to mask sensitive data (like API keys)
@@ -956,6 +956,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create HTTP server
+  // Add direct cryptocurrency prices endpoint
+  app.get('/api/market/prices', async (req, res) => {
+    // Make sure this is treated as a JSON API endpoint
+    res.setHeader('Content-Type', 'application/json');
+    
+    try {
+      // Make a direct request to OKX ticker endpoint to get the latest prices
+      const tickerResponse = await okxService.makePublicRequest<any>(
+        '/api/v5/market/tickers?instType=SPOT'
+      );
+      
+      if (tickerResponse.code !== '0' || !Array.isArray(tickerResponse.data)) {
+        throw new Error('Failed to fetch cryptocurrency prices');
+      }
+      
+      // Process all pairs and extract price data
+      const pricesMap: Record<string, number> = {};
+      
+      tickerResponse.data.forEach((ticker: any) => {
+        // Handle both USDT pairs (most common) and USD pairs
+        if (ticker.instId && (ticker.instId.includes('-USDT') || ticker.instId.includes('-USD'))) {
+          const parts = ticker.instId.split('-');
+          const currency = parts[0];
+          
+          if (currency && ticker.last) {
+            const price = parseFloat(ticker.last);
+            pricesMap[currency] = price;
+          }
+        }
+      });
+      
+      // Always ensure USDT and USDC are 1.0 (these are stablecoins pegged to USD)
+      pricesMap['USDT'] = 1.0;
+      pricesMap['USDC'] = 1.0;
+      
+      // Convert to array format
+      const prices = Object.entries(pricesMap).map(([currency, price]) => ({
+        currency,
+        price,
+        lastUpdated: new Date().toISOString()
+      }));
+      
+      // Return the prices data
+      res.json({
+        success: true,
+        prices: prices
+      });
+    } catch (err: any) {
+      console.error('Error fetching prices:', err);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to fetch cryptocurrency prices',
+        message: err.message 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

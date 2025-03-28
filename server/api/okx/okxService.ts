@@ -68,6 +68,38 @@ export class OkxService {
   async getAccountInfo() {
     return this.makeAuthenticatedRequest<any>('/api/v5/account/balance');
   }
+  
+  /**
+   * Get ticker information for a specific trading pair
+   * @param symbol The trading pair symbol (e.g., "BTC-USDT")
+   */
+  async getTicker(symbol: string) {
+    return this.makePublicRequest<any>(`/api/v5/market/ticker?instId=${symbol}`);
+  }
+  
+  /**
+   * Get candlestick/kline data for a trading pair
+   * @param symbol The trading pair symbol (e.g., "BTC-USDT")
+   * @param timeframe The candlestick timeframe (e.g., "1m", "5m", "15m", "1H", "4H", "1D")
+   * @param limit Number of candles to retrieve (max 100)
+   */
+  async getKlineData(symbol: string, timeframe: string = "15m", limit: number = 100) {
+    // Convert timeframe to OKX format if needed
+    let bar = timeframe;
+    if (timeframe === "1m") bar = "1m";
+    else if (timeframe === "5m") bar = "5m";
+    else if (timeframe === "15m") bar = "15m";
+    else if (timeframe === "30m") bar = "30m";
+    else if (timeframe === "1h" || timeframe === "1H") bar = "1H";
+    else if (timeframe === "4h" || timeframe === "4H") bar = "4H";
+    else if (timeframe === "1d" || timeframe === "1D") bar = "1D";
+
+    const response = await this.makePublicRequest<any>(
+      `/api/v5/market/candles?instId=${symbol}&bar=${bar}&limit=${limit}`
+    );
+    
+    return response;
+  }
 
   /**
    * Place an order on the exchange
