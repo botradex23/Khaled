@@ -39,23 +39,52 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     if (data && Array.isArray(data) && data.length > 0) {
-      // Calculate total value by summing all assets valueUSD or (amount * price)
-      const calculated = data.reduce((sum, asset) => {
-        // Check if we have valueUSD directly (OKX format) and it's a meaningful value
-        // OKX sometimes returns extremely small valueUSD numbers (e.g. 0.000000123) that should be ignored
-        if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0.01) {
-          // Use valueUSD directly for significant values
-          return sum + asset.valueUSD;
-        } else if (asset.total > 0 && asset.pricePerUnit) {
-          // For assets with valid quantity and price but small or missing valueUSD
-          // Calculate based on total and price per unit
-          return sum + (asset.total * asset.pricePerUnit);
-        } else {
-          // Fallback to separate available and frozen calculations
-          const value = asset.available * (asset.pricePerUnit || 0);
-          const frozenValue = asset.frozen * (asset.pricePerUnit || 0);
-          return sum + value + frozenValue;
+      // Process the balances first to ensure we have all the data for accurate calculations
+      const processedBalances = data.map(asset => {
+        // Clone to avoid mutating the original data
+        const processedAsset = { ...asset };
+        
+        // Make sure total is set properly - if it's 0 but available is not, use available
+        if (processedAsset.total === 0 && processedAsset.available > 0) {
+          processedAsset.total = processedAsset.available + (processedAsset.frozen || 0);
         }
+        
+        // If we have valueUSD but no pricePerUnit, calculate it
+        if (typeof processedAsset.valueUSD === 'number' && processedAsset.valueUSD > 0 && 
+            (!processedAsset.pricePerUnit || processedAsset.pricePerUnit === 0)) {
+          // If total is non-zero, calculate price per unit
+          if (processedAsset.total > 0) {
+            processedAsset.pricePerUnit = processedAsset.valueUSD / processedAsset.total;
+          }
+        }
+        
+        return processedAsset;
+      });
+      
+      // Calculate total value using our robust calculation algorithm
+      const calculated = processedBalances.reduce((sum, asset) => {
+        let assetValue = 0;
+        
+        // First priority: Use market data if we have quantity and price
+        if (asset.total > 0 && asset.pricePerUnit && asset.pricePerUnit > 0) {
+          assetValue = asset.total * asset.pricePerUnit;
+        }
+        // Second priority: Use valueUSD directly if it's a meaningful value
+        else if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0.01) {
+          assetValue = asset.valueUSD;
+        }
+        // Third priority: Check for stablecoins which are always ~$1
+        else if (['USDT', 'USDC', 'DAI', 'BUSD'].includes(asset.currency)) {
+          assetValue = asset.total || asset.available || 0;
+        }
+        // Last priority: Look for separate available/frozen values
+        else {
+          const value = (asset.available || 0) * (asset.pricePerUnit || 0);
+          const frozenValue = (asset.frozen || 0) * (asset.pricePerUnit || 0);
+          assetValue = value + frozenValue;
+        }
+        
+        return sum + assetValue;
       }, 0);
       
       // Round to 2 decimal places for better display

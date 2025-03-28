@@ -23,6 +23,8 @@ interface AccountBalance {
   valueUSD: number;
   percentOfWhole?: number; // Percentage of the whole coin (e.g., 0.1 BTC = 10%)
   pricePerUnit?: number;   // Price per 1 unit of currency
+  calculatedTotalValue?: number; // Total calculated value in USD
+  isRealAccount?: boolean; // Whether this is real account data or demo data
 }
 
 export function AccountBalanceCard() {
@@ -82,7 +84,7 @@ export function AccountBalanceCard() {
     isError: marketPricesQuery.isError,
     status: marketPricesQuery.status,
     isSuccess: marketPricesQuery.isSuccess,
-    dataCount: marketPricesQuery.data ? marketPricesQuery.data.length : 0
+    dataCount: marketPricesQuery.data && Array.isArray(marketPricesQuery.data) ? marketPricesQuery.data.length : 0
   });
   
   // Combine loading state from queries
@@ -105,7 +107,7 @@ export function AccountBalanceCard() {
     bitgetData: bitgetQuery.data,
     marketPricesSuccess: marketPricesQuery.isSuccess,
     marketPricesError: marketPricesQuery.error ? "Error" : "None",
-    marketPricesCount: marketPricesQuery.data ? marketPricesQuery.data.length : 0
+    marketPricesCount: marketPricesQuery.data && Array.isArray(marketPricesQuery.data) ? marketPricesQuery.data.length : 0
   });
 
   if (isLoading) {
@@ -223,47 +225,11 @@ export function AccountBalanceCard() {
   // For debugging
   console.log("Processing balances for total calculation:", balances);
   
-  // Calculate total value by summing valueUSD directly
-  balances.forEach(asset => {
-    // Check if we have valueUSD directly (OKX format) and it's a meaningful value
-    // OKX sometimes returns extremely small valueUSD numbers (e.g. 0.000000123) that should be ignored
-    if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0.01) {
-      console.log(`Asset ${asset.currency}: direct valueUSD = ${asset.valueUSD}`);
-      // Add to total available (since OKX typically puts all value in available)
-      totalAvailable += asset.valueUSD;
-    } else if (asset.total > 0 && asset.pricePerUnit > 0) {
-      // For assets with valid quantity and price but small or missing valueUSD
-      // Use a more accurate calculation based on total and price per unit
-      const totalValue = asset.total * asset.pricePerUnit;
-      console.log(`Asset ${asset.currency}: calculated with price data value = ${totalValue}`);
-      // Distribute based on available vs frozen ratio
-      if (asset.total > 0) {
-        const availableRatio = asset.available / asset.total;
-        totalAvailable += totalValue * availableRatio;
-        totalFrozen += totalValue * (1 - availableRatio);
-      } else {
-        totalAvailable += totalValue; // Default to available if ratios can't be calculated
-      }
-    } else {
-      // Fallback calculation with unit price
-      const value = asset.available * (asset.pricePerUnit || 0);
-      const frozenValue = asset.frozen * (asset.pricePerUnit || 0);
-      console.log(`Asset ${asset.currency}: calculated value = ${value}, frozen = ${frozenValue}`);
-      totalAvailable += value;
-      totalFrozen += frozenValue;
-    }
-  });
-  
-  // Calculate total portfolio value (accounting for both available and frozen funds)
-  const totalValue = totalAvailable + totalFrozen;
-  console.log("Total portfolio value calculated:", totalValue);
-  
-  // Ensure we have total value for each asset
-  // For OKX data format, total is often 0 but we have available and valueUSD
+  // Process the balances first to ensure we have all the data for accurate calculations
   const processedBalances = balances.map(asset => {
     // Make sure total is set properly - if it's 0 but available is not, use available
     if (asset.total === 0 && asset.available > 0) {
-      asset.total = asset.available;
+      asset.total = asset.available + (asset.frozen || 0);
     }
     
     // If we have valueUSD but no pricePerUnit, calculate it
@@ -274,8 +240,63 @@ export function AccountBalanceCard() {
       }
     }
     
+    // Find market prices if they're available
+    if (marketPricesQuery.data && Array.isArray(marketPricesQuery.data) && !asset.pricePerUnit) {
+      const exactMatch = marketPricesQuery.data.find(
+        market => market.symbol === `${asset.currency}-USDT`
+      );
+      
+      if (exactMatch && typeof exactMatch.price === 'number') {
+        asset.pricePerUnit = exactMatch.price;
+      }
+    }
+    
     return asset;
   });
+  
+  // Calculate actual value for each asset using the same consistent method
+  // This exact same calculation will be used in the table display as well
+  processedBalances.forEach(asset => {
+    // Calculate actual total value based on the asset.total and market price
+    let assetTotalValue = 0;
+    
+    // First priority: Use market data if we have quantity and price
+    if (asset.total > 0 && asset.pricePerUnit && asset.pricePerUnit > 0) {
+      assetTotalValue = asset.total * asset.pricePerUnit;
+      console.log(`Asset ${asset.currency}: calculated value = ${assetTotalValue} (price: ${asset.pricePerUnit}, amount: ${asset.total})`);
+    }
+    // Second priority: Use valueUSD directly if it's a meaningful value
+    else if (typeof asset.valueUSD === 'number' && asset.valueUSD > 0.01) {
+      assetTotalValue = asset.valueUSD;
+      console.log(`Asset ${asset.currency}: direct valueUSD = ${asset.valueUSD}`);
+    }
+    // Last priority: Look for separate available/frozen values
+    else {
+      const value = (asset.available || 0) * (asset.pricePerUnit || 0);
+      const frozenValue = (asset.frozen || 0) * (asset.pricePerUnit || 0);
+      assetTotalValue = value + frozenValue;
+      console.log(`Asset ${asset.currency}: calculated value = ${value}, frozen = ${frozenValue}, total = ${assetTotalValue}`);
+    }
+    
+    // Store the calculated value on the asset for consistent use
+    asset.calculatedTotalValue = assetTotalValue;
+    
+    // Determine how much is available vs frozen based on the calculated value
+    if (asset.total > 0) {
+      const availableRatio = (asset.available || 0) / asset.total;
+      totalAvailable += assetTotalValue * availableRatio;
+      totalFrozen += assetTotalValue * (1 - availableRatio);
+    } else {
+      // If we don't have good ratio data, default to putting everything in available
+      totalAvailable += assetTotalValue;
+    }
+  });
+  
+  // Calculate total portfolio value (accounting for both available and frozen funds)
+  const totalValue = totalAvailable + totalFrozen;
+  console.log("Total portfolio value calculated:", totalValue);
+  
+  // The processedBalances are already computed and ready to use for the rest of the calculations
   
   // Sort by calculated value (highest first) - show all assets regardless of balance
   const sortedBalances = [...processedBalances]
