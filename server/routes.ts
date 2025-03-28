@@ -8,6 +8,8 @@ import bybitRouter from "./api/bybit";
 import bitgetRouter from "./api/bitget";
 import aiRouter from "./api/ai";
 import testAuthRouter from "./routes/test-auth";
+import userApiKeysRouter from './routes/user-api-keys';
+import adminApiRouter from './routes/admin-api';
 import { setupAuth, ensureAuthenticated } from "./auth";
 import { createOkxServiceWithCustomCredentials } from "./api/okx/okxService";
 
@@ -207,6 +209,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Test auth routes
   app.use("/api/auth", testAuthRouter);
+  
+  // User API Keys routes
+  app.use("/api/users", userApiKeysRouter);
+  
+  // Admin API routes
+  app.use("/api/admin", adminApiRouter);
   
   // OKX API routes
   app.use("/api/okx", okxRouter);
@@ -702,26 +710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.id;
       console.log(`API Keys Update - Processing request for user ID: ${userId}`);
       
-      // Check if it's the hindi1000hindi@gmail.com account
-      const user = await storage.getUser(userId);
-      if (user?.email === "hindi1000hindi@gmail.com") {
-        console.log("API Keys Update - Special handling for hindi1000hindi@gmail.com");
-        
-        // Special case for this user - use environment variables
-        const updatedUser = await storage.updateUserApiKeys(userId, {
-          okxApiKey: process.env.OKX_API_KEY,
-          okxSecretKey: process.env.OKX_SECRET_KEY,
-          okxPassphrase: process.env.OKX_PASSPHRASE,
-          defaultBroker: "okx",
-          useTestnet: true
-        });
-        
-        console.log("API Keys Update - Successfully updated hindi1000hindi@gmail.com with env vars");
-        return res.status(200).json({
-          message: "API keys updated successfully with environment variables",
-          success: true
-        });
-      }
+      // No special handling for any email account - every user must provide their own keys
       
       // Validate input
       console.log("API Keys Update - Validating input data", {
@@ -771,15 +760,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const userId = req.user.id;
-      
-      // Check if it's the hindi1000hindi@gmail.com account
-      const user = await storage.getUser(userId);
-      if (user?.email === "hindi1000hindi@gmail.com") {
-        return res.status(403).json({
-          message: "Cannot delete API keys for this special account",
-          success: false
-        });
-      }
       
       // Clear the API keys
       const success = await storage.clearUserApiKeys(userId);
