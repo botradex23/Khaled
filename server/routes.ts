@@ -586,17 +586,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // In a real app, you would set up a session here
-      
-      // Return success with user data
-      res.status(200).json({
-        message: "Login successful",
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName
+      // Set up session for user login
+      req.login(user, (err) => {
+        if (err) {
+          console.error('Error during login:', err);
+          return res.status(500).json({ 
+            message: "Error during login process" 
+          });
         }
+        
+        // Return success with user data after session setup
+        res.status(200).json({
+          message: "Login successful",
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName
+          }
+        });
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
