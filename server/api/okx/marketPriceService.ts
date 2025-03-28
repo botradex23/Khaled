@@ -56,11 +56,83 @@ export async function getCurrencyPrice(currency: string, forceRefresh = false): 
 }
 
 /**
+ * סינון מחירים לפי מטבעות ספציפיים
+ * @param prices מערך המחירים המקורי לסינון
+ * @param symbols רשימת סמלי מטבעות לסינון
+ * @returns רשימת מחירים מסוננת
+ */
+export function filterCurrencyPrices(prices: CurrencyPrice[], symbols?: string[]): CurrencyPrice[] {
+  if (!symbols || symbols.length === 0) {
+    return prices;
+  }
+  
+  const upperSymbols = symbols.map(s => s.toUpperCase());
+  const result: CurrencyPrice[] = [];
+  
+  // קודם ננסה למצוא התאמות ישירות למטבעות המבוקשים
+  for (const symbol of upperSymbols) {
+    // מערך תוצאות לכל מטבע (יכול להיות יותר מאחד)
+    let matchesForSymbol: CurrencyPrice[] = [];
+    
+    // חיפוש ישיר של הסמל (בדיוק כפי שהוא)
+    const exactMatches = prices.filter(p => 
+      p.symbol === symbol || 
+      p.base === symbol
+    );
+    
+    if (exactMatches.length > 0) {
+      matchesForSymbol.push(...exactMatches);
+    }
+    
+    // חיפוש צמדים עם המטבע כבסיס (חיפוש גמיש יותר)
+    const pairsWithBase = prices.filter(p => 
+      (p.symbol && p.symbol.includes('-') && p.symbol.split('-')[0] === symbol) ||
+      (p.base === symbol)
+    );
+    
+    if (pairsWithBase.length > 0) {
+      matchesForSymbol.push(...pairsWithBase);
+    }
+    
+    // חיפוש לא רגיש לאותיות גדולות/קטנות
+    const caseInsensitiveMatches = prices.filter(p => 
+      p.base.toUpperCase() === symbol || 
+      (p.symbol && p.symbol.toUpperCase().startsWith(symbol))
+    );
+    
+    if (caseInsensitiveMatches.length > 0) {
+      matchesForSymbol.push(...caseInsensitiveMatches);
+    }
+    
+    // הסרת כפילויות על ידי הפיכה לסט וחזרה למערך
+    const uniqueMatches = Array.from(new Set(matchesForSymbol.map(m => m.symbol)))
+      .map(uniqueSymbol => matchesForSymbol.find(m => m.symbol === uniqueSymbol)!);
+    
+    if (uniqueMatches.length > 0) {
+      // מיון עדיפויות - העדפה למטבעות ציטוט USDT ואז USD
+      const preferredMatches = uniqueMatches.sort((a, b) => {
+        if (a.quote === 'USDT' && b.quote !== 'USDT') return -1;
+        if (a.quote !== 'USDT' && b.quote === 'USDT') return 1;
+        if (a.quote === 'USD' && b.quote !== 'USD') return -1;
+        if (a.quote !== 'USD' && b.quote === 'USD') return 1;
+        return 0;
+      });
+      
+      // הוספה לתוצאות
+      result.push(preferredMatches[0]);
+    }
+  }
+  
+  return result;
+}
+
+/**
  * פונקציה להשגת כל מחירי המטבעות הידועים
  * @param forceRefresh האם לרענן את המטמון בכוח
+ * @param filterSymbols רשימת מטבעות לסינון (אופציונלי)
  * @returns מערך של כל מחירי המטבעות
  */
-export async function getAllCurrencyPrices(forceRefresh = false): Promise<CurrencyPrice[]> {
+export async function getAllCurrencyPrices(forceRefresh = false, filterSymbols?: string[]): Promise<CurrencyPrice[]> {
   // רענון המטמון אם צריך
   if (forceRefresh || isStale()) {
     await refreshPriceCache();
@@ -68,7 +140,14 @@ export async function getAllCurrencyPrices(forceRefresh = false): Promise<Curren
   
   // החזרת כל הערכים מהמטמון
   try {
-    return Array.from(priceCache.values());
+    let prices = Array.from(priceCache.values());
+    
+    // סינון לפי מטבעות ספציפיים אם נדרש
+    if (filterSymbols && filterSymbols.length > 0) {
+      prices = filterCurrencyPrices(prices, filterSymbols);
+    }
+    
+    return prices;
   } catch (error) {
     console.error("Error converting priceCache to array:", error);
     return [];
@@ -267,5 +346,6 @@ export default {
   getCurrencyPrice,
   getAllCurrencyPrices,
   findBestTradingPair,
+  filterCurrencyPrices,
   refreshPriceCache: () => refreshPriceCache()
 };

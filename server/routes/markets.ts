@@ -1,11 +1,6 @@
-/**
- * נתיבי API למחירי שוק ונתוני מטבעות קריפטו
- * Routing for market prices and cryptocurrency data
- */
-
-import { Router, Request, Response } from 'express';
-import marketPriceService from '../api/okx/marketPriceService';
-import { log } from '../vite';
+import { Request, Response, Router } from 'express';
+import * as marketPriceService from '../../api/okx/marketPriceService';
+import { log } from '../../vite';
 
 const router = Router();
 
@@ -18,11 +13,95 @@ router.get('/prices', async (req: Request, res: Response) => {
     // רענון המטמון אם הפרמטר refresh קיים
     const forceRefresh = req.query.refresh === 'true';
     
-    // שליפת כל המחירים
-    const prices = await marketPriceService.getAllCurrencyPrices(forceRefresh);
+    // מגבלת מספר המחירים להחזרה
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
     
-    // החזרת התשובה
-    res.json(prices);
+    // סינון לפי מטבעות ספציפיים
+    let filterSymbols = req.query.symbols ? (req.query.symbols as string).split(',') : undefined;
+    
+    // דגל לבדוק אם נרצה פורמט חדש או ישן
+    const isStructuredFormat = req.query.format === 'structured';
+    const isJsonFormat = req.query.format === 'json';
+    const isForceStructured = req.query.usestructured === 'true';
+    
+    // תמיד נוודא שיש לנו רשימת מטבעות מוגדרת
+    // אתחול מערך ברירת מחדל למטבעות נפוצים
+    const defaultCoins = ['BTC', 'ETH', 'XRP', 'USDT', 'SOL', 'DOGE', 'DOT', 'ADA', 'AVAX', 'LINK', 'BNB', 'MATIC'];
+    
+    // אם ביקשו פורמט מובנה או JSON
+    let useStructuredFormat = isStructuredFormat || isJsonFormat || isForceStructured;
+    
+    // כאשר משתמשים בטיפוס JSON או STRUCTURED, תמיד משתמשים בפורמט המובנה
+    if (req.query.hasOwnProperty('structured') || 
+        req.query.hasOwnProperty('structure') || 
+        req.query.hasOwnProperty('usestructured') || 
+        isStructuredFormat || 
+        isJsonFormat) {
+      // נשתמש בפורמט מובנה עם המטבעות שצוינו או ברירת מחדל
+      useStructuredFormat = true;
+    }
+    
+    // אם אין מטבעות ספציפיים ולא מבקשים פורמט מיוחד, נחזיר את הכל
+    if (!useStructuredFormat && (!filterSymbols || filterSymbols.length === 0)) {
+      // שליפת כל המחירים ללא סינון
+      let prices = await marketPriceService.getAllCurrencyPrices(forceRefresh);
+      
+      // להחזיר רק את המחירים המבוקשים אם הוגדרה מגבלה
+      if (limit && !isNaN(limit) && limit > 0) {
+        prices = prices.slice(0, limit);
+      }
+      
+      // החזרת התשובה
+      res.json(prices);
+      return;
+    }
+    
+    // מכאן והלאה אנחנו עובדים עם פורמט מובנה או סינון מטבעות
+    
+    // אם אין מטבעות מוגדרים ומבקשים פורמט מיוחד, נשתמש ברשימת ברירת מחדל
+    if (useStructuredFormat && (!filterSymbols || filterSymbols.length === 0)) {
+      filterSymbols = defaultCoins;
+    }
+    
+    // כעת חייב להיות לנו מערך מטבעות לא ריק
+    const symbols = filterSymbols || [];
+    
+    // שליפת המחירים עבור המטבעות המבוקשים בלבד
+    const filteredPrices = await marketPriceService.getAllCurrencyPrices(forceRefresh, symbols);
+    
+    // חיפוש המחיר המתאים עבור כל מטבע מבוקש
+    const results = symbols.map(symbol => {
+      const foundPrice = filteredPrices.find(p => 
+        p.symbol === symbol || 
+        p.base === symbol || 
+        (p.symbol && p.symbol.includes('-') && p.symbol.split('-')[0] === symbol)
+      );
+      
+      return {
+        symbol: symbol,
+        price: foundPrice ? foundPrice.price : null,
+        found: !!foundPrice,
+        timestamp: foundPrice ? foundPrice.timestamp : new Date().getTime(),
+        source: foundPrice ? foundPrice.source : null
+      };
+    });
+    
+    // סינון רק תוצאות שנמצאו
+    const foundResults = results.filter(r => r.found);
+    
+    // הגבלת כמות התוצאות אם נדרש
+    const limitedResults = limit && !isNaN(limit) && limit > 0 
+      ? foundResults.slice(0, limit) 
+      : foundResults;
+    
+    // החזרת תשובה בפורמט מובנה
+    res.json({
+      timestamp: new Date().toISOString(),
+      totalRequested: symbols.length,
+      totalFound: foundResults.length,
+      prices: limitedResults
+    });
+    
   } catch (error: any) {
     log(`Error fetching all prices: ${error.message}`, 'api');
     res.status(500).json({ error: 'Failed to fetch market prices', details: error.message });
@@ -78,19 +157,24 @@ router.post('/batch-prices', async (req: Request, res: Response) => {
     // רענון המטמון אם הפרמטר refresh קיים
     const forceRefresh = req.query.refresh === 'true';
     
-    // מטמון כל המחירים כבר מעודכן אחרי הקריאה הראשונה
-    await marketPriceService.getAllCurrencyPrices(forceRefresh);
+    // השתמש בחיפוש לפי סינון (יעיל יותר)
+    const filteredPrices = await marketPriceService.getAllCurrencyPrices(forceRefresh, symbols);
     
-    // שליפת מחירים לכל המטבעות המבוקשים
-    const results = [];
-    for (const symbol of symbols) {
-      const price = await marketPriceService.getCurrencyPrice(symbol, false); // לא צריך לרענן שוב
-      results.push({
+    // המרה לפורמט התשובה הרצוי
+    const results = symbols.map(symbol => {
+      // חיפוש המחיר המתאים ברשימה המסוננת
+      const foundPrice = filteredPrices.find(p => 
+        p.symbol === symbol || 
+        p.base === symbol || 
+        (p.symbol && p.symbol.includes('-') && p.symbol.split('-')[0] === symbol)
+      );
+      
+      return {
         symbol: symbol,
-        price: price,
-        found: price !== null
-      });
-    }
+        price: foundPrice ? foundPrice.price : null,
+        found: !!foundPrice
+      };
+    });
     
     // החזרת כל התוצאות
     res.json({
