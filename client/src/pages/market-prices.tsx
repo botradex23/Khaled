@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout';
+import { Link } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUpDown, Search, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowUpDown, Search, TrendingUp, TrendingDown, Key, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/hooks/use-auth';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface MarketData {
   symbol: string;
@@ -19,11 +22,34 @@ interface MarketData {
 }
 
 export default function MarketPrices() {
+  const { isAuthenticated, user } = useAuth();
   const [sortConfig, setSortConfig] = useState<{ key: keyof MarketData; direction: 'asc' | 'desc' }>({
     key: 'symbol',
     direction: 'asc',
   });
   const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  // Keep track if user needs to set up API keys
+  const [apiKeysSetup, setApiKeysSetup] = useState(false);
+  
+  // Check for API keys via API
+  const { data: apiKeysData } = useQuery({
+    queryKey: ['/api/users/api-keys/status'],
+    queryFn: async () => {
+      if (!isAuthenticated) return { hasValidApiKeys: false };
+      try {
+        const res = await fetch('/api/users/api-keys/status');
+        if (!res.ok) throw new Error('Failed to fetch API key status');
+        return await res.json();
+      } catch (err) {
+        console.error('Error checking API key status:', err);
+        return { hasValidApiKeys: false };
+      }
+    },
+    enabled: isAuthenticated,
+    // Don't refetch too often since API keys don't change often
+    refetchInterval: 60000,
+  });
 
   // Fetch market data
   const { data, isLoading, error } = useQuery<MarketData[]>({
@@ -95,9 +121,40 @@ export default function MarketPrices() {
     }
   };
 
+  // Effect to check if the user has API keys set up
+  React.useEffect(() => {
+    if (isAuthenticated && apiKeysData) {
+      setApiKeysSetup(apiKeysData.hasValidApiKeys || false);
+    }
+  }, [isAuthenticated, apiKeysData]);
+  
   return (
     <Layout>
       <div className="container mx-auto py-6">
+        {/* Show API Keys Banner for authenticated users without API keys */}
+        {isAuthenticated && !apiKeysSetup && (
+          <div className="mb-6">
+            <Alert variant="destructive" className="flex justify-between items-start bg-blue-50 border-blue-300 text-blue-900">
+              <div className="flex">
+                <AlertTriangle className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
+                <div>
+                  <AlertTitle className="font-bold text-blue-800 mb-1">הגדרת מפתחות API נדרשת</AlertTitle>
+                  <AlertDescription className="text-blue-700">
+                    <p className="mb-1">כדי לראות את הנתונים האישיים שלך ולבצע פעולות מסחר, עליך להגדיר את מפתחות ה-API שלך.</p>
+                    <p className="text-sm">ללא מפתחות תקפים, תוכל לראות רק מחירי שוק ציבוריים.</p>
+                  </AlertDescription>
+                </div>
+              </div>
+              <Link href="/api-keys">
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Key className="h-4 w-4 mr-1" />
+                  הגדר מפתחות API
+                </Button>
+              </Link>
+            </Alert>
+          </div>
+        )}
+      
         <Card className="border shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-2xl font-bold">Cryptocurrency Market</CardTitle>
