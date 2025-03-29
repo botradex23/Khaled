@@ -261,26 +261,37 @@ function PaperTradingContent() {
 
   // בדיקה אם צריך ליצור חשבון
   useEffect(() => {
-    if (accountError) {
-      // בודקים אם השגיאה היא "Paper trading account already exists"
-      if (accountError instanceof Error) {
-        // אם זו שגיאה שחשבון כבר קיים, פשוט רענן את הנתונים במקום ליצור חשבון חדש
-        if (accountError.message?.includes("already exists")) {
-          refetchAccount();
+    // בדיקה האם יש צורך ליצור חשבון אוטומטית
+    const checkAndCreateAccount = async () => {
+      try {
+        // נסה לקבל את פרטי החשבון הקיים
+        const res = await apiRequest('GET', '/api/paper-trading/account');
+        const data = await res.json();
+        
+        if (data && data.id) {
+          // יש חשבון קיים, נשתמש בו
+          queryClient.setQueryData(['/api/paper-trading/account'], data);
           toast({
             title: "חשבון Paper Trading",
             description: "טוען נתוני חשבון קיים...",
           });
-        } else {
-          // אם זו שגיאה אחרת, נסה ליצור חשבון
-          createAccountMutation.mutate();
         }
-      } else {
-        // אם אין שגיאה מוגדרת, ננסה ליצור חשבון
-        createAccountMutation.mutate();
+      } catch (error: any) {
+        // אין חשבון קיים, ננסה ליצור חדש רק אם ההודעה אינה "כבר קיים"
+        if (!error.message?.includes("already exists")) {
+          createAccountMutation.mutate();
+        } else {
+          // אם החשבון כבר קיים, רענן שוב
+          setTimeout(() => refetchAccount(), 500);
+        }
       }
+    };
+    
+    // הפעל את הבדיקה רק אם אין חשבון וגם כשיש שגיאה
+    if (!account || accountError) {
+      checkAndCreateAccount();
     }
-  }, [accountError]);
+  }, [account, accountError]);
 
   // טיפול באיפוס חשבון
   const handleResetAccount = () => {

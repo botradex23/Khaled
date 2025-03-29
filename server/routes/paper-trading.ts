@@ -52,7 +52,8 @@ router.post('/account', ensureAuthenticated, async (req: Request, res: Response)
     // Check if account already exists
     const existingAccount = await storage.getUserPaperTradingAccount(userId);
     if (existingAccount) {
-      return res.status(400).json({ message: 'Paper trading account already exists' });
+      // אם החשבון כבר קיים, החזר אותו במקום לשלוח שגיאה
+      return res.status(200).json(existingAccount);
     }
 
     // Validate request body
