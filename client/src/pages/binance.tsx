@@ -579,7 +579,7 @@ export default function BinancePage() {
     isLoading: apiStatusLoading,
     refetch: refetchApiStatus
   } = useQuery<BinanceApiStatus>({
-    queryKey: ['/api/users/binance-api-keys'],
+    queryKey: ['/api/binance/api-keys/status'],
     enabled: !!user, // רק אם המשתמש מחובר
     refetchOnWindowFocus: false
   });
@@ -590,6 +590,49 @@ export default function BinancePage() {
       setIsApiKeysDialogOpen(true);
     }
   }, [apiStatus, apiStatusLoading]);
+  
+  // הגדרת ממשק לתשובת ה-API עם מפתחות API
+  interface BinanceApiKeysResponse {
+    success: boolean;
+    apiKey: string;
+    secretKey: string;
+    allowedIp?: string;
+    message: string;
+  }
+
+  // שליפת מפתחות ה-API השמורים אוטומטית בטעינת הדף
+  const {
+    data: savedApiKeys,
+    isLoading: savedApiKeysLoading
+  } = useQuery<BinanceApiKeysResponse>({
+    queryKey: ['/api/binance/api-keys/full'],
+    enabled: !!user && apiStatus?.hasBinanceApiKey === true && apiStatus?.hasBinanceSecretKey === true,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const response = await fetch('/api/binance/api-keys/full');
+      if (!response.ok) {
+        throw new Error('Failed to fetch API keys');
+      }
+      return response.json();
+    }
+  });
+
+  // טיפול בתוצאות שהתקבלו כאשר יש שינוי בנתונים
+  useEffect(() => {
+    if (savedApiKeys && savedApiKeys.success && savedApiKeys.apiKey && savedApiKeys.secretKey) {
+      console.log("הטענת מפתחות API מהשרת בוצעה בהצלחה");
+      
+      // שמירת המפתחות מהשרת למשתני הדף (באופן שקוף למשתמש)
+      // אלו ישמשו את הקריאות ל-API ללא צורך להציג חלונית עדכון
+      setBinanceApiKey(savedApiKeys.apiKey);
+      setBinanceSecretKey(savedApiKeys.secretKey);
+      
+      // עדכון כתובת IP מורשית אם נמצאה
+      if (savedApiKeys.allowedIp) {
+        setBinanceAllowedIp(savedApiKeys.allowedIp);
+      }
+    }
+  }, [savedApiKeys]);
 
   // שאילתה לקבלת יתרות חשבון Binance
   const { 
@@ -798,7 +841,7 @@ export default function BinancePage() {
 
     try {
       // קריאה לAPI לשמירת מפתחות Binance
-      const response = await fetch("/api/users/binance-api-keys", {
+      const response = await fetch("/api/binance/api-keys", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

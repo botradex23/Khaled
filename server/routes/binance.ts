@@ -51,7 +51,7 @@ async function getBinanceApiKeys(req: Request, res: Response, next: Function) {
     req.binanceApiKeys = {
       apiKey: apiKeys.binanceApiKey,
       secretKey: apiKeys.binanceSecretKey,
-      testnet: true // Default to testnet for safety
+      testnet: false // Using live environment as per user requirement
     };
     
     next();
@@ -432,14 +432,50 @@ router.get('/api-keys', ensureAuthenticated, async (req: Request, res: Response)
     // Only send back masked versions for security
     const maskedKeys = {
       binanceApiKey: apiKeys.binanceApiKey ? maskSecret(apiKeys.binanceApiKey) : null,
-      binanceSecretKey: apiKeys.binanceSecretKey ? maskSecret(apiKeys.binanceSecretKey) : null
+      binanceSecretKey: apiKeys.binanceSecretKey ? maskSecret(apiKeys.binanceSecretKey) : null,
+      binanceAllowedIp: apiKeys.binanceAllowedIp || null
     };
     
     return res.status(200).json({
       success: true,
       apiKeys: maskedKeys,
       hasBinanceApiKey: !!apiKeys.binanceApiKey,
-      hasBinanceSecretKey: !!apiKeys.binanceSecretKey
+      hasBinanceSecretKey: !!apiKeys.binanceSecretKey,
+      binanceAllowedIp: apiKeys.binanceAllowedIp || null
+    });
+  } catch (error: any) {
+    console.error("Error retrieving Binance API keys:", error);
+    return res.status(500).json({
+      error: 'Server error',
+      message: 'An error occurred while retrieving Binance API keys'
+    });
+  }
+});
+
+// Get unmasked Binance API Keys (for actual use)
+router.get('/api-keys/full', ensureAuthenticated, async (req: Request, res: Response) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    const userId = req.user.id;
+    const apiKeys = await storage.getUserBinanceApiKeys(userId);
+    
+    if (!apiKeys) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'Could not retrieve API keys for this user'
+      });
+    }
+    
+    // Return the actual keys (only for authenticated users)
+    return res.status(200).json({
+      success: true,
+      apiKey: apiKeys.binanceApiKey || '',
+      secretKey: apiKeys.binanceSecretKey || '',
+      allowedIp: apiKeys.binanceAllowedIp || '185.199.228.220',
+      message: 'API keys retrieved successfully'
     });
   } catch (error: any) {
     console.error("Error retrieving Binance API keys:", error);

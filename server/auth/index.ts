@@ -26,7 +26,7 @@ export function setupAuth(app: Express) {
       saveUninitialized: true,
       cookie: {
         secure: 'auto', // 'auto' will use secure cookies when the connection is HTTPS
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         sameSite: 'none'   // Allow cross-site cookies for OAuth callbacks
       },
     })
