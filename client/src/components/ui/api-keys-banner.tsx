@@ -17,11 +17,21 @@ export default function ApiKeysBanner() {
       if (!isAuthenticated) return { hasValidApiKeys: false };
       try {
         console.log('ApiKeysBanner: Fetching API keys status for authenticated user');
-        const res = await apiRequest('GET', '/api/users/api-keys/status');
+        const res = await fetch('/api/users/api-keys/status', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
         
-        // No need to parse response as apiRequest already returns JSON
-        console.log('ApiKeysBanner: API keys status response:', res);
-        return res;
+        if (!res.ok) {
+          throw new Error('Failed to fetch API keys status');
+        }
+        
+        const data = await res.json();
+        console.log('ApiKeysBanner: API keys status response:', data);
+        return data;
       } catch (err) {
         console.error('ApiKeysBanner: Error fetching API keys status:', err);
         return { hasValidApiKeys: false, error: err };
@@ -45,6 +55,7 @@ export default function ApiKeysBanner() {
 
   // Ensure we use strict equality check against true (not truthy check)
   const hasValidApiKeys = data?.hasValidApiKeys === true;
+  const isConfigured = data?.configured === true;
   
   // Added force-cache invalidation - this helps refresh API keys data when they're updated
   React.useEffect(() => {
@@ -57,9 +68,10 @@ export default function ApiKeysBanner() {
   // Don't show anything if:
   // 1. User is not authenticated
   // 2. User has valid API keys
-  // 3. Data is still loading
-  // 4. Data is explicitly null/undefined (prevents flash of content during auth transitions)
-  if (!isAuthenticated || hasValidApiKeys === true || isLoading || data === undefined) {
+  // 3. User has configured API keys (even if they're not working, don't show the banner)
+  // 4. Data is still loading
+  // 5. Data is explicitly null/undefined (prevents flash of content during auth transitions)
+  if (!isAuthenticated || hasValidApiKeys === true || isConfigured === true || isLoading || data === undefined) {
     return null;
   }
 
