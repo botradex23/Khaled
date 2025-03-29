@@ -7,6 +7,108 @@ import { DEFAULT_PAIRS } from './config';
 import { storage } from '../../storage';
 import { ensureAuthenticated } from '../../auth';
 
+// Create a demo OKX service that provides fallback functionality 
+// for users who haven't configured API keys yet
+function createDemoOkxService() {
+  return {
+    // Basic ping method that always succeeds
+    ping: async () => ({ success: true, message: 'Demo mode active' }),
+    
+    // Demo implementation of authenticated request
+    makeAuthenticatedRequest: async (method: string, endpoint: string, data?: any) => {
+      console.log('Demo OKX service - authenticated request:', method, endpoint);
+      
+      // Handle specific endpoints
+      if (endpoint === '/api/v5/account/balance') {
+        return {
+          code: '0',
+          data: [{
+            details: [
+              {
+                ccy: "BTC",
+                availBal: "1.2",
+                frozenBal: "0.2",
+                bal: "1.4",
+                eq: "116650.8", 
+                eqUsd: "116650.8"
+              },
+              {
+                ccy: "ETH",
+                availBal: "10",
+                frozenBal: "2",
+                bal: "12",
+                eq: "22981.44",
+                eqUsd: "22981.44"
+              },
+              {
+                ccy: "USDT",
+                availBal: "14000",
+                frozenBal: "1000",
+                bal: "15000",
+                eq: "15000",
+                eqUsd: "15000"
+              }
+            ]
+          }]
+        };
+      }
+      
+      if (endpoint === '/api/v5/trade/fills') {
+        const currentDate = new Date();
+        return {
+          code: '0',
+          data: [
+            {
+              instId: 'BTC-USDT',
+              tradeId: 'demo-1',
+              ordId: 'demo-order-1',
+              clOrdId: '',
+              billId: 'demo-bill-1',
+              tag: '',
+              fillPx: '83450.2',
+              fillSz: '0.01',
+              side: 'buy',
+              posSide: 'long',
+              execType: 'T',
+              feeCcy: 'USDT',
+              fee: '-0.05',
+              ts: (currentDate.getTime() - 5 * 60000).toString()
+            },
+            {
+              instId: 'ETH-USDT',
+              tradeId: 'demo-2',
+              ordId: 'demo-order-2',
+              clOrdId: '',
+              billId: 'demo-bill-2',
+              tag: '',
+              fillPx: '1832.45',
+              fillSz: '0.05',
+              side: 'buy',
+              posSide: 'long',
+              execType: 'T',
+              feeCcy: 'USDT',
+              fee: '-0.025',
+              ts: (currentDate.getTime() - 15 * 60000).toString()
+            }
+          ]
+        };
+      }
+      
+      // Default response for unknown endpoints
+      return { code: '0', data: [] };
+    },
+    
+    // Demo implementation of public request
+    makePublicRequest: async (endpoint: string, params?: any) => {
+      console.log('Demo OKX service - public request:', endpoint);
+      return okxService.makePublicRequest(endpoint, params);
+    },
+    
+    // Return testnet base URL 
+    getBaseUrl: () => 'https://www.okx.com/api/v5-demo'
+  };
+}
+
 const router = Router();
 
 // Function declaration of test middleware
@@ -137,13 +239,23 @@ async function withUserApiKeys(req: Request, res: Response, next: NextFunction) 
         console.error(`Failed to connect to OKX with custom keys for user ${userId}:`, pingError);
       }
     } else {
-      console.log(`No complete OKX API keys found for user ID ${userId}, returning error for private endpoints`);
-      // Return 401 error for private endpoints since we don't have valid API keys
-      // Instead of falling back to default keys
-      return res.status(401).json({
-        error: 'Missing API Keys',
-        message: 'You need to configure valid OKX API keys in your account settings to access this endpoint'
-      });
+      console.log(`No complete OKX API keys found for user ID ${userId}, using demo mode for endpoints`);
+      
+      // Get the endpoint path
+      const path = req.path;
+      
+      // Check if this is the account/balance endpoint - special handling
+      if (path.includes('/account/balance')) {
+        console.log(`Redirecting to demo balance endpoint for user ${userId}`);
+        // Redirect internally to a demo endpoint
+        return res.redirect('/api/okx/demo/account/balance');
+      }
+      
+      // For other endpoints, set a flag that we're in demo mode
+      (req as any).okxDemoMode = true;
+      
+      // Create a demo service with minimal functionality
+      (req as any).customOkxService = createDemoOkxService();
     }
   } catch (error) {
     console.error('Error getting user API keys:', error);
