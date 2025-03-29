@@ -24,7 +24,7 @@ const ensureAuthenticated = (req: Request, res: Response, next: Function) => {
   if (req.isAuthenticated()) {
     return next();
   }
-  res.status(401).json({ message: 'Unauthorized' });
+  return res.status(401).json({ message: 'Unauthorized' });
 };
 
 // Get account
@@ -37,10 +37,10 @@ router.get('/account', ensureAuthenticated, async (req: Request, res: Response) 
       return res.status(404).json({ message: 'Paper trading account not found' });
     }
 
-    res.json(account);
+    return res.json(account);
   } catch (error: any) {
     console.error('Error getting paper trading account:', error);
-    res.status(500).json({ message: error.message || 'Failed to get paper trading account' });
+    return res.status(500).json({ message: error.message || 'Failed to get paper trading account' });
   }
 });
 
@@ -80,10 +80,10 @@ router.post('/account', ensureAuthenticated, async (req: Request, res: Response)
     };
 
     const createdAccount = await storage.createPaperTradingAccount(account);
-    res.status(201).json(createdAccount);
+    return res.status(201).json(createdAccount);
   } catch (error: any) {
     console.error('Error creating paper trading account:', error);
-    res.status(500).json({ message: error.message || 'Failed to create paper trading account' });
+    return res.status(500).json({ message: error.message || 'Failed to create paper trading account' });
   }
 });
 
@@ -115,10 +115,10 @@ router.post('/account/reset', ensureAuthenticated, async (req: Request, res: Res
       initialBalance ? initialBalance : parseFloat(account.initialBalance)
     );
     
-    res.json(resetAccount);
+    return res.json(resetAccount);
   } catch (error: any) {
     console.error('Error resetting paper trading account:', error);
-    res.status(500).json({ message: error.message || 'Failed to reset paper trading account' });
+    return res.status(500).json({ message: error.message || 'Failed to reset paper trading account' });
   }
 });
 
@@ -135,10 +135,10 @@ router.get('/positions', ensureAuthenticated, async (req: Request, res: Response
 
     // Get positions
     const positions = await storage.getAccountPaperTradingPositions(account.id);
-    res.json(positions);
+    return res.json(positions);
   } catch (error: any) {
     console.error('Error getting paper trading positions:', error);
-    res.status(500).json({ message: error.message || 'Failed to get paper trading positions' });
+    return res.status(500).json({ message: error.message || 'Failed to get paper trading positions' });
   }
 });
 
@@ -182,10 +182,10 @@ router.post('/positions/:id/close', ensureAuthenticated, async (req: Request, re
       return res.status(400).json({ message: 'Failed to close position' });
     }
     
-    res.json(trade);
+    return res.json(trade);
   } catch (error: any) {
     console.error('Error closing paper trading position:', error);
-    res.status(500).json({ message: error.message || 'Failed to close position' });
+    return res.status(500).json({ message: error.message || 'Failed to close position' });
   }
 });
 
@@ -206,10 +206,10 @@ router.get('/trades', ensureAuthenticated, async (req: Request, res: Response) =
 
     // Get trades
     const trades = await storage.getAccountPaperTradingTrades(account.id, limit, offset);
-    res.json(trades);
+    return res.json(trades);
   } catch (error: any) {
     console.error('Error getting paper trading trades:', error);
-    res.status(500).json({ message: error.message || 'Failed to get paper trading trades' });
+    return res.status(500).json({ message: error.message || 'Failed to get paper trading trades' });
   }
 });
 
@@ -226,10 +226,10 @@ router.get('/stats', ensureAuthenticated, async (req: Request, res: Response) =>
 
     // Get stats
     const stats = await storage.getPaperTradingStats(account.id);
-    res.json(stats);
+    return res.json(stats);
   } catch (error: any) {
     console.error('Error getting paper trading stats:', error);
-    res.status(500).json({ message: error.message || 'Failed to get paper trading stats' });
+    return res.status(500).json({ message: error.message || 'Failed to get paper trading stats' });
   }
 });
 
@@ -272,13 +272,13 @@ router.post('/trades', ensureAuthenticated, async (req: Request, res: Response) 
     };
 
     const createdTrade = await storage.createPaperTradingTrade(trade);
-    res.status(201).json({
+    return res.status(201).json({
       position: createdPosition,
       trade: createdTrade
     });
   } catch (error: any) {
     console.error('Error creating paper trading trade:', error);
-    res.status(500).json({ message: error.message || 'Failed to create trade' });
+    return res.status(500).json({ message: error.message || 'Failed to create trade' });
   }
 });
 

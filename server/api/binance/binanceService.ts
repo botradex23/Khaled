@@ -153,6 +153,12 @@ export class BinanceService {
     return this.makeRequest('/v3/ticker/price');
   }
   
+  // Get price for a specific symbol
+  async getSymbolPrice(symbol: string): Promise<{ symbol: string; price: string }> {
+    const data = await this.makeRequest('/v3/ticker/price', { symbol });
+    return data;
+  }
+  
   // Get 24hr ticker data for all symbols
   async getAllTickers24hr(): Promise<any[]> {
     return this.makeRequest('/v3/ticker/24hr');

@@ -1,382 +1,348 @@
-import { useState, useEffect } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Loader2, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Form schema
-const tradeFormSchema = z.object({
-  symbol: z.string().min(1, { message: 'Symbol is required' }),
-  direction: z.enum(['LONG', 'SHORT'], { 
-    required_error: 'Direction is required' 
-  }),
-  entryPrice: z.string().min(1, { message: 'Entry price is required' })
-    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
-      message: 'Entry price must be a positive number',
-    }),
-  quantity: z.string().min(1, { message: 'Quantity is required' })
-    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
-      message: 'Quantity must be a positive number',
-    }),
-  type: z.enum(['MARKET', 'LIMIT'], { 
-    required_error: 'Order type is required' 
-  }),
-  isAiGenerated: z.boolean().default(false),
-  aiConfidence: z.string().optional(),
-});
-
-type TradeFormValues = z.infer<typeof tradeFormSchema>;
-
-interface NewTradeDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  accountId: number | undefined;
-}
-
-export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTradeDialogProps) {
+export default function NewTradeDialog({ onClose }: { onClose: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [symbolInput, setSymbolInput] = useState('');
-
-  // Popular crypto trading pairs
-  const defaultSymbols = [
-    'BTC-USDT',
-    'ETH-USDT',
-    'BNB-USDT',
-    'XRP-USDT',
-    'SOL-USDT',
-    'ADA-USDT',
-    'DOGE-USDT',
-    'SHIB-USDT',
-    'AVAX-USDT',
-    'DOT-USDT',
-  ];
-
-  // Fetch market prices for symbol suggestions
-  const { data: binanceTickers } = useQuery({
-    queryKey: ['/api/binance/market/tickers'],
-    queryFn: async () => {
+  
+  // State for the form
+  const [symbol, setSymbol] = useState('BTCUSDT');
+  const [quantity, setQuantity] = useState('');
+  const [direction, setDirection] = useState<'LONG' | 'SHORT'>('LONG');
+  const [entryPrice, setEntryPrice] = useState('');
+  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
+  const [availableSymbols, setAvailableSymbols] = useState<string[]>([]);
+  
+  // Fetch current market price
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  
+  // Fetch available symbols from Binance
+  useEffect(() => {
+    // Fetch common trading pairs
+    const fetchCommonPairs = async () => {
       try {
         const res = await apiRequest('GET', '/api/binance/market/tickers');
-        return await res.json();
+        const data = await res.json();
+        
+        // Filter out only USDT pairs
+        const usdtPairs = data
+          .filter((ticker: any) => ticker.symbol.endsWith('USDT'))
+          .map((ticker: any) => ticker.symbol)
+          .sort();
+          
+        setAvailableSymbols(usdtPairs);
       } catch (error) {
-        console.error('Failed to fetch tickers:', error);
-        return [];
+        console.error('Failed to fetch trading pairs:', error);
+        // Fallback to common pairs if API fails
+        setAvailableSymbols([
+          'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'XRPUSDT', 'ADAUSDT', 
+          'SOLUSDT', 'DOGEUSDT', 'DOTUSDT', 'MATICUSDT', 'AVAXUSDT'
+        ]);
       }
-    },
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
-
-  // Create form
-  const form = useForm<TradeFormValues>({
-    resolver: zodResolver(tradeFormSchema),
-    defaultValues: {
-      symbol: '',
-      direction: 'LONG',
-      entryPrice: '',
-      quantity: '',
-      type: 'MARKET',
-      isAiGenerated: false,
-      aiConfidence: '',
-    },
-  });
-
-  // Watch for symbol changes to auto-populate price
-  const selectedSymbol = form.watch('symbol');
+    };
+    
+    fetchCommonPairs();
+  }, []);
+  
+  // Fetch current price for selected symbol
   useEffect(() => {
-    if (selectedSymbol && binanceTickers) {
-      // Find the current price for the selected symbol
-      const ticker = binanceTickers.find(
-        (t: any) => t.symbol === selectedSymbol.replace('-', '')
-      );
+    const fetchPrice = async () => {
+      if (!symbol) return;
       
-      if (ticker && ticker.price) {
-        form.setValue('entryPrice', ticker.price);
+      setIsLoadingPrice(true);
+      try {
+        const res = await apiRequest('GET', `/api/binance/market/price?symbol=${symbol}`);
+        const data = await res.json();
+        
+        if (data && data.price) {
+          setCurrentPrice(parseFloat(data.price));
+          setEntryPrice(data.price);
+        }
+      } catch (error) {
+        console.error('Failed to fetch price:', error);
+        toast({
+          title: "לא ניתן לקבל מחיר",
+          description: "אירעה שגיאה בעת קבלת מחיר עדכני. אנא נסה שנית או הזן מחיר ידנית.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingPrice(false);
       }
-    }
-  }, [selectedSymbol, binanceTickers, form]);
-
-  // Get filtered symbols based on user input
-  const filteredSymbols = symbolInput
-    ? [...defaultSymbols, ...binanceTickers?.map((t: any) => 
-        t.symbol.replace(/([A-Z0-9]+)([A-Z0-9]+)/g, '$1-$2')
-      ) || []]
-        .filter((sym: string) => 
-          sym.toLowerCase().includes(symbolInput.toLowerCase())
-        )
-        .filter((sym: string, index: number, self: string[]) => 
-          self.indexOf(sym) === index
-        ) // Remove duplicates
-        .slice(0, 10) // Limit results
-    : defaultSymbols;
-
-  // Create trade mutation
+    };
+    
+    fetchPrice();
+  }, [symbol]);
+  
+  // Mutation for creating a new trade
   const createTradeMutation = useMutation({
-    mutationFn: async (values: TradeFormValues) => {
-      if (!accountId) {
-        throw new Error('No paper trading account found');
-      }
-      
-      const res = await apiRequest('POST', '/api/paper-trading/trades', {
-        ...values,
-        entryPrice: values.entryPrice.toString(),
-        quantity: values.quantity.toString(),
-        aiConfidence: values.isAiGenerated ? values.aiConfidence : null,
-      });
-      
+    mutationFn: async (tradeData: any) => {
+      const res = await apiRequest('POST', '/api/paper-trading/trades', tradeData);
       return await res.json();
     },
     onSuccess: () => {
       toast({
-        title: 'Trade Created',
-        description: 'Your paper trade has been created successfully.',
+        title: "עסקה חדשה נוצרה",
+        description: `יצרת בהצלחה עסקת ${direction === 'LONG' ? 'קנייה' : 'מכירה'} עבור ${symbol}`,
       });
       
-      // Reset form and close dialog
-      form.reset();
-      onOpenChange(false);
-      
-      // Refresh data
+      // Invalidate and refetch relevant queries
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/account'] });
       queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/positions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/trades'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/account'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/stats'] });
+      
+      // Close the dialog
+      onClose();
     },
     onError: (error: any) => {
       toast({
-        title: 'Failed to Create Trade',
-        description: error.message || 'There was an error creating your trade.',
-        variant: 'destructive',
+        title: "יצירת העסקה נכשלה",
+        description: error.message || "לא ניתן ליצור את העסקה. אנא נסה שנית.",
+        variant: "destructive",
       });
     }
   });
-
-  // Handle form submission
-  const onSubmit = (values: TradeFormValues) => {
-    createTradeMutation.mutate(values);
+  
+  // Handler for refreshing price
+  const handleRefreshPrice = () => {
+    const fetchPrice = async () => {
+      if (!symbol) return;
+      
+      setIsLoadingPrice(true);
+      try {
+        const res = await apiRequest('GET', `/api/binance/market/price?symbol=${symbol}`);
+        const data = await res.json();
+        
+        if (data && data.price) {
+          setCurrentPrice(parseFloat(data.price));
+          setEntryPrice(data.price);
+          
+          toast({
+            title: "מחיר עודכן",
+            description: `המחיר העדכני של ${symbol} הוא ${parseFloat(data.price).toFixed(2)} USDT`,
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "עדכון מחיר נכשל",
+          description: "לא ניתן לעדכן את המחיר העדכני.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingPrice(false);
+      }
+    };
+    
+    fetchPrice();
   };
-
+  
+  // Handler for submitting the form
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate inputs
+    if (!symbol) {
+      toast({
+        title: "שגיאת קלט",
+        description: "אנא בחר זוג מסחר",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!quantity || parseFloat(quantity) <= 0) {
+      toast({
+        title: "שגיאת קלט",
+        description: "אנא הזן כמות תקינה",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!entryPrice || parseFloat(entryPrice) <= 0) {
+      toast({
+        title: "שגיאת קלט",
+        description: "אנא הזן מחיר כניסה תקין",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Create trade object
+    const tradeData = {
+      symbol,
+      quantity,
+      entryPrice,
+      direction,
+      type: "MARKET"
+    };
+    
+    // Submit trade
+    createTradeMutation.mutate(tradeData);
+  };
+  
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Create New Paper Trade</DialogTitle>
-          <DialogDescription>
-            Add a new simulated trade to your paper trading account.
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="symbol"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Trading Pair</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select trading pair" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <div className="flex items-center px-3 pb-2">
-                        <Input
-                          placeholder="Search symbols..."
-                          value={symbolInput}
-                          onChange={(e) => setSymbolInput(e.target.value)}
-                          className="h-8"
-                        />
-                      </div>
-                      {filteredSymbols.map((symbol) => (
-                        <SelectItem key={symbol} value={symbol}>
-                          {symbol}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Choose the cryptocurrency pair to trade
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="direction"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Direction</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select direction" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="LONG">Long (Buy)</SelectItem>
-                        <SelectItem value="SHORT">Short (Sell)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Order Type</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select order type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="MARKET">Market</SelectItem>
-                        <SelectItem value="LIMIT">Limit</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="entryPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Entry Price</FormLabel>
-                    <FormControl>
-                      <Input placeholder="0.00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity</FormLabel>
-                    <FormControl>
-                      <Input placeholder="0.00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="isAiGenerated"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel>AI-Generated Trade</FormLabel>
-                    <FormDescription>
-                      Mark this trade as generated by AI
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            {form.watch('isAiGenerated') && (
-              <FormField
-                control={form.control}
-                name="aiConfidence"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>AI Confidence Level</FormLabel>
-                    <FormControl>
-                      <Input placeholder="0.75" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Enter a value between 0 and 1 (e.g. 0.75 for 75% confidence)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <DialogFooter>
-              <Button 
-                type="submit" 
-                disabled={createTradeMutation.isPending || !accountId}
+    <DialogContent className="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>עסקה חדשה</DialogTitle>
+        <DialogDescription>
+          יצירת עסקה חדשה בחשבון ה-Paper Trading שלך
+        </DialogDescription>
+      </DialogHeader>
+      
+      <form onSubmit={handleSubmit}>
+        <div className="grid gap-4 py-4">
+          {/* Symbol selection */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="symbol" className="text-right">
+              זוג מסחר
+            </Label>
+            <div className="col-span-3">
+              <Select 
+                value={symbol} 
+                onValueChange={setSymbol}
               >
-                {createTradeMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  'Create Trade'
-                )}
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר זוג מסחר" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSymbols.map((sym) => (
+                    <SelectItem key={sym} value={sym}>
+                      {sym}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {/* Direction selection */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label className="text-right">
+              סוג עסקה
+            </Label>
+            <div className="col-span-3">
+              <RadioGroup 
+                value={direction} 
+                onValueChange={(val) => setDirection(val as 'LONG' | 'SHORT')}
+                className="flex gap-4"
+              >
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <RadioGroupItem value="LONG" id="long" />
+                  <Label htmlFor="long" className="flex items-center cursor-pointer">
+                    <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
+                    קנייה (Long)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <RadioGroupItem value="SHORT" id="short" />
+                  <Label htmlFor="short" className="flex items-center cursor-pointer">
+                    <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
+                    מכירה (Short)
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+          
+          {/* Quantity input */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="quantity" className="text-right">
+              כמות
+            </Label>
+            <Input
+              id="quantity"
+              type="number"
+              step="any"
+              min="0.00000001"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              className="col-span-3"
+              placeholder="הזן כמות"
+            />
+          </div>
+          
+          {/* Entry Price input */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="entryPrice" className="text-right">
+              מחיר כניסה
+            </Label>
+            <div className="col-span-3 flex gap-2">
+              <Input
+                id="entryPrice"
+                type="number"
+                step="any"
+                min="0.00000001"
+                value={entryPrice}
+                onChange={(e) => setEntryPrice(e.target.value)}
+                className="flex-1"
+                placeholder="הזן מחיר כניסה"
+              />
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="icon"
+                onClick={handleRefreshPrice}
+                disabled={isLoadingPrice}
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoadingPrice ? 'animate-spin' : ''}`} />
               </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+            </div>
+          </div>
+          
+          {/* Current market price display */}
+          {currentPrice && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <span className="text-right text-sm text-muted-foreground">
+                מחיר שוק נוכחי
+              </span>
+              <span className="col-span-3 text-sm">
+                {isLoadingPrice ? (
+                  <span className="flex items-center">
+                    <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                    מעדכן מחיר...
+                  </span>
+                ) : (
+                  <span>{currentPrice.toFixed(6)} USDT</span>
+                )}
+              </span>
+            </div>
+          )}
+        </div>
+        
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            type="button" 
+            onClick={onClose}
+          >
+            ביטול
+          </Button>
+          <Button 
+            type="submit"
+            disabled={createTradeMutation.isPending || isLoadingPrice}
+          >
+            {createTradeMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                מבצע עסקה...
+              </>
+            ) : (
+              'בצע עסקה'
+            )}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
   );
 }

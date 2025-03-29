@@ -157,6 +157,29 @@ router.get('/market/ticker/:symbol', async (req: Request, res: Response) => {
   }
 });
 
+// Get current price for a specific symbol (public endpoint)
+router.get('/market/price', async (req: Request, res: Response) => {
+  try {
+    // Use dummy credentials for public endpoint (only read-only access)
+    const binanceService = createBinanceService('dummy', 'dummy', true);
+    
+    const { symbol } = req.query;
+    
+    if (!symbol || typeof symbol !== 'string') {
+      return res.status(400).json({ error: 'Symbol parameter is required' });
+    }
+    
+    const price = await binanceService.getSymbolPrice(symbol.toUpperCase());
+    return res.json(price);
+  } catch (error: any) {
+    console.error('Error fetching Binance symbol price:', error);
+    return res.status(500).json({
+      error: 'Failed to fetch price',
+      message: error.message
+    });
+  }
+});
+
 // Test Binance API connection with user's credentials
 router.get('/test-connection', ensureAuthenticated, getBinanceApiKeys, async (req: Request, res: Response) => {
   try {

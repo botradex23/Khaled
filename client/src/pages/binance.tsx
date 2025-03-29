@@ -126,7 +126,7 @@ function PaperTradingContent() {
   const PaperTradingDashboard = React.lazy(() => import('@/components/ui/paper-trading-dashboard'));
   const PaperTradingPositions = React.lazy(() => import('@/components/ui/paper-trading-positions'));
   const PaperTradingHistory = React.lazy(() => import('@/components/ui/paper-trading-history'));
-  const PaperTradingStats = React.lazy(() => import('@/components/ui/paper-trading-stats'));
+  const PaperTradingStats = React.lazy(() => import('@/components/ui/paper-trading-stats').then(module => ({ default: module.PaperTradingStats })));
   const NewTradeDialog = React.lazy(() => import('@/components/ui/new-paper-trade-dialog'));
 
   // שאילתה לקבלת חשבון ה-Paper Trading
@@ -448,24 +448,16 @@ function PaperTradingContent() {
 
       {/* דיאלוג עסקה חדשה */}
       <Dialog open={isNewTradeOpen} onOpenChange={setIsNewTradeOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>עסקה חדשה</DialogTitle>
-            <DialogDescription>
-              יצירת עסקה חדשה בחשבון ה-Paper Trading שלך
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-center text-muted-foreground">
-              טופס יצירת עסקאות יהיה זמין בקרוב.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsNewTradeOpen(false)}>
-              סגור
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+        <React.Suspense fallback={
+          <DialogContent className="sm:max-w-md">
+            <div className="flex flex-col items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mb-4" />
+              <p className="text-center">טוען טופס יצירת עסקה...</p>
+            </div>
+          </DialogContent>
+        }>
+          <NewTradeDialog onClose={() => setIsNewTradeOpen(false)} />
+        </React.Suspense>
       </Dialog>
     </div>
   );
