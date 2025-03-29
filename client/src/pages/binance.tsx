@@ -532,7 +532,7 @@ export default function BinancePage() {
   const [isApiKeysDialogOpen, setIsApiKeysDialogOpen] = useState(false);
   const [binanceApiKey, setBinanceApiKey] = useState('');
   const [binanceSecretKey, setBinanceSecretKey] = useState('');
-  const [useTestnet, setUseTestnet] = useState(true);
+  const [useTestnet, setUseTestnet] = useState(false); // שים לב ששינינו ל-false כדי להתחבר לסביבה האמיתית
   const [isSaving, setIsSaving] = useState(false);
   
   // משתנים למיון וסינון
@@ -540,6 +540,13 @@ export default function BinancePage() {
   const [sortField, setSortField] = useState<'symbol' | 'price' | 'priceChangePercent' | 'volume'>('volume');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [filterCategory, setFilterCategory] = useState<'all' | 'stablecoins' | 'defi' | 'top'>('all');
+  
+  // יצירת משתנה מראש לחישוב השווי הכולל
+  const [savedTotalValue, setSavedTotalValue] = useState<number>(() => {
+    // נסה לקרוא את הערך האחרון מה-localStorage
+    const savedValue = localStorage.getItem('binance_portfolio_value');
+    return savedValue ? parseFloat(savedValue) : 0;
+  });
 
   // שאילתה לבדיקת סטטוס מפתחות API של Binance
   const { 
@@ -569,8 +576,24 @@ export default function BinancePage() {
     queryKey: ['/api/binance/account/balances'],
     enabled: !!apiStatus?.hasBinanceApiKey && !!apiStatus?.hasBinanceSecretKey,
     refetchOnWindowFocus: false,
-    retry: 1
+    retry: 2, // נסה יותר פעמים במקרה של כישלון
+    refetchInterval: 30000, // רענון אוטומטי כל 30 שניות
   });
+  
+  // חישוב סך הכל שווי בדולרים של כל הנכסים
+  const totalUsdValue = balances?.reduce((sum: number, balance: BinanceBalance) => 
+    sum + (balance.usdValue || 0), 0) || 0;
+  
+  // השתמש בlocalStorage כדי לאחסן את הערך של totalUsdValue
+  useEffect(() => {
+    // כאשר הערך של totalUsdValue משתנה, שמור אותו ב-localStorage
+    if (totalUsdValue && totalUsdValue > 0) {
+      console.log("Total portfolio value (simple calculation):", totalUsdValue.toFixed(2));
+      localStorage.setItem('binance_portfolio_value', totalUsdValue.toString());
+      // שמור גם במשתנה הלוקלי
+      setSavedTotalValue(totalUsdValue);
+    }
+  }, [totalUsdValue]);
   
   // שאילתה לקבלת מחירי כל המטבעות ב-Binance
   const {
@@ -779,9 +802,7 @@ export default function BinancePage() {
     }
   };
 
-  // חישוב סך הכל שווי בדולרים של כל הנכסים
-  const totalUsdValue = balances?.reduce((sum, balance) => 
-    sum + (balance.usdValue || 0), 0) || 0;
+  // מחיקת הכפילות - הערך כבר מוגדר למעלה
 
   // אם המשתמש לא מחובר, הפנייה לדף התחברות
   if (!authLoading && !user) {

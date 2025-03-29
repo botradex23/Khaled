@@ -16,10 +16,10 @@ export class BinanceService {
     this.apiKey = credentials.apiKey;
     this.secretKey = credentials.secretKey;
     
-    // Set the base URL based on testnet flag
-    this.baseUrl = credentials.testnet 
-      ? 'https://testnet.binance.vision/api'
-      : 'https://api.binance.com/api';
+    // Always use the real production URL since we want to fetch real balances
+    this.baseUrl = 'https://api.binance.com/api';
+    
+    console.log(`Binance Service initialized with production API (ignoring testnet flag: ${credentials.testnet})`);
   }
 
   // Create a signature for authentication
@@ -97,19 +97,40 @@ export class BinanceService {
   // Get account balances (extract from account info)
   async getAccountBalances(): Promise<any[]> {
     try {
+      console.log('Fetching real account balances from Binance API...');
       const accountInfo = await this.getAccountInfo();
       
       // Process and enrich account balances
       const balances = accountInfo.balances || [];
+      console.log(`Retrieved ${balances.length} balances from Binance account`);
       
       // Get latest prices to calculate USD values
       const prices = await this.getAllTickers();
       const priceMap = new Map<string, number>();
       
+      // Map all prices for all trading pairs
       prices.forEach((price: any) => {
+        // Handle USDT pairs
         if (price.symbol.endsWith('USDT')) {
           const asset = price.symbol.replace('USDT', '');
           priceMap.set(asset, parseFloat(price.price));
+        }
+        // Also handle other trading pairs (BTC, ETH, etc)
+        else if (price.symbol.endsWith('BTC')) {
+          const asset = price.symbol.replace('BTC', '');
+          // Need to also get BTC price to convert to USD
+          const btcPrice = priceMap.get('BTC') || 0;
+          if (btcPrice > 0) {
+            priceMap.set(asset, parseFloat(price.price) * btcPrice);
+          }
+        }
+      });
+      
+      // Log some major currency prices for debugging
+      console.log('Current market prices:');
+      ['BTC', 'ETH', 'BNB', 'SOL', 'XRP'].forEach(symbol => {
+        if (priceMap.has(symbol)) {
+          console.log(`${symbol}: $${priceMap.get(symbol)}`);
         }
       });
       
@@ -118,30 +139,63 @@ export class BinanceService {
       priceMap.set('USDC', 1);
       priceMap.set('BUSD', 1);
       priceMap.set('DAI', 1);
+      priceMap.set('TUSD', 1);
+      priceMap.set('FDUSD', 1);
       
-      // Enrich balances with USD value
-      return balances.map((balance: any) => {
-        const asset = balance.asset;
-        const free = balance.free;
-        const locked = balance.locked;
-        const total = (parseFloat(free) + parseFloat(locked)).toString();
-        
-        // Calculate USD value
-        let usdValue = 0;
-        if (priceMap.has(asset)) {
-          usdValue = parseFloat(total) * priceMap.get(asset)!;
-        } else if (priceMap.has(`${asset}USDT`)) {
-          usdValue = parseFloat(total) * priceMap.get(`${asset}USDT`)!;
-        }
-        
-        return {
-          asset,
-          free,
-          locked,
-          total,
-          usdValue
-        };
-      });
+      // Calculate total portfolio value for logging
+      let totalPortfolioValue = 0;
+      
+      // Enrich balances with USD value and filter out zero balances
+      const enrichedBalances = balances
+        .map((balance: { 
+          asset: string; 
+          free: string; 
+          locked: string; 
+          total?: string;
+        }) => {
+          const asset = balance.asset;
+          const free = balance.free;
+          const locked = balance.locked;
+          const total = (parseFloat(free) + parseFloat(locked)).toString();
+          const totalValue = parseFloat(total);
+          
+          // Calculate USD value
+          let usdValue = 0;
+          let pricePerUnit = 0;
+          
+          if (priceMap.has(asset)) {
+            pricePerUnit = priceMap.get(asset)!;
+            usdValue = totalValue * pricePerUnit;
+          } else if (priceMap.has(`${asset}USDT`)) {
+            pricePerUnit = priceMap.get(`${asset}USDT`)!;
+            usdValue = totalValue * pricePerUnit;
+          }
+          
+          // Add to total portfolio value
+          totalPortfolioValue += usdValue;
+          
+          return {
+            asset,
+            free,
+            locked,
+            total,
+            usdValue,
+            pricePerUnit
+          };
+        })
+        // Filter out zero or extremely small balances
+        .filter((balance: { 
+          total: string; 
+          usdValue: number;
+        }) => parseFloat(balance.total) > 0.000001 || balance.usdValue > 0.01);
+      
+      // Sort by USD value descending
+      enrichedBalances.sort((a: { usdValue: number }, b: { usdValue: number }) => b.usdValue - a.usdValue);
+      
+      console.log(`Total portfolio value (simple calculation): ${totalPortfolioValue.toFixed(2)}`);
+      console.log(`Returning ${enrichedBalances.length} non-zero balances`);
+      
+      return enrichedBalances;
     } catch (error) {
       console.error('Error fetching Binance account balances:', error);
       throw error;

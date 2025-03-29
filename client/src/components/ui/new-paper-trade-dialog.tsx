@@ -63,16 +63,41 @@ type MarketData = {
 };
 
 interface NewPaperTradeDialogProps {
-  accountId: number;
+  accountId?: number;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onClose?: () => void;
 }
 
-export default function NewPaperTradeDialog({ accountId }: NewPaperTradeDialogProps) {
+export default function NewPaperTradeDialog({ 
+  accountId,
+  open: externalOpen,
+  onOpenChange,
+  onClose 
+}: NewPaperTradeDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [markets, setMarkets] = useState<MarketData[]>([]);
   const [isLoadingMarkets, setIsLoadingMarkets] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<MarketData | null>(null);
+  
+  // שימוש ב-open החיצוני אם סופק, אחרת השתמש בערך הפנימי
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  
+  // פונקציה לשינוי מצב הדיאלוג
+  const handleOpenChange = (newOpen: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(newOpen);
+    } else {
+      setInternalOpen(newOpen);
+    }
+    
+    // כאשר הדיאלוג נסגר, קרא ל-onClose אם סופק
+    if (!newOpen && onClose) {
+      onClose();
+    }
+  };
 
   // Form definition
   const form = useForm<z.infer<typeof formSchema>>({
@@ -186,7 +211,7 @@ export default function NewPaperTradeDialog({ accountId }: NewPaperTradeDialogPr
       
       // Reset form and close dialog
       form.reset();
-      setOpen(false);
+      handleOpenChange(false);
     } catch (error: any) {
       toast({
         title: "שגיאה ביצירת העסקה",
@@ -197,7 +222,7 @@ export default function NewPaperTradeDialog({ accountId }: NewPaperTradeDialogPr
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -324,7 +349,7 @@ export default function NewPaperTradeDialog({ accountId }: NewPaperTradeDialogPr
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={() => handleOpenChange(false)}
                 disabled={isSubmitting}
               >
                 ביטול
