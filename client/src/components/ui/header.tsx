@@ -163,6 +163,7 @@ export default function Header() {
     { to: "/bots", label: "Bots", icon: <Grid className="h-4 w-4 mr-2" /> },
     { to: "/learn", label: "Learn", icon: <BookOpen className="h-4 w-4 mr-2" /> },
     { to: "/api-status", label: "API Status", icon: <Activity className="h-4 w-4 mr-2" /> },
+    { to: "/binance", label: "Binance", icon: <ExternalLink className="h-4 w-4 mr-2" /> },
   ];
 
   return (

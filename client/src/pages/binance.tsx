@@ -1,421 +1,499 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
-import { SiBinance } from "react-icons/si";
-import AppSidebar from "@/components/AppSidebar";
-import Header from "@/components/ui/header";
-import Footer from "@/components/ui/footer";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle,
-  CardFooter
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import {
-  AlertCircle,
-  ArrowRight,
-  Check,
-  CreditCard,
-  KeyRound,
-  Loader2,
-  BarChart3,
-  Bot,
-  GanttChart,
-  Shield,
-  LockKeyhole,
-  SlidersHorizontal
-} from "lucide-react";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { Redirect } from 'wouter';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { AlertCircle, ExternalLink, RefreshCw, Settings, TrendingUp } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 
-// Define schema for Binance API key form
-const binanceApiKeySchema = z.object({
-  apiKey: z.string().min(1, { message: "API Key is required" }),
-  secretKey: z.string().min(1, { message: "Secret Key is required" }),
-  testnet: z.boolean().default(true),
-});
+// בינתיים נשתמש בסוג זמני עבור מטבעות ויתרות ביננס
+interface BinanceBalance {
+  asset: string;
+  free: string;
+  locked: string;
+  total?: string;
+  usdValue?: number;
+}
+
+interface BinanceApiStatus {
+  hasBinanceApiKey: boolean;
+  hasBinanceSecretKey: boolean;
+  testnet: boolean;
+}
 
 export default function BinancePage() {
-  const { isAuthenticated, isLoading: authLoading, checkSession } = useAuth();
-  const [location, setLocation] = useLocation();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasSuccessfullySet, setHasSuccessfullySet] = useState(false);
-  
-  // Initialize form
-  const form = useForm<z.infer<typeof binanceApiKeySchema>>({
-    resolver: zodResolver(binanceApiKeySchema),
-    defaultValues: {
-      apiKey: "",
-      secretKey: "",
-      testnet: true,
-    },
+  const [isApiKeysDialogOpen, setIsApiKeysDialogOpen] = useState(false);
+  const [binanceApiKey, setBinanceApiKey] = useState('');
+  const [binanceSecretKey, setBinanceSecretKey] = useState('');
+  const [useTestnet, setUseTestnet] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // שאילתה לבדיקת סטטוס מפתחות API של Binance
+  const { 
+    data: apiStatus, 
+    isLoading: apiStatusLoading,
+    refetch: refetchApiStatus
+  } = useQuery<BinanceApiStatus>({
+    queryKey: ['/api/users/binance-api-keys'],
+    enabled: !!user, // רק אם המשתמש מחובר
+    refetchOnWindowFocus: false
   });
 
-  // Check if user is authenticated
-  useEffect(() => {
-    const verifyAuth = async () => {
-      await checkSession();
-      
-      if (!isAuthenticated && !authLoading) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to access the Binance integration.",
-          variant: "destructive"
-        });
-        setLocation("/login");
-      }
-    };
-    
-    verifyAuth();
-  }, [isAuthenticated, authLoading, checkSession, setLocation, toast]);
+  // שאילתה לקבלת יתרות חשבון Binance
+  const { 
+    data: balances, 
+    isLoading: balancesLoading,
+    isError: balancesError,
+    refetch: refetchBalances
+  } = useQuery<BinanceBalance[]>({
+    queryKey: ['/api/binance/account/balances'],
+    enabled: !!apiStatus?.hasBinanceApiKey && !!apiStatus?.hasBinanceSecretKey,
+    refetchOnWindowFocus: false,
+    retry: 1
+  });
 
-  // Function to handle form submission
-  const onSubmit = async (values: z.infer<typeof binanceApiKeySchema>) => {
-    setIsSubmitting(true);
-    
+  const refreshBalances = () => {
+    refetchBalances();
+    toast({
+      title: "מרענן נתונים",
+      description: "מושך נתונים עדכניים מ-Binance...",
+    });
+  };
+
+  const saveApiKeys = async () => {
+    // וידוא תקינות קלט
+    if (!binanceApiKey.trim()) {
+      toast({
+        title: "שגיאה",
+        description: "נא להזין מפתח API תקין",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!binanceSecretKey.trim()) {
+      toast({
+        title: "שגיאה",
+        description: "נא להזין מפתח סודי תקין",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+
     try {
-      // This is a placeholder for the API endpoint - we need to create a backend endpoint for Binance API keys
-      const response = await apiRequest("POST", "/api/users/binance-api-keys", values);
-      
+      // קריאה לAPI לשמירת מפתחות Binance
+      const response = await fetch("/api/users/binance-api-keys", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          apiKey: binanceApiKey,
+          secretKey: binanceSecretKey,
+          testnet: useTestnet
+        })
+      });
+
+      const data = await response.json();
+
       if (response.ok) {
-        setHasSuccessfullySet(true);
         toast({
-          title: "API Keys Updated",
-          description: "Your Binance API keys have been successfully saved.",
-          variant: "default",
+          title: "מצוין!",
+          description: "מפתחות API של Binance נשמרו בהצלחה",
+          variant: "default"
         });
+        
+        // סגירת הדיאלוג ואיפוס שדות
+        setIsApiKeysDialogOpen(false);
+        setBinanceApiKey("");
+        setBinanceSecretKey("");
+        
+        // רענון הנתונים
+        refetchApiStatus();
+        setTimeout(() => refetchBalances(), 1000); // קצת השהייה לפני ניסיון משיכת היתרות
       } else {
-        const data = await response.json();
         toast({
-          title: "Failed to Update API Keys",
-          description: data.message || "An error occurred while saving your Binance API keys.",
-          variant: "destructive",
+          title: "שגיאה בשמירת המפתחות",
+          description: data.message || "אירעה שגיאה בלתי צפויה",
+          variant: "destructive"
         });
       }
     } catch (error) {
       console.error("Error saving Binance API keys:", error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again later.",
-        variant: "destructive",
+        title: "שגיאה בשמירת המפתחות",
+        description: "אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.",
+        variant: "destructive"
       });
     } finally {
-      setIsSubmitting(false);
+      setIsSaving(false);
     }
   };
 
+  // חישוב סך הכל שווי בדולרים של כל הנכסים
+  const totalUsdValue = balances?.reduce((sum, balance) => 
+    sum + (balance.usdValue || 0), 0) || 0;
+
+  // אם המשתמש לא מחובר, הפנייה לדף התחברות
+  if (!authLoading && !user) {
+    return <Redirect to="/login" />;
+  }
+
+  // תצוגת טעינה כאשר בודקים את סטטוס האימות
+  if (authLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 mt-16">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <Skeleton className="h-16 w-16 rounded-full" />
+        </div>
+      </div>
+    );
+  }
+
+  const hasValidApiKeys = apiStatus?.hasBinanceApiKey && apiStatus?.hasBinanceSecretKey;
+
   return (
-    <div className="flex min-h-screen bg-background">
-      <AppSidebar />
-      <div className="flex flex-col flex-1">
-        <Header />
-        <main className="flex-grow pt-24 pb-12 px-4 md:px-6 ml-0 md:ml-64">
-          <div className="max-w-5xl mx-auto">
-            <div className="flex items-center mb-6">
-              <div className="mr-4 p-2 rounded-lg bg-[#F0B90B]/10">
-                <SiBinance className="h-8 w-8 text-[#F0B90B]" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Binance Integration</h1>
-                <p className="text-muted-foreground">Connect your Binance account for real-time trading</p>
-              </div>
-            </div>
+    <div className="container mx-auto px-4 py-8 mt-16">
+      <div className="flex flex-col md:flex-row justify-between items-start mb-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">חשבון Binance</h1>
+          <p className="text-muted-foreground">
+            צפה ונהל את הנכסים והמסחר שלך ב-Binance
+            {apiStatus?.testnet && (
+              <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800 border-yellow-300">
+                סביבת בדיקות
+              </Badge>
+            )}
+          </p>
+        </div>
+        
+        <div className="mt-4 md:mt-0 flex space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsApiKeysDialogOpen(true)}
+            className="flex items-center"
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            הגדרות API
+          </Button>
+          {hasValidApiKeys && (
+            <Button 
+              variant="outline" 
+              onClick={refreshBalances}
+              disabled={balancesLoading}
+              className="flex items-center"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${balancesLoading ? 'animate-spin' : ''}`} />
+              רענן נתונים
+            </Button>
+          )}
+        </div>
+      </div>
 
-            <Alert className="mb-6 bg-blue-50 border-blue-200">
-              <AlertCircle className="h-4 w-4 text-blue-600" />
-              <AlertTitle className="text-blue-800">New Feature</AlertTitle>
-              <AlertDescription className="text-blue-700">
-                <p>Binance integration is now available! Connect your Binance account to trade using our AI-powered system on the world's largest cryptocurrency exchange.</p>
-              </AlertDescription>
-            </Alert>
+      {/* תצוגת אזהרה אם אין מפתחות API מוגדרים */}
+      {(!hasValidApiKeys && !apiStatusLoading) && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>מפתחות API לא מוגדרים</AlertTitle>
+          <AlertDescription>
+            כדי להשתמש בממשק Binance, עליך להגדיר את מפתחות ה-API שלך.{' '}
+            <Button 
+              variant="link" 
+              className="p-0 h-auto text-destructive underline" 
+              onClick={() => setIsApiKeysDialogOpen(true)}
+            >
+              הגדר מפתחות עכשיו
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card className="md:col-span-2">
+      {/* כרטיסיות תוכן */}
+      <Tabs defaultValue="balances" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="balances">יתרות</TabsTrigger>
+          <TabsTrigger value="trades">היסטוריית מסחר</TabsTrigger>
+          <TabsTrigger value="markets">מחירי שוק</TabsTrigger>
+        </TabsList>
+
+        {/* תוכן כרטיסיית יתרות */}
+        <TabsContent value="balances">
+          {hasValidApiKeys ? (
+            <div>
+              {/* כרטיס סך הכל שווי */}
+              <Card className="mb-6">
                 <CardHeader>
-                  <CardTitle>Set Up Binance API Keys</CardTitle>
-                  <CardDescription>
-                    Enter your Binance API credentials to enable trading functionality
-                  </CardDescription>
+                  <CardTitle>סך שווי הנכסים</CardTitle>
+                  <CardDescription>שווי כולל של כל הנכסים בחשבון שלך</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Tabs defaultValue="api-keys" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="api-keys">API Keys</TabsTrigger>
-                      <TabsTrigger value="instructions">Setup Instructions</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="api-keys">
-                      <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                          <FormField
-                            control={form.control}
-                            name="apiKey"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>API Key</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="Enter your Binance API Key" 
-                                    {...field}
-                                    type="password"
-                                  />
-                                </FormControl>
-                                <FormDescription>
-                                  The API Key provided by Binance
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="secretKey"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Secret Key</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="Enter your Binance Secret Key" 
-                                    {...field}
-                                    type="password"
-                                  />
-                                </FormControl>
-                                <FormDescription>
-                                  The Secret Key provided by Binance
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="testnet"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                                <FormControl>
-                                  <input
-                                    type="checkbox"
-                                    checked={field.value}
-                                    onChange={field.onChange}
-                                    className="h-4 w-4 mt-1"
-                                  />
-                                </FormControl>
-                                <div className="space-y-1 leading-none">
-                                  <FormLabel>Use Testnet</FormLabel>
-                                  <FormDescription>
-                                    We highly recommend using Binance Testnet for testing purposes first
-                                  </FormDescription>
-                                </div>
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <div className="flex justify-end">
-                            <Button type="submit" disabled={isSubmitting}>
-                              {isSubmitting ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Saving...
-                                </>
-                              ) : (
-                                <>
-                                  Save API Keys
-                                  <ArrowRight className="ml-2 h-4 w-4" />
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                          
-                          {hasSuccessfullySet && (
-                            <Alert className="bg-green-50 border-green-200">
-                              <Check className="h-4 w-4 text-green-600" />
-                              <AlertTitle className="text-green-800">API Keys Saved</AlertTitle>
-                              <AlertDescription className="text-green-700">
-                                Your Binance API keys have been successfully saved. You can now use Binance for trading.
-                              </AlertDescription>
-                            </Alert>
-                          )}
-                        </form>
-                      </Form>
-                    </TabsContent>
-                    <TabsContent value="instructions">
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium">How to get your Binance API Keys</h3>
-                        <ol className="list-decimal space-y-2 pl-5">
-                          <li>Log in to your Binance account</li>
-                          <li>Navigate to <strong>API Management</strong> in your account settings</li>
-                          <li>Create a new API key and complete any security verification</li>
-                          <li>Set the following permissions:
-                            <ul className="list-disc pl-5 mt-2">
-                              <li>Enable Reading</li>
-                              <li>Enable Spot & Margin Trading</li>
-                              <li>Disable withdrawals for security</li>
-                            </ul>
-                          </li>
-                          <li>Copy both the API Key and Secret Key</li>
-                          <li>Paste them in the fields on the API Keys tab</li>
-                        </ol>
-                        
-                        <Alert className="bg-yellow-50 border-yellow-200 mt-4">
-                          <AlertCircle className="h-4 w-4 text-yellow-600" />
-                          <AlertTitle className="text-yellow-800">Important Security Information</AlertTitle>
-                          <AlertDescription className="text-yellow-700">
-                            <p>Never share your API Secret Key with anyone. Our system securely stores your keys using industry-standard encryption.</p>
-                          </AlertDescription>
-                        </Alert>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
+                  {balancesLoading ? (
+                    <Skeleton className="h-10 w-40" />
+                  ) : balancesError ? (
+                    <div className="text-destructive">שגיאה בטעינת נתונים</div>
+                  ) : (
+                    <div className="text-3xl font-bold">${totalUsdValue.toLocaleString()}</div>
+                  )}
                 </CardContent>
               </Card>
-              
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Benefits</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-start">
-                        <div className="mr-3 bg-green-100 p-2 rounded-full">
-                          <BarChart3 className="h-4 w-4 text-green-600" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium">Higher Liquidity</h4>
-                          <p className="text-xs text-muted-foreground">Access to more trading pairs and deeper order books</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start">
-                        <div className="mr-3 bg-blue-100 p-2 rounded-full">
-                          <Bot className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium">AI Trading</h4>
-                          <p className="text-xs text-muted-foreground">Same powerful AI algorithms, now on Binance</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start">
-                        <div className="mr-3 bg-purple-100 p-2 rounded-full">
-                          <GanttChart className="h-4 w-4 text-purple-600" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium">More Markets</h4>
-                          <p className="text-xs text-muted-foreground">Trade a wider range of cryptocurrencies</p>
-                        </div>
-                      </div>
+
+              {/* רשימת היתרות */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>יתרות מטבעות</CardTitle>
+                  <CardDescription>רשימת כל המטבעות והטוקנים בחשבון שלך</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {balancesLoading ? (
+                    <div className="space-y-2">
+                      {[...Array(5)].map((_, i) => (
+                        <Skeleton key={i} className="h-12 w-full" />
+                      ))}
                     </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Security</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-start">
-                        <div className="mr-3 bg-slate-100 p-2 rounded-full">
-                          <Shield className="h-4 w-4 text-slate-600" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium">Encrypted Storage</h4>
-                          <p className="text-xs text-muted-foreground">Your API keys are securely encrypted</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start">
-                        <div className="mr-3 bg-slate-100 p-2 rounded-full">
-                          <LockKeyhole className="h-4 w-4 text-slate-600" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium">Limited Permissions</h4>
-                          <p className="text-xs text-muted-foreground">We recommend disabling withdrawal permissions</p>
-                        </div>
-                      </div>
+                  ) : balancesError ? (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>שגיאה בטעינת נתונים</AlertTitle>
+                      <AlertDescription>
+                        לא ניתן לטעון את יתרות החשבון. אנא בדוק את הגדרות ה-API שלך או נסה שוב מאוחר יותר.
+                      </AlertDescription>
+                    </Alert>
+                  ) : balances && balances.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full table-auto">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="pb-2 text-left">מטבע</th>
+                            <th className="pb-2 text-right">זמין</th>
+                            <th className="pb-2 text-right">נעול</th>
+                            <th className="pb-2 text-right">סה"כ</th>
+                            <th className="pb-2 text-right">שווי ($)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {balances
+                            .filter(b => parseFloat(b.total || b.free) > 0)
+                            .sort((a, b) => (b.usdValue || 0) - (a.usdValue || 0))
+                            .map((balance) => (
+                              <tr key={balance.asset} className="border-b">
+                                <td className="py-3 font-medium">{balance.asset}</td>
+                                <td className="py-3 text-right">{parseFloat(balance.free).toLocaleString()}</td>
+                                <td className="py-3 text-right">{parseFloat(balance.locked).toLocaleString()}</td>
+                                <td className="py-3 text-right">
+                                  {parseFloat(balance.total || (
+                                    parseFloat(balance.free) + parseFloat(balance.locked)
+                                  ).toString()).toLocaleString()}
+                                </td>
+                                <td className="py-3 text-right">${(balance.usdValue || 0).toLocaleString()}</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      לא נמצאו יתרות בחשבון או שאין גישה למידע
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    מציג רק מטבעות עם יתרה חיובית
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={refreshBalances}
+                    disabled={balancesLoading}
+                  >
+                    <RefreshCw className={`mr-2 h-4 w-4 ${balancesLoading ? 'animate-spin' : ''}`} />
+                    רענן
+                  </Button>
+                </CardFooter>
+              </Card>
             </div>
-            
+          ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Trading Configuration</CardTitle>
-                <CardDescription>Customize your Binance trading settings</CardDescription>
+                <CardTitle>אין גישה לנתונים</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-4">Configure your Binance trading preferences and risk management settings.</p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border rounded-lg p-4">
-                    <div className="flex items-center mb-2">
-                      <SlidersHorizontal className="h-4 w-4 mr-2 text-primary" />
-                      <h3 className="font-medium">Risk Level</h3>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">Set your maximum risk per trade</p>
-                    <div className="flex items-center">
-                      <Label htmlFor="risk" className="mr-2 text-sm">2% per trade</Label>
-                      <Input id="risk" type="range" className="w-full" disabled />
-                    </div>
-                  </div>
-                  
-                  <div className="border rounded-lg p-4">
-                    <div className="flex items-center mb-2">
-                      <CreditCard className="h-4 w-4 mr-2 text-primary" />
-                      <h3 className="font-medium">Order Type</h3>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">Default order type for trades</p>
-                    <div className="flex items-center">
-                      <select className="w-full p-2 border rounded-md bg-background" disabled>
-                        <option>Market Order</option>
-                        <option>Limit Order</option>
-                      </select>
-                    </div>
-                  </div>
+                <div className="text-center py-8">
+                  <AlertCircle className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-medium mb-2">מפתחות API נדרשים</h3>
+                  <p className="text-muted-foreground mb-4">
+                    כדי לראות את יתרות החשבון ב-Binance, עליך להגדיר את מפתחות ה-API שלך.
+                  </p>
+                  <Button onClick={() => setIsApiKeysDialogOpen(true)}>
+                    הגדר מפתחות API
+                  </Button>
                 </div>
               </CardContent>
-              <CardFooter className="border-t pt-6 flex justify-between">
-                <p className="text-sm text-muted-foreground">Settings will be enabled after API key configuration</p>
-                <Button disabled>Save Configuration</Button>
-              </CardFooter>
             </Card>
+          )}
+        </TabsContent>
+
+        {/* תוכן כרטיסיית היסטוריית מסחר */}
+        <TabsContent value="trades">
+          <Card>
+            <CardHeader>
+              <CardTitle>היסטוריית מסחר</CardTitle>
+              <CardDescription>העסקאות האחרונות בחשבון שלך</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {hasValidApiKeys ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <TrendingUp className="h-16 w-16 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">יכולת זו בפיתוח</h3>
+                  <p>היסטוריית המסחר תהיה זמינה בקרוב.</p>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-medium mb-2">מפתחות API נדרשים</h3>
+                  <p className="text-muted-foreground mb-4">
+                    כדי לראות את היסטוריית המסחר שלך ב-Binance, עליך להגדיר את מפתחות ה-API.
+                  </p>
+                  <Button onClick={() => setIsApiKeysDialogOpen(true)}>
+                    הגדר מפתחות API
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* תוכן כרטיסיית מחירי שוק */}
+        <TabsContent value="markets">
+          <Card>
+            <CardHeader>
+              <CardTitle>מחירי שוק</CardTitle>
+              <CardDescription>מחירים עדכניים של מטבעות וטוקנים ב-Binance</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12 text-muted-foreground">
+                <ExternalLink className="h-16 w-16 mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">יכולת זו בפיתוח</h3>
+                <p>מחירי שוק עדכניים יהיו זמינים בקרוב.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* דיאלוג הגדרת מפתחות API */}
+      <Dialog open={isApiKeysDialogOpen} onOpenChange={setIsApiKeysDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <img 
+                src="https://bin.bnbstatic.com/static/images/common/favicon.ico" 
+                alt="Binance Logo" 
+                className="w-5 h-5 mr-2"
+              />
+              הגדר מפתחות API של Binance
+            </DialogTitle>
+            <DialogDescription>
+              {hasValidApiKeys ? (
+                <div className="flex items-center text-green-600 mt-1">
+                  <AlertCircle className="h-4 w-4 mr-1.5" />
+                  <span>מפתחות ה-API של Binance כבר הוגדרו. אתה יכול לעדכן אותם כאן.</span>
+                </div>
+              ) : (
+                <span>הזן את מפתחות ה-API של Binance שלך כדי להתחיל לקבל ולנתח נתונים מחשבון ה-Binance שלך.</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="binance-api-key" className="text-right">
+                API Key
+              </Label>
+              <Input
+                id="binance-api-key"
+                value={binanceApiKey}
+                onChange={(e) => setBinanceApiKey(e.target.value)}
+                className="col-span-3"
+                placeholder="הזן את מפתח ה-API של Binance שלך"
+                autoComplete="off"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="binance-secret-key" className="text-right">
+                Secret Key
+              </Label>
+              <Input
+                id="binance-secret-key"
+                value={binanceSecretKey}
+                onChange={(e) => setBinanceSecretKey(e.target.value)}
+                className="col-span-3"
+                type="password"
+                placeholder="הזן את המפתח הסודי של Binance שלך"
+                autoComplete="off"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="useTestnet" className="text-right">
+                סביבת בדיקות
+              </Label>
+              <div className="flex items-center col-span-3">
+                <Switch
+                  id="useTestnet"
+                  checked={useTestnet}
+                  onCheckedChange={setUseTestnet}
+                />
+                <Label htmlFor="useTestnet" className="ml-2">
+                  {useTestnet ? 'משתמש בסביבת בדיקות' : 'משתמש בסביבת הייצור (אמיתי)'}
+                </Label>
+              </div>
+            </div>
           </div>
-        </main>
-        <Footer />
-      </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsApiKeysDialogOpen(false)}>
+              ביטול
+            </Button>
+            <Button 
+              type="submit" 
+              onClick={saveApiKeys}
+              disabled={isSaving}
+              className={`${
+                hasValidApiKeys 
+                  ? "bg-green-500 hover:bg-green-600" 
+                  : "bg-yellow-500 hover:bg-yellow-600"
+              } text-white`}
+            >
+              {isSaving ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  שומר...
+                </>
+              ) : (
+                <>
+                  <Settings className="mr-2 h-4 w-4" />
+                  שמור מפתחות
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

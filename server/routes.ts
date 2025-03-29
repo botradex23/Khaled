@@ -17,6 +17,7 @@ import marketsV3Router from './routes/markets-v3';
 import { setupAuth, ensureAuthenticated } from "./auth";
 import { createOkxServiceWithCustomCredentials, okxService } from "./api/okx/okxService";
 import updateApiKeysRouter from "./routes/update-api-keys";
+import binanceRouter from "./routes/binance";
 
 // Helper function to mask sensitive data (like API keys)
 function maskSecret(secret: string): string {
@@ -281,6 +282,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Bitget API routes
   app.use("/api/bitget", bitgetRouter);
+  
+  // Binance API routes
+  app.use("/api/binance", binanceRouter);
   
   // AI API routes
   app.use("/api/ai", aiRouter);
