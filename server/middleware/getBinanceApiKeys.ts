@@ -62,15 +62,30 @@ export async function getBinanceApiKeys(req: Request, res: Response, next: NextF
     // רישום לצורך דיבאג (בלי לחשוף את המפתחות האמיתיים)
     console.log(`Retrieved Binance API keys for user ${req.user.id}. API Key length: ${apiKeys.binanceApiKey.length}, Secret Key length: ${apiKeys.binanceSecretKey.length}`);
     
-    // מוודא שהמפתחות נקיים משטחים לבנים כדי למנוע שגיאות פורמט
-    const trimmedApiKey = apiKeys.binanceApiKey.trim();
-    const trimmedSecretKey = apiKeys.binanceSecretKey.trim();
+    // נקה את המפתחות מכל סוגי הרווחים והתווים הלבנים
+    const trimmedApiKey = apiKeys.binanceApiKey.replace(/\s+/g, '').trim();
+    const trimmedSecretKey = apiKeys.binanceSecretKey.replace(/\s+/g, '').trim();
     
     // מוודא שהמפתחות אינם ריקים לאחר הניקוי
     if (!trimmedApiKey || !trimmedSecretKey) {
       return res.status(400).json({ 
         error: 'Invalid Binance API keys',
         message: 'המפתחות שלך נראים ריקים או לא חוקיים. אנא הגדר אותם מחדש.'
+      });
+    }
+    
+    // בדיקה שהמפתחות באורך תקין - מינימום 10 תווים
+    if (trimmedApiKey.length < 10) {
+      return res.status(400).json({
+        error: 'Invalid API key format',
+        message: 'מפתח API לא תקין. מפתח API של Binance חייב להיות לפחות 10 תווים.'
+      });
+    }
+    
+    if (trimmedSecretKey.length < 10) {
+      return res.status(400).json({
+        error: 'Invalid Secret key format',
+        message: 'מפתח סודי לא תקין. מפתח סודי של Binance חייב להיות לפחות 10 תווים.'
       });
     }
     

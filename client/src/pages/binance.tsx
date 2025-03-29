@@ -599,7 +599,9 @@ export default function BinancePage() {
     apiKey: string;
     secretKey: string;
     allowedIp?: string;
-    message: string;
+    message?: string;
+    isValid?: boolean;  // הוספת שדה לציון האם המפתחות תקינים
+    testnet?: boolean;  // האם משתמשים בסביבת טסטנט
   }
 
   // שליפת מפתחות ה-API השמורים אוטומטית בטעינת הדף - בלי תלות בסטטוס
@@ -913,8 +915,12 @@ export default function BinancePage() {
   };
 
   const saveApiKeys = async () => {
+    // נקה את המפתחות מרווחים ותווים בעייתיים אחרים לפני הבדיקה
+    const cleanedApiKey = binanceApiKey.replace(/\s+/g, '').trim();
+    const cleanedSecretKey = binanceSecretKey.replace(/\s+/g, '').trim();
+    
     // וידוא תקינות קלט
-    if (!binanceApiKey.trim()) {
+    if (!cleanedApiKey) {
       toast({
         title: "שגיאה",
         description: "נא להזין מפתח API תקין",
@@ -923,7 +929,16 @@ export default function BinancePage() {
       return;
     }
 
-    if (!binanceSecretKey.trim()) {
+    if (cleanedApiKey.length < 10) {
+      toast({
+        title: "שגיאה",
+        description: "מפתח ה-API נראה קצר מדי. מפתח API של Binance צריך להיות לפחות 10 תווים.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!cleanedSecretKey) {
       toast({
         title: "שגיאה",
         description: "נא להזין מפתח סודי תקין",
@@ -931,6 +946,19 @@ export default function BinancePage() {
       });
       return;
     }
+    
+    if (cleanedSecretKey.length < 10) {
+      toast({
+        title: "שגיאה",
+        description: "מפתח הסודי נראה קצר מדי. מפתח סודי של Binance צריך להיות לפחות 10 תווים.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // עדכן את המשתנים המקומיים עם הגרסה המנוקה
+    setBinanceApiKey(cleanedApiKey);
+    setBinanceSecretKey(cleanedSecretKey);
 
     setIsSaving(true);
 
@@ -946,9 +974,9 @@ export default function BinancePage() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          apiKey: binanceApiKey.trim(),
-          secretKey: binanceSecretKey.trim(),
-          allowedIp: binanceAllowedIp ? binanceAllowedIp.trim() : "",
+          apiKey: cleanedApiKey,
+          secretKey: cleanedSecretKey,
+          allowedIp: binanceAllowedIp ? binanceAllowedIp.trim().replace(/\s+/g, '') : "",
           testnet: useTestnet
         })
       });

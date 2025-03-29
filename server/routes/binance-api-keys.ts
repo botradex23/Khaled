@@ -114,6 +114,21 @@ router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
       });
     }
     
+    // Validate key formats - Binance API keys are typically 64 characters
+    if (cleanedApiKey.length < 10 || cleanedApiKey.length > 200) {
+      return res.status(400).json({
+        error: 'Invalid API Key format',
+        message: 'API Key should be at least 10 characters long. Please check your API key format.'
+      });
+    }
+    
+    if (cleanedSecretKey.length < 10 || cleanedSecretKey.length > 200) {
+      return res.status(400).json({
+        error: 'Invalid Secret Key format',
+        message: 'Secret Key should be at least 10 characters long. Please check your Secret key format.'
+      });
+    }
+    
     console.log(`Saving Binance API keys for user ${req.user!.id} - API Key length: ${cleanedApiKey.length}, Secret Key length: ${cleanedSecretKey.length}`);
     
     // Update the user's Binance API keys using our storage implementation

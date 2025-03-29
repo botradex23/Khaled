@@ -15,21 +15,26 @@ export class BinanceService {
   private axiosInstance: AxiosInstance;
 
   constructor(credentials: BinanceCredentials) {
-    // Ensure API key and secret key are properly trimmed to avoid format errors
-    this.apiKey = credentials.apiKey ? credentials.apiKey.trim() : '';
-    this.secretKey = credentials.secretKey ? credentials.secretKey.trim() : '';
+    // Clean and validate API key formatting - eliminate ALL whitespace and control characters
+    this.apiKey = credentials.apiKey 
+      ? credentials.apiKey.replace(/\s+/g, '').trim() 
+      : '';
+      
+    // Clean and validate Secret key formatting - eliminate ALL whitespace and control characters
+    this.secretKey = credentials.secretKey 
+      ? credentials.secretKey.replace(/\s+/g, '').trim() 
+      : '';
     
-    // Validate API keys are well-formed
-    if (this.apiKey && (this.apiKey.includes(' ') || this.apiKey.includes('\n') || this.apiKey.includes('\t'))) {
-      console.error('Warning: Binance API key contains whitespace characters that may cause format errors');
-      // Clean up API key to remove problematic characters
-      this.apiKey = this.apiKey.replace(/\s+/g, '');
+    // Log the lengths of the cleaned keys for debugging
+    console.log(`API key length: ${this.apiKey.length}, Secret key length: ${this.secretKey.length}`);
+    
+    // Basic validation for key formats
+    if (this.apiKey && this.apiKey.length < 10) {
+      console.error(`Warning: Binance API key appears to be too short (${this.apiKey.length} chars)`);
     }
     
-    if (this.secretKey && (this.secretKey.includes(' ') || this.secretKey.includes('\n') || this.secretKey.includes('\t'))) {
-      console.error('Warning: Binance Secret key contains whitespace characters that may cause format errors');
-      // Clean up Secret key to remove problematic characters
-      this.secretKey = this.secretKey.replace(/\s+/g, '');
+    if (this.secretKey && this.secretKey.length < 10) {
+      console.error(`Warning: Binance Secret key appears to be too short (${this.secretKey.length} chars)`);
     }
     
     // Always use the real production URL since we want to fetch real balances
