@@ -25,6 +25,11 @@ export class BinanceService {
     if (VPN_CONFIG.enabled) {
       this.axiosInstance = createProxyInstance();
       console.log(`Binance Service initialized with VPN/Proxy: ${VPN_CONFIG.host}:${VPN_CONFIG.port}`);
+      
+      // Set up default headers for better proxy compatibility
+      this.axiosInstance.defaults.headers['X-MBX-APIKEY'] = this.apiKey;
+      this.axiosInstance.defaults.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+      this.axiosInstance.defaults.headers['Accept-Language'] = 'en-US,en;q=0.9';
     } else {
       this.axiosInstance = axios.create();
       console.log('Binance Service initialized with direct connection (no VPN/proxy)');
@@ -52,6 +57,7 @@ export class BinanceService {
     const queryParams = new URLSearchParams({
       ...params,
       timestamp: timestamp.toString(),
+      recvWindow: '60000', // Add longer receive window for proxy compatibility (60 seconds)
     });
     
     const queryString = queryParams.toString();
@@ -65,9 +71,11 @@ export class BinanceService {
     const config = {
       headers: {
         'X-MBX-APIKEY': this.apiKey,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept': 'application/json'
       },
-      timeout: 15000 // 15 seconds timeout
+      timeout: 30000 // 30 seconds timeout for more reliable connection via proxy
     };
     
     try {
@@ -108,9 +116,11 @@ export class BinanceService {
     
     const config = {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept': 'application/json'
       },
-      timeout: 10000 // 10 seconds timeout
+      timeout: 30000 // 30 seconds timeout for more reliability
     };
     
     try {
@@ -294,7 +304,16 @@ export class BinanceService {
     try {
       // Try to get account information as a connectivity test
       console.log(`Testing Binance API connectivity with API key: ${this.apiKey.substring(0, 4)}... to ${this.baseUrl}`);
-      await this.ping();  // First check if the API server is reachable
+      
+      // Set up headers directly for better proxy compatibility
+      this.axiosInstance.defaults.headers['X-MBX-APIKEY'] = this.apiKey;
+      
+      // Try with exchange info instead of ping for better compatibility
+      console.log('Getting Binance exchange info to test API connectivity');
+      await this.makeRequest('/v3/exchangeInfo');
+      
+      // Now try getting account data
+      console.log('Getting Binance account info to test API key validity');
       const accountInfo = await this.getAccountInfo();
       console.log(`Successfully connected to Binance API. Account has ${accountInfo.balances?.length || 0} balances.`);
       return { success: true };

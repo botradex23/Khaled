@@ -853,14 +853,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const envApiKey = process.env.OKX_API_KEY;
       const envSecretKey = process.env.OKX_SECRET_KEY;
       const envPassphrase = process.env.OKX_PASSPHRASE;
+      const binanceApiKey = process.env.BINANCE_API_KEY;
+      const binanceSecretKey = process.env.BINANCE_SECRET_KEY;
       
       console.log('Environment API keys:', {
-        hasApiKey: !!envApiKey,
-        hasSecretKey: !!envSecretKey,
-        hasPassphrase: !!envPassphrase,
-        apiKeyLength: envApiKey ? envApiKey.length : 'N/A',
-        secretKeyLength: envSecretKey ? envSecretKey.length : 'N/A',
-        passphraseLength: envPassphrase ? envPassphrase.length : 'N/A'
+        // OKX keys
+        hasOkxApiKey: !!envApiKey,
+        hasOkxSecretKey: !!envSecretKey,
+        hasOkxPassphrase: !!envPassphrase,
+        okxApiKeyLength: envApiKey ? envApiKey.length : 'N/A',
+        okxSecretKeyLength: envSecretKey ? envSecretKey.length : 'N/A',
+        okxPassphraseLength: envPassphrase ? envPassphrase.length : 'N/A',
+        
+        // Binance keys
+        hasBinanceApiKey: !!binanceApiKey,
+        hasBinanceSecretKey: !!binanceSecretKey,
+        binanceApiKeyLength: binanceApiKey ? binanceApiKey.length : 'N/A',
+        binanceSecretKeyLength: binanceSecretKey ? binanceSecretKey.length : 'N/A'
       });
       
       // Check if admin has API keys

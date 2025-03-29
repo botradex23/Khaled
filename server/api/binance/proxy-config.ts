@@ -10,11 +10,11 @@ export const VPN_CONFIG = {
   enabled: true, // Enabled with Webshare proxy
 
   // Type of proxy: 'https' or 'socks'
-  type: 'https' as 'https' | 'socks',
+  type: 'socks' as 'https' | 'socks', // Changed to socks which has better compatibility with Binance
 
   // Webshare proxy server details
-  host: '38.154.227.167', // Webshare proxy IP address
-  port: 5868,             // Webshare proxy port
+  host: '45.94.47.66', // Alternative Webshare proxy IP address
+  port: 8110,         // Alternative Webshare proxy port
   
   // Webshare authentication credentials
   auth: {
