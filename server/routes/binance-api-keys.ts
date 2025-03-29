@@ -162,4 +162,45 @@ router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
   }
 });
 
+// Get full, unmasked Binance API keys (for authenticated users only)
+router.get('/full', ensureAuthenticated, async (req: Request, res: Response) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ 
+        success: false,
+        error: 'Authentication required',
+        message: 'You must be logged in to access API keys'
+      });
+    }
+    
+    const userId = req.user.id;
+    const apiKeys = await storage.getUserBinanceApiKeys(userId);
+    
+    if (!apiKeys) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+        message: 'Could not retrieve API keys for this user'
+      });
+    }
+    
+    // Send the actual keys - this is secure because it's only for authenticated users
+    // and it's needed for the client to make API calls
+    return res.status(200).json({
+      success: true,
+      apiKey: apiKeys.binanceApiKey || '',
+      secretKey: apiKeys.binanceSecretKey || '',
+      allowedIp: apiKeys.binanceAllowedIp || '',
+      testnet: false // כרגע תמיד משתמשים ב-mainnet ולא ב-testnet
+    });
+  } catch (error: any) {
+    console.error("Error retrieving full Binance API keys:", error);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error',
+      message: 'An error occurred while retrieving Binance API keys'
+    });
+  }
+});
+
 export default router;

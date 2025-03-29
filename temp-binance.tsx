@@ -124,7 +124,7 @@ interface PaperTradingTrade {
 // רכיב Paper Trading
 function PaperTradingContent() {
   const { toast } = useToast();
-  const paperTradingQueryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const [isNewTradeOpen, setIsNewTradeOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState('overview');
   
@@ -217,7 +217,7 @@ function PaperTradingContent() {
         title: "חשבון נוצר בהצלחה",
         description: "חשבון ה-Paper Trading שלך נוצר בהצלחה.",
       });
-      paperTradingQueryClient.setQueryData(['/api/paper-trading/account'], data);
+      queryClient.setQueryData(['/api/paper-trading/account'], data);
       refetchAccount();
     },
     onError: (error: any) => {
@@ -253,10 +253,10 @@ function PaperTradingContent() {
         title: "חשבון אופס",
         description: "חשבון ה-Paper Trading שלך אופס בהצלחה.",
       });
-      paperTradingQueryClient.setQueryData(['/api/paper-trading/account'], data);
-      paperTradingQueryClient.invalidateQueries({ queryKey: ['/api/paper-trading/positions'] });
-      paperTradingQueryClient.invalidateQueries({ queryKey: ['/api/paper-trading/trades'] });
-      paperTradingQueryClient.invalidateQueries({ queryKey: ['/api/paper-trading/stats'] });
+      queryClient.setQueryData(['/api/paper-trading/account'], data);
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/positions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/trades'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/stats'] });
     },
     onError: (error: any) => {
       console.error("Failed to reset paper trading account:", error);
@@ -292,10 +292,10 @@ function PaperTradingContent() {
         title: "פוזיציה נסגרה",
         description: "הפוזיציה נסגרה בהצלחה.",
       });
-      paperTradingQueryClient.invalidateQueries({ queryKey: ['/api/paper-trading/account'] });
-      paperTradingQueryClient.invalidateQueries({ queryKey: ['/api/paper-trading/positions'] });
-      paperTradingQueryClient.invalidateQueries({ queryKey: ['/api/paper-trading/trades'] });
-      paperTradingQueryClient.invalidateQueries({ queryKey: ['/api/paper-trading/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/account'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/positions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/trades'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/stats'] });
     },
     onError: (error: any) => {
       console.error("Failed to close position:", error);
@@ -331,7 +331,7 @@ function PaperTradingContent() {
           const data = await res.json();
           if (data && data.id) {
             // יש חשבון קיים, נשתמש בו
-            paperTradingQueryClient.setQueryData(['/api/paper-trading/account'], data);
+            queryClient.setQueryData(['/api/paper-trading/account'], data);
             toast({
               title: "חשבון Paper Trading",
               description: "טוען נתוני חשבון קיים...",
