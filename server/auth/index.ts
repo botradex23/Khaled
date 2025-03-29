@@ -22,12 +22,13 @@ export function setupAuth(app: Express) {
   app.use(
     session({
       secret: process.env.SESSION_SECRET || 'mudrex-crypto-trading-secret',
-      resave: true,
-      saveUninitialized: true,
+      resave: false,
+      saveUninitialized: false,
       cookie: {
-        secure: 'auto', // 'auto' will use secure cookies when the connection is HTTPS
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-        sameSite: 'none'   // Allow cross-site cookies for OAuth callbacks
+        secure: process.env.NODE_ENV === 'production', // Secure in production, not in development
+        maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
+        httpOnly: true,
+        sameSite: 'lax' // Better compatibility while still providing CSRF protection
       },
     })
   );

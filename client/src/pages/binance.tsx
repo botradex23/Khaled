@@ -609,7 +609,13 @@ export default function BinancePage() {
     enabled: !!user && apiStatus?.hasBinanceApiKey === true && apiStatus?.hasBinanceSecretKey === true,
     refetchOnWindowFocus: false,
     queryFn: async () => {
-      const response = await fetch('/api/binance/api-keys/full');
+      const response = await fetch('/api/binance/api-keys/full', {
+        method: 'GET',
+        credentials: 'include', // חשוב - מצרף קוקיס עבור אימות
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch API keys');
       }
@@ -645,7 +651,13 @@ export default function BinancePage() {
     queryFn: async () => {
       try {
         console.log('Fetching Binance account balances...');
-        const res = await fetch('/api/binance/account/balances');
+        const res = await fetch('/api/binance/account/balances', {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
         
         if (!res.ok) {
           const errorData = await res.json();
@@ -843,6 +855,7 @@ export default function BinancePage() {
       // קריאה לAPI לשמירת מפתחות Binance
       const response = await fetch("/api/binance/api-keys", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json"
         },
