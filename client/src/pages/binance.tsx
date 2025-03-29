@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, ExternalLink, RefreshCw, Settings, TrendingUp, ArrowUpDown, ArrowDown, ArrowUp, Filter, RefreshCcw, PlusCircle, LineChart, BarChart3, Loader2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ExternalLink, RefreshCw, Settings, TrendingUp, ArrowUpDown, ArrowDown, ArrowUp, Filter, RefreshCcw, PlusCircle, LineChart, BarChart3, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -916,7 +916,17 @@ export default function BinancePage() {
                   {balancesLoading ? (
                     <Skeleton className="h-10 w-40" />
                   ) : balancesError ? (
-                    <div className="text-destructive">שגיאה בטעינת נתונים</div>
+                    <div>
+                      <div className="text-destructive mb-2">שגיאה בטעינת נתונים</div>
+                      <Alert variant="destructive" className="mt-2">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>בעיית חיבור לשרתי Binance</AlertTitle>
+                        <AlertDescription>
+                          לא ניתן להתחבר לשרתי Binance. ייתכן שהשירות חסום באזורך הגיאוגרפי.
+                          אנו ממליצים להשתמש ב-VPN או לנסות מאוחר יותר.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
                   ) : (
                     <div className="text-3xl font-bold">${totalUsdValue.toLocaleString()}</div>
                   )}
@@ -1075,13 +1085,27 @@ export default function BinancePage() {
                   ))}
                 </div>
               ) : marketPricesError ? (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>שגיאה בטעינת נתונים</AlertTitle>
-                  <AlertDescription>
-                    לא ניתן לטעון את מחירי השוק. נסה שוב מאוחר יותר.
-                  </AlertDescription>
-                </Alert>
+                <div>
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>שגיאה בטעינת נתונים</AlertTitle>
+                    <AlertDescription>
+                      לא ניתן לטעון את מחירי השוק. ייתכן שהשירות חסום באזורך הגיאוגרפי.
+                      אנו ממליצים להשתמש ב-VPN או לנסות מאוחר יותר.
+                    </AlertDescription>
+                  </Alert>
+                  
+                  <div className="mt-6 rounded-lg border border-red-300 p-4 bg-red-50">
+                    <h4 className="text-lg font-semibold mb-2 text-red-800">מידע חשוב על שימוש ב-Binance:</h4>
+                    <p className="mb-2 text-red-800">
+                      שירותי Binance עשויים להיות מוגבלים במדינות מסוימות. 
+                      ההגבלה הנוכחית מקורה בהגבלת גישה גיאוגרפית מצד Binance.
+                    </p>
+                    <p className="text-red-800">
+                      אם אתה רוצה להשתמש ב-Binance API, אנא השתמש ב-VPN.
+                    </p>
+                  </div>
+                </div>
               ) : marketPrices && marketPrices.length > 0 ? (
                 <div>
                   <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -1258,7 +1282,21 @@ export default function BinancePage() {
             </CardHeader>
             <CardContent>
               {hasValidApiKeys ? (
-                <PaperTradingContent />
+                <div>
+                  {balancesError || marketPricesError ? (
+                    <div className="mb-6">
+                      <Alert variant="destructive" className="mb-4">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>שים לב: בעיית חיבור לשרתי Binance</AlertTitle>
+                        <AlertDescription>
+                          זוהתה בעיית חיבור לשרתי Binance, אך Paper Trading עדיין פעיל.
+                          נתוני מחירי השוק עשויים שלא להתעדכן בזמן אמת.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  ) : null}
+                  <PaperTradingContent />
+                </div>
               ) : (
                 <div className="text-center py-8">
                   <AlertCircle className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
