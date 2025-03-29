@@ -102,9 +102,10 @@ router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
     }
     
     // Clean up the API keys to remove any whitespace that might cause format errors
-    const cleanedApiKey = apiKey.trim();
-    const cleanedSecretKey = secretKey.trim();
-    const cleanedAllowedIp = allowedIp ? allowedIp.trim() : allowedIp;
+    // שימוש ב-replace לפני trim כדי לטפל ברווחים ותווים לבנים בכל המחרוזת
+    const cleanedApiKey = apiKey ? apiKey.replace(/\s+/g, '').trim() : '';
+    const cleanedSecretKey = secretKey ? secretKey.replace(/\s+/g, '').trim() : '';
+    const cleanedAllowedIp = allowedIp ? allowedIp.replace(/\s+/g, '').trim() : allowedIp;
     
     // Validate that keys are not empty after trimming
     if (cleanedApiKey === '' || cleanedSecretKey === '') {
@@ -204,9 +205,10 @@ router.get('/full', ensureAuthenticated, async (req: Request, res: Response) => 
     }
     
     // ניקוי המפתחות מרווחים וודא שהם בפורמט תקין
-    const cleanApiKey = apiKeys.binanceApiKey ? apiKeys.binanceApiKey.trim() : '';
-    const cleanSecretKey = apiKeys.binanceSecretKey ? apiKeys.binanceSecretKey.trim() : '';
-    const cleanAllowedIp = apiKeys.binanceAllowedIp ? apiKeys.binanceAllowedIp.trim() : '';
+    // השתמש בגישה העקבית לניקוי - קודם הסר רווחים ואז trim
+    const cleanApiKey = apiKeys.binanceApiKey ? apiKeys.binanceApiKey.replace(/\s+/g, '').trim() : '';
+    const cleanSecretKey = apiKeys.binanceSecretKey ? apiKeys.binanceSecretKey.replace(/\s+/g, '').trim() : '';
+    const cleanAllowedIp = apiKeys.binanceAllowedIp ? apiKeys.binanceAllowedIp.replace(/\s+/g, '').trim() : '';
     
     // בדיקה אם המפתחות בפורמט תקין
     const isApiKeyValid = cleanApiKey && cleanApiKey.length >= 10;

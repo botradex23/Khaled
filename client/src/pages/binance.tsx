@@ -911,8 +911,10 @@ export default function BinancePage() {
 
   const saveApiKeys = async () => {
     // נקה את המפתחות מרווחים ותווים בעייתיים אחרים לפני הבדיקה
+    // חשוב מאוד: הסרה של כל הרווחים והתווים הלבנים
     const cleanedApiKey = binanceApiKey.replace(/\s+/g, '').trim();
     const cleanedSecretKey = binanceSecretKey.replace(/\s+/g, '').trim();
+    const cleanedAllowedIp = binanceAllowedIp ? binanceAllowedIp.replace(/\s+/g, '').trim() : "";
     
     // וידוא תקינות קלט
     if (!cleanedApiKey) {
@@ -954,13 +956,15 @@ export default function BinancePage() {
     // עדכן את המשתנים המקומיים עם הגרסה המנוקה
     setBinanceApiKey(cleanedApiKey);
     setBinanceSecretKey(cleanedSecretKey);
+    setBinanceAllowedIp(cleanedAllowedIp || "185.199.228.220"); // שמירת ה-IP המנוקה או ברירת המחדל
 
     setIsSaving(true);
 
     try {
       // הדפסת אורך המפתחות לפני השליחה לשרת (עבור דיבוג)
-      console.log(`Sending API keys - API key length: ${binanceApiKey.trim().length}, Secret key length: ${binanceSecretKey.trim().length}`);
+      console.log(`Sending API keys - API key length: ${cleanedApiKey.length}, Secret key length: ${cleanedSecretKey.length}, Allowed IP: ${cleanedAllowedIp || "185.199.228.220"}`);
       
+      // וידוא פעם נוספת שאנחנו שולחים את המפתחות המנוקים
       // קריאה לAPI לשמירת מפתחות Binance
       const response = await fetch("/api/binance/api-keys", {
         method: "POST",
@@ -971,7 +975,7 @@ export default function BinancePage() {
         body: JSON.stringify({
           apiKey: cleanedApiKey,
           secretKey: cleanedSecretKey,
-          allowedIp: binanceAllowedIp ? binanceAllowedIp.trim().replace(/\s+/g, '') : "",
+          allowedIp: cleanedAllowedIp || "185.199.228.220",
           testnet: useTestnet
         })
       });

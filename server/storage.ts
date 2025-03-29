@@ -640,12 +640,39 @@ export class MemStorage implements IStorage {
     console.log("  Received Binance API key undefined check:", apiKeys.binanceApiKey === undefined);
     console.log("  Received Binance API key empty string check:", apiKeys.binanceApiKey === "");
     console.log("  Received Binance API key length:", apiKeys.binanceApiKey ? apiKeys.binanceApiKey.length : "N/A");
+    
+    // Additional cleaning - completely remove all whitespace (inside and outside)
+    let cleanedApiKey = apiKeys.binanceApiKey;
+    let cleanedSecretKey = apiKeys.binanceSecretKey;
+    let cleanedAllowedIp = apiKeys.binanceAllowedIp;
+    
+    // Clean up the API key by removing all whitespace
+    if (cleanedApiKey) {
+      cleanedApiKey = cleanedApiKey.replace(/\s+/g, '').trim();
+      console.log(`  Cleaned API key length: ${cleanedApiKey.length}`);
+    }
+    
+    // Clean up the Secret key by removing all whitespace
+    if (cleanedSecretKey) {
+      cleanedSecretKey = cleanedSecretKey.replace(/\s+/g, '').trim();
+      console.log(`  Cleaned Secret key length: ${cleanedSecretKey.length}`);
+    }
+    
+    // Clean up the Allowed IP by removing all whitespace
+    if (cleanedAllowedIp) {
+      cleanedAllowedIp = cleanedAllowedIp.replace(/\s+/g, '').trim();
+      console.log(`  Cleaned Allowed IP: ${cleanedAllowedIp}`);
+    }
 
-    // Handle the special cases for empty strings or strings with only whitespace to convert them to null
-    // This makes the API behavior more consistent across the app
-    const sanitizedBinanceApiKey = !apiKeys.binanceApiKey || apiKeys.binanceApiKey.trim() === "" ? null : apiKeys.binanceApiKey;
-    const sanitizedBinanceSecretKey = !apiKeys.binanceSecretKey || apiKeys.binanceSecretKey.trim() === "" ? null : apiKeys.binanceSecretKey;
-    const sanitizedBinanceAllowedIp = !apiKeys.binanceAllowedIp || apiKeys.binanceAllowedIp.trim() === "" ? null : apiKeys.binanceAllowedIp;
+    // ניהול תקין של מקרי קצה:
+    // 1. המרת מחרוזות ריקות או מחרוזות עם רווחים בלבד ל-null לעקביות
+    // 2. תמיד נשמור את המחרוזת המנוקה במלואה, ללא קיצורים או שינויים
+    const sanitizedBinanceApiKey = !cleanedApiKey || cleanedApiKey === "" ? null : cleanedApiKey;
+    const sanitizedBinanceSecretKey = !cleanedSecretKey || cleanedSecretKey === "" ? null : cleanedSecretKey;
+    const sanitizedBinanceAllowedIp = !cleanedAllowedIp || cleanedAllowedIp === "" ? null : cleanedAllowedIp;
+    
+    console.log(`Final sanitized API key: ${sanitizedBinanceApiKey ? (typeof sanitizedBinanceApiKey) : 'null'}, length: ${sanitizedBinanceApiKey ? sanitizedBinanceApiKey.length : 0}`);
+    console.log(`Final sanitized Secret key: ${sanitizedBinanceSecretKey ? (typeof sanitizedBinanceSecretKey) : 'null'}, length: ${sanitizedBinanceSecretKey ? sanitizedBinanceSecretKey.length : 0}`);
     
     // Update the API keys
     const updatedUser: User = {
@@ -688,13 +715,36 @@ export class MemStorage implements IStorage {
     console.log("  Binance API key empty string check:", user.binanceApiKey === "");
     console.log("  Binance API key length:", user.binanceApiKey ? user.binanceApiKey.length : "N/A");
     
+    // Additional cleaning on retrieval too - completely remove all whitespace (inside and outside)
+    let cleanedApiKey = user.binanceApiKey;
+    let cleanedSecretKey = user.binanceSecretKey;
+    let cleanedAllowedIp = user.binanceAllowedIp;
+    
+    // Clean up the API key by removing all whitespace
+    if (cleanedApiKey) {
+      cleanedApiKey = cleanedApiKey.replace(/\s+/g, '').trim();
+      console.log(`  Cleaned API key length on get: ${cleanedApiKey.length}`);
+    }
+    
+    // Clean up the Secret key by removing all whitespace
+    if (cleanedSecretKey) {
+      cleanedSecretKey = cleanedSecretKey.replace(/\s+/g, '').trim();
+      console.log(`  Cleaned Secret key length on get: ${cleanedSecretKey.length}`);
+    }
+    
+    // Clean up the Allowed IP by removing all whitespace
+    if (cleanedAllowedIp) {
+      cleanedAllowedIp = cleanedAllowedIp.replace(/\s+/g, '').trim();
+      console.log(`  Cleaned Allowed IP on get: ${cleanedAllowedIp}`);
+    }
+
     // Prepare for response ensuring type consistency
     const apiKeyResponse = {
       // Always return null if there's no meaningful value (null, undefined, or empty string)
       // This ensures consistent return types and makes client-side checks more reliable
-      binanceApiKey: !user.binanceApiKey || user.binanceApiKey.trim() === '' ? null : user.binanceApiKey,
-      binanceSecretKey: !user.binanceSecretKey || user.binanceSecretKey.trim() === '' ? null : user.binanceSecretKey,
-      binanceAllowedIp: !user.binanceAllowedIp || user.binanceAllowedIp.trim() === '' ? null : user.binanceAllowedIp
+      binanceApiKey: !cleanedApiKey || cleanedApiKey === '' ? null : cleanedApiKey,
+      binanceSecretKey: !cleanedSecretKey || cleanedSecretKey === '' ? null : cleanedSecretKey,
+      binanceAllowedIp: !cleanedAllowedIp || cleanedAllowedIp === '' ? null : cleanedAllowedIp
     };
     
     // Log what we're returning (excluding secret values) for debugging

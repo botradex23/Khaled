@@ -472,16 +472,37 @@ router.post('/api-keys', ensureAuthenticated, async (req: Request, res: Response
       });
     }
     
+    // ניקוי המפתחות מרווחים והסרת תווים לא רצויים
+    const cleanedApiKey = apiKey.replace(/\s+/g, '').trim();
+    const cleanedSecretKey = secretKey.replace(/\s+/g, '').trim();
+    const { allowedIp } = req.body;
+    const cleanedAllowedIp = allowedIp ? allowedIp.replace(/\s+/g, '').trim() : "";
+    
+    // בדיקות אימות נוספות
+    if (cleanedApiKey.length < 10) {
+      return res.status(400).json({
+        error: 'Invalid API Key',
+        message: 'API Key should be at least 10 characters long. Please check your API key format.'
+      });
+    }
+    
+    if (cleanedSecretKey.length < 10) {
+      return res.status(400).json({
+        error: 'Invalid Secret Key',
+        message: 'Secret Key should be at least 10 characters long. Please check your Secret key format.'
+      });
+    }
+    
     // Update the user's Binance API keys using our storage implementation
     const userId = req.user!.id;
-    const { allowedIp } = req.body;
     
-    console.log('Saving Binance API keys for user with allowed IP:', allowedIp);
+    console.log(`Saving Binance API keys for user ${userId} - API Key length: ${cleanedApiKey.length}, Secret Key length: ${cleanedSecretKey.length}`);
+    console.log('Saving Binance API keys for user with allowed IP:', cleanedAllowedIp || "185.199.228.220");
     
     const updatedUser = await storage.updateUserBinanceApiKeys(userId, {
-      binanceApiKey: apiKey,
-      binanceSecretKey: secretKey,
-      binanceAllowedIp: allowedIp || "185.199.228.220" // Default to our proxy IP if not specified
+      binanceApiKey: cleanedApiKey,
+      binanceSecretKey: cleanedSecretKey,
+      binanceAllowedIp: cleanedAllowedIp || "185.199.228.220" // Default to our proxy IP if not specified
     });
     
     if (!updatedUser) {
