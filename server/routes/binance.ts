@@ -121,6 +121,24 @@ router.get('/market/tickers', async (req: Request, res: Response) => {
   }
 });
 
+// Get 24hr ticker data for all symbols (public endpoint)
+router.get('/market/24hr', async (req: Request, res: Response) => {
+  try {
+    // Use dummy credentials for public endpoint (only read-only access)
+    const binanceService = createBinanceService('dummy', 'dummy', true);
+    
+    // Get 24hr ticker data for all symbols
+    const data = await binanceService.getAllTickers24hr();
+    res.json(data);
+  } catch (error: any) {
+    console.error('Error fetching Binance 24hr data:', error);
+    res.status(500).json({
+      error: 'Failed to fetch 24hr ticker data',
+      message: error.message
+    });
+  }
+});
+
 // Get 24hr ticker for specific symbol (public endpoint)
 router.get('/market/ticker/:symbol', async (req: Request, res: Response) => {
   try {

@@ -152,6 +152,11 @@ export class BinanceService {
   async getAllTickers(): Promise<any[]> {
     return this.makeRequest('/v3/ticker/price');
   }
+  
+  // Get 24hr ticker data for all symbols
+  async getAllTickers24hr(): Promise<any[]> {
+    return this.makeRequest('/v3/ticker/24hr');
+  }
 
   // Get 24hr ticker for specific symbol
   async get24hrTicker(symbol: string): Promise<any> {

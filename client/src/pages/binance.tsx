@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Redirect } from 'wouter';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +30,45 @@ interface BinanceApiStatus {
   testnet: boolean;
 }
 
+// מבנה נתונים עבור מחיר מטבע
+interface BinanceTickerPrice {
+  symbol: string;
+  price: string;
+}
+
+// מבנה נתונים עבור מידע מפורט על מטבע (24 שעות)
+interface Binance24hrTicker {
+  symbol: string;
+  priceChange: string;
+  priceChangePercent: string;
+  weightedAvgPrice: string;
+  prevClosePrice: string;
+  lastPrice: string;
+  lastQty: string;
+  bidPrice: string;
+  bidQty: string;
+  askPrice: string;
+  askQty: string;
+  openPrice: string;
+  highPrice: string;
+  lowPrice: string;
+  volume: string;
+  quoteVolume: string;
+  openTime: number;
+  closeTime: number;
+  firstId: number;
+  lastId: number;
+  count: number;
+}
+
+// מבנה נתונים מעובד לתצוגה בטבלת מחירי שוק
+interface MarketPriceDisplay {
+  symbol: string;
+  price: string;
+  priceChangePercent: number;
+  volume: string;
+}
+
 export default function BinancePage() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -38,6 +77,9 @@ export default function BinancePage() {
   const [binanceSecretKey, setBinanceSecretKey] = useState('');
   const [useTestnet, setUseTestnet] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // משתנה לחיפוש מטבעות
+  const [searchTerm, setSearchTerm] = useState('');
 
   // שאילתה לבדיקת סטטוס מפתחות API של Binance
   const { 
@@ -69,6 +111,82 @@ export default function BinancePage() {
     refetchOnWindowFocus: false,
     retry: 1
   });
+  
+  // שאילתה לקבלת מחירי כל המטבעות ב-Binance
+  const {
+    data: tickerPrices,
+    isLoading: tickerPricesLoading,
+    isError: tickerPricesError,
+    refetch: refetchTickerPrices
+  } = useQuery<BinanceTickerPrice[]>({
+    queryKey: ['/api/binance/market/tickers'],
+    refetchOnWindowFocus: false,
+    refetchInterval: 60000, // רענון כל דקה
+  });
+  
+  // שאילתה לקבלת מידע מפורט על 24 שעות אחרונות
+  const {
+    data: market24hrData,
+    isLoading: market24hrLoading,
+    isError: market24hrError,
+    refetch: refetch24hrData
+  } = useQuery<Binance24hrTicker[]>({
+    queryKey: ['/api/binance/market/24hr'],
+    refetchOnWindowFocus: false,
+    refetchInterval: 60000, // רענון כל דקה
+  });
+  
+  // מיזוג הנתונים ממקורות שונים לתצוגה אחת
+  const marketPrices = useMemo(() => {
+    if (!tickerPrices || !market24hrData) return [];
+    
+    // מיפוי נתוני 24 שעות לפי סמל המטבע לגישה מהירה
+    const marketDataMap = new Map<string, Binance24hrTicker>();
+    market24hrData.forEach(item => {
+      marketDataMap.set(item.symbol, item);
+    });
+    
+    // לוקח רק את הזוגות עם USDT (או BTC או BNB או ETH לסחורות חדשות)
+    return tickerPrices
+      .filter((ticker: BinanceTickerPrice) => 
+        ticker.symbol.endsWith('USDT') || 
+        ticker.symbol.endsWith('BUSD')
+      )
+      .map((ticker: BinanceTickerPrice) => {
+        const marketData = marketDataMap.get(ticker.symbol);
+        return {
+          symbol: ticker.symbol,
+          price: ticker.price,
+          priceChangePercent: marketData ? parseFloat(marketData.priceChangePercent) : 0,
+          volume: marketData ? marketData.quoteVolume : '0'
+        } as MarketPriceDisplay;
+      });
+  }, [tickerPrices, market24hrData]);
+  
+  // פילטור לפי מונח החיפוש
+  const filteredMarketPrices = useMemo(() => {
+    if (!marketPrices) return [];
+    if (!searchTerm.trim()) return marketPrices;
+    
+    const term = searchTerm.trim().toUpperCase();
+    return marketPrices.filter((ticker: MarketPriceDisplay) => 
+      ticker.symbol.includes(term)
+    );
+  }, [marketPrices, searchTerm]);
+  
+  // פונקציה לרענון מחירי השוק
+  const refetchMarketPrices = () => {
+    refetchTickerPrices();
+    refetch24hrData();
+    toast({
+      title: "מרענן מחירי שוק",
+      description: "מושך נתונים עדכניים מ-Binance...",
+    });
+  };
+  
+  // מאחד את סטטוס הטעינה של מחירי השוק
+  const marketPricesLoading = tickerPricesLoading || market24hrLoading;
+  const marketPricesError = tickerPricesError || market24hrError;
 
   const refreshBalances = () => {
     refetchBalances();
@@ -370,17 +488,82 @@ export default function BinancePage() {
         {/* תוכן כרטיסיית מחירי שוק */}
         <TabsContent value="markets">
           <Card>
-            <CardHeader>
-              <CardTitle>מחירי שוק</CardTitle>
-              <CardDescription>מחירים עדכניים של מטבעות וטוקנים ב-Binance</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>מחירי שוק</CardTitle>
+                <CardDescription>מחירים עדכניים של מטבעות וטוקנים ב-Binance</CardDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => refetchMarketPrices()} 
+                disabled={marketPricesLoading}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${marketPricesLoading ? 'animate-spin' : ''}`} />
+                רענן
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <ExternalLink className="h-16 w-16 mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">יכולת זו בפיתוח</h3>
-                <p>מחירי שוק עדכניים יהיו זמינים בקרוב.</p>
-              </div>
+              {marketPricesLoading ? (
+                <div className="space-y-2">
+                  {[...Array(8)].map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : marketPricesError ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>שגיאה בטעינת נתונים</AlertTitle>
+                  <AlertDescription>
+                    לא ניתן לטעון את מחירי השוק. נסה שוב מאוחר יותר.
+                  </AlertDescription>
+                </Alert>
+              ) : marketPrices && marketPrices.length > 0 ? (
+                <div>
+                  <div className="mb-4">
+                    <Input
+                      placeholder="חיפוש מטבע..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="max-w-sm"
+                    />
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full table-auto">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="pb-2 text-left">סמל</th>
+                          <th className="pb-2 text-right">מחיר</th>
+                          <th className="pb-2 text-right">שינוי 24 שעות</th>
+                          <th className="pb-2 text-right">מחזור מסחר 24 שעות</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredMarketPrices.map((ticker: MarketPriceDisplay) => (
+                          <tr key={ticker.symbol} className="border-b">
+                            <td className="py-3 font-medium">{ticker.symbol}</td>
+                            <td className="py-3 text-right">${parseFloat(ticker.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}</td>
+                            <td className={`py-3 text-right ${ticker.priceChangePercent > 0 ? 'text-green-500' : ticker.priceChangePercent < 0 ? 'text-red-500' : ''}`}>
+                              {ticker.priceChangePercent > 0 ? '+' : ''}{ticker.priceChangePercent}%
+                            </td>
+                            <td className="py-3 text-right">${parseFloat(ticker.volume).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  לא נמצאו מחירי שוק
+                </div>
+              )}
             </CardContent>
+            <CardFooter className="flex justify-between">
+              <div className="text-sm text-muted-foreground">
+                {filteredMarketPrices.length ? `מציג ${filteredMarketPrices.length} מטבעות מתוך ${marketPrices?.length || 0}` : ''}
+              </div>
+            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>
