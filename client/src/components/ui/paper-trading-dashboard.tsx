@@ -20,7 +20,19 @@ export default function PaperTradingDashboard({ account }: PaperTradingDashboard
   } = useQuery({
     queryKey: ['/api/paper-trading/positions'],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/paper-trading/positions');
+      const res = await fetch('/api/paper-trading/positions', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to fetch positions');
+      }
+      
       return await res.json();
     }
   });
@@ -33,7 +45,19 @@ export default function PaperTradingDashboard({ account }: PaperTradingDashboard
   } = useQuery({
     queryKey: ['/api/paper-trading/trades'],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/paper-trading/trades');
+      const res = await fetch('/api/paper-trading/trades', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to fetch trading history');
+      }
+      
       return await res.json();
     }
   });
@@ -46,7 +70,19 @@ export default function PaperTradingDashboard({ account }: PaperTradingDashboard
   } = useQuery({
     queryKey: ['/api/paper-trading/stats'],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/paper-trading/stats');
+      const res = await fetch('/api/paper-trading/stats', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to fetch trading statistics');
+      }
+      
       return await res.json();
     }
   });
@@ -114,18 +150,18 @@ export default function PaperTradingDashboard({ account }: PaperTradingDashboard
             <CardTitle className="text-sm font-medium">
               Total P&L
             </CardTitle>
-            {parseFloat(account.totalProfitLoss) >= 0 ? (
+            {parseFloat(account.totalProfitLoss || '0') >= 0 ? (
               <TrendingUp className="h-4 w-4 text-green-500" />
             ) : (
               <TrendingDown className="h-4 w-4 text-red-500" />
             )}
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${parseFloat(account.totalProfitLoss) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              ${parseFloat(account.totalProfitLoss).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <div className={`text-2xl font-bold ${parseFloat(account.totalProfitLoss || '0') >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              ${parseFloat(account.totalProfitLoss || '0').toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground">
-              {parseFloat(account.totalProfitLossPercent)}% overall return
+              {parseFloat(account.totalProfitLossPercent || '0').toFixed(2)}% overall return
             </p>
           </CardContent>
         </Card>
@@ -168,15 +204,19 @@ export default function PaperTradingDashboard({ account }: PaperTradingDashboard
             ) : trades.length > 0 ? (
               <div className="space-y-4">
                 {trades
-                  .sort((a: PaperTradingTrade, b: PaperTradingTrade) => 
-                    new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime())
+                  .sort((a: PaperTradingTrade, b: PaperTradingTrade) => {
+                    // Ensure dates are valid
+                    const dateA = a.openedAt ? new Date(a.openedAt) : new Date(0);
+                    const dateB = b.openedAt ? new Date(b.openedAt) : new Date(0);
+                    return dateB.getTime() - dateA.getTime();
+                  })
                   .slice(0, 5)
                   .map((trade: PaperTradingTrade) => (
                     <div key={trade.id} className="flex items-center justify-between border-b pb-2">
                       <div>
                         <p className="font-medium">{trade.symbol}</p>
                         <p className="text-sm text-muted-foreground">
-                          {new Date(trade.openedAt).toLocaleDateString()} • {trade.direction} • {trade.status}
+                          {trade.openedAt ? new Date(trade.openedAt).toLocaleDateString() : '-'} • {trade.direction} • {trade.status}
                         </p>
                       </div>
                       <div className="text-right">

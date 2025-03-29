@@ -32,7 +32,19 @@ export default function PaperTradingPositions({ account }: PaperTradingPositions
   } = useQuery({
     queryKey: ['/api/paper-trading/positions'],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/paper-trading/positions');
+      const res = await fetch('/api/paper-trading/positions', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to fetch positions');
+      }
+      
       return await res.json();
     }
   });
@@ -40,9 +52,20 @@ export default function PaperTradingPositions({ account }: PaperTradingPositions
   // Close position mutation
   const closePositionMutation = useMutation({
     mutationFn: async ({ positionId, exitPrice }: { positionId: number, exitPrice: number }) => {
-      const res = await apiRequest('POST', `/api/paper-trading/positions/${positionId}/close`, {
-        exitPrice
+      const res = await fetch(`/api/paper-trading/positions/${positionId}/close`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ exitPrice }),
+        credentials: 'include'
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to close position');
+      }
+      
       return await res.json();
     },
     onSuccess: () => {

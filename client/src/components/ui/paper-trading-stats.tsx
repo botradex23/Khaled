@@ -25,6 +25,22 @@ export function PaperTradingStats({ account }: PaperTradingStatsProps) {
     averageProfitLossPercent: string;
   }>({
     queryKey: ["/api/paper-trading/stats"],
+    queryFn: async () => {
+      const res = await fetch('/api/paper-trading/stats', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to fetch trading statistics');
+      }
+      
+      return await res.json();
+    },
     enabled: !!account?.id,
   });
 

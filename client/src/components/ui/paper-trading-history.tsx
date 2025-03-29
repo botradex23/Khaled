@@ -37,7 +37,19 @@ export default function PaperTradingHistory({ account }: PaperTradingHistoryProp
   } = useQuery({
     queryKey: ['/api/paper-trading/trades'],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/paper-trading/trades');
+      const res = await fetch('/api/paper-trading/trades', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to fetch trading history');
+      }
+      
       return await res.json();
     }
   });
@@ -50,9 +62,12 @@ export default function PaperTradingHistory({ account }: PaperTradingHistoryProp
   });
 
   // Sort trades by date, most recent first
-  const sortedTrades = [...filteredTrades].sort((a: PaperTradingTrade, b: PaperTradingTrade) => 
-    new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime()
-  );
+  const sortedTrades = [...filteredTrades].sort((a: PaperTradingTrade, b: PaperTradingTrade) => {
+    // Ensure the dates are valid before creating Date objects
+    const dateA = a.openedAt ? new Date(a.openedAt) : new Date(0);
+    const dateB = b.openedAt ? new Date(b.openedAt) : new Date(0);
+    return dateB.getTime() - dateA.getTime();
+  });
 
   return (
     <Card>
@@ -111,9 +126,9 @@ export default function PaperTradingHistory({ account }: PaperTradingHistoryProp
                 {sortedTrades.map((trade: PaperTradingTrade) => (
                   <TableRow key={trade.id}>
                     <TableCell className="whitespace-nowrap">
-                      {new Date(trade.openedAt).toLocaleDateString()}
+                      {trade.openedAt ? new Date(trade.openedAt).toLocaleDateString() : '-'}
                       <div className="text-xs text-muted-foreground">
-                        {new Date(trade.openedAt).toLocaleTimeString()}
+                        {trade.openedAt ? new Date(trade.openedAt).toLocaleTimeString() : ''}
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">{trade.symbol}</TableCell>
