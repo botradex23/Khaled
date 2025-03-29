@@ -18,17 +18,18 @@ export function setupAuth(app: Express) {
   // Trust first proxy for secure cookies behind HTTPS
   app.set('trust proxy', 1);
   
-  // Setup session
+  // Setup session with improved cookie settings
   app.use(
     session({
       secret: process.env.SESSION_SECRET || 'mudrex-crypto-trading-secret',
-      resave: false,
-      saveUninitialized: false,
+      resave: true, // Changed to true to ensure session is saved even if unchanged
+      saveUninitialized: true, // Changed to true to save new sessions
       cookie: {
-        secure: process.env.NODE_ENV === 'production', // Secure in production, not in development
+        secure: false, // Set to false to work in development environment
         maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
         httpOnly: true,
-        sameSite: 'lax' // Better compatibility while still providing CSRF protection
+        sameSite: 'lax', // Better compatibility while still providing CSRF protection
+        path: '/' // Ensure cookie is available for all paths
       },
     })
   );

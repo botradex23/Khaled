@@ -44,15 +44,30 @@ async function getBinanceApiKeys(req: Request, res: Response, next: Function) {
       });
     }
     
-    // Log for debugging
-    console.log(`Retrieved Binance API keys for user ${req.user.id}`);
+    // Log for debugging (without exposing the actual keys)
+    console.log(`Retrieved Binance API keys for user ${req.user.id}. API Key length: ${apiKeys.binanceApiKey.length}, Secret Key length: ${apiKeys.binanceSecretKey.length}`);
+    
+    // Ensure the keys are properly trimmed to avoid format errors
+    const trimmedApiKey = apiKeys.binanceApiKey.trim();
+    const trimmedSecretKey = apiKeys.binanceSecretKey.trim();
+    
+    // Make sure keys are non-empty after trimming
+    if (!trimmedApiKey || !trimmedSecretKey) {
+      return res.status(400).json({ 
+        error: 'Invalid Binance API keys',
+        message: 'Your API keys appear to be empty or invalid. Please reconfigure them.'
+      });
+    }
     
     // Attach the keys to the request object for use in routes
     req.binanceApiKeys = {
-      apiKey: apiKeys.binanceApiKey,
-      secretKey: apiKeys.binanceSecretKey,
+      apiKey: trimmedApiKey,
+      secretKey: trimmedSecretKey,
       testnet: false // Using live environment as per user requirement
     };
+    
+    // Debug log to help troubleshoot
+    console.log(`Binance API keys prepared for request. API Key format valid: ${trimmedApiKey.length > 0}, Secret Key format valid: ${trimmedSecretKey.length > 0}`);
     
     next();
   } catch (error) {

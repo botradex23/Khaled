@@ -101,12 +101,27 @@ router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
       });
     }
     
+    // Clean up the API keys to remove any whitespace that might cause format errors
+    const cleanedApiKey = apiKey.trim();
+    const cleanedSecretKey = secretKey.trim();
+    const cleanedAllowedIp = allowedIp ? allowedIp.trim() : allowedIp;
+    
+    // Validate that keys are not empty after trimming
+    if (cleanedApiKey === '' || cleanedSecretKey === '') {
+      return res.status(400).json({
+        error: 'Invalid fields',
+        message: 'API Key and Secret Key cannot be empty or contain only whitespace'
+      });
+    }
+    
+    console.log(`Saving Binance API keys for user ${req.user!.id} - API Key length: ${cleanedApiKey.length}, Secret Key length: ${cleanedSecretKey.length}`);
+    
     // Update the user's Binance API keys using our storage implementation
     const userId = req.user!.id;
     const updatedUser = await storage.updateUserBinanceApiKeys(userId, {
-      binanceApiKey: apiKey,
-      binanceSecretKey: secretKey,
-      binanceAllowedIp: allowedIp
+      binanceApiKey: cleanedApiKey,
+      binanceSecretKey: cleanedSecretKey,
+      binanceAllowedIp: cleanedAllowedIp
     });
     
     if (!updatedUser) {
@@ -116,11 +131,22 @@ router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
       });
     }
     
+    // Log success
     console.log(`Binance API keys saved successfully for user ${userId} (Using testnet: ${testnet})`);
+    console.log(`API Key format: ${cleanedApiKey.substring(0, 4)}... (length: ${cleanedApiKey.length})`);
     
-    return res.status(200).json({
-      success: true,
-      message: 'Binance API keys saved successfully'
+    // Make sure session is saved after updating API keys
+    req.session.save((err) => {
+      if (err) {
+        console.error("Error saving session after updating Binance API keys:", err);
+      } else {
+        console.log("Session saved successfully after updating Binance API keys");
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Binance API keys saved successfully'
+      });
     });
   } catch (error: any) {
     console.error("Error saving Binance API keys:", error);

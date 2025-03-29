@@ -15,8 +15,22 @@ export class BinanceService {
   private axiosInstance: AxiosInstance;
 
   constructor(credentials: BinanceCredentials) {
-    this.apiKey = credentials.apiKey;
-    this.secretKey = credentials.secretKey;
+    // Ensure API key and secret key are properly trimmed to avoid format errors
+    this.apiKey = credentials.apiKey ? credentials.apiKey.trim() : '';
+    this.secretKey = credentials.secretKey ? credentials.secretKey.trim() : '';
+    
+    // Validate API keys are well-formed
+    if (this.apiKey && (this.apiKey.includes(' ') || this.apiKey.includes('\n') || this.apiKey.includes('\t'))) {
+      console.error('Warning: Binance API key contains whitespace characters that may cause format errors');
+      // Clean up API key to remove problematic characters
+      this.apiKey = this.apiKey.replace(/\s+/g, '');
+    }
+    
+    if (this.secretKey && (this.secretKey.includes(' ') || this.secretKey.includes('\n') || this.secretKey.includes('\t'))) {
+      console.error('Warning: Binance Secret key contains whitespace characters that may cause format errors');
+      // Clean up Secret key to remove problematic characters
+      this.secretKey = this.secretKey.replace(/\s+/g, '');
+    }
     
     // Always use the real production URL since we want to fetch real balances
     this.baseUrl = 'https://api.binance.com/api';
@@ -27,7 +41,14 @@ export class BinanceService {
       console.log(`Binance Service initialized with VPN/Proxy: ${VPN_CONFIG.host}:${VPN_CONFIG.port}`);
       
       // Set up default headers for better proxy compatibility
-      this.axiosInstance.defaults.headers['X-MBX-APIKEY'] = this.apiKey;
+      // Ensure we don't pass invalid API key header
+      if (this.apiKey && this.apiKey.length > 0) {
+        console.log(`Setting up Binance API key in headers (length: ${this.apiKey.length})`);
+        this.axiosInstance.defaults.headers['X-MBX-APIKEY'] = this.apiKey;
+      } else {
+        console.log('No valid Binance API key available, not setting X-MBX-APIKEY header');
+      }
+      
       this.axiosInstance.defaults.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
       this.axiosInstance.defaults.headers['Accept-Language'] = 'en-US,en;q=0.9';
     } else {
@@ -326,8 +347,35 @@ export class BinanceService {
   // Test connectivity with authentication
   async testConnectivity(): Promise<{ success: boolean; message?: string }> {
     try {
+      // Validate the API keys first
+      if (!this.apiKey || this.apiKey.trim() === '') {
+        return {
+          success: false,
+          message: 'API key is missing or empty'
+        };
+      }
+      
+      if (!this.secretKey || this.secretKey.trim() === '') {
+        return {
+          success: false,
+          message: 'Secret key is missing or empty'
+        };
+      }
+      
+      // Ensure API keys are in the correct format
+      if (this.apiKey.includes(' ') || this.apiKey.includes('\n') || this.apiKey.includes('\t')) {
+        console.warn('Warning: Binance API key contains whitespace. Cleaning up...');
+        this.apiKey = this.apiKey.replace(/\s+/g, '');
+      }
+      
+      if (this.secretKey.includes(' ') || this.secretKey.includes('\n') || this.secretKey.includes('\t')) {
+        console.warn('Warning: Binance Secret key contains whitespace. Cleaning up...');
+        this.secretKey = this.secretKey.replace(/\s+/g, '');
+      }
+      
       // Try to get account information as a connectivity test
       console.log(`Testing Binance API connectivity with API key: ${this.apiKey.substring(0, 4)}... to ${this.baseUrl}`);
+      console.log(`API key length: ${this.apiKey.length}, Secret key length: ${this.secretKey.length}`);
       
       // Set up headers directly for better proxy compatibility
       this.axiosInstance.defaults.headers['X-MBX-APIKEY'] = this.apiKey;
