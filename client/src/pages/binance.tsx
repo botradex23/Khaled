@@ -49,6 +49,13 @@ export default function BinancePage() {
     enabled: !!user, // רק אם המשתמש מחובר
     refetchOnWindowFocus: false
   });
+  
+  // פתיחה אוטומטית של חלונית הגדרת מפתחות ה-API כאשר אין מפתחות מוגדרים
+  useEffect(() => {
+    if (!apiStatusLoading && apiStatus && !apiStatus.hasBinanceApiKey && !apiStatus.hasBinanceSecretKey) {
+      setIsApiKeysDialogOpen(true);
+    }
+  }, [apiStatus, apiStatusLoading]);
 
   // שאילתה לקבלת יתרות חשבון Binance
   const { 
@@ -203,23 +210,7 @@ export default function BinancePage() {
         </div>
       </div>
 
-      {/* תצוגת אזהרה אם אין מפתחות API מוגדרים */}
-      {(!hasValidApiKeys && !apiStatusLoading) && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>מפתחות API לא מוגדרים</AlertTitle>
-          <AlertDescription>
-            כדי להשתמש בממשק Binance, עליך להגדיר את מפתחות ה-API שלך.{' '}
-            <Button 
-              variant="link" 
-              className="p-0 h-auto text-destructive underline" 
-              onClick={() => setIsApiKeysDialogOpen(true)}
-            >
-              הגדר מפתחות עכשיו
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* לא נציג הודעת אזהרה יותר - נציג את חלונית ההגדרות ישירות במקום */}
 
       {/* כרטיסיות תוכן */}
       <Tabs defaultValue="balances" className="w-full">
@@ -395,7 +386,16 @@ export default function BinancePage() {
       </Tabs>
 
       {/* דיאלוג הגדרת מפתחות API */}
-      <Dialog open={isApiKeysDialogOpen} onOpenChange={setIsApiKeysDialogOpen}>
+      {/* לא נאפשר למשתמש לסגור את החלונית אם אין לו מפתחות מוגדרים */}
+      <Dialog 
+        open={isApiKeysDialogOpen} 
+        onOpenChange={(open) => {
+          // אם יש למשתמש מפתחות מוגדרים, נאפשר לו לסגור את החלונית
+          // אחרת, נסגור את החלונית רק אם הוא מנסה לפתוח אותה (שזה לא אמור לקרות)
+          if (hasValidApiKeys || open) {
+            setIsApiKeysDialogOpen(open);
+          }
+        }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center">
@@ -466,9 +466,12 @@ export default function BinancePage() {
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsApiKeysDialogOpen(false)}>
-              ביטול
-            </Button>
+            {/* נציג כפתור ביטול רק אם כבר יש למשתמש מפתחות מוגדרים */}
+            {hasValidApiKeys && (
+              <Button variant="outline" onClick={() => setIsApiKeysDialogOpen(false)}>
+                ביטול
+              </Button>
+            )}
             <Button 
               type="submit" 
               onClick={saveApiKeys}
