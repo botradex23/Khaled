@@ -1,6 +1,5 @@
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
 import crypto from 'crypto';
-import { createProxyInstance, VPN_CONFIG } from './proxy-config';
 
 interface BinanceCredentials {
   apiKey: string;
@@ -12,7 +11,6 @@ export class BinanceService {
   private apiKey: string;
   private secretKey: string;
   private baseUrl: string;
-  private axiosInstance: AxiosInstance;
 
   constructor(credentials: BinanceCredentials) {
     this.apiKey = credentials.apiKey;
@@ -20,15 +18,6 @@ export class BinanceService {
     
     // Always use the real production URL since we want to fetch real balances
     this.baseUrl = 'https://api.binance.com/api';
-    
-    // Create axios instance with VPN proxy if enabled
-    if (VPN_CONFIG.enabled) {
-      this.axiosInstance = createProxyInstance();
-      console.log(`Binance Service initialized with VPN/Proxy: ${VPN_CONFIG.host}:${VPN_CONFIG.port}`);
-    } else {
-      this.axiosInstance = axios.create();
-      console.log('Binance Service initialized with direct connection (no VPN/proxy)');
-    }
     
     console.log(`Binance Service initialized with production API (ignoring testnet flag: ${credentials.testnet})`);
   }
@@ -71,15 +60,15 @@ export class BinanceService {
     };
     
     try {
-      console.log(`Making authenticated Binance API request to ${endpoint} (${method}) via ${VPN_CONFIG.enabled ? 'VPN/proxy' : 'direct connection'}`);
+      console.log(`Making authenticated Binance API request to ${endpoint} (${method})`);
       let response;
       
       if (method === 'GET') {
-        response = await this.axiosInstance.get(url, config);
+        response = await axios.get(url, config);
       } else if (method === 'POST') {
-        response = await this.axiosInstance.post(url, null, config);
+        response = await axios.post(url, null, config);
       } else if (method === 'DELETE') {
-        response = await this.axiosInstance.delete(url, config);
+        response = await axios.delete(url, config);
       }
       
       return response?.data;
@@ -90,11 +79,6 @@ export class BinanceService {
       const errorCode = errorData?.code || error.code || 'UNKNOWN';
       
       console.error(`Binance API Error (${endpoint}): Code: ${errorCode}, Message: ${errorMessage}`);
-      
-      // Check if it's a proxy-related error
-      if (VPN_CONFIG.enabled && error.code) {
-        console.error(`VPN/Proxy error (${error.code}): This might be related to the proxy configuration.`);
-      }
       
       // Provide more meaningful error to client
       throw new Error(`Binance API Error: ${errorMessage} (Code: ${errorCode})`);
@@ -114,8 +98,8 @@ export class BinanceService {
     };
     
     try {
-      console.log(`Making public Binance API request to ${endpoint} via ${VPN_CONFIG.enabled ? 'VPN/proxy' : 'direct connection'}`);
-      const response = await this.axiosInstance.get(url, config);
+      console.log(`Making public Binance API request to ${endpoint}`);
+      const response = await axios.get(url, config);
       return response.data;
     } catch (error: any) {
       // Extract more detailed error information
@@ -124,11 +108,6 @@ export class BinanceService {
       const errorCode = errorData?.code || error.code || 'UNKNOWN';
       
       console.error(`Binance API Error (${endpoint}): Code: ${errorCode}, Message: ${errorMessage}`);
-      
-      // Check if it's a proxy-related error
-      if (VPN_CONFIG.enabled && error.code) {
-        console.error(`VPN/Proxy error (${error.code}): This might be related to the proxy configuration.`);
-      }
       
       // Provide more meaningful error to client
       throw new Error(`Binance API Error: ${errorMessage} (Code: ${errorCode})`);
