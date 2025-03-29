@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Redirect } from 'wouter';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,13 +7,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, ExternalLink, RefreshCw, Settings, TrendingUp, ArrowUpDown, ArrowDown, ArrowUp, Filter } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AlertCircle, ExternalLink, RefreshCw, Settings, TrendingUp, ArrowUpDown, ArrowDown, ArrowUp, Filter, RefreshCcw, PlusCircle, LineChart, BarChart3, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { apiRequest } from '@/lib/queryClient';
 
 // בינתיים נשתמש בסוג זמני עבור מטבעות ויתרות ביננס
 interface BinanceBalance {
@@ -67,6 +68,470 @@ interface MarketPriceDisplay {
   price: string;
   priceChangePercent: number;
   volume: string;
+}
+
+// ממשקים עבור Paper Trading
+interface PaperTradingAccount {
+  id: number;
+  userId: number;
+  initialBalance: string;
+  currentBalance: string;
+  totalProfitLoss: string;
+  totalProfitLossPercent: string;
+  totalTrades: number;
+  winningTrades: number;
+  losingTrades: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PaperTradingPosition {
+  id: number;
+  accountId: number;
+  symbol: string;
+  entryPrice: string;
+  quantity: string;
+  direction: "LONG" | "SHORT";
+  openedAt: string;
+}
+
+interface PaperTradingTrade {
+  id: number;
+  accountId: number;
+  positionId: number | null;
+  symbol: string;
+  entryPrice: string;
+  exitPrice: string | null;
+  quantity: string;
+  direction: "LONG" | "SHORT";
+  status: "OPEN" | "CLOSED";
+  profitLoss: string | null;
+  profitLossPercent: string | null;
+  fee: string;
+  openedAt: string;
+  closedAt: string | null;
+  type: string;
+  isAiGenerated: boolean;
+  aiConfidence: string | null;
+}
+
+// רכיב Paper Trading
+function PaperTradingContent() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isNewTradeOpen, setIsNewTradeOpen] = useState(false);
+  const [selectedTab, setSelectedTab] = useState('overview');
+  
+  // Import required components using React.lazy
+  const PaperTradingDashboard = React.lazy(() => import('@/components/ui/paper-trading-dashboard'));
+  const PaperTradingPositions = React.lazy(() => import('@/components/ui/paper-trading-positions'));
+  const PaperTradingHistory = React.lazy(() => import('@/components/ui/paper-trading-history'));
+  const PaperTradingStats = React.lazy(() => import('@/components/ui/paper-trading-stats'));
+  const NewTradeDialog = React.lazy(() => import('@/components/ui/new-paper-trade-dialog'));
+
+  // שאילתה לקבלת חשבון ה-Paper Trading
+  const {
+    data: account,
+    isLoading: isAccountLoading,
+    error: accountError,
+    refetch: refetchAccount
+  } = useQuery({
+    queryKey: ['/api/paper-trading/account'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/paper-trading/account');
+      return await res.json();
+    }
+  });
+
+  // שאילתה לקבלת פוזיציות פתוחות
+  const {
+    data: positions,
+    isLoading: isPositionsLoading,
+    refetch: refetchPositions
+  } = useQuery({
+    queryKey: ['/api/paper-trading/positions'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/paper-trading/positions');
+      return await res.json();
+    },
+    enabled: !!account
+  });
+
+  // שאילתה לקבלת היסטוריית עסקאות
+  const {
+    data: trades,
+    isLoading: isTradesLoading,
+    refetch: refetchTrades
+  } = useQuery({
+    queryKey: ['/api/paper-trading/trades'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/paper-trading/trades');
+      return await res.json();
+    },
+    enabled: !!account
+  });
+
+  // שאילתה לקבלת סטטיסטיקות
+  const {
+    data: stats,
+    isLoading: isStatsLoading,
+    refetch: refetchStats
+  } = useQuery({
+    queryKey: ['/api/paper-trading/stats'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/paper-trading/stats');
+      return await res.json();
+    },
+    enabled: !!account
+  });
+
+  // מוטציה ליצירת חשבון
+  const createAccountMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/paper-trading/account', {
+        initialBalance: 1000.0 // יתרה התחלתית $1000
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "חשבון נוצר בהצלחה",
+        description: "חשבון ה-Paper Trading שלך נוצר בהצלחה.",
+      });
+      refetchAccount();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "יצירת חשבון נכשלה",
+        description: error.message || "לא ניתן ליצור חשבון Paper Trading.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // מוטציה לאיפוס חשבון
+  const resetAccountMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/paper-trading/account/reset');
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "חשבון אופס",
+        description: "חשבון ה-Paper Trading שלך אופס בהצלחה.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/account'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/positions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/trades'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/stats'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "איפוס חשבון נכשל",
+        description: error.message || "לא ניתן לאפס את חשבון ה-Paper Trading.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // מוטציה לסגירת פוזיציה
+  const closePositionMutation = useMutation({
+    mutationFn: async ({ id, price }: { id: number, price: number }) => {
+      const res = await apiRequest('POST', `/api/paper-trading/positions/${id}/close`, { exitPrice: price });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "פוזיציה נסגרה",
+        description: "הפוזיציה נסגרה בהצלחה.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/account'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/positions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/trades'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/stats'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "סגירת פוזיציה נכשלה",
+        description: error.message || "לא ניתן לסגור את הפוזיציה.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // בדיקה אם צריך ליצור חשבון
+  useEffect(() => {
+    if (accountError) {
+      createAccountMutation.mutate();
+    }
+  }, [accountError]);
+
+  // טיפול באיפוס חשבון
+  const handleResetAccount = () => {
+    if (confirm('האם אתה בטוח שברצונך לאפס את חשבון ה-Paper Trading? פעולה זו תסגור את כל הפוזיציות הפתוחות ותאפס את היתרה לסכום ההתחלתי.')) {
+      resetAccountMutation.mutate();
+    }
+  };
+
+  // טיפול בעסקה חדשה
+  const handleNewTrade = () => {
+    setIsNewTradeOpen(true);
+  };
+
+  // רענון נתונים
+  const refreshData = () => {
+    refetchAccount();
+    refetchPositions();
+    refetchTrades();
+    refetchStats();
+    toast({
+      title: "מרענן נתונים",
+      description: "מושך נתונים עדכניים של Paper Trading...",
+    });
+  };
+
+  // אם הנתונים נטענים
+  if (isAccountLoading || createAccountMutation.isPending) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin mb-4" />
+        <p className="text-center">{createAccountMutation.isPending ? 'יוצר חשבון Paper Trading...' : 'טוען נתוני Paper Trading...'}</p>
+      </div>
+    );
+  }
+
+  // אם אין חשבון (ועדיין לא מנסים ליצור אחד)
+  if (!account && !createAccountMutation.isPending) {
+    return (
+      <div className="text-center py-8">
+        <h3 className="text-lg font-medium mb-2">אין חשבון Paper Trading</h3>
+        <p className="text-muted-foreground mb-4">
+          אין לך עדיין חשבון Paper Trading. צור אחד כדי להתחיל לתרגל מסחר ללא סיכון.
+        </p>
+        <Button 
+          onClick={() => createAccountMutation.mutate()} 
+          disabled={createAccountMutation.isPending}
+        >
+          {createAccountMutation.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              יוצר חשבון...
+            </>
+          ) : (
+            <>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              צור חשבון Paper Trading
+            </>
+          )}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* כפתורי פעולות */}
+      <div className="flex flex-wrap justify-between items-center mb-6 gap-2">
+        <div className="flex items-center">
+          <div className="mr-4">
+            <div className="text-sm text-muted-foreground">יתרה נוכחית</div>
+            <div className="text-2xl font-bold">${parseFloat(account?.currentBalance || "0").toLocaleString()}</div>
+          </div>
+          <div>
+            <div className="text-sm text-muted-foreground">רווח/הפסד</div>
+            <div className={`text-xl font-semibold ${parseFloat(account?.totalProfitLoss || "0") >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              ${parseFloat(account?.totalProfitLoss || "0").toLocaleString()} 
+              ({parseFloat(account?.totalProfitLossPercent || "0").toFixed(2)}%)
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={refreshData}
+            disabled={isAccountLoading || isPositionsLoading || isTradesLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isAccountLoading || isPositionsLoading || isTradesLoading ? 'animate-spin' : ''}`} />
+            רענן
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleResetAccount}
+            disabled={resetAccountMutation.isPending}
+          >
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            אפס חשבון
+          </Button>
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={handleNewTrade}
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            עסקה חדשה
+          </Button>
+        </div>
+      </div>
+
+      {/* כרטיסיות */}
+      <Tabs defaultValue="overview" value={selectedTab} onValueChange={setSelectedTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="overview">סקירה כללית</TabsTrigger>
+          <TabsTrigger value="positions">פוזיציות פתוחות</TabsTrigger>
+          <TabsTrigger value="history">היסטוריית עסקאות</TabsTrigger>
+          <TabsTrigger value="analytics">ניתוח ביצועים</TabsTrigger>
+        </TabsList>
+        
+        {/* סקירה כללית - תצוגת Dashboard */}
+        <TabsContent value="overview">
+          <React.Suspense fallback={
+            <div className="flex items-center justify-center h-[300px]">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          }>
+            <PaperTradingDashboard account={account} />
+          </React.Suspense>
+        </TabsContent>
+        
+        {/* פוזיציות פתוחות */}
+        <TabsContent value="positions">
+          <React.Suspense fallback={
+            <div className="flex items-center justify-center h-[300px]">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          }>
+            <PaperTradingPositions account={account} />
+          </React.Suspense>
+        </TabsContent>
+        
+        {/* היסטוריית עסקאות */}
+        <TabsContent value="history">
+          <React.Suspense fallback={
+            <div className="flex items-center justify-center h-[300px]">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          }>
+            <PaperTradingHistory account={account} />
+          </React.Suspense>
+        </TabsContent>
+        
+        {/* ניתוח ביצועים */}
+        <TabsContent value="analytics">
+          <Card>
+            <CardHeader>
+              <CardTitle>ניתוח ביצועים</CardTitle>
+              <CardDescription>סטטיסטיקות מפורטות של ביצועי המסחר שלך</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isStatsLoading ? (
+                <div className="space-y-4">
+                  {[...Array(6)].map((_, i) => (
+                    <Skeleton key={i} className="h-8 w-full" />
+                  ))}
+                </div>
+              ) : stats ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">סטטיסטיקות עסקאות</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">סה"כ עסקאות</span>
+                          <span className="font-medium">{stats.totalTrades}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">עסקאות מרוויחות</span>
+                          <span className="font-medium text-green-500">{stats.winningTrades}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">עסקאות מפסידות</span>
+                          <span className="font-medium text-red-500">{stats.losingTrades}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">אחוז הצלחה</span>
+                          <span className="font-medium">{stats.winRate.toFixed(2)}%</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">ביצועים כספיים</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">רווח/הפסד כולל</span>
+                          <span className={`font-medium ${parseFloat(stats.totalProfitLoss) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            ${parseFloat(stats.totalProfitLoss).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">אחוז רווח/הפסד</span>
+                          <span className={`font-medium ${parseFloat(stats.totalProfitLossPercent) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {parseFloat(stats.totalProfitLossPercent).toFixed(2)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">רווח/הפסד ממוצע לעסקה</span>
+                          <span className={`font-medium ${parseFloat(stats.averageProfitLoss) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            ${parseFloat(stats.averageProfitLoss).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">אחוז רווח/הפסד ממוצע</span>
+                          <span className={`font-medium ${parseFloat(stats.averageProfitLossPercent) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {parseFloat(stats.averageProfitLossPercent).toFixed(2)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <LineChart className="h-24 w-24 mx-auto mb-4 text-primary opacity-60" />
+                      <p className="text-muted-foreground">
+                        ויזואליזציה גרפית של ביצועי המסחר תהיה זמינה בקרוב.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                  <h3 className="text-lg font-medium mb-2">אין נתונים זמינים</h3>
+                  <p>התחל לסחור כדי לראות סטטיסטיקות ביצועים.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* דיאלוג עסקה חדשה */}
+      <Dialog open={isNewTradeOpen} onOpenChange={setIsNewTradeOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>עסקה חדשה</DialogTitle>
+            <DialogDescription>
+              יצירת עסקה חדשה בחשבון ה-Paper Trading שלך
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-center text-muted-foreground">
+              טופס יצירת עסקאות יהיה זמין בקרוב.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNewTradeOpen(false)}>
+              סגור
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
 
 export default function BinancePage() {
@@ -390,6 +855,12 @@ export default function BinancePage() {
           <TabsTrigger value="balances">יתרות</TabsTrigger>
           <TabsTrigger value="trades">היסטוריית מסחר</TabsTrigger>
           <TabsTrigger value="markets">מחירי שוק</TabsTrigger>
+          <TabsTrigger value="paper-trading">
+            Paper Trading
+            <Badge variant="outline" className="ml-2 bg-green-100 text-green-800 border-green-300">
+              חדש
+            </Badge>
+          </TabsTrigger>
         </TabsList>
 
         {/* תוכן כרטיסיית יתרות */}
@@ -736,6 +1207,32 @@ export default function BinancePage() {
                 {filteredAndSortedMarketPrices.length ? `מציג ${filteredAndSortedMarketPrices.length} מטבעות מתוך ${marketPrices?.length || 0}` : ''}
               </div>
             </CardFooter>
+          </Card>
+        </TabsContent>
+
+        {/* תוכן כרטיסיית Paper Trading */}
+        <TabsContent value="paper-trading">
+          <Card>
+            <CardHeader>
+              <CardTitle>Paper Trading</CardTitle>
+              <CardDescription>תרגול מסחר עם כסף וירטואלי ללא סיכון</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {hasValidApiKeys ? (
+                <PaperTradingContent />
+              ) : (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-medium mb-2">מפתחות API נדרשים</h3>
+                  <p className="text-muted-foreground mb-4">
+                    כדי להשתמש ב-Paper Trading, עליך להגדיר את מפתחות ה-API של Binance תחילה.
+                  </p>
+                  <Button onClick={() => setIsApiKeysDialogOpen(true)}>
+                    הגדר מפתחות API
+                  </Button>
+                </div>
+              )}
+            </CardContent>
           </Card>
         </TabsContent>
       </Tabs>

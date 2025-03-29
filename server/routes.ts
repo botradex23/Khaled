@@ -18,6 +18,7 @@ import { setupAuth, ensureAuthenticated } from "./auth";
 import { createOkxServiceWithCustomCredentials, okxService } from "./api/okx/okxService";
 import updateApiKeysRouter from "./routes/update-api-keys";
 import binanceRouter from "./routes/binance";
+import paperTradingRouter from "./routes/paper-trading";
 
 // Helper function to mask sensitive data (like API keys)
 function maskSecret(secret: string): string {
@@ -288,6 +289,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // AI API routes
   app.use("/api/ai", aiRouter);
+  
+  // Paper Trading routes
+  app.use("/api/paper-trading", paperTradingRouter);
   
   // Direct API Key validation endpoint - No authentication required for validating API keys
   app.post("/api/validate-api-keys", async (req, res) => {

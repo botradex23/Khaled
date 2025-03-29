@@ -145,14 +145,14 @@ export const paymentSchema = createInsertSchema(payments)
 export const paperTradingAccounts = pgTable("paper_trading_accounts", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
-  initialBalance: decimal("initial_balance").notNull().default("1000"),
-  currentBalance: decimal("current_balance").notNull().default("1000"),
+  initialBalance: text("initial_balance").notNull().default("1000"),
+  currentBalance: text("current_balance").notNull().default("1000"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   isActive: boolean("is_active").notNull().default(true),
   lastResetAt: timestamp("last_reset_at"),
-  totalProfitLoss: decimal("total_profit_loss").default("0"),
-  totalProfitLossPercent: decimal("total_profit_loss_percent").default("0"),
+  totalProfitLoss: text("total_profit_loss").default("0"),
+  totalProfitLossPercent: text("total_profit_loss_percent").default("0"),
   totalTrades: integer("total_trades").default(0),
   winningTrades: integer("winning_trades").default(0),
   losingTrades: integer("losing_trades").default(0),
@@ -164,12 +164,7 @@ export const paperTradingAccountSchema = createInsertSchema(paperTradingAccounts
     id: true, 
     createdAt: true, 
     updatedAt: true,
-    lastResetAt: true,
-    totalProfitLoss: true,
-    totalProfitLossPercent: true,
-    totalTrades: true,
-    winningTrades: true,
-    losingTrades: true
+    lastResetAt: true
   });
 
 // Paper Trading Positions (current open positions)
@@ -177,16 +172,16 @@ export const paperTradingPositions = pgTable("paper_trading_positions", {
   id: serial("id").primaryKey(),
   accountId: integer("account_id").notNull(),
   symbol: text("symbol").notNull(),
-  entryPrice: decimal("entry_price").notNull(),
-  quantity: decimal("quantity").notNull(),
+  entryPrice: text("entry_price").notNull(),
+  quantity: text("quantity").notNull(),
   direction: text("direction").notNull(), // 'LONG' or 'SHORT'
   openedAt: timestamp("opened_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  currentPrice: decimal("current_price"),
-  currentProfitLoss: decimal("current_profit_loss").default("0"),
-  currentProfitLossPercent: decimal("current_profit_loss_percent").default("0"),
-  stopLoss: decimal("stop_loss"),
-  takeProfit: decimal("take_profit"),
+  currentPrice: text("current_price"),
+  currentProfitLoss: text("current_profit_loss").default("0"),
+  currentProfitLossPercent: text("current_profit_loss_percent").default("0"),
+  stopLoss: text("stop_loss"),
+  takeProfit: text("take_profit"),
   metadata: jsonb("metadata"),
 });
 
@@ -206,19 +201,19 @@ export const paperTradingTrades = pgTable("paper_trading_trades", {
   accountId: integer("account_id").notNull(),
   positionId: integer("position_id"),
   symbol: text("symbol").notNull(),
-  entryPrice: decimal("entry_price").notNull(),
-  exitPrice: decimal("exit_price"),
-  quantity: decimal("quantity").notNull(),
+  entryPrice: text("entry_price").notNull(),
+  exitPrice: text("exit_price"),
+  quantity: text("quantity").notNull(),
   direction: text("direction").notNull(), // 'LONG' or 'SHORT'
   status: text("status").notNull(), // 'OPEN', 'CLOSED', 'CANCELED'
-  profitLoss: decimal("profit_loss"),
-  profitLossPercent: decimal("profit_loss_percent"),
-  fee: decimal("fee").default("0"),
+  profitLoss: text("profit_loss"),
+  profitLossPercent: text("profit_loss_percent"),
+  fee: text("fee").default("0"),
   openedAt: timestamp("opened_at").defaultNow(),
   closedAt: timestamp("closed_at"),
   type: text("type").notNull(), // 'MARKET', 'LIMIT', etc.
   isAiGenerated: boolean("is_ai_generated").default(false),
-  aiConfidence: decimal("ai_confidence"),
+  aiConfidence: text("ai_confidence"),
   signalData: jsonb("signal_data"),
   metadata: jsonb("metadata"),
 });
