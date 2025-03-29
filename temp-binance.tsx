@@ -16,19 +16,19 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { apiRequest } from '@/lib/queryClient';
 
-// בינתיים נשתמש בסוג זמני עבור מטבעות ויתרות ביננס
+// Temporary type for Binance currencies and balances
 interface BinanceBalance {
-  asset?: string;  // שם המטבע בפורמט ביננס
-  currency?: string;  // שם המטבע בפורמט שלנו
-  free?: string | number;  // כמות זמינה בפורמט ביננס
-  available?: string | number;  // כמות זמינה בפורמט שלנו
-  locked?: string | number;  // כמות נעולה בפורמט ביננס
-  frozen?: string | number;  // כמות נעולה בפורמט שלנו
-  total?: string | number;  // סה"כ כמות
-  usdValue?: number;  // שווי ב-USD בפורמט אחד
-  valueUSD?: number;  // שווי ב-USD בפורמט אחר
-  calculatedTotalValue?: number;  // שווי מחושב לפי הגיבוב שלנו
-  pricePerUnit?: number;  // מחיר ליחידה
+  asset?: string;  // Currency name in Binance format
+  currency?: string;  // Currency name in our format
+  free?: string | number;  // Available amount in Binance format
+  available?: string | number;  // Available amount in our format
+  locked?: string | number;  // Locked amount in Binance format
+  frozen?: string | number;  // Frozen amount in our format
+  total?: string | number;  // Total amount
+  usdValue?: number;  // Value in USD in one format
+  valueUSD?: number;  // Value in USD in another format
+  calculatedTotalValue?: number;  // Value calculated according to our aggregation
+  pricePerUnit?: number;  // Price per unit
 }
 
 interface BinanceApiStatus {
@@ -37,13 +37,13 @@ interface BinanceApiStatus {
   testnet: boolean;
 }
 
-// מבנה נתונים עבור מחיר מטבע
+// Data structure for currency price
 interface BinanceTickerPrice {
   symbol: string;
   price: string;
 }
 
-// מבנה נתונים עבור מידע מפורט על מטבע (24 שעות)
+// Data structure for detailed currency information (24 hours)
 interface Binance24hrTicker {
   symbol: string;
   priceChange: string;
@@ -68,7 +68,7 @@ interface Binance24hrTicker {
   count: number;
 }
 
-// מבנה נתונים מעובד לתצוגה בטבלת מחירי שוק
+// Processed data structure for market price table display
 interface MarketPriceDisplay {
   symbol: string;
   price: string;
@@ -76,7 +76,7 @@ interface MarketPriceDisplay {
   volume: string;
 }
 
-// ממשקים עבור Paper Trading
+// Paper Trading interfaces
 interface PaperTradingAccount {
   id: number;
   userId: number;
@@ -121,7 +121,7 @@ interface PaperTradingTrade {
   aiConfidence: string | null;
 }
 
-// רכיב Paper Trading
+// Paper Trading Component
 function PaperTradingContent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -135,7 +135,7 @@ function PaperTradingContent() {
   const PaperTradingStats = React.lazy(() => import('@/components/ui/paper-trading-stats').then(module => ({ default: module.PaperTradingStats })));
   const NewTradeDialog = React.lazy(() => import('@/components/ui/new-paper-trade-dialog'));
 
-  // שאילתה לקבלת חשבון ה-Paper Trading
+  // Query to get Paper Trading account
   const {
     data: account,
     isLoading: isAccountLoading,
@@ -149,7 +149,7 @@ function PaperTradingContent() {
     }
   });
 
-  // שאילתה לקבלת פוזיציות פתוחות
+  // Query to get open positions
   const {
     data: positions,
     isLoading: isPositionsLoading,
@@ -163,7 +163,7 @@ function PaperTradingContent() {
     enabled: !!account
   });
 
-  // שאילתה לקבלת היסטוריית עסקאות
+  // Query to get trade history
   const {
     data: trades,
     isLoading: isTradesLoading,
@@ -177,7 +177,7 @@ function PaperTradingContent() {
     enabled: !!account
   });
 
-  // שאילתה לקבלת סטטיסטיקות
+  // Query to get statistics
   const {
     data: stats,
     isLoading: isStatsLoading,
@@ -191,7 +191,7 @@ function PaperTradingContent() {
     enabled: !!account
   });
 
-  // מוטציה ליצירת חשבון
+  // Mutation to create account
   const createAccountMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch('/api/paper-trading/account', {
@@ -230,7 +230,7 @@ function PaperTradingContent() {
     }
   });
 
-  // מוטציה לאיפוס חשבון
+  // Mutation to reset account
   const resetAccountMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch('/api/paper-trading/account/reset', {
@@ -268,7 +268,7 @@ function PaperTradingContent() {
     }
   });
 
-  // מוטציה לסגירת פוזיציה
+  // Mutation to close position
   const closePositionMutation = useMutation({
     mutationFn: async ({ id, price }: { id: number, price: number }) => {
       const res = await fetch(`/api/paper-trading/positions/${id}/close`, {
@@ -307,12 +307,12 @@ function PaperTradingContent() {
     }
   });
 
-  // בדיקה אם צריך ליצור חשבון
+  // Check if account needs to be created
   useEffect(() => {
-    // בדיקה האם יש צורך ליצור חשבון אוטומטית
+    // Check if there's a need to automatically create an account
     const checkAndCreateAccount = async () => {
       try {
-        // נסה לקבל את פרטי החשבון הקיים
+        // Try to get existing account details
         const res = await fetch('/api/paper-trading/account', {
           method: 'GET',
           headers: {
@@ -322,7 +322,7 @@ function PaperTradingContent() {
         });
         
         if (res.status === 404) {
-          // אין חשבון, צריך ליצור חדש
+          // No account, need to create a new one
           createAccountMutation.mutate();
           return;
         }
@@ -330,81 +330,81 @@ function PaperTradingContent() {
         if (res.ok) {
           const data = await res.json();
           if (data && data.id) {
-            // יש חשבון קיים, נשתמש בו
+            // Existing account found, use it
             queryClient.setQueryData(['/api/paper-trading/account'], data);
             toast({
-              title: "חשבון Paper Trading",
-              description: "טוען נתוני חשבון קיים...",
+              title: "Paper Trading Account",
+              description: "Loading existing account data...",
             });
           }
         }
       } catch (error: any) {
         console.error("Error checking account:", error);
-        // במקרה של שגיאה ננסה ליצור חשבון חדש
+        // In case of error, try to create a new account
         createAccountMutation.mutate();
       }
     };
     
-    // הפעל את הבדיקה רק אם אין חשבון וגם כשיש שגיאה
+    // Run the check only if there's no account or when there's an error
     if (!account || accountError) {
       checkAndCreateAccount();
     }
   }, [account, accountError]);
 
-  // טיפול באיפוס חשבון
+  // Handle account reset
   const handleResetAccount = () => {
-    if (confirm('האם אתה בטוח שברצונך לאפס את חשבון ה-Paper Trading? פעולה זו תסגור את כל הפוזיציות הפתוחות ותאפס את היתרה לסכום ההתחלתי.')) {
+    if (confirm('Are you sure you want to reset your Paper Trading account? This will close all open positions and reset the balance to the initial amount.')) {
       resetAccountMutation.mutate();
     }
   };
 
-  // טיפול בעסקה חדשה
+  // Handle new trade
   const handleNewTrade = () => {
     if (!account) {
       toast({
-        title: "שגיאה",
-        description: "אין לך חשבון Paper Trading פעיל. אנא יצור חשבון חדש.",
+        title: "Error",
+        description: "You don't have an active Paper Trading account. Please create a new account.",
         variant: "destructive"
       });
       return;
     }
     
-    // מדפיס מידע לדיבאגינג
+    // Print debugging information
     console.log("Opening new trade dialog, account ID:", account?.id);
     
-    // הגדרת מצב הדיאלוג כפתוח
+    // Set dialog state to open
     setIsNewTradeOpen(true);
   };
 
-  // רענון נתונים
+  // Refresh data
   const refreshData = () => {
     refetchAccount();
     refetchPositions();
     refetchTrades();
     refetchStats();
     toast({
-      title: "מרענן נתונים",
-      description: "מושך נתונים עדכניים של Paper Trading...",
+      title: "Refreshing Data",
+      description: "Fetching latest Paper Trading data...",
     });
   };
 
-  // אם הנתונים נטענים
+  // If data is loading
   if (isAccountLoading || createAccountMutation.isPending) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin mb-4" />
-        <p className="text-center">{createAccountMutation.isPending ? 'יוצר חשבון Paper Trading...' : 'טוען נתוני Paper Trading...'}</p>
+        <p className="text-center">{createAccountMutation.isPending ? 'Creating Paper Trading account...' : 'Loading Paper Trading data...'}</p>
       </div>
     );
   }
 
-  // אם אין חשבון (ועדיין לא מנסים ליצור אחד)
+  // If no account exists (and not currently creating one)
   if (!account && !createAccountMutation.isPending) {
     return (
       <div className="text-center py-8">
-        <h3 className="text-lg font-medium mb-2">אין חשבון Paper Trading</h3>
+        <h3 className="text-lg font-medium mb-2">No Paper Trading Account</h3>
         <p className="text-muted-foreground mb-4">
-          אין לך עדיין חשבון Paper Trading. צור אחד כדי להתחיל לתרגל מסחר ללא סיכון.
+          You don't have a Paper Trading account yet. Create one to start practicing trading without risk.
         </p>
         <Button 
           onClick={() => createAccountMutation.mutate()} 
@@ -413,12 +413,12 @@ function PaperTradingContent() {
           {createAccountMutation.isPending ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              יוצר חשבון...
+              Creating account...
             </>
           ) : (
             <>
               <PlusCircle className="h-4 w-4 mr-2" />
-              צור חשבון Paper Trading
+              Create Paper Trading Account
             </>
           )}
         </Button>
@@ -432,11 +432,11 @@ function PaperTradingContent() {
       <div className="flex flex-wrap justify-between items-center mb-6 gap-2">
         <div className="flex items-center">
           <div className="mr-4">
-            <div className="text-sm text-muted-foreground">יתרה נוכחית</div>
+            <div className="text-sm text-muted-foreground">Current Balance</div>
             <div className="text-2xl font-bold">${parseFloat(account?.currentBalance || "0").toLocaleString()}</div>
           </div>
           <div>
-            <div className="text-sm text-muted-foreground">רווח/הפסד</div>
+            <div className="text-sm text-muted-foreground">Profit/Loss</div>
             <div className={`text-xl font-semibold ${parseFloat(account?.totalProfitLoss || "0") >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               ${parseFloat(account?.totalProfitLoss || "0").toLocaleString()} 
               ({parseFloat(account?.totalProfitLossPercent || "0").toFixed(2)}%)
@@ -452,7 +452,7 @@ function PaperTradingContent() {
             disabled={isAccountLoading || isPositionsLoading || isTradesLoading}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isAccountLoading || isPositionsLoading || isTradesLoading ? 'animate-spin' : ''}`} />
-            רענן
+            Refresh
           </Button>
           <Button 
             variant="outline" 
@@ -461,7 +461,7 @@ function PaperTradingContent() {
             disabled={resetAccountMutation.isPending}
           >
             <RefreshCcw className="h-4 w-4 mr-2" />
-            אפס חשבון
+            Reset Account
           </Button>
           <Button 
             variant="default" 
@@ -469,21 +469,21 @@ function PaperTradingContent() {
             onClick={handleNewTrade}
           >
             <PlusCircle className="h-4 w-4 mr-2" />
-            עסקה חדשה
+            New Trade
           </Button>
         </div>
       </div>
 
-      {/* כרטיסיות */}
+      {/* Tabs */}
       <Tabs defaultValue="overview" value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="mb-4">
-          <TabsTrigger value="overview">סקירה כללית</TabsTrigger>
-          <TabsTrigger value="positions">פוזיציות פתוחות</TabsTrigger>
-          <TabsTrigger value="history">היסטוריית עסקאות</TabsTrigger>
-          <TabsTrigger value="analytics">ניתוח ביצועים</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="positions">Open Positions</TabsTrigger>
+          <TabsTrigger value="history">Trade History</TabsTrigger>
+          <TabsTrigger value="analytics">Performance Analytics</TabsTrigger>
         </TabsList>
         
-        {/* סקירה כללית - תצוגת Dashboard */}
+        {/* Overview Dashboard */}
         <TabsContent value="overview">
           <React.Suspense fallback={
             <div className="flex items-center justify-center h-[300px]">
@@ -494,7 +494,7 @@ function PaperTradingContent() {
           </React.Suspense>
         </TabsContent>
         
-        {/* פוזיציות פתוחות */}
+        {/* Open Positions */}
         <TabsContent value="positions">
           <React.Suspense fallback={
             <div className="flex items-center justify-center h-[300px]">
@@ -505,7 +505,7 @@ function PaperTradingContent() {
           </React.Suspense>
         </TabsContent>
         
-        {/* היסטוריית עסקאות */}
+        {/* Trade History */}
         <TabsContent value="history">
           <React.Suspense fallback={
             <div className="flex items-center justify-center h-[300px]">
@@ -516,7 +516,7 @@ function PaperTradingContent() {
           </React.Suspense>
         </TabsContent>
         
-        {/* ניתוח ביצועים */}
+        {/* Performance Analytics */}
         <TabsContent value="analytics">
           <React.Suspense fallback={
             <div className="flex items-center justify-center h-[300px]">
@@ -528,14 +528,14 @@ function PaperTradingContent() {
         </TabsContent>
       </Tabs>
 
-      {/* דיאלוג עסקה חדשה */}
-      {/* דיאלוג עסקה חדשה - אפשר להציג תמיד כי יש לו מצב open */}
+      {/* New Trade Dialog */}
+      {/* The dialog can always be rendered since it has an open state */}
       <Dialog open={isNewTradeOpen} onOpenChange={setIsNewTradeOpen}>
         <React.Suspense fallback={
           <DialogContent className="sm:max-w-md">
             <div className="flex flex-col items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin mb-4" />
-              <p className="text-center">טוען טופס יצירת עסקה...</p>
+              <p className="text-center">Loading trade form...</p>
             </div>
           </DialogContent>
         }>
@@ -815,8 +815,8 @@ export default function BinancePage() {
     refetchTickerPrices();
     refetch24hrData();
     toast({
-      title: "מרענן מחירי שוק",
-      description: "מושך נתונים עדכניים מ-Binance...",
+      title: "Refreshing Market Prices",
+      description: "Fetching latest data from Binance...",
     });
   };
   
@@ -827,8 +827,8 @@ export default function BinancePage() {
   const refreshBalances = () => {
     refetchBalances();
     toast({
-      title: "מרענן נתונים",
-      description: "מושך נתונים עדכניים מ-Binance...",
+      title: "Refreshing Data",
+      description: "Fetching latest data from Binance...",
     });
   };
 
@@ -836,8 +836,8 @@ export default function BinancePage() {
     // וידוא תקינות קלט
     if (!binanceApiKey.trim()) {
       toast({
-        title: "שגיאה",
-        description: "נא להזין מפתח API תקין",
+        title: "Error",
+        description: "Please enter a valid API key",
         variant: "destructive"
       });
       return;
@@ -845,8 +845,8 @@ export default function BinancePage() {
 
     if (!binanceSecretKey.trim()) {
       toast({
-        title: "שגיאה",
-        description: "נא להזין מפתח סודי תקין",
+        title: "Error",
+        description: "Please enter a valid Secret key",
         variant: "destructive"
       });
       return;
@@ -874,8 +874,8 @@ export default function BinancePage() {
 
       if (response.ok) {
         toast({
-          title: "מצוין!",
-          description: "מפתחות API של Binance נשמרו בהצלחה",
+          title: "Excellent!",
+          description: "Binance API keys were saved successfully",
           variant: "default"
         });
         
@@ -892,16 +892,16 @@ export default function BinancePage() {
         setTimeout(() => refetchBalances(), 1000); // קצת השהייה לפני ניסיון משיכת היתרות
       } else {
         toast({
-          title: "שגיאה בשמירת המפתחות",
-          description: data.message || "אירעה שגיאה בלתי צפויה",
+          title: "Error Saving Keys",
+          description: data.message || "An unexpected error occurred",
           variant: "destructive"
         });
       }
     } catch (error) {
       console.error("Error saving Binance API keys:", error);
       toast({
-        title: "שגיאה בשמירת המפתחות",
-        description: "אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.",
+        title: "Error Saving Keys",
+        description: "An unexpected error occurred. Please try again later.",
         variant: "destructive"
       });
     } finally {
