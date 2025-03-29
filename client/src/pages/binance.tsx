@@ -592,6 +592,25 @@ export default function BinancePage() {
     refetch: refetchBalances
   } = useQuery<BinanceBalance[]>({
     queryKey: ['/api/binance/account/balances'],
+    queryFn: async () => {
+      try {
+        console.log('Fetching Binance account balances...');
+        const res = await fetch('/api/binance/account/balances');
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          console.error('Error fetching Binance balances:', errorData);
+          throw new Error(errorData.message || 'Failed to fetch balances');
+        }
+        
+        const data = await res.json();
+        console.log('Successfully fetched Binance balances:', data.length);
+        return data;
+      } catch (error) {
+        console.error('Error in balance fetch function:', error);
+        throw error;
+      }
+    },
     enabled: !!apiStatus?.hasBinanceApiKey && !!apiStatus?.hasBinanceSecretKey,
     refetchOnWindowFocus: false,
     retry: 2, // נסה יותר פעמים במקרה של כישלון

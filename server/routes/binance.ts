@@ -35,11 +35,17 @@ async function getBinanceApiKeys(req: Request, res: Response, next: Function) {
     const apiKeys = await storage.getUserBinanceApiKeys(req.user.id);
     
     if (!apiKeys || !apiKeys.binanceApiKey || !apiKeys.binanceSecretKey) {
+      // Just for debugging
+      console.log(`User ${req.user.id} does not have Binance API keys configured. API Keys status:`, apiKeys);
+      
       return res.status(400).json({ 
         error: 'Binance API keys not configured',
         message: 'Please configure your Binance API keys first'
       });
     }
+    
+    // Log for debugging
+    console.log(`Retrieved Binance API keys for user ${req.user.id}`);
     
     // Attach the keys to the request object for use in routes
     req.binanceApiKeys = {

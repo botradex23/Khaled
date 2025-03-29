@@ -175,6 +175,9 @@ export class BinanceService {
   async getAccountBalances(): Promise<any[]> {
     try {
       console.log('Fetching real account balances from Binance API...');
+      console.log(`Using API key: ${this.apiKey.substring(0, 4)}... Secret key length: ${this.secretKey ? this.secretKey.length : 0}`);
+      console.log(`Proxy Configuration: ${VPN_CONFIG.enabled ? 'Enabled' : 'Disabled'}, Host: ${VPN_CONFIG.host}, Port: ${VPN_CONFIG.port}`);
+      
       const accountInfo = await this.getAccountInfo();
       
       // Process and enrich account balances
