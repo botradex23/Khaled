@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, ExternalLink, RefreshCw, Settings, TrendingUp } from 'lucide-react';
+import { AlertCircle, ExternalLink, RefreshCw, Settings, TrendingUp, ArrowUpDown, ArrowDown, ArrowUp, Filter } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -78,8 +78,11 @@ export default function BinancePage() {
   const [useTestnet, setUseTestnet] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
-  // משתנה לחיפוש מטבעות
+  // משתנים למיון וסינון
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<'symbol' | 'price' | 'priceChangePercent' | 'volume'>('volume');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [filterCategory, setFilterCategory] = useState<'all' | 'stablecoins' | 'defi' | 'top'>('all');
 
   // שאילתה לבדיקת סטטוס מפתחות API של Binance
   const { 
@@ -163,16 +166,67 @@ export default function BinancePage() {
       });
   }, [tickerPrices, market24hrData]);
   
-  // פילטור לפי מונח החיפוש
-  const filteredMarketPrices = useMemo(() => {
+  // חשיבה מחדש על הפילטור והסידור של נתוני שוק
+  const filteredAndSortedMarketPrices = useMemo(() => {
     if (!marketPrices) return [];
-    if (!searchTerm.trim()) return marketPrices;
     
-    const term = searchTerm.trim().toUpperCase();
-    return marketPrices.filter((ticker: MarketPriceDisplay) => 
-      ticker.symbol.includes(term)
-    );
-  }, [marketPrices, searchTerm]);
+    // 1. פילטור לפי קטגוריה
+    let filtered = [...marketPrices];
+
+    // פילטור לפי קטגוריות
+    if (filterCategory === 'stablecoins') {
+      // סטייבלקוינס - מטבעות עם יציבות מחיר
+      filtered = filtered.filter(ticker => 
+        ticker.symbol.includes('USDT') || 
+        ticker.symbol.includes('USDC') || 
+        ticker.symbol.includes('BUSD') || 
+        ticker.symbol.includes('DAI') ||
+        ticker.symbol.includes('UST')
+      );
+    } else if (filterCategory === 'defi') {
+      // טוקנים של DeFi
+      const defiTokens = ['UNI', 'AAVE', 'COMP', 'SNX', 'MKR', 'YFI', 'CAKE', 'SUSHI', '1INCH', 'CRV'];
+      filtered = filtered.filter(ticker => 
+        defiTokens.some(token => ticker.symbol.includes(token))
+      );
+    } else if (filterCategory === 'top') {
+      // מטבעות מובילים - לפי נפח מסחר
+      filtered = filtered
+        .sort((a, b) => parseFloat(b.volume) - parseFloat(a.volume))
+        .slice(0, 20);
+    }
+
+    // 2. פילטור לפי חיפוש
+    if (searchTerm.trim()) {
+      const term = searchTerm.trim().toUpperCase();
+      filtered = filtered.filter(ticker => ticker.symbol.includes(term));
+    }
+
+    // 3. מיון
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortField) {
+        case 'symbol':
+          comparison = a.symbol.localeCompare(b.symbol);
+          break;
+        case 'price':
+          comparison = parseFloat(a.price) - parseFloat(b.price);
+          break;
+        case 'priceChangePercent':
+          comparison = a.priceChangePercent - b.priceChangePercent;
+          break;
+        case 'volume':
+          comparison = parseFloat(a.volume) - parseFloat(b.volume);
+          break;
+      }
+
+      // כיוון המיון
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [marketPrices, searchTerm, sortField, sortDirection, filterCategory]);
   
   // פונקציה לרענון מחירי השוק
   const refetchMarketPrices = () => {
@@ -520,26 +574,144 @@ export default function BinancePage() {
                 </Alert>
               ) : marketPrices && marketPrices.length > 0 ? (
                 <div>
-                  <div className="mb-4">
-                    <Input
-                      placeholder="חיפוש מטבע..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="max-w-sm"
-                    />
+                  <div className="flex flex-col md:flex-row gap-4 mb-6">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="חיפוש מטבע..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant={filterCategory === 'all' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilterCategory('all')}
+                        className="flex items-center"
+                      >
+                        הכל
+                      </Button>
+                      <Button
+                        variant={filterCategory === 'top' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilterCategory('top')}
+                        className="flex items-center"
+                      >
+                        מטבעות מובילים
+                      </Button>
+                      <Button
+                        variant={filterCategory === 'stablecoins' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilterCategory('stablecoins')}
+                        className="flex items-center"
+                      >
+                        סטייבלקוינס
+                      </Button>
+                      <Button
+                        variant={filterCategory === 'defi' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilterCategory('defi')}
+                        className="flex items-center"
+                      >
+                        DeFi
+                      </Button>
+                    </div>
                   </div>
+                  
                   <div className="overflow-x-auto">
                     <table className="w-full table-auto">
                       <thead>
                         <tr className="border-b">
-                          <th className="pb-2 text-left">סמל</th>
-                          <th className="pb-2 text-right">מחיר</th>
-                          <th className="pb-2 text-right">שינוי 24 שעות</th>
-                          <th className="pb-2 text-right">מחזור מסחר 24 שעות</th>
+                          <th 
+                            className="pb-2 text-left cursor-pointer hover:text-primary"
+                            onClick={() => {
+                              if (sortField === 'symbol') {
+                                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                              } else {
+                                setSortField('symbol');
+                                setSortDirection('asc');
+                              }
+                            }}
+                          >
+                            <div className="flex items-center">
+                              סמל
+                              {sortField === 'symbol' && (
+                                <span className="ml-1">
+                                  {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                                </span>
+                              )}
+                              {sortField !== 'symbol' && <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />}
+                            </div>
+                          </th>
+                          <th 
+                            className="pb-2 text-right cursor-pointer hover:text-primary"
+                            onClick={() => {
+                              if (sortField === 'price') {
+                                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                              } else {
+                                setSortField('price');
+                                setSortDirection('desc');
+                              }
+                            }}
+                          >
+                            <div className="flex items-center justify-end">
+                              מחיר
+                              {sortField === 'price' && (
+                                <span className="ml-1">
+                                  {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                                </span>
+                              )}
+                              {sortField !== 'price' && <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />}
+                            </div>
+                          </th>
+                          <th 
+                            className="pb-2 text-right cursor-pointer hover:text-primary"
+                            onClick={() => {
+                              if (sortField === 'priceChangePercent') {
+                                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                              } else {
+                                setSortField('priceChangePercent');
+                                setSortDirection('desc');
+                              }
+                            }}
+                          >
+                            <div className="flex items-center justify-end">
+                              שינוי 24 שעות
+                              {sortField === 'priceChangePercent' && (
+                                <span className="ml-1">
+                                  {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                                </span>
+                              )}
+                              {sortField !== 'priceChangePercent' && <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />}
+                            </div>
+                          </th>
+                          <th 
+                            className="pb-2 text-right cursor-pointer hover:text-primary"
+                            onClick={() => {
+                              if (sortField === 'volume') {
+                                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                              } else {
+                                setSortField('volume');
+                                setSortDirection('desc');
+                              }
+                            }}
+                          >
+                            <div className="flex items-center justify-end">
+                              מחזור מסחר 24 שעות
+                              {sortField === 'volume' && (
+                                <span className="ml-1">
+                                  {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                                </span>
+                              )}
+                              {sortField !== 'volume' && <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />}
+                            </div>
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredMarketPrices.map((ticker: MarketPriceDisplay) => (
+                        {filteredAndSortedMarketPrices.map((ticker: MarketPriceDisplay) => (
                           <tr key={ticker.symbol} className="border-b">
                             <td className="py-3 font-medium">{ticker.symbol}</td>
                             <td className="py-3 text-right">${parseFloat(ticker.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}</td>
@@ -561,7 +733,7 @@ export default function BinancePage() {
             </CardContent>
             <CardFooter className="flex justify-between">
               <div className="text-sm text-muted-foreground">
-                {filteredMarketPrices.length ? `מציג ${filteredMarketPrices.length} מטבעות מתוך ${marketPrices?.length || 0}` : ''}
+                {filteredAndSortedMarketPrices.length ? `מציג ${filteredAndSortedMarketPrices.length} מטבעות מתוך ${marketPrices?.length || 0}` : ''}
               </div>
             </CardFooter>
           </Card>

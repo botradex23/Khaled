@@ -1,88 +1,6 @@
 {
   "decisionHistory": [
     {
-      "action": "HOLD",
-      "confidence": 0.7,
-      "reason": "No clear signal, maintaining position",
-      "timestamp": 1743102642844,
-      "symbol": "XRP-USDT",
-      "price": 2.3224,
-      "strategy": "COUNTER_TREND",
-      "parameters": {
-        "trendStrengthThreshold": 0.7,
-        "stopLossPercent": 3,
-        "takeProfitPercent": 6
-      },
-      "tradingSignals": {
-        "reinforcementLearning": "HOLD",
-        "genetic": "BUY",
-        "technicalIndicators": "SELL"
-      },
-      "marketState": "DOWNTREND",
-      "predictions": {
-        "shortTerm": "DOWN",
-        "longTerm": "DOWN"
-      }
-    },
-    {
-      "action": "BUY",
-      "confidence": 0.8333333333333333,
-      "reason": "Multiple signals indicate buying opportunity",
-      "timestamp": 1743102758142,
-      "symbol": "BTC-USDT",
-      "price": 86440,
-      "strategy": "GRID_MEDIUM",
-      "parameters": {
-        "gridParams": {
-          "upperPrice": 108,
-          "lowerPrice": 92,
-          "gridCount": 8,
-          "investmentPerGrid": 125
-        },
-        "stopLossPercent": 4,
-        "takeProfitPercent": 8
-      },
-      "tradingSignals": {
-        "reinforcementLearning": "BUY",
-        "genetic": "BUY",
-        "technicalIndicators": "HOLD"
-      },
-      "marketState": "DOWNTREND",
-      "predictions": {
-        "shortTerm": "DOWN",
-        "longTerm": "DOWN"
-      }
-    },
-    {
-      "action": "BUY",
-      "confidence": 0.51,
-      "reason": "Forced trade due to time interval - weighted buy signal",
-      "timestamp": 1743102760616,
-      "symbol": "ETH-USDT",
-      "price": 2004.3,
-      "strategy": "GRID_MEDIUM",
-      "parameters": {
-        "gridParams": {
-          "lowerPrice": 87096.97910682613,
-          "upperPrice": 92191.94628108245,
-          "gridCount": 9,
-          "investmentPerGrid": 83.94728677740416
-        },
-        "stopLossPercent": 1.378683597009092,
-        "takeProfitPercent": 4.774982855613569
-      },
-      "tradingSignals": {
-        "reinforcementLearning": "HOLD",
-        "genetic": "BUY",
-        "technicalIndicators": "HOLD"
-      },
-      "marketState": "SIDEWAYS",
-      "predictions": {
-        "shortTerm": "SIDEWAYS",
-        "longTerm": "SIDEWAYS"
-      }
-    },
-    {
       "action": "BUY",
       "confidence": 0.8333333333333333,
       "reason": "Multiple signals indicate buying opportunity",
@@ -28614,9 +28532,96 @@
         "shortTerm": "UP",
         "longTerm": "SIDEWAYS"
       }
+    },
+    {
+      "action": "BUY",
+      "confidence": 0.51,
+      "reason": "Forced trade due to time interval - weighted buy signal",
+      "timestamp": 1743210151509,
+      "symbol": "BTC-USDT",
+      "price": 83371.5,
+      "strategy": "GRID_MEDIUM",
+      "parameters": {
+        "gridParams": {
+          "lowerPrice": 90824.81283524715,
+          "upperPrice": 96111.9556643465,
+          "gridCount": 6,
+          "investmentPerGrid": 106.41206184465536
+        },
+        "stopLossPercent": 4.518923137520224,
+        "takeProfitPercent": 5.878343315673041
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "HOLD",
+        "genetic": "BUY",
+        "technicalIndicators": "HOLD"
+      },
+      "marketState": "SIDEWAYS",
+      "predictions": {
+        "shortTerm": "SIDEWAYS",
+        "longTerm": "SIDEWAYS"
+      }
+    },
+    {
+      "action": "SELL",
+      "confidence": 0.51,
+      "reason": "Forced trade due to time interval - weighted sell signal",
+      "timestamp": 1743210153736,
+      "symbol": "ETH-USDT",
+      "price": 1896.9,
+      "strategy": "GRID_NARROW",
+      "parameters": {
+        "gridParams": {
+          "upperPrice": 103,
+          "lowerPrice": 97,
+          "gridCount": 10,
+          "investmentPerGrid": 100
+        },
+        "stopLossPercent": 2,
+        "takeProfitPercent": 5
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "HOLD",
+        "genetic": "BUY",
+        "technicalIndicators": "SELL"
+      },
+      "marketState": "SIDEWAYS",
+      "predictions": {
+        "shortTerm": "SIDEWAYS",
+        "longTerm": "SIDEWAYS"
+      }
+    },
+    {
+      "action": "BUY",
+      "confidence": 0.8333333333333333,
+      "reason": "Multiple signals indicate buying opportunity",
+      "timestamp": 1743210155978,
+      "symbol": "XRP-USDT",
+      "price": 2.3024,
+      "strategy": "GRID_MEDIUM",
+      "parameters": {
+        "gridParams": {
+          "upperPrice": 108,
+          "lowerPrice": 92,
+          "gridCount": 8,
+          "investmentPerGrid": 125
+        },
+        "stopLossPercent": 4,
+        "takeProfitPercent": 8
+      },
+      "tradingSignals": {
+        "reinforcementLearning": "BUY",
+        "genetic": "BUY",
+        "technicalIndicators": "SELL"
+      },
+      "marketState": "WEAK_UPTREND",
+      "predictions": {
+        "shortTerm": "UP",
+        "longTerm": "SIDEWAYS"
+      }
     }
   ],
   "executionHistory": [],
   "lastLearnTime": 1743207418423,
-  "lastSaved": "2025-03-29T00:50:52.750Z"
+  "lastSaved": "2025-03-29T01:02:37.979Z"
 }
