@@ -53,11 +53,14 @@ export class BinanceService {
     
     const config = {
       headers: {
-        'X-MBX-APIKEY': this.apiKey
-      }
+        'X-MBX-APIKEY': this.apiKey,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      timeout: 15000 // 15 seconds timeout
     };
     
     try {
+      console.log(`Making authenticated Binance API request to ${endpoint} (${method})`);
       let response;
       
       if (method === 'GET') {
@@ -70,8 +73,15 @@ export class BinanceService {
       
       return response?.data;
     } catch (error: any) {
-      console.error('Binance API Error:', error.response?.data || error.message);
-      throw new Error(`Binance API Error: ${JSON.stringify(error.response?.data || error.message)}`);
+      // Extract more detailed error information
+      const errorData = error.response?.data;
+      const errorMessage = errorData?.msg || error.message || 'Unknown error';
+      const errorCode = errorData?.code || error.code || 'UNKNOWN';
+      
+      console.error(`Binance API Error (${endpoint}): Code: ${errorCode}, Message: ${errorMessage}`);
+      
+      // Provide more meaningful error to client
+      throw new Error(`Binance API Error: ${errorMessage} (Code: ${errorCode})`);
     }
   }
 
@@ -80,12 +90,27 @@ export class BinanceService {
     const queryParams = new URLSearchParams(params);
     const url = `${this.baseUrl}${endpoint}?${queryParams.toString()}`;
     
+    const config = {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      timeout: 10000 // 10 seconds timeout
+    };
+    
     try {
-      const response = await axios.get(url);
+      console.log(`Making public Binance API request to ${endpoint}`);
+      const response = await axios.get(url, config);
       return response.data;
     } catch (error: any) {
-      console.error('Binance API Error:', error.response?.data || error.message);
-      throw new Error(`Binance API Error: ${JSON.stringify(error.response?.data || error.message)}`);
+      // Extract more detailed error information
+      const errorData = error.response?.data;
+      const errorMessage = errorData?.msg || error.message || 'Unknown error';
+      const errorCode = errorData?.code || error.code || 'UNKNOWN';
+      
+      console.error(`Binance API Error (${endpoint}): Code: ${errorCode}, Message: ${errorMessage}`);
+      
+      // Provide more meaningful error to client
+      throw new Error(`Binance API Error: ${errorMessage} (Code: ${errorCode})`);
     }
   }
 
@@ -247,9 +272,13 @@ export class BinanceService {
   async testConnectivity(): Promise<{ success: boolean; message?: string }> {
     try {
       // Try to get account information as a connectivity test
-      await this.getAccountInfo();
+      console.log(`Testing Binance API connectivity with API key: ${this.apiKey.substring(0, 4)}... to ${this.baseUrl}`);
+      await this.ping();  // First check if the API server is reachable
+      const accountInfo = await this.getAccountInfo();
+      console.log(`Successfully connected to Binance API. Account has ${accountInfo.balances?.length || 0} balances.`);
       return { success: true };
     } catch (error: any) {
+      console.error('Binance connectivity test failed:', error.message);
       return { 
         success: false, 
         message: error.message 

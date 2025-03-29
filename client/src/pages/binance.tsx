@@ -510,18 +510,25 @@ function PaperTradingContent() {
       </Tabs>
 
       {/* דיאלוג עסקה חדשה */}
-      <Dialog open={isNewTradeOpen} onOpenChange={setIsNewTradeOpen}>
+      {/* עטיפת הדיאלוג ב-div כדי לוודא טעינה תקינה */}
+      {isNewTradeOpen && (
         <React.Suspense fallback={
-          <DialogContent className="sm:max-w-md">
-            <div className="flex flex-col items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin mb-4" />
-              <p className="text-center">טוען טופס יצירת עסקה...</p>
-            </div>
-          </DialogContent>
+          <Dialog open={true}>
+            <DialogContent className="sm:max-w-md">
+              <div className="flex flex-col items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                <p className="text-center">טוען טופס יצירת עסקה...</p>
+              </div>
+            </DialogContent>
+          </Dialog>
         }>
-          <NewTradeDialog onClose={() => setIsNewTradeOpen(false)} />
+          <NewTradeDialog 
+            open={isNewTradeOpen} 
+            onOpenChange={(open) => setIsNewTradeOpen(open)} 
+            accountId={paperTradingAccount?.id}
+          />
         </React.Suspense>
-      </Dialog>
+      )}
     </div>
   );
 }
