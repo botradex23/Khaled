@@ -20,7 +20,11 @@ export const users = pgTable("users", {
   okxSecretKey: text("okx_secret_key"),
   okxPassphrase: text("okx_passphrase"),
   
-  // Default broker for trading (e.g., 'okx', 'bitget')
+  // Binance API credentials
+  binanceApiKey: text("binance_api_key"),
+  binanceSecretKey: text("binance_secret_key"),
+  
+  // Default broker for trading (e.g., 'okx', 'binance')
   defaultBroker: text("default_broker").default("okx"),
   
   // Whether to use demo/test mode
@@ -43,6 +47,8 @@ export const insertUserSchema = createInsertSchema(users)
     okxApiKey: z.string().optional(),
     okxSecretKey: z.string().optional(),
     okxPassphrase: z.string().optional(),
+    binanceApiKey: z.string().optional(),
+    binanceSecretKey: z.string().optional(),
     useTestnet: z.boolean().default(true),
     defaultBroker: z.string().default("okx"),
   })

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import { 
   Menu, 
   X, 
@@ -37,7 +38,8 @@ import {
   ExternalLink,
   KeyRound,
   Save,
-  Loader2
+  Loader2,
+  Check
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -52,6 +54,28 @@ export default function Header() {
   const [binanceSecretKey, setBinanceSecretKey] = useState("");
   const [useTestnet, setUseTestnet] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasBinanceKeys, setHasBinanceKeys] = useState(false);
+
+  // Query to check if the user has Binance API keys configured
+  const { data: binanceApiKeysData, isLoading: binanceApiKeysLoading, refetch: refetchBinanceApiKeys } = useQuery({
+    queryKey: ['/api/users/binance-api-keys'],
+    queryFn: async () => {
+      if (!isAuthenticated) return null;
+      const response = await fetch('/api/users/binance-api-keys');
+      if (!response.ok) throw new Error('Failed to fetch Binance API keys status');
+      return response.json();
+    },
+    enabled: isAuthenticated,
+    retry: 0,
+    refetchOnWindowFocus: false
+  });
+
+  // Update state when data is loaded
+  useEffect(() => {
+    if (binanceApiKeysData && !binanceApiKeysLoading) {
+      setHasBinanceKeys(binanceApiKeysData.hasBinanceApiKey && binanceApiKeysData.hasBinanceSecretKey);
+    }
+  }, [binanceApiKeysData, binanceApiKeysLoading]);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -111,6 +135,9 @@ export default function Header() {
         setShowBinanceDialog(false);
         setBinanceApiKey("");
         setBinanceSecretKey("");
+        
+        // Refresh the API keys data to update the UI
+        refetchBinanceApiKeys();
       } else {
         toast({
           title: "שגיאה בשמירת המפתחות",
@@ -173,11 +200,15 @@ export default function Header() {
           <div className="flex items-center">
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                {/* Binance Button with "NEW" Badge */}
+                {/* Binance Button with badge showing status */}
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="flex items-center mr-2 font-medium border-yellow-500 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700"
+                  className={`flex items-center mr-2 font-medium ${
+                    hasBinanceKeys 
+                      ? "border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700" 
+                      : "border-yellow-500 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700"
+                  }`}
                   onClick={() => {
                     // Open Binance API modal
                     setShowBinanceDialog(true);
@@ -189,9 +220,13 @@ export default function Header() {
                     className="w-4 h-4 mr-1.5"
                   />
                   Binance
-                  <Badge variant="outline" className="ml-1.5 py-0 h-4 text-[10px] font-bold px-1.5 bg-yellow-100 text-yellow-800 border-yellow-400">
-                    חדש
-                  </Badge>
+                  {hasBinanceKeys ? (
+                    <Check className="ml-1 h-3.5 w-3.5 text-green-600" />
+                  ) : (
+                    <Badge variant="outline" className="ml-1.5 py-0 h-4 text-[10px] font-bold px-1.5 bg-yellow-100 text-yellow-800 border-yellow-400">
+                      חדש
+                    </Badge>
+                  )}
                 </Button>
                 
                 {!isMobile && (
@@ -267,10 +302,14 @@ export default function Header() {
         {isMobile && isOpen && (
           <div className="md:hidden mt-4 py-4 border-t border-border">
             <nav className="flex flex-col space-y-4">
-              {/* Binance option for mobile */}
+              {/* Binance option for mobile with status indicator */}
               {isAuthenticated && (
                 <div 
-                  className="flex items-center cursor-pointer text-sm font-medium text-yellow-600 hover:text-yellow-700"
+                  className={`flex items-center cursor-pointer text-sm font-medium px-2.5 py-1.5 rounded ${
+                    hasBinanceKeys 
+                      ? "text-green-600 hover:text-green-700 bg-green-50" 
+                      : "text-yellow-600 hover:text-yellow-700 bg-yellow-50"
+                  }`}
                   onClick={() => {
                     closeMenu();
                     setShowBinanceDialog(true);
@@ -282,9 +321,13 @@ export default function Header() {
                     className="w-4 h-4 mr-2"
                   />
                   Binance
-                  <Badge variant="outline" className="ml-1.5 py-0 h-4 text-[10px] font-bold px-1.5 bg-yellow-100 text-yellow-800 border-yellow-400">
-                    חדש
-                  </Badge>
+                  {hasBinanceKeys ? (
+                    <Check className="ml-1 h-3.5 w-3.5 text-green-600" />
+                  ) : (
+                    <Badge variant="outline" className="ml-1.5 py-0 h-4 text-[10px] font-bold px-1.5 bg-yellow-100 text-yellow-800 border-yellow-400">
+                      חדש
+                    </Badge>
+                  )}
                 </div>
               )}
               
@@ -320,7 +363,14 @@ export default function Header() {
               הגדר מפתחות API של Binance
             </DialogTitle>
             <DialogDescription>
-              הזן את מפתחות ה-API של Binance שלך כדי להתחיל לקבל ולנתח ממשק לחשבון שלך ב-Binance.
+              {hasBinanceKeys ? (
+                <div className="flex items-center text-green-600 mt-1">
+                  <Check className="h-4 w-4 mr-1.5" />
+                  <span>מפתחות ה-API של Binance כבר הוגדרו. אתה יכול לעדכן אותם כאן.</span>
+                </div>
+              ) : (
+                <span>הזן את מפתחות ה-API של Binance שלך כדי להתחיל לקבל ולנתח ממשק לחשבון שלך ב-Binance.</span>
+              )}
             </DialogDescription>
           </DialogHeader>
           
@@ -379,7 +429,11 @@ export default function Header() {
               type="submit" 
               onClick={saveBinanceApiKeys}
               disabled={isSaving}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+              className={`${
+                hasBinanceKeys 
+                  ? "bg-green-500 hover:bg-green-600" 
+                  : "bg-yellow-500 hover:bg-yellow-600"
+              } text-white`}
             >
               {isSaving ? (
                 <>

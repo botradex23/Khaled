@@ -22,7 +22,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
   
-  // New API key related methods
+  // OKX API key related methods
   updateUserApiKeys(
     userId: number, 
     apiKeys: { 
@@ -40,6 +40,20 @@ export interface IStorage {
     okxPassphrase?: string | null;
     defaultBroker: string;
     useTestnet: boolean;
+  } | undefined>;
+  
+  // Binance API key related methods
+  updateUserBinanceApiKeys(
+    userId: number,
+    apiKeys: {
+      binanceApiKey?: string;
+      binanceSecretKey?: string;
+    }
+  ): Promise<User | undefined>;
+  
+  getUserBinanceApiKeys(userId: number): Promise<{
+    binanceApiKey?: string | null;
+    binanceSecretKey?: string | null;
   } | undefined>;
   
   clearUserApiKeys(userId: number): Promise<boolean>;
@@ -119,6 +133,8 @@ export class MemStorage implements IStorage {
       okxApiKey: null,
       okxSecretKey: null,
       okxPassphrase: null,
+      binanceApiKey: null,
+      binanceSecretKey: null,
       
       // Default broker settings
       defaultBroker: "okx",
@@ -148,6 +164,10 @@ export class MemStorage implements IStorage {
       okxApiKey: process.env.OKX_API_KEY || "",
       okxSecretKey: process.env.OKX_SECRET_KEY || "",
       okxPassphrase: process.env.OKX_PASSPHRASE || "",
+      
+      // Add Binance API keys
+      binanceApiKey: process.env.BYBIT_API_KEY || "", // Using Bybit for testing as users will provide their own in production
+      binanceSecretKey: process.env.BYBIT_SECRET_KEY || "",
       
       // Always use testnet for safety
       defaultBroker: "okx",
@@ -359,6 +379,8 @@ export class MemStorage implements IStorage {
       okxApiKey: null,
       okxSecretKey: null,
       okxPassphrase: null,
+      binanceApiKey: null,
+      binanceSecretKey: null,
       
       // Default broker settings
       defaultBroker: insertUser.defaultBroker || "okx",
@@ -395,6 +417,14 @@ export class MemStorage implements IStorage {
     
     if (insertUser.okxPassphrase) {
       user.okxPassphrase = insertUser.okxPassphrase;
+    }
+    
+    if (insertUser.binanceApiKey) {
+      user.binanceApiKey = insertUser.binanceApiKey;
+    }
+    
+    if (insertUser.binanceSecretKey) {
+      user.binanceSecretKey = insertUser.binanceSecretKey;
     }
     
     this.users.set(id, user);
@@ -522,6 +552,88 @@ export class MemStorage implements IStorage {
     return apiKeyResponse;
   }
   
+  // Binance API key methods
+  async updateUserBinanceApiKeys(
+    userId: number,
+    apiKeys: {
+      binanceApiKey?: string;
+      binanceSecretKey?: string;
+    }
+  ): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    
+    if (!user) {
+      console.log(`updateUserBinanceApiKeys: User with ID ${userId} not found`);
+      return undefined;
+    }
+    
+    console.log(`updateUserBinanceApiKeys for user ${userId} (${user.email}):`);
+    console.log("  Received Binance API key type:", typeof apiKeys.binanceApiKey);
+    console.log("  Received Binance API key undefined check:", apiKeys.binanceApiKey === undefined);
+    console.log("  Received Binance API key empty string check:", apiKeys.binanceApiKey === "");
+    console.log("  Received Binance API key length:", apiKeys.binanceApiKey ? apiKeys.binanceApiKey.length : "N/A");
+
+    // Handle the special cases for empty strings or strings with only whitespace to convert them to null
+    // This makes the API behavior more consistent across the app
+    const sanitizedBinanceApiKey = !apiKeys.binanceApiKey || apiKeys.binanceApiKey.trim() === "" ? null : apiKeys.binanceApiKey;
+    const sanitizedBinanceSecretKey = !apiKeys.binanceSecretKey || apiKeys.binanceSecretKey.trim() === "" ? null : apiKeys.binanceSecretKey;
+    
+    // Update the API keys
+    const updatedUser: User = {
+      ...user,
+      // Only update if value is not undefined (explicitly provided)
+      // This preserves previous values if a field wasn't specified
+      binanceApiKey: sanitizedBinanceApiKey !== undefined ? sanitizedBinanceApiKey : user.binanceApiKey,
+      binanceSecretKey: sanitizedBinanceSecretKey !== undefined ? sanitizedBinanceSecretKey : user.binanceSecretKey
+    };
+    
+    console.log("updateUserBinanceApiKeys - User values after update:", {
+      hasBinanceApiKey: !!updatedUser.binanceApiKey,
+      hasBinanceSecretKey: !!updatedUser.binanceSecretKey
+    });
+    
+    // Save the updated user
+    this.users.set(userId, updatedUser);
+    
+    return updatedUser;
+  }
+  
+  async getUserBinanceApiKeys(userId: number): Promise<{
+    binanceApiKey: string | null;
+    binanceSecretKey: string | null;
+  } | undefined> {
+    const user = this.users.get(userId);
+    
+    if (!user) {
+      console.log(`getUserBinanceApiKeys: User with ID ${userId} not found`);
+      return undefined;
+    }
+    
+    // Log the user properties and API key info for debugging
+    console.log(`getUserBinanceApiKeys for user ${userId} (${user.email}):`);
+    console.log("  Binance API key type:", typeof user.binanceApiKey);
+    console.log("  Binance API key null check:", user.binanceApiKey === null);
+    console.log("  Binance API key undefined check:", user.binanceApiKey === undefined);
+    console.log("  Binance API key empty string check:", user.binanceApiKey === "");
+    console.log("  Binance API key length:", user.binanceApiKey ? user.binanceApiKey.length : "N/A");
+    
+    // Prepare for response ensuring type consistency
+    const apiKeyResponse = {
+      // Always return null if there's no meaningful value (null, undefined, or empty string)
+      // This ensures consistent return types and makes client-side checks more reliable
+      binanceApiKey: !user.binanceApiKey || user.binanceApiKey.trim() === '' ? null : user.binanceApiKey,
+      binanceSecretKey: !user.binanceSecretKey || user.binanceSecretKey.trim() === '' ? null : user.binanceSecretKey
+    };
+    
+    // Log what we're returning (excluding secret values) for debugging
+    console.log("getUserBinanceApiKeys return value:", {
+      hasBinanceApiKey: !!apiKeyResponse.binanceApiKey,
+      hasBinanceSecretKey: !!apiKeyResponse.binanceSecretKey
+    });
+    
+    return apiKeyResponse;
+  }
+
   async clearUserApiKeys(userId: number): Promise<boolean> {
     const user = this.users.get(userId);
     
@@ -531,12 +643,14 @@ export class MemStorage implements IStorage {
     
     console.log(`Clearing API keys for user ID ${userId} (${user.email || 'unknown email'})`);
     
-    // Clear all API keys
+    // Clear all API keys - both OKX and Binance
     const updatedUser: User = {
       ...user,
       okxApiKey: null,
       okxSecretKey: null,
-      okxPassphrase: null
+      okxPassphrase: null,
+      binanceApiKey: null,
+      binanceSecretKey: null
     };
     
     // Save the updated user
