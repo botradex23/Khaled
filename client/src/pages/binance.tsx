@@ -711,16 +711,11 @@ export default function BinancePage() {
           autoConnectWithSavedKeys();
         }
       } else {
-        // אם המפתחות לא תקינים, יש להציג למשתמש הודעה ולפתוח את חלונית המפתחות
+        // אם המפתחות לא תקינים, רק נרשום לקונסול ללא הצגת התראה
         console.log("המפתחות השמורים אינם תקינים או חסרים");
-        if (!isApiKeysDialogOpen) {
-          toast({
-            title: "נדרש להזין מפתחות Binance API",
-            description: "המפתחות השמורים אינם תקינים או חסרים. אנא הזן מפתחות חדשים.",
-            variant: "destructive"
-          });
-          setIsApiKeysDialogOpen(true);
-        }
+        
+        // לא מציגים הודעה אוטומטית או פותחים חלונית, נאפשר למשתמש ללחוץ על כפתור הגדרות API בעצמו
+        // המשתמש יוכל להגדיר את המפתחות דרך כפתור "הגדרות API" בראש הדף
       }
     }
   }, [savedApiKeys, binanceAllowedIp, keysInitialized, refetchApiStatus, toast, isApiKeysDialogOpen]);
