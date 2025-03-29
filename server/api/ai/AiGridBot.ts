@@ -490,18 +490,46 @@ export class AiGridBotManager {
       throw new Error(`AI grid bot with ID ${botId} not found`);
     }
     
+    // משתנים כדי לעקוב אחרי מחזורים שרצים
+    let tradingCycleInProgress = false;
+    let gridUpdateInProgress = false;
+    
     // טיימר למחזור מסחר רגיל
     const tradingTimer = setInterval(() => {
-      this.executeTradingCycle(botId).catch(err => {
-        console.error(`Error in trading cycle for bot ${botId}: ${err}`);
-      });
+      // אם יש כבר מחזור שרץ, נדלג על זה כדי למנוע מהמערכת לעבוד קשה מדי
+      if (tradingCycleInProgress) {
+        console.log(`Skipping trading cycle for bot ${botId} - previous cycle still running`);
+        return;
+      }
+      
+      tradingCycleInProgress = true;
+      
+      this.executeTradingCycle(botId)
+        .catch(err => {
+          console.error(`Error in trading cycle for bot ${botId}: ${err}`);
+        })
+        .finally(() => {
+          tradingCycleInProgress = false;
+        });
     }, 60000); // בדיקה כל דקה
     
     // טיימר לעדכון רשת
     const gridUpdateTimer = setInterval(() => {
-      this.updateGrid(botId).catch(err => {
-        console.error(`Error updating grid for bot ${botId}: ${err}`);
-      });
+      // אם יש כבר עדכון שרץ, נדלג על זה
+      if (gridUpdateInProgress) {
+        console.log(`Skipping grid update for bot ${botId} - previous update still running`);
+        return;
+      }
+      
+      gridUpdateInProgress = true;
+      
+      this.updateGrid(botId)
+        .catch(err => {
+          console.error(`Error updating grid for bot ${botId}: ${err}`);
+        })
+        .finally(() => {
+          gridUpdateInProgress = false;
+        });
     }, botData.params.updateInterval || 3600000); // עדכון כל שעה כברירת מחדל
     
     // הוספת הטיימרים למסד הנתונים
@@ -650,9 +678,12 @@ export class AiGridBotManager {
           const orderType = 'market';
           const amount = '0.001'; // כמות קטנה לדוגמה
           
+          // המר את הפעולה לפורמט שמתקבל ע"י ה-API
+          const side = finalAction === 'BUY' ? 'buy' : 'sell';
+          
           const result = await okxService.placeOrder(
             symbol,
-            finalAction.toLowerCase(),
+            side,
             orderType,
             amount
           );

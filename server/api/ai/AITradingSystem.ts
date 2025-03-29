@@ -1059,6 +1059,11 @@ export class AITradingSystem {
   /**
    * התחלת מערכת המסחר האוטומטית
    */
+  // שמירת מזהי ה-intervals כדי שנוכל לעצור אותם בצורה מסודרת
+  private tradingInterval: NodeJS.Timeout | null = null;
+  private saveDataInterval: NodeJS.Timeout | null = null;
+  private cycleInProgress: boolean = false;
+
   public async start(): Promise<void> {
     if (this.isRunning) {
       console.log('AI trading system is already running');
@@ -1085,6 +1090,7 @@ export class AITradingSystem {
         this.readyToTrade = false;
         return;
       }
+      
       // הכנת המערכת - איסוף נתונים התחלתי
       console.log('Preparing system - collecting initial data...');
       
@@ -1103,23 +1109,59 @@ export class AITradingSystem {
       this.readyToTrade = true;
       console.log('AI trading system ready - starting trading cycles');
       
-      // הרצת מחזורי מסחר
-      setInterval(async () => {
-        if (!this.isRunning || !this.readyToTrade) return;
-        
-        for (const symbol of this.config.symbols) {
-          await this.runTradingCycle(symbol);
-          // המתנה קצרה בין מחזורי מסחר של סמלים שונים
-          await new Promise(resolve => setTimeout(resolve, 2000));
+      // נשמור את הנתונים בתדירות נמוכה יותר מאשר המסחר עצמו
+      this.saveDataInterval = setInterval(() => {
+        if (this.isRunning && this.readyToTrade) {
+          try {
+            this.saveData();
+          } catch (error) {
+            console.error('Error saving AI trading data:', error);
+          }
         }
+      }, 10 * 60 * 1000); // שמירת נתונים כל 10 דקות במקום בכל מחזור
+      
+      // הרצת מחזורי מסחר
+      this.tradingInterval = setInterval(async () => {
+        if (!this.isRunning || !this.readyToTrade || this.cycleInProgress) return;
         
-        // שמירת נתונים מעודכנים
-        this.saveData();
+        try {
+          this.cycleInProgress = true;
+          
+          for (const symbol of this.config.symbols) {
+            try {
+              await this.runTradingCycle(symbol);
+              // המתנה קצרה בין מחזורי מסחר של סמלים שונים
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            } catch (err) {
+              console.error(`Error in trading cycle for ${symbol}:`, err);
+              // נמשיך לסמל הבא גם אם יש שגיאה בסמל הנוכחי
+            }
+          }
+        } catch (error) {
+          console.error('Error in trading cycle:', error);
+        } finally {
+          this.cycleInProgress = false;
+        }
       }, 2 * 60 * 1000); // הרצת מחזור מסחר כל 2 דקות
+      
     } catch (error) {
       console.error(`Error starting AI trading system: ${error}`);
       this.isRunning = false;
       this.readyToTrade = false;
+      this.cleanupIntervals();
+    }
+  }
+  
+  // ניקוי intervals בצורה מסודרת
+  private cleanupIntervals(): void {
+    if (this.tradingInterval) {
+      clearInterval(this.tradingInterval);
+      this.tradingInterval = null;
+    }
+    
+    if (this.saveDataInterval) {
+      clearInterval(this.saveDataInterval);
+      this.saveDataInterval = null;
     }
   }
   
@@ -1136,8 +1178,17 @@ export class AITradingSystem {
     this.isRunning = false;
     this.readyToTrade = false;
     
+    // ניקוי כל ה-intervals
+    this.cleanupIntervals();
+    
     // שמירת נתונים לפני עצירה
-    this.saveData();
+    try {
+      this.saveData();
+    } catch (error) {
+      console.error('Error saving data on shutdown:', error);
+    }
+    
+    console.log('AI trading system stopped successfully');
   }
   
   /**
