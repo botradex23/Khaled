@@ -38,6 +38,15 @@ export class OkxService {
   }
   
   /**
+   * Check if the service has empty credentials
+   * This is used by the AI trading system to avoid making API calls with empty credentials
+   * @returns boolean indicating if API keys are empty
+   */
+  hasEmptyCredentials(): boolean {
+    return !(this.apiKey && this.secretKey && this.passphrase);
+  }
+  
+  /**
    * Get the base URL
    * Used by diagnostic tools to check connectivity
    */
