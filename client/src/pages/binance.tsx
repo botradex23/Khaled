@@ -600,14 +600,16 @@ export default function BinancePage() {
     message: string;
   }
 
-  // שליפת מפתחות ה-API השמורים אוטומטית בטעינת הדף
+  // שליפת מפתחות ה-API השמורים אוטומטית בטעינת הדף - בלי תלות בסטטוס
+  const queryClient = useQueryClient();
   const {
     data: savedApiKeys,
     isLoading: savedApiKeysLoading
   } = useQuery<BinanceApiKeysResponse>({
     queryKey: ['/api/binance/api-keys/full'],
-    enabled: !!user && apiStatus?.hasBinanceApiKey === true && apiStatus?.hasBinanceSecretKey === true,
+    enabled: !!user, // רק בודק שהמשתמש מחובר, בלי תלות בסטטוס API
     refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 5, // להימנע מבקשות חוזרות ונשנות לקבלת המפתחות
     queryFn: async () => {
       const response = await fetch('/api/binance/api-keys/full', {
         method: 'GET',
@@ -876,13 +878,16 @@ export default function BinancePage() {
           variant: "default"
         });
         
-        // סגירת הדיאלוג ואיפוס שדות
+        // סגירת הדיאלוג ושמירת ערכים - לא לאפס אותם כדי שיהיו זמינים בפעם הבאה
         setIsApiKeysDialogOpen(false);
-        setBinanceApiKey("");
-        setBinanceSecretKey("");
         
         // רענון הנתונים
         refetchApiStatus();
+        
+        // רענון הנתונים של API keys כדי שיהיו זמינים למשתמש בפעם הבאה
+        queryClient.invalidateQueries({ queryKey: ['/api/binance/api-keys/full'] });
+        
+        // רענון נתוני החשבון לאחר השהייה קלה
         setTimeout(() => refetchBalances(), 1000); // קצת השהייה לפני ניסיון משיכת היתרות
       } else {
         toast({
