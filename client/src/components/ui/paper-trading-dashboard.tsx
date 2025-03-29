@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, DollarSign, TrendingUp, TrendingDown, BarChart3, LineChart, ArrowUpDown, RefreshCw } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
 import type { PaperTradingAccount, PaperTradingPosition, PaperTradingTrade } from '@shared/schema';
+import ResetPaperAccountDialog from './reset-paper-account-dialog';
 
 interface PaperTradingDashboardProps {
   account: PaperTradingAccount;
@@ -189,10 +189,13 @@ export default function PaperTradingDashboard({ account }: PaperTradingDashboard
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Recent Activity</CardTitle>
-              <Button variant="outline" size="sm" onClick={refreshAllData}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
+              <div className="flex items-center space-x-2">
+                <ResetPaperAccountDialog accountId={account.id} />
+                <Button variant="outline" size="sm" onClick={refreshAllData}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
             </div>
             <CardDescription>Your most recent trading activity</CardDescription>
           </CardHeader>

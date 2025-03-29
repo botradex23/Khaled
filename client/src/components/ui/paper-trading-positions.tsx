@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Loader2, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import type { PaperTradingAccount, PaperTradingPosition } from '@shared/schema';
 import {
@@ -14,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import NewPaperTradeDialog from './new-paper-trade-dialog';
 
 interface PaperTradingPositionsProps {
   account: PaperTradingAccount;
@@ -118,15 +118,18 @@ export default function PaperTradingPositions({ account }: PaperTradingPositions
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Open Positions</CardTitle>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => refetchPositions()}
-            disabled={isLoading}
-          >
-            <Loader2 className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center space-x-2">
+            <NewPaperTradeDialog accountId={account.id} />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => refetchPositions()}
+              disabled={isLoading}
+            >
+              <Loader2 className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
         <CardDescription>Your currently active trading positions</CardDescription>
       </CardHeader>
