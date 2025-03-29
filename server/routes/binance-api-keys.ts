@@ -184,14 +184,25 @@ router.get('/full', ensureAuthenticated, async (req: Request, res: Response) => 
       });
     }
     
-    // Send the actual keys - this is secure because it's only for authenticated users
-    // and it's needed for the client to make API calls
+    // ניקוי המפתחות מרווחים וודא שהם בפורמט תקין
+    const cleanApiKey = apiKeys.binanceApiKey ? apiKeys.binanceApiKey.trim() : '';
+    const cleanSecretKey = apiKeys.binanceSecretKey ? apiKeys.binanceSecretKey.trim() : '';
+    const cleanAllowedIp = apiKeys.binanceAllowedIp ? apiKeys.binanceAllowedIp.trim() : '';
+    
+    // בדיקה אם המפתחות בפורמט תקין
+    const isApiKeyValid = cleanApiKey && cleanApiKey.length >= 10;
+    const isSecretKeyValid = cleanSecretKey && cleanSecretKey.length >= 10;
+    
+    console.log(`Returning cleaned Binance API keys - API Key valid: ${isApiKeyValid}, Secret Key valid: ${isSecretKeyValid}, API Key length: ${cleanApiKey.length}, Secret Key length: ${cleanSecretKey.length}`);
+    
+    // השב את המפתחות המנוקים
     return res.status(200).json({
       success: true,
-      apiKey: apiKeys.binanceApiKey || '',
-      secretKey: apiKeys.binanceSecretKey || '',
-      allowedIp: apiKeys.binanceAllowedIp || '',
-      testnet: false // כרגע תמיד משתמשים ב-mainnet ולא ב-testnet
+      apiKey: cleanApiKey,
+      secretKey: cleanSecretKey,
+      allowedIp: cleanAllowedIp,
+      testnet: false, // כרגע תמיד משתמשים ב-mainnet ולא ב-testnet
+      isValid: isApiKeyValid && isSecretKeyValid // הוסף שדה לבדיקה אם המפתחות תקינים
     });
   } catch (error: any) {
     console.error("Error retrieving full Binance API keys:", error);

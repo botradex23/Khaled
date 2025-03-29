@@ -628,57 +628,100 @@ export default function BinancePage() {
 
   // טיפול בתוצאות שהתקבלו כאשר יש שינוי בנתונים
   useEffect(() => {
-    if (savedApiKeys && savedApiKeys.success && savedApiKeys.apiKey && savedApiKeys.secretKey) {
+    if (savedApiKeys && savedApiKeys.success) {
       console.log("הטענת מפתחות API מהשרת בוצעה בהצלחה");
       
-      // שמירת המפתחות מהשרת למשתני הדף (באופן שקוף למשתמש)
-      // אלו ישמשו את הקריאות ל-API ללא צורך להציג חלונית עדכון
-      setBinanceApiKey(savedApiKeys.apiKey);
-      setBinanceSecretKey(savedApiKeys.secretKey);
-      
-      // עדכון כתובת IP מורשית אם נמצאה
-      if (savedApiKeys.allowedIp) {
-        setBinanceAllowedIp(savedApiKeys.allowedIp);
-      }
-      
-      // כעת בצע התחברות אוטומטית עם המפתחות שהתקבלו
-      const autoConnectWithSavedKeys = async () => {
-        try {
-          // בצע שמירה של המפתחות לשרת (חיבור אוטומטי)
-          const response = await fetch('/api/binance/api-keys', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              apiKey: savedApiKeys.apiKey,
-              secretKey: savedApiKeys.secretKey,
-              allowedIp: savedApiKeys.allowedIp || binanceAllowedIp
-            }),
-            credentials: 'include'
-          });
-          
-          if (response.ok) {
-            // עדכן את מצב המפתחות ורענן את המידע
-            setKeysInitialized(true);
-            refetchApiStatus();
-            toast({
-              title: "התחברות אוטומטית לביננס",
-              description: "המפתחות הוטענו והפעלת החיבור בוצעה בהצלחה",
-              variant: "default"
-            });
-          }
-        } catch (error) {
-          console.error("שגיאה בהתחברות אוטומטית:", error);
+      // בדיקה אם יש מפתחות תקינים
+      if (savedApiKeys.isValid && savedApiKeys.apiKey && savedApiKeys.secretKey) {
+        // שמירת המפתחות מהשרת למשתני הדף (באופן שקוף למשתמש)
+        // אלו ישמשו את הקריאות ל-API ללא צורך להציג חלונית עדכון
+        setBinanceApiKey(savedApiKeys.apiKey);
+        setBinanceSecretKey(savedApiKeys.secretKey);
+        
+        // עדכון כתובת IP מורשית אם נמצאה
+        if (savedApiKeys.allowedIp) {
+          setBinanceAllowedIp(savedApiKeys.allowedIp);
         }
-      };
-      
-      // הפעל את החיבור האוטומטי רק אם המפתחות עוד לא אותחלו
-      if (!keysInitialized) {
-        autoConnectWithSavedKeys();
+        
+        // כעת בצע התחברות אוטומטית עם המפתחות שהתקבלו
+        const autoConnectWithSavedKeys = async () => {
+          try {
+            // בדיקה נוספת של אורך המפתחות לפני השליחה
+            if (savedApiKeys.apiKey.length < 10 || savedApiKeys.secretKey.length < 10) {
+              console.error("מפתחות API בפורמט לא תקין, אורך לא מספיק");
+              toast({
+                title: "שגיאה במפתחות API",
+                description: "המפתחות השמורים בפורמט לא תקין. אנא הכנס מפתחות חדשים.",
+                variant: "destructive"
+              });
+              setIsApiKeysDialogOpen(true);
+              return;
+            }
+            
+            console.log(`מנסה להתחבר עם מפתחות: API (${savedApiKeys.apiKey.length} תווים), Secret (${savedApiKeys.secretKey.length} תווים)`);
+            
+            // בצע שמירה של המפתחות לשרת (חיבור אוטומטי)
+            const response = await fetch('/api/binance/api-keys', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                apiKey: savedApiKeys.apiKey,
+                secretKey: savedApiKeys.secretKey,
+                allowedIp: savedApiKeys.allowedIp || binanceAllowedIp
+              }),
+              credentials: 'include'
+            });
+            
+            if (response.ok) {
+              // עדכן את מצב המפתחות ורענן את המידע
+              setKeysInitialized(true);
+              refetchApiStatus();
+              toast({
+                title: "התחברות אוטומטית לביננס",
+                description: "המפתחות הוטענו והפעלת החיבור בוצעה בהצלחה",
+                variant: "default"
+              });
+            } else {
+              console.error("ההתחברות האוטומטית נכשלה - תגובת שרת:", response.status);
+              const errorData = await response.json();
+              toast({
+                title: "שגיאה בהתחברות אוטומטית",
+                description: errorData.message || "אירעה שגיאה בהתחברות עם המפתחות השמורים",
+                variant: "destructive"
+              });
+              setIsApiKeysDialogOpen(true);
+            }
+          } catch (error) {
+            console.error("שגיאה בהתחברות אוטומטית:", error);
+            toast({
+              title: "שגיאה בהתחברות אוטומטית",
+              description: "אירעה שגיאה בהתחברות עם המפתחות השמורים",
+              variant: "destructive"
+            });
+            setIsApiKeysDialogOpen(true);
+          }
+        };
+        
+        // הפעל את החיבור האוטומטי רק אם המפתחות עוד לא אותחלו
+        if (!keysInitialized) {
+          autoConnectWithSavedKeys();
+        }
+      } else {
+        // אם המפתחות לא תקינים, יש להציג למשתמש הודעה ולפתוח את חלונית המפתחות
+        console.log("המפתחות השמורים אינם תקינים או חסרים");
+        if (!isApiKeysDialogOpen) {
+          toast({
+            title: "נדרש להזין מפתחות Binance API",
+            description: "המפתחות השמורים אינם תקינים או חסרים. אנא הזן מפתחות חדשים.",
+            variant: "destructive"
+          });
+          setIsApiKeysDialogOpen(true);
+        }
       }
     }
-  }, [savedApiKeys, binanceAllowedIp, keysInitialized, refetchApiStatus, toast]);
+  }, [savedApiKeys, binanceAllowedIp, keysInitialized, refetchApiStatus, toast, isApiKeysDialogOpen]);
 
   // שאילתה לקבלת יתרות חשבון Binance
   const { 
