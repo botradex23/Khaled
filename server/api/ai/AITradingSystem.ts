@@ -719,10 +719,13 @@ export class AITradingSystem {
       const orderType = 'market'; // נשתמש בפקודות שוק לביצוע מיידי
       const amount = '0.001'; // כמות קטנה לדוגמה - בפועל יש לחשב לפי יתרת חשבון וניהול סיכונים
       
+      // המרת פעולה לפורמט שמתקבל על ידי ה-API
+      const side = decision.action === 'BUY' ? 'buy' : 'sell';
+      
       // שליחת הפקודה לברוקר באמצעות ה-API
       const result = await okxService.placeOrder(
         decision.symbol,
-        decision.action.toLowerCase(),
+        side,
         orderType,
         amount
       );
