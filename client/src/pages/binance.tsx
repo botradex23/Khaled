@@ -262,7 +262,23 @@ function PaperTradingContent() {
   // בדיקה אם צריך ליצור חשבון
   useEffect(() => {
     if (accountError) {
-      createAccountMutation.mutate();
+      // בודקים אם השגיאה היא "Paper trading account already exists"
+      if (accountError instanceof Error) {
+        // אם זו שגיאה שחשבון כבר קיים, פשוט רענן את הנתונים במקום ליצור חשבון חדש
+        if (accountError.message?.includes("already exists")) {
+          refetchAccount();
+          toast({
+            title: "חשבון Paper Trading",
+            description: "טוען נתוני חשבון קיים...",
+          });
+        } else {
+          // אם זו שגיאה אחרת, נסה ליצור חשבון
+          createAccountMutation.mutate();
+        }
+      } else {
+        // אם אין שגיאה מוגדרת, ננסה ליצור חשבון
+        createAccountMutation.mutate();
+      }
     }
   }, [accountError]);
 
@@ -420,92 +436,13 @@ function PaperTradingContent() {
         
         {/* ניתוח ביצועים */}
         <TabsContent value="analytics">
-          <Card>
-            <CardHeader>
-              <CardTitle>ניתוח ביצועים</CardTitle>
-              <CardDescription>סטטיסטיקות מפורטות של ביצועי המסחר שלך</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isStatsLoading ? (
-                <div className="space-y-4">
-                  {[...Array(6)].map((_, i) => (
-                    <Skeleton key={i} className="h-8 w-full" />
-                  ))}
-                </div>
-              ) : stats ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">סטטיסטיקות עסקאות</h3>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">סה"כ עסקאות</span>
-                          <span className="font-medium">{stats.totalTrades}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">עסקאות מרוויחות</span>
-                          <span className="font-medium text-green-500">{stats.winningTrades}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">עסקאות מפסידות</span>
-                          <span className="font-medium text-red-500">{stats.losingTrades}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">אחוז הצלחה</span>
-                          <span className="font-medium">{stats.winRate.toFixed(2)}%</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">ביצועים כספיים</h3>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">רווח/הפסד כולל</span>
-                          <span className={`font-medium ${parseFloat(stats.totalProfitLoss) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            ${parseFloat(stats.totalProfitLoss).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">אחוז רווח/הפסד</span>
-                          <span className={`font-medium ${parseFloat(stats.totalProfitLossPercent) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            {parseFloat(stats.totalProfitLossPercent).toFixed(2)}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">רווח/הפסד ממוצע לעסקה</span>
-                          <span className={`font-medium ${parseFloat(stats.averageProfitLoss) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            ${parseFloat(stats.averageProfitLoss).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">אחוז רווח/הפסד ממוצע</span>
-                          <span className={`font-medium ${parseFloat(stats.averageProfitLossPercent) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            {parseFloat(stats.averageProfitLossPercent).toFixed(2)}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <LineChart className="h-24 w-24 mx-auto mb-4 text-primary opacity-60" />
-                      <p className="text-muted-foreground">
-                        ויזואליזציה גרפית של ביצועי המסחר תהיה זמינה בקרוב.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                  <h3 className="text-lg font-medium mb-2">אין נתונים זמינים</h3>
-                  <p>התחל לסחור כדי לראות סטטיסטיקות ביצועים.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <React.Suspense fallback={
+            <div className="flex items-center justify-center h-[300px]">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          }>
+            <PaperTradingStats account={account} />
+          </React.Suspense>
         </TabsContent>
       </Tabs>
 
