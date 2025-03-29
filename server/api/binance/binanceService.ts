@@ -425,7 +425,22 @@ export class BinanceService {
           };
         });
       
-      return balances;
+      console.log('First few Binance balances after processing:', balances.slice(0, 3));
+      // כדי למנוע בעיות בהצגת נתונים, נהפוך את כל הערכים המספריים למחרוזות
+      const normalizedBalances = balances.map((balance: any) => ({
+        currency: balance.currency,   // שם המטבע (לפי הפורמט שלנו)
+        asset: balance.currency,      // שם המטבע (מקביל ל-asset בפורמט ביננס)
+        available: String(balance.available),  // כמות זמינה (מקביל ל-free בפורמט ביננס)
+        free: String(balance.available),       // כמות זמינה בפורמט ביננס
+        frozen: String(balance.frozen || 0),   // כמות נעולה (מקביל ל-locked בפורמט ביננס)
+        locked: String(balance.frozen || 0),   // כמות נעולה בפורמט ביננס
+        total: String(balance.total),          // סה"כ כמות
+        valueUSD: balance.valueUSD,            // שווי ב-USD
+        pricePerUnit: balance.pricePerUnit     // מחיר ליחידה
+      }));
+      
+      console.log('First few Binance balances after normalization:', normalizedBalances.slice(0, 3));
+      return normalizedBalances;
     } catch (error: any) {
       console.error('Failed to fetch Binance account balances:', error.message);
       throw new Error(`Binance API Error: ${error.message}`);

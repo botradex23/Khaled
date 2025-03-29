@@ -18,17 +18,17 @@ import { apiRequest } from '@/lib/queryClient';
 
 // בינתיים נשתמש בסוג זמני עבור מטבעות ויתרות ביננס
 interface BinanceBalance {
-  asset: string;
-  free: string;
-  locked: string;
-  total?: string;
-  usdValue?: number;
-  valueUSD?: number;
-  pricePerUnit?: number;
-  calculatedTotalValue?: number;
-  currency?: string;
-  available?: number;
-  frozen?: number;
+  asset?: string;  // שם המטבע בפורמט ביננס
+  currency?: string;  // שם המטבע בפורמט שלנו
+  free?: string | number;  // כמות זמינה בפורמט ביננס
+  available?: string | number;  // כמות זמינה בפורמט שלנו
+  locked?: string | number;  // כמות נעולה בפורמט ביננס
+  frozen?: string | number;  // כמות נעולה בפורמט שלנו
+  total?: string | number;  // סה"כ כמות
+  usdValue?: number;  // שווי ב-USD בפורמט אחד
+  valueUSD?: number;  // שווי ב-USD בפורמט אחר
+  pricePerUnit?: number;  // מחיר ליחידה
+  calculatedTotalValue?: number;  // שווי מחושב
 }
 
 interface BinanceApiStatus {
@@ -1051,17 +1051,48 @@ export default function BinancePage() {
                         </thead>
                         <tbody>
                           {balances
-                            .filter(b => parseFloat(b.total || b.free) > 0)
+                            // פילטור לפי יתרה חיובית (מציג רק מטבעות עם יתרה)
+                            .filter(balance => {
+                              // נשתמש בפונקציית עזר להמרה בטוחה
+                              const getNumericValue = (value: string | number | undefined): number => {
+                                if (value === undefined || value === null) return 0;
+                                return typeof value === 'number' ? value : parseFloat(value || '0');
+                              };
+                              
+                              const total = getNumericValue(balance.total);
+                              const free = getNumericValue(balance.free || balance.available);
+                              return total > 0 || free > 0;
+                            })
                             .sort((a, b) => (b.valueUSD || b.usdValue || 0) - (a.valueUSD || a.usdValue || 0))
                             .map((balance) => (
-                              <tr key={balance.asset} className="border-b">
-                                <td className="py-3 font-medium">{balance.asset}</td>
-                                <td className="py-3 text-right">{parseFloat(balance.free).toLocaleString()}</td>
-                                <td className="py-3 text-right">{parseFloat(balance.locked).toLocaleString()}</td>
+                              <tr key={balance.asset || balance.currency} className="border-b">
+                                <td className="py-3 font-medium">{balance.asset || balance.currency}</td>
                                 <td className="py-3 text-right">
-                                  {parseFloat(balance.total || (
-                                    parseFloat(balance.free) + parseFloat(balance.locked)
-                                  ).toString()).toLocaleString()}
+                                  {(() => {
+                                    const getNumericValue = (value: string | number | undefined): number => {
+                                      if (value === undefined || value === null) return 0;
+                                      return typeof value === 'number' ? value : parseFloat(value || '0');
+                                    };
+                                    return getNumericValue(balance.free || balance.available).toLocaleString();
+                                  })()}
+                                </td>
+                                <td className="py-3 text-right">
+                                  {(() => {
+                                    const getNumericValue = (value: string | number | undefined): number => {
+                                      if (value === undefined || value === null) return 0;
+                                      return typeof value === 'number' ? value : parseFloat(value || '0');
+                                    };
+                                    return getNumericValue(balance.locked || balance.frozen).toLocaleString();
+                                  })()}
+                                </td>
+                                <td className="py-3 text-right">
+                                  {(() => {
+                                    const getNumericValue = (value: string | number | undefined): number => {
+                                      if (value === undefined || value === null) return 0;
+                                      return typeof value === 'number' ? value : parseFloat(value || '0');
+                                    };
+                                    return getNumericValue(balance.total).toLocaleString();
+                                  })()}
                                 </td>
                                 <td className="py-3 text-right">${(balance.valueUSD || balance.usdValue || 0).toLocaleString()}</td>
                               </tr>
