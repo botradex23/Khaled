@@ -764,7 +764,15 @@ export default function BinancePage() {
           </p>
         </div>
         
-        <div className="mt-4 md:mt-0 flex space-x-2">
+        <div className="mt-4 md:mt-0 flex space-x-2 items-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/'}
+            className="ml-2 rtl:mr-2 rtl:ml-0"
+          >
+            חזרה לדף הבית
+          </Button>
           <Button 
             variant="outline" 
             onClick={() => setIsApiKeysDialogOpen(true)}
