@@ -365,10 +365,17 @@ export class BinanceService {
         tickerMap.set(ticker.symbol, parseFloat(ticker.price));
       });
       
-      // Filter out zero balances
+      // Always include SHIB and other important coins, even with zero balances
+      const importantCoins = ['SHIB', 'BNB', 'BTC', 'ETH', 'USDT'];
+      
+      // Filter out zero balances except for important coins
       const balances = accountInfo.balances
         .filter((balance: any) => {
           const total = parseFloat(balance.free) + parseFloat(balance.locked);
+          // Keep important coins regardless of balance
+          if (importantCoins.includes(balance.asset)) {
+            return true;
+          }
           return total > 0;
         })
         .map((balance: any) => {

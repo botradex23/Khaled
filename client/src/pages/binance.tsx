@@ -23,6 +23,12 @@ interface BinanceBalance {
   locked: string;
   total?: string;
   usdValue?: number;
+  valueUSD?: number;
+  pricePerUnit?: number;
+  calculatedTotalValue?: number;
+  currency?: string;
+  available?: number;
+  frozen?: number;
 }
 
 interface BinanceApiStatus {
@@ -620,7 +626,7 @@ export default function BinancePage() {
   
   // חישוב סך הכל שווי בדולרים של כל הנכסים
   const totalUsdValue = balances?.reduce((sum: number, balance: BinanceBalance) => 
-    sum + (balance.usdValue || 0), 0) || 0;
+    sum + (balance.valueUSD || 0), 0) || 0;
   
   // השתמש בlocalStorage כדי לאחסן את הערך של totalUsdValue
   useEffect(() => {
@@ -990,7 +996,7 @@ export default function BinancePage() {
                         <tbody>
                           {balances
                             .filter(b => parseFloat(b.total || b.free) > 0)
-                            .sort((a, b) => (b.usdValue || 0) - (a.usdValue || 0))
+                            .sort((a, b) => (b.valueUSD || b.usdValue || 0) - (a.valueUSD || a.usdValue || 0))
                             .map((balance) => (
                               <tr key={balance.asset} className="border-b">
                                 <td className="py-3 font-medium">{balance.asset}</td>
@@ -1001,7 +1007,7 @@ export default function BinancePage() {
                                     parseFloat(balance.free) + parseFloat(balance.locked)
                                   ).toString()).toLocaleString()}
                                 </td>
-                                <td className="py-3 text-right">${(balance.usdValue || 0).toLocaleString()}</td>
+                                <td className="py-3 text-right">${(balance.valueUSD || balance.usdValue || 0).toLocaleString()}</td>
                               </tr>
                             ))}
                         </tbody>
@@ -1427,7 +1433,7 @@ export default function BinancePage() {
               </div>
             </div>
             
-            <Alert variant="info" className="mt-2">
+            <Alert className="mt-2 bg-blue-50 border-blue-200">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>הערה חשובה - הגדרת IP מורשה</AlertTitle>
               <AlertDescription>
