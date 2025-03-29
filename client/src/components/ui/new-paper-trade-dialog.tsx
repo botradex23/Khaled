@@ -223,12 +223,7 @@ export default function NewPaperTradeDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          עסקה חדשה
-        </Button>
-      </DialogTrigger>
+      {/* הסרנו את ה-DialogTrigger כי הדיאלוג נשלט חיצונית */}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>יצירת עסקה חדשה</DialogTitle>

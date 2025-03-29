@@ -354,6 +354,19 @@ function PaperTradingContent() {
 
   // טיפול בעסקה חדשה
   const handleNewTrade = () => {
+    if (!account) {
+      toast({
+        title: "שגיאה",
+        description: "אין לך חשבון Paper Trading פעיל. אנא יצור חשבון חדש.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // מדפיס מידע לדיבאגינג
+    console.log("Opening new trade dialog, account ID:", account?.id);
+    
+    // הגדרת מצב הדיאלוג כפתוח
     setIsNewTradeOpen(true);
   };
 
@@ -510,25 +523,23 @@ function PaperTradingContent() {
       </Tabs>
 
       {/* דיאלוג עסקה חדשה */}
-      {/* עטיפת הדיאלוג ב-div כדי לוודא טעינה תקינה */}
-      {isNewTradeOpen && (
+      {/* דיאלוג עסקה חדשה - אפשר להציג תמיד כי יש לו מצב open */}
+      <Dialog open={isNewTradeOpen} onOpenChange={setIsNewTradeOpen}>
         <React.Suspense fallback={
-          <Dialog open={true}>
-            <DialogContent className="sm:max-w-md">
-              <div className="flex flex-col items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin mb-4" />
-                <p className="text-center">טוען טופס יצירת עסקה...</p>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <DialogContent className="sm:max-w-md">
+            <div className="flex flex-col items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mb-4" />
+              <p className="text-center">טוען טופס יצירת עסקה...</p>
+            </div>
+          </DialogContent>
         }>
           <NewTradeDialog 
             open={isNewTradeOpen} 
-            onOpenChange={(open) => setIsNewTradeOpen(open)} 
-            accountId={paperTradingAccount?.id}
+            onOpenChange={setIsNewTradeOpen} 
+            accountId={account?.id}
           />
         </React.Suspense>
-      )}
+      </Dialog>
     </div>
   );
 }
