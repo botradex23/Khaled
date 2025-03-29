@@ -69,7 +69,8 @@ router.get('/', ensureAuthenticated, async (req: Request, res: Response) => {
     // Only send back masked versions for security
     const maskedKeys = {
       binanceApiKey: apiKeys.binanceApiKey ? maskSecret(apiKeys.binanceApiKey) : null,
-      binanceSecretKey: apiKeys.binanceSecretKey ? maskSecret(apiKeys.binanceSecretKey) : null
+      binanceSecretKey: apiKeys.binanceSecretKey ? maskSecret(apiKeys.binanceSecretKey) : null,
+      binanceAllowedIp: apiKeys.binanceAllowedIp
     };
     
     return res.status(200).json({
@@ -90,7 +91,7 @@ router.get('/', ensureAuthenticated, async (req: Request, res: Response) => {
 // Save/Update Binance API keys
 router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
-    const { apiKey, secretKey, testnet } = req.body;
+    const { apiKey, secretKey, allowedIp, testnet } = req.body;
     
     // Simple validation
     if (!apiKey || !secretKey) {
@@ -104,7 +105,8 @@ router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const updatedUser = await storage.updateUserBinanceApiKeys(userId, {
       binanceApiKey: apiKey,
-      binanceSecretKey: secretKey
+      binanceSecretKey: secretKey,
+      binanceAllowedIp: allowedIp
     });
     
     if (!updatedUser) {

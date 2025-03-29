@@ -55,12 +55,14 @@ export interface IStorage {
     apiKeys: {
       binanceApiKey?: string;
       binanceSecretKey?: string;
+      binanceAllowedIp?: string;
     }
   ): Promise<User | undefined>;
   
   getUserBinanceApiKeys(userId: number): Promise<{
     binanceApiKey?: string | null;
     binanceSecretKey?: string | null;
+    binanceAllowedIp?: string | null;
   } | undefined>;
   
   clearUserApiKeys(userId: number): Promise<boolean>;
@@ -188,6 +190,7 @@ export class MemStorage implements IStorage {
       okxPassphrase: null,
       binanceApiKey: null,
       binanceSecretKey: null,
+      binanceAllowedIp: null,
       
       // Default broker settings
       defaultBroker: "okx",
@@ -222,6 +225,7 @@ export class MemStorage implements IStorage {
       // Add Binance API keys
       binanceApiKey: process.env.BYBIT_API_KEY || "", // Using Bybit for testing as users will provide their own in production
       binanceSecretKey: process.env.BYBIT_SECRET_KEY || "",
+      binanceAllowedIp: null,
       
       // Always use testnet for safety
       defaultBroker: "okx",
@@ -436,6 +440,7 @@ export class MemStorage implements IStorage {
       okxPassphrase: null,
       binanceApiKey: null,
       binanceSecretKey: null,
+      binanceAllowedIp: null,
       
       // Default broker settings
       defaultBroker: insertUser.defaultBroker || "okx",
@@ -483,6 +488,10 @@ export class MemStorage implements IStorage {
     
     if (insertUser.binanceSecretKey) {
       user.binanceSecretKey = insertUser.binanceSecretKey;
+    }
+    
+    if (insertUser.binanceAllowedIp) {
+      user.binanceAllowedIp = insertUser.binanceAllowedIp;
     }
     
     this.users.set(id, user);
@@ -616,6 +625,7 @@ export class MemStorage implements IStorage {
     apiKeys: {
       binanceApiKey?: string;
       binanceSecretKey?: string;
+      binanceAllowedIp?: string;
     }
   ): Promise<User | undefined> {
     const user = this.users.get(userId);
@@ -635,6 +645,7 @@ export class MemStorage implements IStorage {
     // This makes the API behavior more consistent across the app
     const sanitizedBinanceApiKey = !apiKeys.binanceApiKey || apiKeys.binanceApiKey.trim() === "" ? null : apiKeys.binanceApiKey;
     const sanitizedBinanceSecretKey = !apiKeys.binanceSecretKey || apiKeys.binanceSecretKey.trim() === "" ? null : apiKeys.binanceSecretKey;
+    const sanitizedBinanceAllowedIp = !apiKeys.binanceAllowedIp || apiKeys.binanceAllowedIp.trim() === "" ? null : apiKeys.binanceAllowedIp;
     
     // Update the API keys
     const updatedUser: User = {
@@ -642,7 +653,8 @@ export class MemStorage implements IStorage {
       // Only update if value is not undefined (explicitly provided)
       // This preserves previous values if a field wasn't specified
       binanceApiKey: sanitizedBinanceApiKey !== undefined ? sanitizedBinanceApiKey : user.binanceApiKey,
-      binanceSecretKey: sanitizedBinanceSecretKey !== undefined ? sanitizedBinanceSecretKey : user.binanceSecretKey
+      binanceSecretKey: sanitizedBinanceSecretKey !== undefined ? sanitizedBinanceSecretKey : user.binanceSecretKey,
+      binanceAllowedIp: sanitizedBinanceAllowedIp !== undefined ? sanitizedBinanceAllowedIp : user.binanceAllowedIp
     };
     
     console.log("updateUserBinanceApiKeys - User values after update:", {
@@ -659,6 +671,7 @@ export class MemStorage implements IStorage {
   async getUserBinanceApiKeys(userId: number): Promise<{
     binanceApiKey: string | null;
     binanceSecretKey: string | null;
+    binanceAllowedIp: string | null;
   } | undefined> {
     const user = this.users.get(userId);
     
@@ -680,7 +693,8 @@ export class MemStorage implements IStorage {
       // Always return null if there's no meaningful value (null, undefined, or empty string)
       // This ensures consistent return types and makes client-side checks more reliable
       binanceApiKey: !user.binanceApiKey || user.binanceApiKey.trim() === '' ? null : user.binanceApiKey,
-      binanceSecretKey: !user.binanceSecretKey || user.binanceSecretKey.trim() === '' ? null : user.binanceSecretKey
+      binanceSecretKey: !user.binanceSecretKey || user.binanceSecretKey.trim() === '' ? null : user.binanceSecretKey,
+      binanceAllowedIp: !user.binanceAllowedIp || user.binanceAllowedIp.trim() === '' ? null : user.binanceAllowedIp
     };
     
     // Log what we're returning (excluding secret values) for debugging
@@ -708,7 +722,8 @@ export class MemStorage implements IStorage {
       okxSecretKey: null,
       okxPassphrase: null,
       binanceApiKey: null,
-      binanceSecretKey: null
+      binanceSecretKey: null,
+      binanceAllowedIp: null
     };
     
     // Save the updated user

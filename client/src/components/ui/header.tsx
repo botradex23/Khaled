@@ -52,6 +52,7 @@ export default function Header() {
   const [showBinanceDialog, setShowBinanceDialog] = useState(false);
   const [binanceApiKey, setBinanceApiKey] = useState("");
   const [binanceSecretKey, setBinanceSecretKey] = useState("");
+  const [binanceAllowedIp, setBinanceAllowedIp] = useState("38.154.227.167");
   const [useTestnet, setUseTestnet] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasBinanceKeys, setHasBinanceKeys] = useState(false);
@@ -118,6 +119,7 @@ export default function Header() {
         body: JSON.stringify({
           apiKey: binanceApiKey,
           secretKey: binanceSecretKey,
+          allowedIp: binanceAllowedIp,
           testnet: useTestnet
         })
       });
@@ -135,6 +137,7 @@ export default function Header() {
         setShowBinanceDialog(false);
         setBinanceApiKey("");
         setBinanceSecretKey("");
+        // Leave IP address as is because it's likely to remain the same
         
         // Refresh the API keys data to update the UI
         refetchBinanceApiKeys();
@@ -401,6 +404,20 @@ export default function Header() {
                 className="col-span-3"
                 type="password"
                 placeholder="הזן את המפתח הסודי של Binance שלך"
+                autoComplete="off"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="binance-allowed-ip" className="text-right">
+                כתובת IP מורשית
+              </Label>
+              <Input
+                id="binance-allowed-ip"
+                value={binanceAllowedIp}
+                onChange={(e) => setBinanceAllowedIp(e.target.value)}
+                className="col-span-3"
+                placeholder="כתובת ה-IP שהגדרת ב-Binance"
                 autoComplete="off"
               />
             </div>

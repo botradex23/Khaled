@@ -23,6 +23,7 @@ export const users = pgTable("users", {
   // Binance API credentials
   binanceApiKey: text("binance_api_key"),
   binanceSecretKey: text("binance_secret_key"),
+  binanceAllowedIp: text("binance_allowed_ip"),
   
   // Default broker for trading (e.g., 'okx', 'binance')
   defaultBroker: text("default_broker").default("okx"),
