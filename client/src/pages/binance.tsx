@@ -640,8 +640,45 @@ export default function BinancePage() {
       if (savedApiKeys.allowedIp) {
         setBinanceAllowedIp(savedApiKeys.allowedIp);
       }
+      
+      // כעת בצע התחברות אוטומטית עם המפתחות שהתקבלו
+      const autoConnectWithSavedKeys = async () => {
+        try {
+          // בצע שמירה של המפתחות לשרת (חיבור אוטומטי)
+          const response = await fetch('/api/binance/api-keys', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              apiKey: savedApiKeys.apiKey,
+              secretKey: savedApiKeys.secretKey,
+              allowedIp: savedApiKeys.allowedIp || binanceAllowedIp
+            }),
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            // עדכן את מצב המפתחות ורענן את המידע
+            setKeysInitialized(true);
+            refetchApiStatus();
+            toast({
+              title: "התחברות אוטומטית לביננס",
+              description: "המפתחות הוטענו והפעלת החיבור בוצעה בהצלחה",
+              variant: "default"
+            });
+          }
+        } catch (error) {
+          console.error("שגיאה בהתחברות אוטומטית:", error);
+        }
+      };
+      
+      // הפעל את החיבור האוטומטי רק אם המפתחות עוד לא אותחלו
+      if (!keysInitialized) {
+        autoConnectWithSavedKeys();
+      }
     }
-  }, [savedApiKeys]);
+  }, [savedApiKeys, binanceAllowedIp, keysInitialized, refetchApiStatus, toast]);
 
   // שאילתה לקבלת יתרות חשבון Binance
   const { 
