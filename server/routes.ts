@@ -18,6 +18,7 @@ import { setupAuth, ensureAuthenticated } from "./auth";
 import { createOkxServiceWithCustomCredentials, okxService } from "./api/okx/okxService";
 import updateApiKeysRouter from "./routes/update-api-keys";
 import binanceRouter from "./routes/binance";
+import binanceApiKeysRouter from "./routes/binance-api-keys";
 import paperTradingRouter from "./routes/paper-trading";
 
 // Helper function to mask sensitive data (like API keys)
@@ -247,6 +248,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Binance API routes
   app.use("/api/binance", binanceRouter);
+  
+  // Binance API keys specific routes
+  app.use("/api/binance/api-keys", binanceApiKeysRouter);
+  
+  // Compatibility endpoints for old Binance API keys path
+  app.use("/api/users/binance-api-keys", binanceApiKeysRouter);
   
   // AI API routes
   app.use("/api/ai", aiRouter);
