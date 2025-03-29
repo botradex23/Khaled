@@ -223,47 +223,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API Key update and testing routes
   app.use("/api/keys", updateApiKeysRouter);
   
-  // Binance API keys endpoint
-  app.post("/api/users/binance-api-keys", ensureAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const { apiKey, secretKey, testnet } = req.body;
-      
-      // Simple validation
-      if (!apiKey || !secretKey) {
-        return res.status(400).json({
-          error: 'Missing required fields',
-          message: 'API Key and Secret Key are required'
-        });
-      }
-      
-      // Update the user's Binance API keys using our storage implementation
-      const userId = req.user!.id;
-      const updatedUser = await storage.updateUserBinanceApiKeys(userId, {
-        binanceApiKey: apiKey,
-        binanceSecretKey: secretKey
-      });
-      
-      if (!updatedUser) {
-        return res.status(404).json({
-          error: 'User not found',
-          message: 'Could not update API keys for this user'
-        });
-      }
-      
-      console.log(`Binance API keys saved successfully for user ${userId} (Using testnet: ${testnet})`);
-      
-      return res.status(200).json({
-        success: true,
-        message: 'Binance API keys saved successfully'
-      });
-    } catch (error) {
-      console.error("Error saving Binance API keys:", error);
-      return res.status(500).json({
-        error: 'Server error',
-        message: 'An error occurred while saving Binance API keys'
-      });
-    }
-  });
+  // Binance API keys endpoints are moved to binance router
+  // Keeping a note here to prevent accidental reimplementation
   
   // Admin API routes
   app.use("/api/admin", adminApiRouter);
@@ -732,33 +693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // API Keys Management
   
-  // Get Binance API Keys for the current user
-  app.get("/api/users/binance-api-keys", ensureAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = req.user!.id;
-      const apiKeys = await storage.getUserBinanceApiKeys(userId);
-      
-      if (!apiKeys) {
-        return res.status(404).json({
-          error: 'User not found',
-          message: 'Could not retrieve API keys for this user'
-        });
-      }
-      
-      // Only send back the existence of keys, not the actual keys for security
-      return res.status(200).json({
-        success: true,
-        hasBinanceApiKey: !!apiKeys.binanceApiKey,
-        hasBinanceSecretKey: !!apiKeys.binanceSecretKey
-      });
-    } catch (error) {
-      console.error("Error retrieving Binance API keys:", error);
-      return res.status(500).json({
-        error: 'Server error',
-        message: 'An error occurred while retrieving Binance API keys'
-      });
-    }
-  });
+  // Binance API Keys are now handled in binance router - keeping comment to avoid reimplementation
   
   // This endpoint is implemented above
   /*app.post("/api/admin/reset-all-api-keys", async (req, res) => {
