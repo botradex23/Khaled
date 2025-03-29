@@ -1046,6 +1046,7 @@ export default function BinancePage() {
                             <th className="pb-2 text-right">זמין</th>
                             <th className="pb-2 text-right">נעול</th>
                             <th className="pb-2 text-right">סה"כ</th>
+                            <th className="pb-2 text-right">מחיר ליחידה ($)</th>
                             <th className="pb-2 text-right">שווי ($)</th>
                           </tr>
                         </thead>
@@ -1094,6 +1095,7 @@ export default function BinancePage() {
                                     return getNumericValue(balance.total).toLocaleString();
                                   })()}
                                 </td>
+                                <td className="py-3 text-right">${(balance.pricePerUnit || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}</td>
                                 <td className="py-3 text-right">${(balance.valueUSD || balance.usdValue || 0).toLocaleString()}</td>
                               </tr>
                             ))}

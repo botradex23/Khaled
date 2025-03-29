@@ -34,7 +34,7 @@ router.post('/update-keys', ensureAuthenticated, async (req: Request, res: Respo
     });
 
     // Validate the new keys immediately
-    const testService = new OkxService(
+    const testService = createOkxServiceWithCustomCredentials(
       apiKey,
       secretKey,
       passphrase,
@@ -96,7 +96,7 @@ router.get('/test-keys', ensureAuthenticated, async (req: Request, res: Response
     }
 
     // Create a service instance with the user's API keys
-    const testService = new OkxService(
+    const testService = createOkxServiceWithCustomCredentials(
       apiKeys.okxApiKey,
       apiKeys.okxSecretKey,
       apiKeys.okxPassphrase,
