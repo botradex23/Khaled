@@ -113,73 +113,23 @@ export default function Dashboard() {
     retry: 0, // Don't retry on failure
   });
   
-  // Check if user needs to set up API keys (except for hindi1000hindi@gmail.com)
+  // API keys check is now disabled - this effect still exists but doesn't show the dialog
   useEffect(() => {
     if (isAuthenticated && !authLoading && !apiKeysLoading && user) {
-      console.log("Checking API keys status...");
-      console.log("API Keys Data:", apiKeysData);
+      console.log("API key check - DISABLED (keys not required)");
       
-      const isHindi1000Hindi = user.email === "hindi1000hindi@gmail.com";
+      // Always set this to false - user is not required to set up API keys
+      setShowApiKeyDialog(false);
       
-      // If it's hindi1000hindi@gmail.com account, never show the dialog
-      if (isHindi1000Hindi) {
-        console.log("Hindi1000hindi@gmail.com account - skipping API key check");
-        setShowApiKeyDialog(false);
-        return;
+      // Keep logging API key status for debugging, but don't enforce keys
+      if (apiKeysData) {
+        console.log("API keys data (for development purposes only):", {
+          hasApiKeysObject: !!apiKeysData.apiKeys,
+          apiKeyValue: apiKeysData.apiKeys?.okxApiKey ? "exists" : "missing", 
+          secretKeyPresent: !!apiKeysData.apiKeys?.okxSecretKey,
+          passphrasePresent: !!apiKeysData.apiKeys?.okxPassphrase
+        });
       }
-      
-      // Make sure we have data from API
-      if (!apiKeysData) {
-        console.log("No API keys data available yet");
-        return;
-      }
-      
-      // Improved debug logging 
-      console.log("API keys data for dialog check:", {
-        hasApiKeysObject: !!apiKeysData.apiKeys,
-        apiKeyValue: apiKeysData.apiKeys?.okxApiKey, 
-        apiKeyType: typeof apiKeysData.apiKeys?.okxApiKey,
-        apiKeyNull: apiKeysData.apiKeys?.okxApiKey === null,
-        apiKeyEmpty: apiKeysData.apiKeys?.okxApiKey === "",
-        apiKeyLength: apiKeysData.apiKeys?.okxApiKey ? apiKeysData.apiKeys.okxApiKey.length : 0,
-        secretKeyPresent: !!apiKeysData.apiKeys?.okxSecretKey,
-        secretKeyType: typeof apiKeysData.apiKeys?.okxSecretKey,
-        passphrasePresent: !!apiKeysData.apiKeys?.okxPassphrase,
-        passphraseType: typeof apiKeysData.apiKeys?.okxPassphrase
-      });
-      
-      // Most robust check for API keys
-      // We need to verify that:
-      // 1. apiKeysData.apiKeys exists
-      // 2. Each required API key is present (not null or empty string)
-      // 3. Each key has a minimum valid length
-      const hasValidApiKeys = (
-        // Check if apiKeys object exists
-        apiKeysData.apiKeys && 
-        
-        // Check if okxApiKey is valid
-        apiKeysData.apiKeys.okxApiKey !== null && 
-        apiKeysData.apiKeys.okxApiKey !== undefined &&
-        typeof apiKeysData.apiKeys.okxApiKey === 'string' &&
-        apiKeysData.apiKeys.okxApiKey.trim().length > 5 &&
-        
-        // Check if okxSecretKey is valid
-        apiKeysData.apiKeys.okxSecretKey !== null && 
-        apiKeysData.apiKeys.okxSecretKey !== undefined &&
-        typeof apiKeysData.apiKeys.okxSecretKey === 'string' &&
-        apiKeysData.apiKeys.okxSecretKey.trim().length > 5 && 
-        
-        // Check if okxPassphrase is valid
-        apiKeysData.apiKeys.okxPassphrase !== null && 
-        apiKeysData.apiKeys.okxPassphrase !== undefined &&
-        typeof apiKeysData.apiKeys.okxPassphrase === 'string' &&
-        apiKeysData.apiKeys.okxPassphrase.trim().length > 0
-      );
-      
-      console.log("Has valid API keys:", hasValidApiKeys);
-      
-      // Set dialog visibility based on whether valid API keys exist
-      setShowApiKeyDialog(!hasValidApiKeys);
     }
   }, [isAuthenticated, authLoading, apiKeysLoading, apiKeysData, user]);
 
