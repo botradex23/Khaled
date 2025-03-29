@@ -1070,79 +1070,24 @@ export class AITradingSystem {
       return;
     }
     
-    console.log('Starting AI trading system...');
+    console.log('Starting AI trading system in PASSIVE mode (no active trading)...');
     this.isRunning = true;
-    this.readyToTrade = false;
+    this.readyToTrade = true; // נגדיר ישר כמוכן כי אנחנו לא באמת נריץ מסחר
     
     try {
-      // בדוק אם יש אפשרות לקבל נתוני מחירים ציבוריים - אם לא, אל תמשיך
-      try {
-        const testTicker = await okxService.getTicker('BTC-USDT');
-        if (!testTicker?.data || !testTicker.data[0]) {
-          console.error('Cannot start AI trading system - unable to access market data');
-          this.isRunning = false;
-          this.readyToTrade = false;
-          return;
-        }
-      } catch (error) {
-        console.error('Cannot start AI trading system - error accessing market data:', error);
-        this.isRunning = false;
-        this.readyToTrade = false;
-        return;
-      }
+      // נטרל את מערכת המסחר האוטומטית באופן זמני
+      console.log('AI trading system started in passive monitoring mode only');
       
-      // הכנת המערכת - איסוף נתונים התחלתי
-      console.log('Preparing system - collecting initial data...');
-      
-      for (const symbol of this.config.symbols) {
-        for (const timeframe of this.config.timeframes) {
-          await this.collectMarketData(symbol, timeframe);
-        }
-      }
-      
-      // ביצוע למידה התחלתית אם אין נתוני למידה קודמים
-      if (this.lastLearnTime === 0) {
-        console.log('Performing initial learning...');
-        await this.relearn();
-      }
-      
-      this.readyToTrade = true;
-      console.log('AI trading system ready - starting trading cycles');
-      
-      // נשמור את הנתונים בתדירות נמוכה יותר מאשר המסחר עצמו
+      // שמירת נתונים בלבד, ללא מחזורי מסחר פעילים
       this.saveDataInterval = setInterval(() => {
-        if (this.isRunning && this.readyToTrade) {
+        if (this.isRunning) {
           try {
             this.saveData();
           } catch (error) {
             console.error('Error saving AI trading data:', error);
           }
         }
-      }, 10 * 60 * 1000); // שמירת נתונים כל 10 דקות במקום בכל מחזור
-      
-      // הרצת מחזורי מסחר
-      this.tradingInterval = setInterval(async () => {
-        if (!this.isRunning || !this.readyToTrade || this.cycleInProgress) return;
-        
-        try {
-          this.cycleInProgress = true;
-          
-          for (const symbol of this.config.symbols) {
-            try {
-              await this.runTradingCycle(symbol);
-              // המתנה קצרה בין מחזורי מסחר של סמלים שונים
-              await new Promise(resolve => setTimeout(resolve, 2000));
-            } catch (err) {
-              console.error(`Error in trading cycle for ${symbol}:`, err);
-              // נמשיך לסמל הבא גם אם יש שגיאה בסמל הנוכחי
-            }
-          }
-        } catch (error) {
-          console.error('Error in trading cycle:', error);
-        } finally {
-          this.cycleInProgress = false;
-        }
-      }, 2 * 60 * 1000); // הרצת מחזור מסחר כל 2 דקות
+      }, 30 * 60 * 1000); // שמירת נתונים רק כל 30 דקות כדי להקטין עומס
       
     } catch (error) {
       console.error(`Error starting AI trading system: ${error}`);
