@@ -550,6 +550,7 @@ export default function BinancePage() {
   const [isApiKeysDialogOpen, setIsApiKeysDialogOpen] = useState(false);
   const [binanceApiKey, setBinanceApiKey] = useState('');
   const [binanceSecretKey, setBinanceSecretKey] = useState('');
+  const [binanceAllowedIp, setBinanceAllowedIp] = useState("185.199.228.220");
   const [useTestnet, setUseTestnet] = useState(false); // שים לב ששינינו ל-false כדי להתחבר לסביבה האמיתית
   const [isSaving, setIsSaving] = useState(false);
   
@@ -799,6 +800,7 @@ export default function BinancePage() {
         body: JSON.stringify({
           apiKey: binanceApiKey,
           secretKey: binanceSecretKey,
+          allowedIp: binanceAllowedIp,
           testnet: useTestnet
         })
       });
@@ -1397,6 +1399,19 @@ export default function BinancePage() {
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="binance-allowed-ip" className="text-right">
+                כתובת IP מורשית
+              </Label>
+              <Input
+                id="binance-allowed-ip"
+                value={binanceAllowedIp}
+                onChange={(e) => setBinanceAllowedIp(e.target.value)}
+                className="col-span-3"
+                placeholder="כתובת ה-IP שהגדרת ב-Binance"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="useTestnet" className="text-right">
                 סביבת בדיקות
               </Label>
@@ -1411,6 +1426,15 @@ export default function BinancePage() {
                 </Label>
               </div>
             </div>
+            
+            <Alert variant="info" className="mt-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>הערה חשובה - הגדרת IP מורשה</AlertTitle>
+              <AlertDescription>
+                וודא שהוספת את כתובת ה-IP {binanceAllowedIp} לרשימת הכתובות המורשות בהגדרות API Key שלך ב-Binance. 
+                כתובת ה-IP הזו משמשת את הפרוקסי שלנו להתחברות לשרתי Binance.
+              </AlertDescription>
+            </Alert>
           </div>
           
           <DialogFooter>

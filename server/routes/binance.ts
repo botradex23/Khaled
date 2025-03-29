@@ -465,9 +465,14 @@ router.post('/api-keys', ensureAuthenticated, async (req: Request, res: Response
     
     // Update the user's Binance API keys using our storage implementation
     const userId = req.user!.id;
+    const { allowedIp } = req.body;
+    
+    console.log('Saving Binance API keys for user with allowed IP:', allowedIp);
+    
     const updatedUser = await storage.updateUserBinanceApiKeys(userId, {
       binanceApiKey: apiKey,
-      binanceSecretKey: secretKey
+      binanceSecretKey: secretKey,
+      binanceAllowedIp: allowedIp || "185.199.228.220" // Default to our proxy IP if not specified
     });
     
     if (!updatedUser) {

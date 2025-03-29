@@ -52,7 +52,7 @@ export default function Header() {
   const [showBinanceDialog, setShowBinanceDialog] = useState(false);
   const [binanceApiKey, setBinanceApiKey] = useState("");
   const [binanceSecretKey, setBinanceSecretKey] = useState("");
-  const [binanceAllowedIp, setBinanceAllowedIp] = useState("38.154.227.167");
+  const [binanceAllowedIp, setBinanceAllowedIp] = useState("185.199.228.220");
   const [useTestnet, setUseTestnet] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasBinanceKeys, setHasBinanceKeys] = useState(false);
