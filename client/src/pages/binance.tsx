@@ -188,19 +188,34 @@ function PaperTradingContent() {
   // מוטציה ליצירת חשבון
   const createAccountMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', '/api/paper-trading/account', {
-        initialBalance: 1000.0 // יתרה התחלתית $1000
+      const res = await fetch('/api/paper-trading/account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          initialBalance: 1000.0 // יתרה התחלתית $1000
+        }),
+        credentials: 'include'
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "לא ניתן ליצור חשבון Paper Trading.");
+      }
+      
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "חשבון נוצר בהצלחה",
         description: "חשבון ה-Paper Trading שלך נוצר בהצלחה.",
       });
+      queryClient.setQueryData(['/api/paper-trading/account'], data);
       refetchAccount();
     },
     onError: (error: any) => {
+      console.error("Failed to create paper trading account:", error);
       toast({
         title: "יצירת חשבון נכשלה",
         description: error.message || "לא ניתן ליצור חשבון Paper Trading.",
@@ -212,20 +227,33 @@ function PaperTradingContent() {
   // מוטציה לאיפוס חשבון
   const resetAccountMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', '/api/paper-trading/account/reset');
+      const res = await fetch('/api/paper-trading/account/reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "לא ניתן לאפס את חשבון ה-Paper Trading.");
+      }
+      
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "חשבון אופס",
         description: "חשבון ה-Paper Trading שלך אופס בהצלחה.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/account'] });
+      queryClient.setQueryData(['/api/paper-trading/account'], data);
       queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/positions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/trades'] });
       queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/stats'] });
     },
     onError: (error: any) => {
+      console.error("Failed to reset paper trading account:", error);
       toast({
         title: "איפוס חשבון נכשל",
         description: error.message || "לא ניתן לאפס את חשבון ה-Paper Trading.",
@@ -237,10 +265,23 @@ function PaperTradingContent() {
   // מוטציה לסגירת פוזיציה
   const closePositionMutation = useMutation({
     mutationFn: async ({ id, price }: { id: number, price: number }) => {
-      const res = await apiRequest('POST', `/api/paper-trading/positions/${id}/close`, { exitPrice: price });
+      const res = await fetch(`/api/paper-trading/positions/${id}/close`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ exitPrice: price }),
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "לא ניתן לסגור את הפוזיציה.");
+      }
+      
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "פוזיציה נסגרה",
         description: "הפוזיציה נסגרה בהצלחה.",
@@ -251,6 +292,7 @@ function PaperTradingContent() {
       queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/stats'] });
     },
     onError: (error: any) => {
+      console.error("Failed to close position:", error);
       toast({
         title: "סגירת פוזיציה נכשלה",
         description: error.message || "לא ניתן לסגור את הפוזיציה.",
@@ -265,25 +307,35 @@ function PaperTradingContent() {
     const checkAndCreateAccount = async () => {
       try {
         // נסה לקבל את פרטי החשבון הקיים
-        const res = await apiRequest('GET', '/api/paper-trading/account');
-        const data = await res.json();
+        const res = await fetch('/api/paper-trading/account', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
         
-        if (data && data.id) {
-          // יש חשבון קיים, נשתמש בו
-          queryClient.setQueryData(['/api/paper-trading/account'], data);
-          toast({
-            title: "חשבון Paper Trading",
-            description: "טוען נתוני חשבון קיים...",
-          });
+        if (res.status === 404) {
+          // אין חשבון, צריך ליצור חדש
+          createAccountMutation.mutate();
+          return;
+        }
+        
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.id) {
+            // יש חשבון קיים, נשתמש בו
+            queryClient.setQueryData(['/api/paper-trading/account'], data);
+            toast({
+              title: "חשבון Paper Trading",
+              description: "טוען נתוני חשבון קיים...",
+            });
+          }
         }
       } catch (error: any) {
-        // אין חשבון קיים, ננסה ליצור חדש רק אם ההודעה אינה "כבר קיים"
-        if (!error.message?.includes("already exists")) {
-          createAccountMutation.mutate();
-        } else {
-          // אם החשבון כבר קיים, רענן שוב
-          setTimeout(() => refetchAccount(), 500);
-        }
+        console.error("Error checking account:", error);
+        // במקרה של שגיאה ננסה ליצור חשבון חדש
+        createAccountMutation.mutate();
       }
     };
     
