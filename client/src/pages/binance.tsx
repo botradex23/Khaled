@@ -935,6 +935,9 @@ export default function BinancePage() {
     setIsSaving(true);
 
     try {
+      // הדפסת אורך המפתחות לפני השליחה לשרת (עבור דיבוג)
+      console.log(`Sending API keys - API key length: ${binanceApiKey.trim().length}, Secret key length: ${binanceSecretKey.trim().length}`);
+      
       // קריאה לAPI לשמירת מפתחות Binance
       const response = await fetch("/api/binance/api-keys", {
         method: "POST",
@@ -943,16 +946,17 @@ export default function BinancePage() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          apiKey: binanceApiKey,
-          secretKey: binanceSecretKey,
-          allowedIp: binanceAllowedIp,
+          apiKey: binanceApiKey.trim(),
+          secretKey: binanceSecretKey.trim(),
+          allowedIp: binanceAllowedIp ? binanceAllowedIp.trim() : "",
           testnet: useTestnet
         })
       });
 
       const data = await response.json();
+      console.log("API response:", data);
 
-      if (response.ok) {
+      if (response.ok && data.success) {
         toast({
           title: "מצוין!",
           description: "מפתחות API של Binance נשמרו בהצלחה",
@@ -968,9 +972,15 @@ export default function BinancePage() {
         // רענון הנתונים של API keys כדי שיהיו זמינים למשתמש בפעם הבאה
         queryClient.invalidateQueries({ queryKey: ['/api/binance/api-keys/full'] });
         
+        // עדכון הסטטוס של אתחול מפתחות
+        setKeysInitialized(true);
+        
         // רענון נתוני החשבון לאחר השהייה קלה
-        setTimeout(() => refetchBalances(), 1000); // קצת השהייה לפני ניסיון משיכת היתרות
+        setTimeout(() => {
+          refetchBalances();
+        }, 1000); // קצת השהייה לפני ניסיון משיכת היתרות
       } else {
+        console.error("Failed to save API keys:", data);
         toast({
           title: "שגיאה בשמירת המפתחות",
           description: data.message || "אירעה שגיאה בלתי צפויה",

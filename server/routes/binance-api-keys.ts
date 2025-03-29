@@ -129,12 +129,16 @@ router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
       binanceAllowedIp: finalAllowedIp
     });
     
+    console.log(`Update result: ${updatedUser ? "Success" : "Failed"}`);
+    
     if (!updatedUser) {
       return res.status(404).json({
         error: 'User not found',
         message: 'Could not update API keys for this user'
       });
     }
+    
+    console.log(`User updated successfully. Has API Key: ${!!updatedUser.binanceApiKey}, Has Secret Key: ${!!updatedUser.binanceSecretKey}`);
     
     // Log success
     console.log(`Binance API keys saved successfully for user ${userId} (Using testnet: ${testnet})`);
