@@ -6,15 +6,15 @@ import axios from 'axios';
 // Configured with Webshare proxy service
 export const VPN_CONFIG = {
   // Whether to use VPN for all Binance API requests
-  // Setting to false will use the fallback demo data when geo-restrictions are detected
-  enabled: true, // Enabled with Webshare proxy
+  // Setting to false will use direct connection without proxy
+  enabled: false, // Disabled proxy for testing direct API connection
 
   // Type of proxy: 'https' or 'socks'
-  type: 'socks' as 'https' | 'socks', // Changed to socks which has better compatibility with Binance
+  type: 'https' as 'https' | 'socks', // Reverting back to HTTPS proxy
 
   // Webshare proxy server details
-  host: '45.94.47.66', // Alternative Webshare proxy IP address
-  port: 8110,         // Alternative Webshare proxy port
+  host: '38.154.227.167', // Original Webshare proxy IP address
+  port: 5868,             // Original Webshare proxy port
   
   // Webshare authentication credentials
   auth: {
@@ -33,8 +33,8 @@ export const VPN_CONFIG = {
   
   // Config for fallback to demo data
   fallbackToDemo: true, // Whether to use demo data when proxy fails
-  retryCount: 2, // Number of times to retry the proxy before falling back to demo data
-  retryDelay: 1000 // Delay between retries in ms
+  retryCount: 3, // Increased retry count
+  retryDelay: 3000 // Increased delay between retries in ms for better reliability
 };
 
 /**

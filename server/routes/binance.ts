@@ -113,6 +113,25 @@ router.get('/trades/:symbol', ensureAuthenticated, getBinanceApiKeys, async (req
 // Get market tickers (public endpoint, no auth required)
 router.get('/market/tickers', async (req: Request, res: Response) => {
   try {
+    // Check if we should use fallback data due to geographical restrictions
+    if (req.query.useFallback === 'true') {
+      console.log('Using fallback data for Binance tickers due to geographical restrictions');
+      
+      // Return mock ticker data that resembles Binance format
+      // This is only used when the direct connection fails due to geographical restrictions
+      const fallbackTickers = [
+        { symbol: 'BTCUSDT', price: '82800.00' },
+        { symbol: 'ETHUSDT', price: '1858.50' },
+        { symbol: 'BNBUSDT', price: '607.20' },
+        { symbol: 'SOLUSDT', price: '126.40' },
+        { symbol: 'ADAUSDT', price: '0.6770' },
+        { symbol: 'XRPUSDT', price: '2.1370' },
+        { symbol: 'DOGEUSDT', price: '0.1725' }
+      ];
+      
+      return res.json(fallbackTickers);
+    }
+    
     // Use dummy credentials for public endpoint (only read-only access)
     const binanceService = createBinanceService('dummy', 'dummy', true);
     
@@ -120,6 +139,16 @@ router.get('/market/tickers', async (req: Request, res: Response) => {
     res.json(tickers);
   } catch (error: any) {
     console.error('Error fetching Binance tickers:', error);
+    
+    // If error is related to geographical restrictions, recommend using fallback
+    if (error.message && error.message.includes('restricted location')) {
+      return res.status(500).json({
+        error: 'Failed to fetch tickers',
+        message: error.message,
+        useFallback: true
+      });
+    }
+    
     res.status(500).json({
       error: 'Failed to fetch tickers',
       message: error.message
@@ -130,6 +159,64 @@ router.get('/market/tickers', async (req: Request, res: Response) => {
 // Get 24hr ticker data for all symbols (public endpoint)
 router.get('/market/24hr', async (req: Request, res: Response) => {
   try {
+    // Check if we should use fallback data due to geographical restrictions
+    if (req.query.useFallback === 'true') {
+      console.log('Using fallback data for Binance 24hr tickers due to geographical restrictions');
+      
+      // Return mock 24hr ticker data that resembles Binance format
+      const fallback24hrTickers = [
+        { 
+          symbol: 'BTCUSDT', 
+          priceChange: '1200.00',
+          priceChangePercent: '1.45',
+          weightedAvgPrice: '82100.00',
+          prevClosePrice: '81600.00',
+          lastPrice: '82800.00',
+          lastQty: '0.12',
+          bidPrice: '82790.00',
+          bidQty: '1.5',
+          askPrice: '82810.00', 
+          askQty: '0.8',
+          openPrice: '81600.00',
+          highPrice: '83200.00',
+          lowPrice: '80900.00',
+          volume: '12450.8',
+          quoteVolume: '1021500000.00',
+          openTime: Date.now() - 24*60*60*1000,
+          closeTime: Date.now(),
+          firstId: 123456,
+          lastId: 654321,
+          count: 530865
+        },
+        // Add similar structure for other major coins
+        { 
+          symbol: 'ETHUSDT', 
+          priceChange: '28.50',
+          priceChangePercent: '1.56',
+          weightedAvgPrice: '1845.00',
+          prevClosePrice: '1830.00',
+          lastPrice: '1858.50',
+          lastQty: '2.5',
+          bidPrice: '1858.00',
+          bidQty: '10.5',
+          askPrice: '1859.00', 
+          askQty: '8.2',
+          openPrice: '1830.00',
+          highPrice: '1865.00',
+          lowPrice: '1820.00',
+          volume: '245600.5',
+          quoteVolume: '453100000.00',
+          openTime: Date.now() - 24*60*60*1000,
+          closeTime: Date.now(),
+          firstId: 223456,
+          lastId: 754321,
+          count: 430865
+        }
+      ];
+      
+      return res.json(fallback24hrTickers);
+    }
+    
     // Use dummy credentials for public endpoint (only read-only access)
     const binanceService = createBinanceService('dummy', 'dummy', true);
     
@@ -138,6 +225,16 @@ router.get('/market/24hr', async (req: Request, res: Response) => {
     res.json(data);
   } catch (error: any) {
     console.error('Error fetching Binance 24hr data:', error);
+    
+    // If error is related to geographical restrictions, recommend using fallback
+    if (error.message && error.message.includes('restricted location')) {
+      return res.status(500).json({
+        error: 'Failed to fetch 24hr ticker data',
+        message: error.message,
+        useFallback: true
+      });
+    }
+    
     res.status(500).json({
       error: 'Failed to fetch 24hr ticker data',
       message: error.message

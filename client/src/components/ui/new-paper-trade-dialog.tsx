@@ -130,7 +130,47 @@ export default function NewPaperTradeDialog({
   const fetchMarketData = async () => {
     setIsLoadingMarkets(true);
     try {
-      const response = await fetch("/api/binance/market/tickers", {
+      // בדיקה ראשונית - עם נתונים אמיתיים מבינאנס
+      try {
+        const response = await fetch("/api/binance/market/tickers", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          const responseData = await response.json();
+          // אם התגובה מכילה שגיאה המציינת מגבלת מיקום גיאוגרפי
+          if (responseData?.useFallback) {
+            // נסה שוב עם נתוני גיבוי
+            throw new Error("Geographic restriction");
+          }
+          throw new Error("Failed to fetch market data");
+        }
+
+        const data = await response.json();
+        
+        // אם הגענו לכאן, יש לנו נתונים תקינים
+        const formattedMarkets = data
+          .filter((ticker: any) => ticker.symbol.endsWith("USDT"))
+          .map((ticker: any) => ({
+            symbol: ticker.symbol,
+            // השתמש במחיר האחרון אם קיים, אחרת השתמש במחיר הרגיל
+            currentPrice: parseFloat(ticker.lastPrice || ticker.price),
+          }))
+          .sort((a: MarketData, b: MarketData) => a.symbol.localeCompare(b.symbol));
+
+        setMarkets(formattedMarkets);
+        return;
+      } catch (initialError) {
+        console.log("Initial fetch failed, trying fallback:", initialError);
+        // נמשיך לנסות את אפשרות הגיבוי
+      }
+
+      // נסה לקבל נתוני גיבוי
+      const fallbackResponse = await fetch("/api/binance/market/tickers?useFallback=true", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -138,18 +178,18 @@ export default function NewPaperTradeDialog({
         credentials: "include",
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch market data");
+      if (!fallbackResponse.ok) {
+        throw new Error("Failed to fetch market data even with fallback");
       }
 
-      const data = await response.json();
+      const fallbackData = await fallbackResponse.json();
       
-      // Transform the data to our format
-      const formattedMarkets = data
+      // Transform the fallback data to our format
+      const formattedMarkets = fallbackData
         .filter((ticker: any) => ticker.symbol.endsWith("USDT"))
         .map((ticker: any) => ({
           symbol: ticker.symbol,
-          currentPrice: parseFloat(ticker.lastPrice),
+          currentPrice: parseFloat(ticker.price),
         }))
         .sort((a: MarketData, b: MarketData) => a.symbol.localeCompare(b.symbol));
 
