@@ -27,8 +27,8 @@ interface BinanceBalance {
   total?: string | number;  // סה"כ כמות
   usdValue?: number;  // שווי ב-USD בפורמט אחד
   valueUSD?: number;  // שווי ב-USD בפורמט אחר
+  calculatedTotalValue?: number;  // שווי מחושב לפי הגיבוב שלנו
   pricePerUnit?: number;  // מחיר ליחידה
-  calculatedTotalValue?: number;  // שווי מחושב
 }
 
 interface BinanceApiStatus {
@@ -681,7 +681,7 @@ export default function BinancePage() {
   
   // חישוב סך הכל שווי בדולרים של כל הנכסים
   const totalUsdValue = balances?.reduce((sum: number, balance: BinanceBalance) => 
-    sum + (balance.valueUSD || 0), 0) || 0;
+    sum + (balance.valueUSD || balance.usdValue || balance.calculatedTotalValue || 0), 0) || 0;
   
   // השתמש בlocalStorage כדי לאחסן את הערך של totalUsdValue
   useEffect(() => {
@@ -1064,7 +1064,7 @@ export default function BinancePage() {
                               const free = getNumericValue(balance.free || balance.available);
                               return total > 0 || free > 0;
                             })
-                            .sort((a, b) => (b.valueUSD || b.usdValue || 0) - (a.valueUSD || a.usdValue || 0))
+                            .sort((a, b) => (b.valueUSD || b.usdValue || b.calculatedTotalValue || 0) - (a.valueUSD || a.usdValue || a.calculatedTotalValue || 0))
                             .map((balance) => (
                               <tr key={balance.asset || balance.currency} className="border-b">
                                 <td className="py-3 font-medium">{balance.asset || balance.currency}</td>
@@ -1096,7 +1096,7 @@ export default function BinancePage() {
                                   })()}
                                 </td>
                                 <td className="py-3 text-right">${(balance.pricePerUnit || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}</td>
-                                <td className="py-3 text-right">${(balance.valueUSD || balance.usdValue || 0).toLocaleString()}</td>
+                                <td className="py-3 text-right">${(balance.valueUSD || balance.usdValue || balance.calculatedTotalValue || 0).toLocaleString()}</td>
                               </tr>
                             ))}
                         </tbody>
