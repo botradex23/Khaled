@@ -38,10 +38,16 @@ async function getBinanceApiKeys(req: Request, res: Response, next: Function) {
       // Just for debugging
       console.log(`User ${req.user.id} does not have Binance API keys configured. API Keys status:`, apiKeys);
       
-      return res.status(400).json({ 
-        error: 'Binance API keys not configured',
-        message: 'Please configure your Binance API keys first'
-      });
+      // Instead of returning an error, mark the request as not having API keys
+      // and let downstream middleware/handlers decide what to do
+      req.binanceApiKeys = {
+        apiKey: '',
+        secretKey: '',
+        testnet: false
+      };
+      
+      // Continue to the next middleware/route handler
+      return next();
     }
     
     // Log for debugging (without exposing the actual keys)
@@ -84,6 +90,16 @@ router.get('/account/balances', ensureAuthenticated, getBinanceApiKeys, async (r
   try {
     // Access binanceApiKeys safely using type assertion
     const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    
+    // Check if the user has configured their API keys
+    if (!binanceApiKeys.apiKey || !binanceApiKeys.secretKey) {
+      return res.status(200).json({
+        configRequired: true,
+        message: 'Binance API keys need to be configured before accessing account data',
+        balances: [] // Return empty array to avoid client-side errors
+      });
+    }
+    
     const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
     
     // Test connection first
@@ -116,6 +132,16 @@ router.get('/trades/:symbol', ensureAuthenticated, getBinanceApiKeys, async (req
   try {
     // Access binanceApiKeys safely using type assertion
     const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    
+    // Check if the user has configured their API keys
+    if (!binanceApiKeys.apiKey || !binanceApiKeys.secretKey) {
+      return res.status(200).json({
+        configRequired: true,
+        message: 'Binance API keys need to be configured before accessing trade data',
+        trades: [] // Return empty array to avoid client-side errors
+      });
+    }
+    
     const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
     
     const symbol = req.params.symbol.toUpperCase();
@@ -373,6 +399,16 @@ router.get('/test-connection', ensureAuthenticated, getBinanceApiKeys, async (re
   try {
     // Access binanceApiKeys safely using type assertion
     const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    
+    // Check if the user has configured their API keys
+    if (!binanceApiKeys.apiKey || !binanceApiKeys.secretKey) {
+      return res.status(200).json({
+        configRequired: true,
+        success: false,
+        message: 'Binance API keys need to be configured before testing connection'
+      });
+    }
+    
     const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
     
     const result = await binanceService.testConnectivity();
@@ -553,6 +589,18 @@ router.post('/order', ensureAuthenticated, getBinanceApiKeys, async (req: Reques
   try {
     const { symbol, side, type, quantity, price, timeInForce, stopPrice } = req.body;
     
+    // Access binanceApiKeys safely using type assertion
+    const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    
+    // Check if the user has configured their API keys
+    if (!binanceApiKeys.apiKey || !binanceApiKeys.secretKey) {
+      return res.status(200).json({
+        configRequired: true,
+        success: false,
+        message: 'Binance API keys need to be configured before placing orders'
+      });
+    }
+    
     // Basic validation
     if (!symbol || !side || !type || !quantity) {
       return res.status(400).json({
@@ -594,8 +642,6 @@ router.post('/order', ensureAuthenticated, getBinanceApiKeys, async (req: Reques
       });
     }
     
-    // Create the order using the Binance service
-    const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
     const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
     
     // Test connection first to ensure API key is valid and has trading permissions
@@ -638,6 +684,18 @@ router.delete('/order/:orderId', ensureAuthenticated, getBinanceApiKeys, async (
     const { orderId } = req.params;
     const { symbol } = req.query;
     
+    // Access binanceApiKeys safely using type assertion
+    const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    
+    // Check if the user has configured their API keys
+    if (!binanceApiKeys.apiKey || !binanceApiKeys.secretKey) {
+      return res.status(200).json({
+        configRequired: true,
+        success: false,
+        message: 'Binance API keys need to be configured before cancelling orders'
+      });
+    }
+    
     if (!orderId || !symbol || typeof symbol !== 'string') {
       return res.status(400).json({
         error: 'Missing required fields',
@@ -645,7 +703,6 @@ router.delete('/order/:orderId', ensureAuthenticated, getBinanceApiKeys, async (
       });
     }
     
-    const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
     const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
     
     const result = await binanceService.cancelOrder(symbol, parseInt(orderId));
@@ -669,7 +726,18 @@ router.get('/open-orders', ensureAuthenticated, getBinanceApiKeys, async (req: R
   try {
     const { symbol } = req.query;
     
+    // Access binanceApiKeys safely using type assertion
     const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    
+    // Check if the user has configured their API keys
+    if (!binanceApiKeys.apiKey || !binanceApiKeys.secretKey) {
+      return res.status(200).json({
+        configRequired: true,
+        message: 'Binance API keys need to be configured before fetching orders',
+        orders: [] // Return empty array to avoid client-side errors
+      });
+    }
+    
     const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
     
     const orders = await binanceService.getOpenOrders(typeof symbol === 'string' ? symbol : undefined);
@@ -690,7 +758,18 @@ router.get('/order-history/:symbol', ensureAuthenticated, getBinanceApiKeys, asy
     const { symbol } = req.params;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
     
+    // Access binanceApiKeys safely using type assertion
     const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    
+    // Check if the user has configured their API keys
+    if (!binanceApiKeys.apiKey || !binanceApiKeys.secretKey) {
+      return res.status(200).json({
+        configRequired: true,
+        message: 'Binance API keys need to be configured before fetching order history',
+        orders: [] // Return empty array to avoid client-side errors
+      });
+    }
+    
     const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
     
     const orders = await binanceService.getOrderHistory(symbol, limit);
@@ -711,7 +790,18 @@ router.get('/trade-history/:symbol', ensureAuthenticated, getBinanceApiKeys, asy
     const { symbol } = req.params;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
     
+    // Access binanceApiKeys safely using type assertion
     const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    
+    // Check if the user has configured their API keys
+    if (!binanceApiKeys.apiKey || !binanceApiKeys.secretKey) {
+      return res.status(200).json({
+        configRequired: true,
+        message: 'Binance API keys need to be configured before fetching trade history',
+        trades: [] // Return empty array to avoid client-side errors
+      });
+    }
+    
     const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
     
     const trades = await binanceService.getTradeHistory(symbol, limit);

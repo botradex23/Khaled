@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { storage } from '../storage';
 import { ensureAuthenticated } from '../auth';
-import { OkxService } from '../api/okx/okxService';
+import { createOkxServiceWithCustomCredentials } from '../api/okx/okxService';
 
 const router = Router();
 
@@ -35,9 +35,10 @@ router.post('/update-keys', ensureAuthenticated, async (req: Request, res: Respo
 
     // Validate the new keys immediately
     const testService = new OkxService(
-      useTestnet, // Use testnet if requested
-      { apiKey, secretKey, passphrase },
-      userId
+      apiKey,
+      secretKey,
+      passphrase,
+      useTestnet // Use testnet if requested
     );
 
     // Attempt a simple authenticated request to validate credentials
@@ -96,13 +97,10 @@ router.get('/test-keys', ensureAuthenticated, async (req: Request, res: Response
 
     // Create a service instance with the user's API keys
     const testService = new OkxService(
-      apiKeys.useTestnet,
-      { 
-        apiKey: apiKeys.okxApiKey,
-        secretKey: apiKeys.okxSecretKey,
-        passphrase: apiKeys.okxPassphrase
-      },
-      userId
+      apiKeys.okxApiKey,
+      apiKeys.okxSecretKey,
+      apiKeys.okxPassphrase,
+      apiKeys.useTestnet === true // Ensure it's a boolean
     );
 
     // Attempt a simple authenticated request to validate credentials
