@@ -18,9 +18,10 @@ export default function AppSidebar() {
     { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
     { name: "Markets", href: "/markets", icon: BarChart3 },
     { name: "Bots", href: "/bots", icon: Grid },
+    { name: "AI Trading", href: "/ai-trading", icon: Activity, isNew: true },
     { name: "Learn", href: "/learn", icon: BookOpen },
     { name: "API Status", href: "/api-status", icon: Activity },
-    { name: "Binance", href: "/binance", icon: SiBinance, isNew: true },
+    { name: "Binance", href: "/binance", icon: SiBinance },
   ];
 
   const isActive = (href: string) => {

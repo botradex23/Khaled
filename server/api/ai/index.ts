@@ -7,6 +7,7 @@
 import { Router, Request, Response } from 'express';
 import { aiGridBotManager, AiGridParams } from './AiGridBot';
 import { aiTradingSystem } from './AITradingSystem';
+import { aiTradingBridge, TradingSignal } from './AITradingBridge';
 import { storage } from '../../storage';
 import { ensureAuthenticated } from '../../auth';
 
@@ -298,7 +299,7 @@ router.post('/bots/:id/update', ensureAuthenticated, async (req: Request, res: R
 router.post('/relearn', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     // בדיקת הרשאות מנהל
-    if (!req.user?.isAdmin) {
+    if (req.user?.username !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Only administrators can trigger AI relearning'
@@ -312,6 +313,160 @@ router.post('/relearn', ensureAuthenticated, async (req: Request, res: Response)
       success: true,
       message: 'AI relearning process triggered successfully'
     });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * GET /api/ai/trading/signals
+ * קבלת איתותי מסחר מה-AI
+ */
+router.get('/trading/signals', ensureAuthenticated, async (req: Request, res: Response) => {
+  try {
+    // Get user API keys for Binance
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    // Get user API keys from storage
+    const apiKeys = await storage.getUserBinanceApiKeys(userId);
+    if (!apiKeys || !apiKeys.binanceApiKey || !apiKeys.binanceSecretKey) {
+      return res.status(400).json({ message: 'Binance API keys not configured' });
+    }
+
+    // Set credentials
+    await aiTradingBridge.setCredentials({
+      apiKey: apiKeys.binanceApiKey,
+      secretKey: apiKeys.binanceSecretKey, 
+      testnet: true // Default to testnet for safety
+    });
+
+    // Check if we have fresh signals already
+    if (aiTradingBridge.areSignalsFresh()) {
+      const { signals, timestamp } = aiTradingBridge.getLastSignals();
+      return res.json({
+        success: true,
+        signals,
+        timestamp: timestamp.toISOString(),
+        isFresh: true
+      });
+    }
+
+    // Generate new signals
+    const signals = await aiTradingBridge.generateSignals();
+    
+    return res.json({
+      success: true,
+      signals,
+      timestamp: new Date().toISOString(),
+      isFresh: true
+    });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * POST /api/ai/trading/execute
+ * ביצוע מסחר על סמך המלצת ה-AI
+ */
+router.post('/trading/execute', ensureAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { signalId, amount } = req.body;
+    if (!signalId) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Signal ID is required' 
+      });
+    }
+
+    // Get user API keys for Binance
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'User not authenticated' 
+      });
+    }
+
+    // Get user API keys from storage
+    const apiKeys = await storage.getUserBinanceApiKeys(userId);
+    if (!apiKeys || !apiKeys.binanceApiKey || !apiKeys.binanceSecretKey) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Binance API keys not configured' 
+      });
+    }
+
+    // Set credentials
+    await aiTradingBridge.setCredentials({
+      apiKey: apiKeys.binanceApiKey,
+      secretKey: apiKeys.binanceSecretKey,
+      testnet: true // Default to testnet for safety
+    });
+
+    // Get current signals
+    const { signals } = aiTradingBridge.getLastSignals();
+    const signal = signals.find(s => `${s.symbol}-${s.timestamp}` === signalId);
+
+    if (!signal) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Signal not found' 
+      });
+    }
+
+    // Execute the trade
+    const result = await aiTradingBridge.executeTrade(signal, amount);
+    
+    return res.json({
+      success: result.success,
+      message: result.message,
+      order: result.order
+    });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * POST /api/ai/trading/train
+ * אימון מודל ה-AI למטבע מסוים
+ */
+router.post('/trading/train', ensureAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { symbol } = req.body;
+    if (!symbol) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Symbol is required' 
+      });
+    }
+
+    // Only admin can train models
+    if (req.user?.username !== 'admin') {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Only admin can train models' 
+      });
+    }
+
+    // Train the model
+    const success = await aiTradingBridge.trainModel(symbol);
+    
+    if (success) {
+      return res.json({ 
+        success: true,
+        message: `Model for ${symbol} trained successfully` 
+      });
+    } else {
+      return res.status(500).json({ 
+        success: false,
+        message: `Failed to train model for ${symbol}` 
+      });
+    }
   } catch (err) {
     handleApiError(err, res);
   }

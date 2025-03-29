@@ -46,7 +46,7 @@ export default function Layout({ children }: LayoutProps) {
   const navigationItems = [
     { name: "Home", href: "/", icon: Home },
     { name: "Dashboard", href: "/dashboard", icon: BarChart3, auth: true },
-    { name: "AI Trading", href: "/bot-demo", icon: Bot, auth: true },
+    { name: "AI Trading", href: "/ai-trading", icon: Bot, auth: true },
     { name: "Markets", href: "/markets", icon: CandlestickChart, auth: true },
     { name: "Market Prices", href: "/market-prices", icon: LineChart },
     { name: "Bots", href: "/bots", icon: FlaskConical, auth: true },

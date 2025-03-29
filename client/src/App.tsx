@@ -18,6 +18,7 @@ import TestLogin from "@/pages/test-login";
 import BotDemo from "@/pages/bot-demo";
 import Learn from "@/pages/learn";
 import AIGridBot from "@/pages/ai-grid-bot";
+import AITradingPage from "@/pages/ai-trading";
 import ApiStatus from "@/pages/api-status";
 import ApiKeys from "@/pages/api-keys";
 import Account from "@/pages/account";
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/bot-demo" component={BotDemo} />
       <Route path="/learn" component={Learn} />
       <Route path="/ai-grid-bot" component={AIGridBot} />
+      <Route path="/ai-trading" component={AITradingPage} />
       <Route path="/api-status" component={ApiStatus} />
       <Route path="/api-keys" component={ApiKeys} />
       <Route path="/account" component={Account} />

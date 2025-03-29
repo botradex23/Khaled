@@ -35,6 +35,9 @@ export const users = pgTable("users", {
   stripeSubscriptionId: text("stripe_subscription_id"),
   hasPremium: boolean("has_premium").default(false),
   premiumExpiresAt: timestamp("premium_expires_at"),
+  
+  // Admin privileges
+  isAdmin: boolean("is_admin").default(false),
 });
 
 export const insertUserSchema = createInsertSchema(users)
