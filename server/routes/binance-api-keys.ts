@@ -118,10 +118,15 @@ router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
     
     // Update the user's Binance API keys using our storage implementation
     const userId = req.user!.id;
+    // במקרה שמשתמש לא מספק כתובת IP מאושרת, השתמש בברירת מחדל של הפרוקסי שלנו
+    const finalAllowedIp = cleanedAllowedIp || "185.199.228.220";
+    
+    console.log(`Using allowed IP: ${finalAllowedIp} for Binance API`);
+    
     const updatedUser = await storage.updateUserBinanceApiKeys(userId, {
       binanceApiKey: cleanedApiKey,
       binanceSecretKey: cleanedSecretKey,
-      binanceAllowedIp: cleanedAllowedIp
+      binanceAllowedIp: finalAllowedIp
     });
     
     if (!updatedUser) {

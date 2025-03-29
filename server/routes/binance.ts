@@ -3,87 +3,9 @@ import { createBinanceService } from '../api/binance';
 import { storage } from '../storage';
 import { ensureAuthenticated } from '../auth';
 import { VPN_CONFIG, testProxyConnection } from '../api/binance/proxy-config';
-
-// Extend Express Request type to include binanceApiKeys
-declare global {
-  namespace Express {
-    interface Request {
-      binanceApiKeys?: {
-        apiKey: string;
-        secretKey: string;
-        testnet: boolean;
-      };
-    }
-  }
-}
+import { getBinanceApiKeys, maskSecret } from '../middleware/getBinanceApiKeys';
 
 const router = Router();
-
-// Utility function to mask sensitive strings
-function maskSecret(secret: string): string {
-  if (!secret || secret.length < 8) return '****';
-  return `${secret.substring(0, 4)}...${secret.substring(secret.length - 4)}`;
-}
-
-// Middleware to get user's Binance API keys
-async function getBinanceApiKeys(req: Request, res: Response, next: Function) {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
-  try {
-    const apiKeys = await storage.getUserBinanceApiKeys(req.user.id);
-    
-    if (!apiKeys || !apiKeys.binanceApiKey || !apiKeys.binanceSecretKey) {
-      // Just for debugging
-      console.log(`User ${req.user.id} does not have Binance API keys configured. API Keys status:`, apiKeys);
-      
-      // Instead of returning an error, mark the request as not having API keys
-      // and let downstream middleware/handlers decide what to do
-      req.binanceApiKeys = {
-        apiKey: '',
-        secretKey: '',
-        testnet: false
-      };
-      
-      // Continue to the next middleware/route handler
-      return next();
-    }
-    
-    // Log for debugging (without exposing the actual keys)
-    console.log(`Retrieved Binance API keys for user ${req.user.id}. API Key length: ${apiKeys.binanceApiKey.length}, Secret Key length: ${apiKeys.binanceSecretKey.length}`);
-    
-    // Ensure the keys are properly trimmed to avoid format errors
-    const trimmedApiKey = apiKeys.binanceApiKey.trim();
-    const trimmedSecretKey = apiKeys.binanceSecretKey.trim();
-    
-    // Make sure keys are non-empty after trimming
-    if (!trimmedApiKey || !trimmedSecretKey) {
-      return res.status(400).json({ 
-        error: 'Invalid Binance API keys',
-        message: 'Your API keys appear to be empty or invalid. Please reconfigure them.'
-      });
-    }
-    
-    // Attach the keys to the request object for use in routes
-    req.binanceApiKeys = {
-      apiKey: trimmedApiKey,
-      secretKey: trimmedSecretKey,
-      testnet: false // Using live environment as per user requirement
-    };
-    
-    // Debug log to help troubleshoot
-    console.log(`Binance API keys prepared for request. API Key format valid: ${trimmedApiKey.length > 0}, Secret Key format valid: ${trimmedSecretKey.length > 0}`);
-    
-    next();
-  } catch (error) {
-    console.error('Error retrieving Binance API keys:', error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: 'Failed to retrieve API keys'
-    });
-  }
-}
 
 // Get account balances
 router.get('/account/balances', ensureAuthenticated, getBinanceApiKeys, async (req: Request, res: Response) => {
