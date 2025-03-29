@@ -349,4 +349,173 @@ export class BinanceService {
       };
     }
   }
+
+  // Get all account balances with USD values
+  async getAccountBalancesWithUSD(): Promise<any[]> {
+    try {
+      console.log('Fetching Binance account balances with USD values');
+      
+      // Get account information
+      const accountInfo = await this.getAccountInfo();
+      
+      // Get ticker prices for USD conversion
+      const tickers = await this.getAllTickers();
+      const tickerMap = new Map();
+      tickers.forEach((ticker: any) => {
+        tickerMap.set(ticker.symbol, parseFloat(ticker.price));
+      });
+      
+      // Filter out zero balances
+      const balances = accountInfo.balances
+        .filter((balance: any) => {
+          const total = parseFloat(balance.free) + parseFloat(balance.locked);
+          return total > 0;
+        })
+        .map((balance: any) => {
+          const currency = balance.asset;
+          const available = parseFloat(balance.free);
+          const frozen = parseFloat(balance.locked);
+          const total = available + frozen;
+          
+          // Calculate USD value
+          let valueUSD = 0;
+          let pricePerUnit = 0;
+          
+          if (currency === 'USDT' || currency === 'BUSD' || currency === 'USDC' || currency === 'DAI') {
+            // Stablecoins are approximately $1
+            valueUSD = total;
+            pricePerUnit = 1;
+          } else if (currency === 'BTC') {
+            // BTC direct conversion if BTC/USDT exists
+            pricePerUnit = tickerMap.get('BTCUSDT') || 0;
+            valueUSD = total * pricePerUnit;
+          } else {
+            // Try to find direct pair with USDT
+            const symbol = `${currency}USDT`;
+            if (tickerMap.has(symbol)) {
+              pricePerUnit = tickerMap.get(symbol);
+              valueUSD = total * pricePerUnit;
+            } else {
+              // Try to find a BTC pair and convert through BTC
+              const btcSymbol = `${currency}BTC`;
+              if (tickerMap.has(btcSymbol) && tickerMap.has('BTCUSDT')) {
+                const btcPrice = tickerMap.get(btcSymbol);
+                const btcUsdtPrice = tickerMap.get('BTCUSDT');
+                pricePerUnit = btcPrice * btcUsdtPrice;
+                valueUSD = total * pricePerUnit;
+              }
+            }
+          }
+          
+          return {
+            currency,
+            available,
+            frozen,
+            total,
+            valueUSD,
+            pricePerUnit,
+            calculatedTotalValue: valueUSD
+          };
+        });
+      
+      return balances;
+    } catch (error: any) {
+      console.error('Failed to fetch Binance account balances:', error.message);
+      throw new Error(`Binance API Error: ${error.message}`);
+    }
+  }
+
+  // Create a new order
+  async createOrder(
+    symbol: string,
+    side: 'BUY' | 'SELL',
+    type: 'LIMIT' | 'MARKET' | 'STOP_LOSS' | 'STOP_LOSS_LIMIT' | 'TAKE_PROFIT' | 'TAKE_PROFIT_LIMIT',
+    quantity: number,
+    price?: number,
+    timeInForce?: 'GTC' | 'IOC' | 'FOK',
+    stopPrice?: number
+  ): Promise<any> {
+    const params: any = {
+      symbol: symbol.toUpperCase(),
+      side,
+      type,
+      quantity: quantity.toString()
+    };
+    
+    // Add optional parameters based on order type
+    if (type === 'LIMIT' || type.includes('LIMIT')) {
+      params.price = price!.toString();
+      params.timeInForce = timeInForce || 'GTC';
+    }
+    
+    if (type.includes('STOP_LOSS') || type.includes('TAKE_PROFIT')) {
+      params.stopPrice = stopPrice!.toString();
+    }
+    
+    try {
+      console.log(`Creating ${side} ${type} order for ${symbol} - quantity: ${quantity}${price ? `, price: ${price}` : ''}`);
+      return await this.makeAuthenticatedRequest('/v3/order', 'POST', params);
+    } catch (error: any) {
+      console.error('Failed to create order:', error.message);
+      throw new Error(`Binance Order Error: ${error.message}`);
+    }
+  }
+
+  // Cancel an order
+  async cancelOrder(symbol: string, orderId: number): Promise<any> {
+    try {
+      console.log(`Cancelling order ${orderId} for ${symbol}`);
+      return await this.makeAuthenticatedRequest('/v3/order', 'DELETE', {
+        symbol: symbol.toUpperCase(),
+        orderId
+      });
+    } catch (error: any) {
+      console.error('Failed to cancel order:', error.message);
+      throw new Error(`Binance Cancel Order Error: ${error.message}`);
+    }
+  }
+
+  // Get open orders
+  async getOpenOrders(symbol?: string): Promise<any[]> {
+    try {
+      const params: any = {};
+      if (symbol) {
+        params.symbol = symbol.toUpperCase();
+      }
+      
+      console.log(`Fetching open orders${symbol ? ` for ${symbol}` : ''}`);
+      return await this.makeAuthenticatedRequest('/v3/openOrders', 'GET', params);
+    } catch (error: any) {
+      console.error('Failed to fetch open orders:', error.message);
+      throw new Error(`Binance Open Orders Error: ${error.message}`);
+    }
+  }
+
+  // Get order history
+  async getOrderHistory(symbol: string, limit: number = 50): Promise<any[]> {
+    try {
+      console.log(`Fetching order history for ${symbol}`);
+      return await this.makeAuthenticatedRequest('/v3/allOrders', 'GET', {
+        symbol: symbol.toUpperCase(),
+        limit
+      });
+    } catch (error: any) {
+      console.error('Failed to fetch order history:', error.message);
+      throw new Error(`Binance Order History Error: ${error.message}`);
+    }
+  }
+
+  // Get trade history
+  async getTradeHistory(symbol: string, limit: number = 50): Promise<any[]> {
+    try {
+      console.log(`Fetching trade history for ${symbol}`);
+      return await this.makeAuthenticatedRequest('/v3/myTrades', 'GET', {
+        symbol: symbol.toUpperCase(),
+        limit
+      });
+    } catch (error: any) {
+      console.error('Failed to fetch trade history:', error.message);
+      throw new Error(`Binance Trade History Error: ${error.message}`);
+    }
+  }
 }

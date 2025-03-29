@@ -81,10 +81,10 @@ router.get('/account/balances', ensureAuthenticated, getBinanceApiKeys, async (r
       });
     }
     
-    const balances = await binanceService.getAccountBalances();
+    const balances = await binanceService.getAccountBalancesWithUSD();
     
     // Sort balances by USD value (descending)
-    balances.sort((a, b) => (b.usdValue || 0) - (a.usdValue || 0));
+    balances.sort((a, b) => (b.valueUSD || 0) - (a.valueUSD || 0));
     
     res.json(balances);
   } catch (error: any) {
@@ -493,6 +493,184 @@ router.post('/api-keys', ensureAuthenticated, async (req: Request, res: Response
     return res.status(500).json({
       error: 'Server error',
       message: 'An error occurred while saving Binance API keys'
+    });
+  }
+});
+
+// Create order endpoints (for trading)
+router.post('/order', ensureAuthenticated, getBinanceApiKeys, async (req: Request, res: Response) => {
+  try {
+    const { symbol, side, type, quantity, price, timeInForce, stopPrice } = req.body;
+    
+    // Basic validation
+    if (!symbol || !side || !type || !quantity) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'Symbol, side, type, and quantity are required'
+      });
+    }
+    
+    // Validate side
+    if (side !== 'BUY' && side !== 'SELL') {
+      return res.status(400).json({
+        error: 'Invalid side',
+        message: 'Side must be BUY or SELL'
+      });
+    }
+    
+    // Validate order type and required parameters
+    const validTypes = ['LIMIT', 'MARKET', 'STOP_LOSS', 'STOP_LOSS_LIMIT', 'TAKE_PROFIT', 'TAKE_PROFIT_LIMIT'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({
+        error: 'Invalid order type',
+        message: `Order type must be one of: ${validTypes.join(', ')}`
+      });
+    }
+    
+    // Price is required for LIMIT orders
+    if ((type === 'LIMIT' || type.includes('LIMIT')) && !price) {
+      return res.status(400).json({
+        error: 'Missing price',
+        message: 'Price is required for LIMIT orders'
+      });
+    }
+    
+    // Stop price is required for stop orders
+    if ((type.includes('STOP') || type.includes('TAKE_PROFIT')) && !stopPrice) {
+      return res.status(400).json({
+        error: 'Missing stop price',
+        message: 'Stop price is required for stop orders'
+      });
+    }
+    
+    // Create the order using the Binance service
+    const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
+    
+    // Test connection first to ensure API key is valid and has trading permissions
+    const connectionTest = await binanceService.testConnectivity();
+    if (!connectionTest.success) {
+      return res.status(400).json({
+        error: 'Binance API connection failed',
+        message: connectionTest.message || 'Could not connect to Binance API with the provided credentials'
+      });
+    }
+    
+    // Create the order
+    const order = await binanceService.createOrder(
+      symbol,
+      side as any,
+      type as any,
+      parseFloat(quantity),
+      price ? parseFloat(price) : undefined,
+      timeInForce as any,
+      stopPrice ? parseFloat(stopPrice) : undefined
+    );
+    
+    res.status(200).json({
+      success: true,
+      message: `Order created successfully (${side} ${type} order for ${symbol})`,
+      order
+    });
+  } catch (error: any) {
+    console.error('Error creating order:', error);
+    res.status(500).json({
+      error: 'Failed to create order',
+      message: error.message
+    });
+  }
+});
+
+// Cancel order
+router.delete('/order/:orderId', ensureAuthenticated, getBinanceApiKeys, async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    const { symbol } = req.query;
+    
+    if (!orderId || !symbol || typeof symbol !== 'string') {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'Order ID and symbol are required'
+      });
+    }
+    
+    const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
+    
+    const result = await binanceService.cancelOrder(symbol, parseInt(orderId));
+    
+    res.status(200).json({
+      success: true,
+      message: `Order ${orderId} for ${symbol} cancelled successfully`,
+      result
+    });
+  } catch (error: any) {
+    console.error('Error cancelling order:', error);
+    res.status(500).json({
+      error: 'Failed to cancel order',
+      message: error.message
+    });
+  }
+});
+
+// Get open orders
+router.get('/open-orders', ensureAuthenticated, getBinanceApiKeys, async (req: Request, res: Response) => {
+  try {
+    const { symbol } = req.query;
+    
+    const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
+    
+    const orders = await binanceService.getOpenOrders(typeof symbol === 'string' ? symbol : undefined);
+    
+    res.status(200).json(orders);
+  } catch (error: any) {
+    console.error('Error fetching open orders:', error);
+    res.status(500).json({
+      error: 'Failed to fetch open orders',
+      message: error.message
+    });
+  }
+});
+
+// Get order history
+router.get('/order-history/:symbol', ensureAuthenticated, getBinanceApiKeys, async (req: Request, res: Response) => {
+  try {
+    const { symbol } = req.params;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+    
+    const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
+    
+    const orders = await binanceService.getOrderHistory(symbol, limit);
+    
+    res.status(200).json(orders);
+  } catch (error: any) {
+    console.error('Error fetching order history:', error);
+    res.status(500).json({
+      error: 'Failed to fetch order history',
+      message: error.message
+    });
+  }
+});
+
+// Get trade history
+router.get('/trade-history/:symbol', ensureAuthenticated, getBinanceApiKeys, async (req: Request, res: Response) => {
+  try {
+    const { symbol } = req.params;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+    
+    const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
+    
+    const trades = await binanceService.getTradeHistory(symbol, limit);
+    
+    res.status(200).json(trades);
+  } catch (error: any) {
+    console.error('Error fetching trade history:', error);
+    res.status(500).json({
+      error: 'Failed to fetch trade history',
+      message: error.message
     });
   }
 });
