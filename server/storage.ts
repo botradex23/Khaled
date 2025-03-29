@@ -5,8 +5,15 @@ import {
   type Bot,
   type InsertBot,
   type PricingPlan,
+  type InsertPricingPlan,
   type Payment,
   type InsertPayment,
+  type PaperTradingAccount,
+  type InsertPaperTradingAccount,
+  type PaperTradingPosition,
+  type InsertPaperTradingPosition,
+  type PaperTradingTrade,
+  type InsertPaperTradingTrade,
   payments
 } from "@shared/schema";
 
@@ -89,6 +96,38 @@ export interface IStorage {
     stripeSubscriptionId?: string; 
   }): Promise<User | undefined>;
   updateUserPremiumStatus(userId: number, hasPremium: boolean, expiresAt?: Date): Promise<User | undefined>;
+  
+  // Paper Trading Account methods
+  getPaperTradingAccount(id: number): Promise<PaperTradingAccount | undefined>;
+  getUserPaperTradingAccount(userId: number): Promise<PaperTradingAccount | undefined>;
+  createPaperTradingAccount(account: InsertPaperTradingAccount): Promise<PaperTradingAccount>;
+  updatePaperTradingAccount(id: number, updates: Partial<PaperTradingAccount>): Promise<PaperTradingAccount | undefined>;
+  resetPaperTradingAccount(id: number, initialBalance?: number): Promise<PaperTradingAccount | undefined>;
+  
+  // Paper Trading Position methods
+  getPaperTradingPosition(id: number): Promise<PaperTradingPosition | undefined>;
+  getAccountPaperTradingPositions(accountId: number): Promise<PaperTradingPosition[]>;
+  createPaperTradingPosition(position: InsertPaperTradingPosition): Promise<PaperTradingPosition>;
+  updatePaperTradingPosition(id: number, updates: Partial<PaperTradingPosition>): Promise<PaperTradingPosition | undefined>;
+  closePaperTradingPosition(id: number, exitPrice: number): Promise<PaperTradingTrade | undefined>;
+  
+  // Paper Trading Trade methods
+  getPaperTradingTrade(id: number): Promise<PaperTradingTrade | undefined>;
+  getAccountPaperTradingTrades(accountId: number, limit?: number, offset?: number): Promise<PaperTradingTrade[]>;
+  createPaperTradingTrade(trade: InsertPaperTradingTrade): Promise<PaperTradingTrade>;
+  updatePaperTradingTrade(id: number, updates: Partial<PaperTradingTrade>): Promise<PaperTradingTrade | undefined>;
+  
+  // Paper Trading Stats
+  getPaperTradingStats(accountId: number): Promise<{
+    totalTrades: number;
+    winningTrades: number;
+    losingTrades: number;
+    winRate: number;
+    totalProfitLoss: string;
+    totalProfitLossPercent: string;
+    averageProfitLoss: string;
+    averageProfitLossPercent: string;
+  }>;
 }
 
 export class MemStorage implements IStorage {
@@ -96,20 +135,34 @@ export class MemStorage implements IStorage {
   private bots: Map<number, Bot>;
   private pricingPlans: Map<number, PricingPlan>;
   private payments: Map<number, Payment>;
+  private paperTradingAccounts: Map<number, PaperTradingAccount>;
+  private paperTradingPositions: Map<number, PaperTradingPosition>;
+  private paperTradingTrades: Map<number, PaperTradingTrade>;
+  
   currentId: number;
   botId: number;
   pricingPlanId: number;
   paymentId: number;
+  paperAccountId: number;
+  paperPositionId: number;
+  paperTradeId: number;
 
   constructor() {
     this.users = new Map();
     this.bots = new Map();
     this.pricingPlans = new Map();
     this.payments = new Map();
+    this.paperTradingAccounts = new Map();
+    this.paperTradingPositions = new Map();
+    this.paperTradingTrades = new Map();
+    
     this.currentId = 1;
     this.botId = 1;
     this.pricingPlanId = 1;
     this.paymentId = 1;
+    this.paperAccountId = 1;
+    this.paperPositionId = 1;
+    this.paperTradeId = 1;
     
     // Initialize with sample data
     this.initializeData();
@@ -144,7 +197,8 @@ export class MemStorage implements IStorage {
       stripeCustomerId: null,
       stripeSubscriptionId: null,
       hasPremium: false,
-      premiumExpiresAt: null
+      premiumExpiresAt: null,
+      isAdmin: false
     };
     
     // Create an admin user with test API keys
@@ -177,7 +231,8 @@ export class MemStorage implements IStorage {
       stripeCustomerId: null,
       stripeSubscriptionId: null,
       hasPremium: true,
-      premiumExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year from now
+      premiumExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+      isAdmin: true
     };
     
     console.log('Created admin user with API keys:', {
@@ -390,7 +445,10 @@ export class MemStorage implements IStorage {
       stripeCustomerId: null,
       stripeSubscriptionId: null,
       hasPremium: false,
-      premiumExpiresAt: null
+      premiumExpiresAt: null,
+      
+      // Default role
+      isAdmin: false
     };
     
     // Add optional OAuth fields if provided
@@ -796,12 +854,13 @@ export class MemStorage implements IStorage {
       id,
       userId: payment.userId,
       amount: payment.amount,
-      currency: payment.currency || "USD",
-      status: payment.status || "pending",
-      stripePaymentId: payment.stripePaymentId || null,
-      pricingPlanId: payment.pricingPlanId,
+      currency: payment.currency || "usd",
+      status: payment.status,
+      stripePaymentIntentId: payment.stripePaymentIntentId,
+      planId: payment.planId || null,
       createdAt: new Date(),
-      completedAt: payment.completedAt || null
+      updatedAt: new Date(),
+      metadata: payment.metadata || null
     };
     
     this.payments.set(id, newPayment);
@@ -868,6 +927,409 @@ export class MemStorage implements IStorage {
     
     this.users.set(userId, updatedUser);
     return updatedUser;
+  }
+
+
+
+  // Paper Trading Account methods
+  async getPaperTradingAccount(id: number): Promise<PaperTradingAccount | undefined> {
+    return this.paperTradingAccounts.get(id);
+  }
+
+  async getUserPaperTradingAccount(userId: number): Promise<PaperTradingAccount | undefined> {
+    return Array.from(this.paperTradingAccounts.values()).find(
+      (account) => account.userId === userId
+    );
+  }
+
+  async createPaperTradingAccount(account: InsertPaperTradingAccount): Promise<PaperTradingAccount> {
+    const id = this.paperAccountId++;
+    
+    const paperAccount: PaperTradingAccount = {
+      id,
+      userId: account.userId,
+      initialBalance: account.initialBalance || "1000",
+      currentBalance: account.currentBalance || account.initialBalance || "1000",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isActive: account.isActive !== undefined ? account.isActive : true,
+      lastResetAt: null,
+      totalProfitLoss: "0",
+      totalProfitLossPercent: "0",
+      totalTrades: 0,
+      winningTrades: 0,
+      losingTrades: 0,
+      metadata: account.metadata || null
+    };
+    
+    this.paperTradingAccounts.set(id, paperAccount);
+    return paperAccount;
+  }
+
+  async updatePaperTradingAccount(id: number, updates: Partial<PaperTradingAccount>): Promise<PaperTradingAccount | undefined> {
+    const account = this.paperTradingAccounts.get(id);
+    
+    if (!account) {
+      return undefined;
+    }
+    
+    const updatedAccount: PaperTradingAccount = {
+      ...account,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.paperTradingAccounts.set(id, updatedAccount);
+    return updatedAccount;
+  }
+
+  async resetPaperTradingAccount(id: number, initialBalance?: number): Promise<PaperTradingAccount | undefined> {
+    const account = this.paperTradingAccounts.get(id);
+    
+    if (!account) {
+      return undefined;
+    }
+    
+    // Close all open positions
+    const positions = Array.from(this.paperTradingPositions.values())
+      .filter(pos => pos.accountId === id);
+      
+    for (const position of positions) {
+      await this.closePaperTradingPosition(position.id, parseFloat(position.currentPrice || position.entryPrice));
+    }
+    
+    // Update account with reset values
+    const updatedAccount: PaperTradingAccount = {
+      ...account,
+      initialBalance: initialBalance ? initialBalance.toString() : account.initialBalance,
+      currentBalance: initialBalance ? initialBalance.toString() : account.initialBalance,
+      lastResetAt: new Date(),
+      updatedAt: new Date(),
+      totalProfitLoss: "0",
+      totalProfitLossPercent: "0",
+      totalTrades: 0,
+      winningTrades: 0,
+      losingTrades: 0
+    };
+    
+    this.paperTradingAccounts.set(id, updatedAccount);
+    return updatedAccount;
+  }
+
+  // Paper Trading Position methods
+  async getPaperTradingPosition(id: number): Promise<PaperTradingPosition | undefined> {
+    return this.paperTradingPositions.get(id);
+  }
+
+  async getAccountPaperTradingPositions(accountId: number): Promise<PaperTradingPosition[]> {
+    return Array.from(this.paperTradingPositions.values())
+      .filter(position => position.accountId === accountId);
+  }
+
+  async createPaperTradingPosition(position: InsertPaperTradingPosition): Promise<PaperTradingPosition> {
+    const id = this.paperPositionId++;
+    
+    const newPosition: PaperTradingPosition = {
+      id,
+      accountId: position.accountId,
+      symbol: position.symbol,
+      entryPrice: position.entryPrice,
+      quantity: position.quantity,
+      direction: position.direction,
+      openedAt: new Date(),
+      updatedAt: new Date(),
+      currentPrice: position.entryPrice,
+      currentProfitLoss: "0",
+      currentProfitLossPercent: "0",
+      stopLoss: position.stopLoss || null,
+      takeProfit: position.takeProfit || null,
+      metadata: position.metadata || null
+    };
+    
+    this.paperTradingPositions.set(id, newPosition);
+    
+    // Also create a trade record for this position
+    const tradeId = this.paperTradeId++;
+    const newTrade: PaperTradingTrade = {
+      id: tradeId,
+      accountId: position.accountId,
+      positionId: id,
+      symbol: position.symbol,
+      entryPrice: position.entryPrice,
+      exitPrice: null,
+      quantity: position.quantity,
+      direction: position.direction,
+      status: "OPEN",
+      profitLoss: null,
+      profitLossPercent: null,
+      fee: "0",
+      openedAt: new Date(),
+      closedAt: null,
+      type: "MARKET",
+      isAiGenerated: false,
+      aiConfidence: null,
+      signalData: null,
+      metadata: position.metadata || null
+    };
+    
+    this.paperTradingTrades.set(tradeId, newTrade);
+    
+    // Update account balance
+    const account = this.paperTradingAccounts.get(position.accountId);
+    if (account) {
+      const positionValue = parseFloat(position.entryPrice) * parseFloat(position.quantity);
+      const fee = positionValue * 0.001; // Simulate 0.1% fee
+      const newBalance = parseFloat(account.currentBalance) - fee;
+      
+      await this.updatePaperTradingAccount(account.id, {
+        currentBalance: newBalance.toString()
+      });
+    }
+    
+    return newPosition;
+  }
+
+  async updatePaperTradingPosition(id: number, updates: Partial<PaperTradingPosition>): Promise<PaperTradingPosition | undefined> {
+    const position = this.paperTradingPositions.get(id);
+    
+    if (!position) {
+      return undefined;
+    }
+    
+    // Calculate profit/loss if currentPrice is being updated
+    let currentProfitLoss = position.currentProfitLoss;
+    let currentProfitLossPercent = position.currentProfitLossPercent;
+    
+    if (updates.currentPrice && updates.currentPrice !== position.currentPrice) {
+      const entryValue = parseFloat(position.entryPrice) * parseFloat(position.quantity);
+      const currentValue = parseFloat(updates.currentPrice) * parseFloat(position.quantity);
+      
+      // Adjust calculation based on position direction
+      if (position.direction === "LONG") {
+        currentProfitLoss = (currentValue - entryValue).toString();
+        currentProfitLossPercent = ((currentValue - entryValue) / entryValue * 100).toString();
+      } else {
+        currentProfitLoss = (entryValue - currentValue).toString();
+        currentProfitLossPercent = ((entryValue - currentValue) / entryValue * 100).toString();
+      }
+    }
+    
+    const updatedPosition: PaperTradingPosition = {
+      ...position,
+      ...updates,
+      currentProfitLoss,
+      currentProfitLossPercent,
+      updatedAt: new Date()
+    };
+    
+    this.paperTradingPositions.set(id, updatedPosition);
+    return updatedPosition;
+  }
+
+  async closePaperTradingPosition(id: number, exitPrice: number): Promise<PaperTradingTrade | undefined> {
+    const position = this.paperTradingPositions.get(id);
+    
+    if (!position) {
+      return undefined;
+    }
+    
+    // Find the associated trade
+    const trade = Array.from(this.paperTradingTrades.values())
+      .find(t => t.positionId === id && t.status === "OPEN");
+    
+    if (!trade) {
+      return undefined;
+    }
+    
+    // Calculate profit/loss
+    const entryValue = parseFloat(position.entryPrice) * parseFloat(position.quantity);
+    const exitValue = exitPrice * parseFloat(position.quantity);
+    const fee = exitValue * 0.001; // Simulate 0.1% fee
+    
+    let profitLoss: number;
+    let profitLossPercent: number;
+    
+    // Adjust calculation based on position direction
+    if (position.direction === "LONG") {
+      profitLoss = exitValue - entryValue - fee;
+      profitLossPercent = (profitLoss / entryValue) * 100;
+    } else {
+      profitLoss = entryValue - exitValue - fee;
+      profitLossPercent = (profitLoss / entryValue) * 100;
+    }
+    
+    // Update the trade
+    const updatedTrade: PaperTradingTrade = {
+      ...trade,
+      exitPrice: exitPrice.toString(),
+      status: "CLOSED",
+      profitLoss: profitLoss.toString(),
+      profitLossPercent: profitLossPercent.toString(),
+      fee: fee.toString(),
+      closedAt: new Date()
+    };
+    
+    this.paperTradingTrades.set(trade.id, updatedTrade);
+    
+    // Remove the position
+    this.paperTradingPositions.delete(id);
+    
+    // Update account balance and stats
+    const account = this.paperTradingAccounts.get(position.accountId);
+    if (account) {
+      const newBalance = parseFloat(account.currentBalance) + exitValue + profitLoss;
+      const totalProfitLoss = parseFloat(account.totalProfitLoss || "0") + profitLoss;
+      const totalTrades = (account.totalTrades || 0) + 1;
+      const winningTrades = profitLoss > 0 ? (account.winningTrades || 0) + 1 : (account.winningTrades || 0);
+      const losingTrades = profitLoss <= 0 ? (account.losingTrades || 0) + 1 : (account.losingTrades || 0);
+      
+      const totalProfitLossPercent = (totalProfitLoss / parseFloat(account.initialBalance)) * 100;
+      
+      await this.updatePaperTradingAccount(account.id, {
+        currentBalance: newBalance.toString(),
+        totalProfitLoss: totalProfitLoss.toString(),
+        totalProfitLossPercent: totalProfitLossPercent.toString(),
+        totalTrades,
+        winningTrades,
+        losingTrades
+      });
+    }
+    
+    return updatedTrade;
+  }
+
+  // Paper Trading Trade methods
+  async getPaperTradingTrade(id: number): Promise<PaperTradingTrade | undefined> {
+    return this.paperTradingTrades.get(id);
+  }
+
+  async getAccountPaperTradingTrades(accountId: number, limit?: number, offset?: number): Promise<PaperTradingTrade[]> {
+    let trades = Array.from(this.paperTradingTrades.values())
+      .filter(trade => trade.accountId === accountId)
+      .sort((a, b) => {
+        const aTime = a.openedAt ? a.openedAt.getTime() : 0;
+        const bTime = b.openedAt ? b.openedAt.getTime() : 0;
+        return bTime - aTime; // Newest first
+      });
+    
+    if (offset !== undefined) {
+      trades = trades.slice(offset);
+    }
+    
+    if (limit !== undefined) {
+      trades = trades.slice(0, limit);
+    }
+    
+    return trades;
+  }
+
+  async createPaperTradingTrade(trade: InsertPaperTradingTrade): Promise<PaperTradingTrade> {
+    const id = this.paperTradeId++;
+    
+    // Need to cast the trade to handle potentially missing profitLoss and profitLossPercent
+    const completeTradeData = trade as any;
+    
+    const newTrade: PaperTradingTrade = {
+      id,
+      accountId: trade.accountId,
+      positionId: trade.positionId || null,
+      symbol: trade.symbol,
+      entryPrice: trade.entryPrice,
+      exitPrice: trade.exitPrice || null,
+      quantity: trade.quantity,
+      direction: trade.direction,
+      status: trade.status,
+      profitLoss: completeTradeData.profitLoss || null,
+      profitLossPercent: completeTradeData.profitLossPercent || null,
+      fee: trade.fee || "0",
+      openedAt: new Date(),
+      closedAt: trade.status === "CLOSED" ? new Date() : null,
+      type: trade.type,
+      isAiGenerated: trade.isAiGenerated || false,
+      aiConfidence: trade.aiConfidence || null,
+      signalData: trade.signalData || null,
+      metadata: trade.metadata || null
+    };
+    
+    this.paperTradingTrades.set(id, newTrade);
+    return newTrade;
+  }
+
+  async updatePaperTradingTrade(id: number, updates: Partial<PaperTradingTrade>): Promise<PaperTradingTrade | undefined> {
+    const trade = this.paperTradingTrades.get(id);
+    
+    if (!trade) {
+      return undefined;
+    }
+    
+    // If status is changing to CLOSED, set closedAt
+    const closedAt = updates.status === "CLOSED" && trade.status !== "CLOSED" 
+      ? new Date() 
+      : trade.closedAt;
+    
+    const updatedTrade: PaperTradingTrade = {
+      ...trade,
+      ...updates,
+      closedAt
+    };
+    
+    this.paperTradingTrades.set(id, updatedTrade);
+    return updatedTrade;
+  }
+
+  // Paper Trading Stats
+  async getPaperTradingStats(accountId: number): Promise<{
+    totalTrades: number;
+    winningTrades: number;
+    losingTrades: number;
+    winRate: number;
+    totalProfitLoss: string;
+    totalProfitLossPercent: string;
+    averageProfitLoss: string;
+    averageProfitLossPercent: string;
+  }> {
+    const account = await this.getPaperTradingAccount(accountId);
+    
+    if (!account) {
+      throw new Error(`Paper trading account with ID ${accountId} not found`);
+    }
+    
+    const closedTrades = Array.from(this.paperTradingTrades.values())
+      .filter(trade => trade.accountId === accountId && trade.status === "CLOSED");
+    
+    const totalTrades = closedTrades.length;
+    const winningTrades = closedTrades.filter(trade => parseFloat(trade.profitLoss || "0") > 0).length;
+    const losingTrades = closedTrades.filter(trade => parseFloat(trade.profitLoss || "0") <= 0).length;
+    const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
+    
+    const totalProfitLoss = account.totalProfitLoss;
+    const totalProfitLossPercent = account.totalProfitLossPercent;
+    
+    // Calculate average profit/loss
+    let avgProfitLoss = "0";
+    let avgProfitLossPercent = "0";
+    
+    if (totalTrades > 0) {
+      const sumProfitLoss = closedTrades.reduce((sum, trade) => 
+        sum + parseFloat(trade.profitLoss || "0"), 0);
+      
+      const sumProfitLossPercent = closedTrades.reduce((sum, trade) => 
+        sum + parseFloat(trade.profitLossPercent || "0"), 0);
+      
+      avgProfitLoss = (sumProfitLoss / totalTrades).toString();
+      avgProfitLossPercent = (sumProfitLossPercent / totalTrades).toString();
+    }
+    
+    return {
+      totalTrades,
+      winningTrades,
+      losingTrades,
+      winRate,
+      totalProfitLoss: totalProfitLoss || "0",
+      totalProfitLossPercent: totalProfitLossPercent || "0",
+      averageProfitLoss: avgProfitLoss,
+      averageProfitLossPercent: avgProfitLossPercent
+    };
   }
 }
 
