@@ -124,7 +124,15 @@ export class BinanceService {
     };
     
     try {
-      console.log(`Making public Binance API request to ${endpoint} via ${VPN_CONFIG.enabled ? 'VPN/proxy' : 'direct connection'}`);
+      // Debug the proxy configuration
+      if (VPN_CONFIG.enabled) {
+        console.log(`Making public Binance API request to ${endpoint} via VPN/proxy using URL: ${url}`);
+        console.log(`Proxy configuration: ${VPN_CONFIG.type} proxy at ${VPN_CONFIG.host}:${VPN_CONFIG.port}`);
+      } else {
+        console.log(`Making public Binance API request to ${endpoint} via direct connection`);
+      }
+
+      // Actually make the request
       const response = await this.axiosInstance.get(url, config);
       return response.data;
     } catch (error: any) {
@@ -135,9 +143,22 @@ export class BinanceService {
       
       console.error(`Binance API Error (${endpoint}): Code: ${errorCode}, Message: ${errorMessage}`);
       
-      // Check if it's a proxy-related error
-      if (VPN_CONFIG.enabled && error.code) {
-        console.error(`VPN/Proxy error (${error.code}): This might be related to the proxy configuration.`);
+      // Add more detailed logging for proxy-related errors
+      if (VPN_CONFIG.enabled) {
+        console.error(`VPN/Proxy error details for debugging:`);
+        console.error(`- Error code: ${error.code}`);
+        console.error(`- URL attempted: ${url}`);
+        console.error(`- Proxy host: ${VPN_CONFIG.host}:${VPN_CONFIG.port}`);
+        console.error(`- Proxy type: ${VPN_CONFIG.type}`);
+        
+        if (error.request) {
+          console.error('- Request was made but no response received');
+        }
+        
+        if (error.response) {
+          console.error(`- Response status: ${error.response.status}`);
+          console.error(`- Response headers:`, error.response.headers);
+        }
       }
       
       // Provide more meaningful error to client

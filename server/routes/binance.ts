@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { createBinanceService } from '../api/binance';
 import { storage } from '../storage';
 import { ensureAuthenticated } from '../auth';
+import { VPN_CONFIG, testProxyConnection } from '../api/binance/proxy-config';
 
 // Extend Express Request type to include binanceApiKeys
 declare global {
@@ -133,6 +134,7 @@ router.get('/market/tickers', async (req: Request, res: Response) => {
     }
     
     // Use dummy credentials for public endpoint (only read-only access)
+    console.log('Creating Binance service for /market/tickers endpoint');
     const binanceService = createBinanceService('dummy', 'dummy', true);
     
     const tickers = await binanceService.getAllTickers();
@@ -142,6 +144,7 @@ router.get('/market/tickers', async (req: Request, res: Response) => {
     
     // If error is related to geographical restrictions, recommend using fallback
     if (error.message && error.message.includes('restricted location')) {
+      console.log('Geographical restriction detected, suggesting fallback mode');
       return res.status(500).json({
         error: 'Failed to fetch tickers',
         message: error.message,
@@ -279,6 +282,67 @@ router.get('/market/price', async (req: Request, res: Response) => {
     return res.status(500).json({
       error: 'Failed to fetch price',
       message: error.message
+    });
+  }
+});
+
+// Add test endpoint for proxy debugging
+router.get('/test-proxy', async (req: Request, res: Response) => {
+  try {
+    // Debug proxy configuration
+    console.log('Testing proxy configuration for Binance connection');
+    console.log(`Proxy enabled: ${VPN_CONFIG.enabled}`);
+    console.log(`Proxy type: ${VPN_CONFIG.type}`);
+    console.log(`Proxy host: ${VPN_CONFIG.host}:${VPN_CONFIG.port}`);
+    
+    // Test the proxy connection directly
+    const proxyTest = await testProxyConnection();
+    console.log('Proxy connection test result:', proxyTest);
+    
+    // Use dummy credentials for public endpoint (only read-only access)
+    const binanceService = createBinanceService('dummy', 'dummy', true);
+    
+    // Try to ping the Binance server
+    console.log('Attempting to ping Binance API endpoint...');
+    const pingResult = await binanceService.ping();
+    
+    if (pingResult) {
+      return res.status(200).json({
+        success: true,
+        message: 'Binance connection successful via proxy',
+        proxyEnabled: VPN_CONFIG.enabled,
+        proxyConfig: {
+          type: VPN_CONFIG.type,
+          host: VPN_CONFIG.host,
+          port: VPN_CONFIG.port
+        }
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: 'Binance connection failed via proxy',
+        proxyEnabled: VPN_CONFIG.enabled,
+        proxyConfig: {
+          type: VPN_CONFIG.type,
+          host: VPN_CONFIG.host,
+          port: VPN_CONFIG.port
+        }
+      });
+    }
+  } catch (error: any) {
+    console.error('Error testing Binance proxy connection:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: `Binance proxy connection failed: ${error.message}`,
+      proxyEnabled: VPN_CONFIG.enabled,
+      proxyConfig: {
+        type: VPN_CONFIG.type,
+        host: VPN_CONFIG.host,
+        port: VPN_CONFIG.port
+      },
+      error: error.message,
+      stack: error.stack
     });
   }
 });

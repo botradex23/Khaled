@@ -7,7 +7,7 @@ import axios from 'axios';
 export const VPN_CONFIG = {
   // Whether to use VPN for all Binance API requests
   // Setting to false will use direct connection without proxy
-  enabled: false, // Disabled proxy for testing direct API connection
+  enabled: true, // Enable proxy to overcome geographical restrictions
 
   // Type of proxy: 'https' or 'socks'
   type: 'https' as 'https' | 'socks', // Reverting back to HTTPS proxy
@@ -50,15 +50,19 @@ export function createProxyInstance() {
   
   // Create the appropriate proxy agent based on config
   if (VPN_CONFIG.type === 'https') {
+    // Make sure to add 'http://' prefix for HttpsProxyAgent
     const proxyUrl = `http://${VPN_CONFIG.auth.username ? 
       `${VPN_CONFIG.auth.username}:${VPN_CONFIG.auth.password}@` : ''}${VPN_CONFIG.host}:${VPN_CONFIG.port}`;
     
+    console.log(`Setting up HTTPS proxy with URL: ${proxyUrl}`);
     agent = new HttpsProxyAgent(proxyUrl);
     console.log(`Using HTTPS proxy for Binance: ${VPN_CONFIG.host}:${VPN_CONFIG.port}`);
   } else {
+    // Make sure to add 'socks5://' prefix for SocksProxyAgent
     const proxyUrl = `socks5://${VPN_CONFIG.auth.username ? 
       `${VPN_CONFIG.auth.username}:${VPN_CONFIG.auth.password}@` : ''}${VPN_CONFIG.host}:${VPN_CONFIG.port}`;
     
+    console.log(`Setting up SOCKS proxy with URL: ${proxyUrl}`);  
     agent = new SocksProxyAgent(proxyUrl);
     console.log(`Using SOCKS proxy for Binance: ${VPN_CONFIG.host}:${VPN_CONFIG.port}`);
   }
