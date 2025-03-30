@@ -47,6 +47,56 @@ import {
   RefreshCw
 } from "lucide-react";
 
+// Define interfaces for our market data
+interface MarketResponse {
+  success: boolean;
+  source: string;
+  timestamp: string;
+  count: number;
+  data: MarketData[];
+}
+
+interface MarketData {
+  symbol: string;
+  price: number;
+  source: string;
+  timestamp: string;
+}
+
+interface FormattedMarketData {
+  symbol: string;
+  baseSymbol: string;
+  name: string;
+  price: number;
+  change24h: number;
+  marketCap: number;
+  source: string;
+}
+
+interface MarketOverviewResponse {
+  success: boolean;
+  source: string;
+  timestamp: string;
+  marketStats: {
+    totalMarketCap: number;
+    totalMarketCapFormatted: string;
+    totalCoins: number;
+    btcDominance: string;
+    ethDominance: string;
+    totalVolume24h: string;
+  };
+  trendingCoins: TrendingCoin[];
+}
+
+interface TrendingCoin {
+  symbol: string;
+  shortSymbol: string;
+  name: string;
+  price: number;
+  priceChangePercent: number;
+  source: string;
+}
+
 // Coin name mapping
 const coinNames: Record<string, string> = {
   "BTC": "Bitcoin",
@@ -92,29 +142,44 @@ export default function Markets() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCoin, setSelectedCoin] = useState<string | null>(null);
   
-  // Fetch market data
-  const { data: marketsData, isLoading, error, refetch } = useQuery({
-    queryKey: ["/api/okx/markets"],
+  // Fetch market data from Binance
+  const { data: marketsData, isLoading, error, refetch } = useQuery<MarketResponse>({
+    queryKey: ["/api/markets/binance/prices"],
     refetchInterval: 30000 // refresh every 30 seconds
   });
   
+  // Fetch market overview with trending coins
+  const { data: marketOverview, isLoading: isOverviewLoading } = useQuery<MarketOverviewResponse>({
+    queryKey: ["/api/markets/binance/overview"],
+    refetchInterval: 60000 // refresh every minute
+  });
+  
   // Format data and add market cap estimates
-  const markets = Array.isArray(marketsData) ? marketsData.map(market => {
-    const symbol = market.symbol.split('-')[0];
-    return {
-      ...market,
-      name: coinNames[symbol] || symbol,
-      // Estimate market cap based on price
-      marketCap: (marketCapEstimates[symbol] || 1) * 1_000_000_000
-    };
-  }) : [];
+  const markets = marketsData?.data 
+    ? marketsData.data.map((market: MarketData): FormattedMarketData => {
+        // Extract base symbol (BTC from BTCUSDT)
+        const symbol = market.symbol.endsWith('USDT') 
+          ? market.symbol.slice(0, -4) 
+          : market.symbol;
+          
+        return {
+          symbol: market.symbol,
+          baseSymbol: symbol,
+          name: coinNames[symbol] || symbol,
+          price: market.price,
+          change24h: 0, // Will be replaced with real data in future
+          marketCap: (marketCapEstimates[symbol] || 1) * 1_000_000_000,
+          source: market.source || 'binance'
+        };
+      }) 
+    : [];
   
   // Filter markets by search query
-  const filteredMarkets = markets.filter(market => {
-    const symbol = market.symbol.split('-')[0];
-    const name = coinNames[symbol] || symbol;
+  const filteredMarkets = markets.filter((market: FormattedMarketData) => {
+    const baseSymbol = market.baseSymbol || '';
+    const name = market.name || '';
     return name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-           symbol.toLowerCase().includes(searchQuery.toLowerCase());
+           baseSymbol.toLowerCase().includes(searchQuery.toLowerCase());
   });
   
   // Handle coin selection for detailed view
@@ -191,7 +256,7 @@ export default function Markets() {
                   ) : markets.length > 0 ? (
                     // Top 3 markets and market overview
                     <>
-                      {markets.slice(0, 3).map((market, index) => {
+                      {markets.slice(0, 3).map((market: FormattedMarketData, index: number) => {
                         const isPositive = market.change24h >= 0;
                         const symbol = market.symbol.split('-')[0];
                         return (
@@ -315,7 +380,7 @@ export default function Markets() {
                               </TableRow>
                             ))
                           ) : filteredMarkets.length > 0 ? (
-                            filteredMarkets.map((market, index) => {
+                            filteredMarkets.map((market: FormattedMarketData, index: number) => {
                               // Extract base symbol (BTC from BTC-USDT)
                               const baseSymbol = market.symbol.split('-')[0];
                               const isPositive = market.change24h >= 0;

@@ -88,6 +88,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }).catch(err => {
     console.error('Failed to register database status routes:', err);
   });
+  
+  // Register Binance market prices routes
+  import('./routes/binance-market-prices').then(binanceMarketsRouter => {
+    app.use('/api/binance', binanceMarketsRouter.default);
+    console.log('Binance market prices routes registered');
+  }).catch(err => {
+    console.error('Failed to register Binance market prices routes:', err);
+  });
   // Add a test endpoint to check API keys for a user
   app.get('/api/test/user-api-keys', async (req: Request, res: Response) => {
     if (!req.user) {
@@ -243,6 +251,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Use the markets v3 router with better price endpoints
   app.use("/api/markets", marketsV3Router);
+  
+  // Register Binance markets routes
+  import('./routes/markets-binance').then(binanceMarketsRouter => {
+    app.use("/api/markets", binanceMarketsRouter.default);
+    console.log('Binance markets routes registered');
+  }).catch(err => {
+    console.error('Failed to register Binance markets routes:', err);
+  });
   
   // OKX API routes
   app.use("/api/okx", okxRouter);
