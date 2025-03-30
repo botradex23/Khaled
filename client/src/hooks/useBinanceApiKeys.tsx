@@ -28,7 +28,7 @@ export function useBinanceApiKeys() {
   const [apiKey, setApiKey] = useState<string>('');
   const [secretKey, setSecretKey] = useState<string>('');
   const [allowedIp, setAllowedIp] = useState<string>('185.199.228.220');
-  const [testnet, setTestnet] = useState<boolean>(false);
+  const [testnet, setTestnet] = useState<boolean>(true); // Using testnet by default for simulation testing
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isConfigured, setIsConfigured] = useState(false);
