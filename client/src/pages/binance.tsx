@@ -994,9 +994,11 @@ export default function BinancePage() {
         description: "An unexpected error occurred. Please try again later.",
         variant: "destructive"
       });
-    } finally {
-      setIsSaving(false);
-    }
+    } 
+    // No need to set isSaving as it's managed by the hook
+    // finally {
+    //   setIsSaving(false);
+    // }
   };
 
   // מחיקת הכפילות - הערך כבר מוגדר למעלה
