@@ -422,7 +422,7 @@ router.get('/trading/signals', ensureAuthenticated, async (req: Request, res: Re
     await aiTradingBridge.setCredentials({
       apiKey: apiKeys.binanceApiKey,
       secretKey: apiKeys.binanceSecretKey, 
-      testnet: true // Default to testnet for safety
+      testnet: false // Using real trading (changed from testnet)
     });
 
     // Check if we have fresh signals already
@@ -486,7 +486,7 @@ router.post('/trading/execute', ensureAuthenticated, async (req: Request, res: R
     await aiTradingBridge.setCredentials({
       apiKey: apiKeys.binanceApiKey,
       secretKey: apiKeys.binanceSecretKey,
-      testnet: true // Default to testnet for safety
+      testnet: false // Using real trading (changed from testnet)
     });
 
     // Get current signals
