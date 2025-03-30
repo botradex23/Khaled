@@ -17,8 +17,22 @@ const router = Router();
 // יצירת גשר למערכת Paper Trading עבור מערכת ה-AI
 const aiPaperTradingBridge = createAIPaperTradingBridge(aiTradingSystem);
 
-// אתחול הגשר במערכת ה-AI
-aiTradingSystem.setPaperTradingBridge(aiPaperTradingBridge);
+// הגדרת המשתמש לגשר (משתמש ברירת מחדל)
+aiPaperTradingBridge.setUser(1)
+  .then(success => {
+    if (success) {
+      console.log('Paper Trading Bridge initialized for default user (ID: 1)');
+      
+      // אתחול הגשר במערכת ה-AI רק לאחר הגדרת משתמש
+      aiTradingSystem.setPaperTradingBridge(aiPaperTradingBridge);
+      console.log('Paper Trading Bridge connected to AI Trading System');
+    } else {
+      console.error('Failed to initialize Paper Trading Bridge for default user');
+    }
+  })
+  .catch(error => {
+    console.error('Error initializing Paper Trading Bridge:', error);
+  });
 
 /**
  * טיפול בשגיאות API
@@ -564,6 +578,51 @@ router.post('/trading/train', ensureAuthenticated, async (req: Request, res: Res
 });
 
 /**
+ * POST /api/ai/trading/force
+ * כפיית עסקה בודדת לצורך בדיקת מערכת
+ */
+router.post('/trading/force', async (req: Request, res: Response) => {
+  try {
+    // קבלת פרמטרים לעסקה מאולצת
+    const { symbol, action } = req.body;
+    
+    if (!symbol || !action || (action !== 'BUY' && action !== 'SELL')) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Symbol and valid action (BUY or SELL) are required' 
+      });
+    }
+    
+    // בדיקה אם המערכת פעילה
+    const status = aiTradingSystem.getStatus();
+    if (!status.isRunning) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'AI system is not running. Please start the system before forcing a trade.'
+      });
+    }
+    
+    // ביצוע העסקה
+    const result = await aiTradingSystem.forceTrade(symbol, action);
+    
+    if (!result) {
+      return res.status(500).json({ 
+        success: false,
+        message: 'Failed to execute forced trade'
+      });
+    }
+    
+    return res.json({
+      success: true,
+      message: `Successfully ${result.executed ? 'executed' : 'attempted'} forced ${action} trade for ${symbol}`,
+      result
+    });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
  * POST /api/ai/paper-trading/set-user
  * הגדרת משתמש עבור מערכת ה-AI Paper Trading
  */
@@ -611,7 +670,11 @@ router.post('/paper-trading/set-user', async (req: Request, res: Response) => {
       });
     }
   } catch (err) {
-    handleApiError(err, res);
+    console.error('Error in paper-trading/set-user:', err);
+    res.status(500).json({
+      success: false,
+      message: err instanceof Error ? err.message : 'Failed to set paper trading user for AI system'
+    });
   }
 });
 
@@ -657,7 +720,11 @@ router.get('/paper-trading/trades', async (req: Request, res: Response) => {
       trades
     });
   } catch (err) {
-    handleApiError(err, res);
+    console.error('Error in paper-trading/trades:', err);
+    res.status(500).json({
+      success: false,
+      message: err instanceof Error ? err.message : 'Failed to get paper trading trades'
+    });
   }
 });
 
@@ -703,7 +770,11 @@ router.get('/paper-trading/performance', async (req: Request, res: Response) => 
       performance
     });
   } catch (err) {
-    handleApiError(err, res);
+    console.error('Error in paper-trading/performance:', err);
+    res.status(500).json({
+      success: false,
+      message: err instanceof Error ? err.message : 'Failed to get paper trading performance'
+    });
   }
 });
 

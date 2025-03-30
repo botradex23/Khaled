@@ -66,7 +66,18 @@ export class AIPaperTradingBridge {
    * @returns תוצאת הביצוע
    */
   public async executeTrading(decision: TradingDecision): Promise<TradingResult> {
+    console.log(`AIPaperTradingBridge: Executing decision: ${JSON.stringify({
+      action: decision.action,
+      symbol: decision.symbol,
+      price: decision.price,
+      confidence: decision.confidence,
+      timestamp: decision.timestamp
+    })}`);
+    
+    console.log(`AIPaperTradingBridge state: userId=${this.userId}, accountId=${this.accountId}`);
+    
     if (!this.userId || !this.accountId) {
+      console.log(`AIPaperTradingBridge: Cannot execute - Missing user (${this.userId}) or account (${this.accountId})`);
       return {
         decision,
         executed: false,
@@ -76,6 +87,7 @@ export class AIPaperTradingBridge {
 
     // אם ההחלטה היא להחזיק, אין צורך לשלוח פקודה
     if (decision.action === 'HOLD') {
+      console.log(`AIPaperTradingBridge: Skipping HOLD action for ${decision.symbol}`);
       return {
         decision,
         executed: false,

@@ -554,15 +554,17 @@ export class AITradingSystem {
       confidence = 0.5 + (sellVotes / 3) * 0.5;
       reason = 'Multiple signals indicate selling opportunity';
     } else if (forceTradeNow) {
-      // אם עבר מספיק זמן מהעסקה האחרונה, נאלץ החלטה עם ביטחון גבוה יותר
+      // אם עבר מספיק זמן מהעסקה האחרונה, נאלץ החלטה עם ביטחון גבוה יותר מהסף
+      const forcedConfidence = this.config.minimumConfidence + 0.01; // תמיד גבוה קצת מהסף המינימלי
+      
       if (buyVotes > sellVotes || (buyVotes === sellVotes && Math.random() > 0.5)) {
         finalAction = 'BUY';
-        confidence = 0.60;  // ביטחון גבוה יותר מהסף (0.45)
-        reason = 'Forced trade due to time interval - weighted buy signal';
+        confidence = forcedConfidence;
+        reason = `Forced trade due to time interval - weighted buy signal (confidence: ${forcedConfidence.toFixed(2)})`;
       } else {
         finalAction = 'SELL';
-        confidence = 0.60;  // ביטחון גבוה יותר מהסף (0.45)
-        reason = 'Forced trade due to time interval - weighted sell signal';
+        confidence = forcedConfidence;
+        reason = `Forced trade due to time interval - weighted sell signal (confidence: ${forcedConfidence.toFixed(2)})`;
       }
       
       // עדכון זמן העסקה המאולצת האחרונה
@@ -1359,6 +1361,90 @@ export class AITradingSystem {
   public setPaperTradingBridge(bridge: any) {
     this.paperTradingBridge = bridge;
     console.log('Paper Trading Bridge connected to AI Trading System');
+  }
+  
+  /**
+   * יוזם עסקה מאולצת (הדגמה בלבד) לצורך בדיקת המערכת
+   * בעל ביטחון גבוה יותר כדי לוודא שתבוצע
+   * 
+   * @param symbol סמל המטבע
+   * @param action פעולה (קנייה או מכירה)
+   * @returns תוצאת הביצוע
+   */
+  public async forceTrade(symbol: string, action: 'BUY' | 'SELL'): Promise<TradingResult | null> {
+    if (!this.readyToTrade) {
+      console.log('AI trading system not ready yet. Cannot force trade.');
+      return null;
+    }
+    
+    try {
+      console.log(`Forcing ${action} trade for ${symbol}...`);
+      
+      // איסוף נתוני שוק
+      const data = await this.collectMarketData(symbol, TimeFrame.MINUTE_5);
+      
+      // זיהוי מצב השוק
+      const marketState = this.identifyMarketState(data);
+      
+      // יצירת מצב למערכת למידה מחיזוקים
+      const state = this.createRLState(data, marketState);
+      
+      // תחזיות לטווח קצר וארוך
+      const shortTermPrediction = this.predictShortTerm(data, marketState);
+      const longTermPrediction = this.predictLongTerm(data, marketState);
+      
+      // המחיר הנוכחי
+      const currentPrice = data.candles[data.candles.length - 1].close;
+      
+      // יצירת החלטת מסחר מאולצת
+      const decision: TradingDecision = {
+        action,
+        confidence: 0.99, // ביטחון גבוה במיוחד כדי לוודא ביצוע
+        reason: 'Forced trade requested by user or system',
+        timestamp: Date.now(),
+        symbol,
+        price: currentPrice,
+        strategy: StrategyType.GRID_MEDIUM,
+        parameters: {
+          // הפרמטרים של אסטרטגיית GRID בהתאם לסכמה של הפרויקט
+          gridSize: 5, 
+          minPrice: 0,  // יוחלף דינמית בהתאם למחיר הנוכחי
+          maxPrice: 0,  // יוחלף דינמית בהתאם למחיר הנוכחי
+          orderQuantity: 0.01,
+          stopLoss: 2,
+          takeProfit: 2
+        },
+        tradingSignals: {
+          reinforcementLearning: action,
+          genetic: action,
+          technicalIndicators: action
+        },
+        marketState,
+        predictions: {
+          shortTerm: shortTermPrediction,
+          longTerm: longTermPrediction
+        }
+      };
+      
+      console.log(`Executing forced ${action} decision for ${symbol} @ ${currentPrice}`);
+      
+      // ביצוע ההחלטה המאולצת
+      const result = await this.executeTrading(decision);
+      
+      // שמירה להיסטוריה
+      this.lastDecisions.set(symbol, decision);
+      this.decisionHistory.push(decision);
+      
+      if (result.executed) {
+        this.executionHistory.push(result);
+        this.updateLearning(result); // אין צורך לחכות לסיום התהליך
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`Error in forced trade for ${symbol}: ${error}`);
+      return null;
+    }
   }
 }
 

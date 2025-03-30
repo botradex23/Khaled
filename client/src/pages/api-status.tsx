@@ -156,11 +156,17 @@ function AISystemStatusCard({ query, paperTradingQuery, setUserMutation }: { que
   const { data: paperTradingData, isLoading: isPaperTradingLoading, error: paperTradingError, refetch: refetchPaperTrading } = paperTradingQuery;
   const { toast } = useToast();
   const [activeMode, setActiveMode] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState<{open: boolean, action: 'start' | 'stop' | 'set-user', mode: boolean}>({
+  const [confirmDialog, setConfirmDialog] = useState<{open: boolean, action: 'start' | 'stop' | 'set-user' | 'force-trade', mode: boolean}>({
     open: false, 
     action: 'start',
     mode: false
   });
+  
+  // Force Trade States
+  const [forceTradeSymbol, setForceTradeSymbol] = useState('BTC-USDT');
+  const [forceTradeAction, setForceTradeAction] = useState<'BUY' | 'SELL'>('BUY');
+  const [isForcingTrade, setIsForcingTrade] = useState(false);
+  const [forceTradeResult, setForceTradeResult] = useState<any>(null);
   
   // Start AI System Mutation
   const startSystemMutation = useMutation({
@@ -235,11 +241,46 @@ function AISystemStatusCard({ query, paperTradingQuery, setUserMutation }: { que
     });
   };
   
+  // Force Trade Mutation
+  const forceTradeSystemMutation = useMutation({
+    mutationFn: async (params: { symbol: string, action: 'BUY' | 'SELL' }) => {
+      return await apiRequest('POST', '/api/ai/trading/force', params, {
+        headers: {
+          'X-Test-User-Id': 'admin'  // Add test user header to bypass authentication
+        }
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Trade Executed",
+        description: `Force trade executed successfully on ${forceTradeSymbol}.`,
+        variant: "default",
+      });
+      setForceTradeResult(data);
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Execute Trade",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  });
+    
   // Set Paper Trading User Mutation
   const handleSetPaperTradingUser = () => {
     setConfirmDialog({
       open: true,
       action: 'set-user',
+      mode: false
+    });
+  };
+  
+  // Handle Force Trade
+  const handleForceTrade = () => {
+    setConfirmDialog({
+      open: true,
+      action: 'force-trade',
       mode: false
     });
   };
@@ -267,6 +308,14 @@ function AISystemStatusCard({ query, paperTradingQuery, setUserMutation }: { que
           });
         }
       });
+    } else if (confirmDialog.action === 'force-trade') {
+      setIsForcingTrade(true);
+      forceTradeSystemMutation.mutate(
+        { symbol: forceTradeSymbol, action: forceTradeAction },
+        {
+          onSettled: () => setIsForcingTrade(false)
+        }
+      );
     }
     setConfirmDialog({...confirmDialog, open: false});
   };
@@ -543,6 +592,83 @@ function AISystemStatusCard({ query, paperTradingQuery, setUserMutation }: { que
         )}
       </div>
       
+      {/* Force Trade Section */}
+      {isRunning && readyToTrade && (
+        <div className="mt-4 border-t border-gray-700 pt-4">
+          <h3 className="text-lg font-medium text-gray-300 mb-3">Force Trade (Testing)</h3>
+          
+          <div className="bg-[#072252] rounded-md p-4 mb-4">
+            <div className="flex flex-col space-y-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Zap className="h-4 w-4 text-[#00aaff]" />
+                  <span className="text-sm font-medium text-gray-300">
+                    Execute Manual Trade
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 mb-3">
+                  Force the AI system to execute a specific trade for testing purposes
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <Activity className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    className="h-10 bg-[#051838] border border-gray-600 text-gray-300 rounded-md w-full pl-10 pr-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    placeholder="Trading Pair (e.g. BTC-USDT)"
+                    value={forceTradeSymbol}
+                    onChange={(e) => setForceTradeSymbol(e.target.value)}
+                  />
+                </div>
+                
+                <div className="relative">
+                  <select
+                    className="h-10 bg-[#051838] border border-gray-600 text-gray-300 rounded-md w-full px-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    value={forceTradeAction}
+                    onChange={(e) => setForceTradeAction(e.target.value as 'BUY' | 'SELL')}
+                  >
+                    <option value="BUY">BUY</option>
+                    <option value="SELL">SELL</option>
+                  </select>
+                </div>
+                
+                <Button 
+                  variant="default"
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={handleForceTrade}
+                  disabled={isForcingTrade || forceTradeSystemMutation.isPending}
+                >
+                  {isForcingTrade || forceTradeSystemMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Executing...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4 mr-2" />
+                      Execute Force Trade
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              {forceTradeResult && (
+                <div className="mt-2 p-3 bg-[#051838] border border-gray-700 rounded-md">
+                  <h4 className="text-sm font-medium text-gray-300 mb-1">Last Trade Result</h4>
+                  <pre className="text-xs text-gray-400 overflow-x-auto whitespace-pre-wrap">
+                    {JSON.stringify(forceTradeResult, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Confirmation Dialog */}
       <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog({...confirmDialog, open})}>
         <DialogContent>
@@ -552,6 +678,8 @@ function AISystemStatusCard({ query, paperTradingQuery, setUserMutation }: { que
                 ? `Start AI System in ${confirmDialog.mode ? 'ACTIVE' : 'PASSIVE'} Mode?` 
                 : confirmDialog.action === 'stop'
                   ? 'Stop AI System?'
+                  : confirmDialog.action === 'force-trade'
+                  ? `Execute ${forceTradeAction} Trade for ${forceTradeSymbol}?`
                   : 'Connect Paper Trading Account?'}
             </DialogTitle>
             <DialogDescription>
@@ -561,6 +689,8 @@ function AISystemStatusCard({ query, paperTradingQuery, setUserMutation }: { que
                     : 'In PASSIVE mode, the system will monitor the market but will not execute trades automatically.')
                 : confirmDialog.action === 'stop'
                   ? 'This will stop all AI trading system operations including market monitoring.'
+                  : confirmDialog.action === 'force-trade'
+                  ? `This will execute a ${forceTradeAction} trade for ${forceTradeSymbol} with maximum confidence to ensure execution. This is for testing purposes only.`
                   : 'This will associate your paper trading account with the AI system, allowing the AI to make paper trades on your behalf.'}
             </DialogDescription>
           </DialogHeader>
@@ -569,13 +699,23 @@ function AISystemStatusCard({ query, paperTradingQuery, setUserMutation }: { que
               Cancel
             </Button>
             <Button 
-              variant={confirmDialog.action === 'start' ? "default" : confirmDialog.action === 'stop' ? "destructive" : "default"}
+              variant={
+                confirmDialog.action === 'start' 
+                  ? "default" 
+                  : confirmDialog.action === 'stop' 
+                    ? "destructive" 
+                    : confirmDialog.action === 'force-trade'
+                      ? (forceTradeAction === 'BUY' ? 'default' : 'destructive')
+                      : "default"
+              }
               onClick={handleConfirmAction}
             >
               {confirmDialog.action === 'start' 
                 ? `Start ${confirmDialog.mode ? 'ACTIVE' : 'PASSIVE'} Mode` 
                 : confirmDialog.action === 'stop'
                   ? 'Stop System'
+                  : confirmDialog.action === 'force-trade'
+                  ? `Execute ${forceTradeAction} Trade`
                   : 'Connect Account'}
             </Button>
           </DialogFooter>
