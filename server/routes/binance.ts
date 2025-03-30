@@ -316,6 +316,76 @@ router.get('/test-proxy', async (req: Request, res: Response) => {
   }
 });
 
+// Status endpoint for API status page
+router.get('/status', ensureAuthenticated, getBinanceApiKeys, async (req: Request, res: Response) => {
+  try {
+    // Access binanceApiKeys safely using type assertion
+    const binanceApiKeys = req.binanceApiKeys as { apiKey: string; secretKey: string; testnet: boolean };
+    
+    // Check if the user has configured their API keys
+    if (!binanceApiKeys.apiKey || !binanceApiKeys.secretKey) {
+      return res.status(200).json({
+        connected: false,
+        authenticated: false,
+        message: 'Binance API keys need to be configured',
+        isTestnet: binanceApiKeys.testnet,
+        configRequired: true
+      });
+    }
+    
+    const binanceService = createBinanceService(binanceApiKeys.apiKey, binanceApiKeys.secretKey, binanceApiKeys.testnet);
+    
+    // Test general API connectivity first (public API)
+    let connected = false;
+    try {
+      const pingResult = await binanceService.ping();
+      connected = !!pingResult;
+    } catch (error) {
+      console.error('Error pinging Binance API:', error);
+      connected = false;
+    }
+    
+    // Test authenticated endpoints if connection is successful
+    let authenticated = false;
+    let message = '';
+    
+    if (connected) {
+      try {
+        const result = await binanceService.testConnectivity();
+        authenticated = result.success;
+        message = result.message || 'Authentication successful';
+      } catch (error: any) {
+        console.error('Error authenticating with Binance API:', error);
+        authenticated = false;
+        message = error.message || 'Authentication failed';
+      }
+    } else {
+      message = 'Could not connect to Binance API. Please check your internet connection or proxy settings.';
+    }
+    
+    res.json({
+      connected,
+      authenticated,
+      message,
+      isTestnet: binanceApiKeys.testnet,
+      proxyEnabled: VPN_CONFIG.enabled,
+      proxyConfig: {
+        type: VPN_CONFIG.type,
+        host: VPN_CONFIG.host,
+        port: VPN_CONFIG.port
+      }
+    });
+  } catch (error: any) {
+    console.error('Error checking Binance API status:', error);
+    res.status(500).json({
+      connected: false,
+      authenticated: false,
+      message: `Error checking status: ${error.message}`,
+      error: error.message
+    });
+  }
+});
+
 // Test Binance API connection with user's credentials
 router.get('/test-connection', ensureAuthenticated, getBinanceApiKeys, async (req: Request, res: Response) => {
   try {

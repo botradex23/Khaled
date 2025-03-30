@@ -5,7 +5,6 @@ import { botSchema, pricingPlanSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import axios from "axios";
 import okxRouter from "./api/okx";
-import bybitRouter from "./api/bybit";
 import bitgetRouter from "./api/bitget";
 import aiRouter from "./api/ai";
 import testAuthRouter from "./routes/test-auth";
@@ -239,9 +238,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // OKX API routes
   app.use("/api/okx", okxRouter);
-  
-  // Bybit API routes
-  app.use("/api/bybit", bybitRouter);
   
   // Bitget API routes
   app.use("/api/bitget", bitgetRouter);

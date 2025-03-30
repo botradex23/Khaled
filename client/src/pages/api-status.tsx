@@ -7,21 +7,15 @@ import Footer from "@/components/ui/footer";
 import { CheckCircle, XCircle, AlertTriangle, Info } from "lucide-react";
 
 export default function ApiStatus() {
-  // Query Bitget API status
-  const bitgetQuery = useQuery({
-    queryKey: ["/api/bitget/status"],
-    retry: 1
-  });
-
-  // Query Bybit API status
-  const bybitQuery = useQuery({
-    queryKey: ["/api/bybit/status"],
-    retry: 1
-  });
-
   // Query OKX API status
   const okxQuery = useQuery({
     queryKey: ["/api/okx/status"],
+    retry: 1
+  });
+
+  // Query Binance API status
+  const binanceQuery = useQuery({
+    queryKey: ["/api/binance/status"],
     retry: 1
   });
 
@@ -32,29 +26,16 @@ export default function ApiStatus() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">API Connection Status</h1>
           <p className="text-muted-foreground">
-            בדיקת סטטוס החיבור ל-API של הבורסות השונות.
-            המערכת צריכה להיות מחוברת ל-testnet בכל הבורסות.
+            Check the connection status to exchange APIs.
+            The system should be connected to the testnet in all exchanges.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Bitget Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Binance Status */}
           <ApiStatusCard
-            title="Bitget API"
-            query={bitgetQuery}
-            getStatus={(data) => ({
-              isConnected: data?.connected || false,
-              authStatus: data?.authenticated || false,
-              message: data?.message || "",
-              environment: data?.isTestnet ? "Testnet" : "Mainnet",
-              details: data
-            })}
-          />
-
-          {/* Bybit Status */}
-          <ApiStatusCard
-            title="Bybit API"
-            query={bybitQuery}
+            title="Binance API"
+            query={binanceQuery}
             getStatus={(data) => ({
               isConnected: data?.connected || false,
               authStatus: data?.authenticated || false,
@@ -83,11 +64,7 @@ export default function ApiStatus() {
           <ul className="space-y-2">
             <li className="flex items-start">
               <Info className="h-5 w-5 text-primary mr-2 flex-shrink-0 mt-0.5" />
-              <span>Bitget API uses the <Badge variant="outline">BITGET_API_KEY</Badge>, <Badge variant="outline">BITGET_SECRET_KEY</Badge>, and <Badge variant="outline">BITGET_PASSPHRASE</Badge> environment variables.</span>
-            </li>
-            <li className="flex items-start">
-              <Info className="h-5 w-5 text-primary mr-2 flex-shrink-0 mt-0.5" />
-              <span>Bybit API uses the <Badge variant="outline">BYBIT_API_KEY</Badge> and <Badge variant="outline">BYBIT_SECRET_KEY</Badge> environment variables.</span>
+              <span>Binance API uses the <Badge variant="outline">BINANCE_API_KEY</Badge> and <Badge variant="outline">BINANCE_SECRET_KEY</Badge> environment variables.</span>
             </li>
             <li className="flex items-start">
               <Info className="h-5 w-5 text-primary mr-2 flex-shrink-0 mt-0.5" />
@@ -95,7 +72,7 @@ export default function ApiStatus() {
             </li>
             <li className="flex items-start mt-4">
               <AlertTriangle className="h-5 w-5 text-warning mr-2 flex-shrink-0 mt-0.5" />
-              <span>עבודה עם testnet: המערכת מוגדרת לעבוד מול סביבת testnet שמספקת פורטל מלא לבדיקות, אך לא משפיעה על נתונים אמיתיים או כספים אמיתיים.</span>
+              <span>Working with testnet: The system is configured to work with a testnet environment that provides a full portal for testing, without affecting real data or real funds.</span>
             </li>
           </ul>
         </div>
