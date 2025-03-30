@@ -90,10 +90,10 @@ export class AITradingSystem {
         'BNB-USDT', 'ADA-USDT', 'DOT-USDT', 'LINK-USDT', 'LTC-USDT',
         'AVAX-USDT', 'ATOM-USDT', 'NEAR-USDT', 'UNI-USDT', 'SHIB-USDT'
       ],
-      timeframes: [TimeFrame.MINUTE_5, TimeFrame.MINUTE_15, TimeFrame.HOUR_1, TimeFrame.DAY_1],
-      minimumConfidence: 0.55, // מוריד מעט את הסף כדי להגדיל את מספר העסקאות
-      relearningInterval: 2 * 60 * 60 * 1000, // 2 שעות
-      forcedTradeInterval: 5 * 60 * 1000,    // 5 דקות - מכריח עסקאות בתדירות גבוהה יותר
+      timeframes: [TimeFrame.MINUTE_1, TimeFrame.MINUTE_5, TimeFrame.MINUTE_15, TimeFrame.HOUR_1],
+      minimumConfidence: 0.50, // מוריד את הסף כדי להגדיל משמעותית את מספר העסקאות
+      relearningInterval: 1 * 60 * 60 * 1000, // 1 שעה
+      forcedTradeInterval: 30 * 1000,    // 30 שניות - תדירות גבוהה מאוד
       maxPositionSize: 1000,
       enabledStrategies: [
         StrategyType.GRID_SMALL,
