@@ -91,8 +91,8 @@ export default function Header() {
     // Validate inputs
     if (!binanceApiKey.trim()) {
       toast({
-        title: "שגיאה",
-        description: "נא להזין מפתח API תקין",
+        title: "Error",
+        description: "Please enter a valid API key",
         variant: "destructive"
       });
       return;
@@ -100,8 +100,8 @@ export default function Header() {
 
     if (!binanceSecretKey.trim()) {
       toast({
-        title: "שגיאה",
-        description: "נא להזין מפתח סודי תקין",
+        title: "Error",
+        description: "Please enter a valid Secret key",
         variant: "destructive"
       });
       return;
@@ -128,8 +128,8 @@ export default function Header() {
 
       if (response.ok) {
         toast({
-          title: "מצוין!",
-          description: "מפתחות API של Binance נשמרו בהצלחה",
+          title: "Excellent!",
+          description: "Binance API keys saved successfully",
           variant: "default"
         });
         
@@ -143,16 +143,16 @@ export default function Header() {
         refetchBinanceApiKeys();
       } else {
         toast({
-          title: "שגיאה בשמירת המפתחות",
-          description: data.message || "אירעה שגיאה בלתי צפויה",
+          title: "Error Saving Keys",
+          description: data.message || "An unexpected error occurred",
           variant: "destructive"
         });
       }
     } catch (error) {
       console.error("Error saving Binance API keys:", error);
       toast({
-        title: "שגיאה בשמירת המפתחות",
-        description: "אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.",
+        title: "Error Saving Keys",
+        description: "An unexpected error occurred. Please try again later.",
         variant: "destructive"
       });
     } finally {
@@ -228,7 +228,7 @@ export default function Header() {
                     <Check className="ml-1 h-3.5 w-3.5 text-green-600" />
                   ) : (
                     <Badge variant="outline" className="ml-1.5 py-0 h-4 text-[10px] font-bold px-1.5 bg-yellow-100 text-yellow-800 border-yellow-400">
-                      חדש
+                      NEW
                     </Badge>
                   )}
                 </Button>
@@ -329,7 +329,7 @@ export default function Header() {
                     <Check className="ml-1 h-3.5 w-3.5 text-green-600" />
                   ) : (
                     <Badge variant="outline" className="ml-1.5 py-0 h-4 text-[10px] font-bold px-1.5 bg-yellow-100 text-yellow-800 border-yellow-400">
-                      חדש
+                      NEW
                     </Badge>
                   )}
                 </div>
@@ -364,16 +364,16 @@ export default function Header() {
                 alt="Binance Logo" 
                 className="w-5 h-5 mr-2"
               />
-              הגדר מפתחות API של Binance
+              Configure Binance API Keys
             </DialogTitle>
             <DialogDescription>
               {hasBinanceKeys ? (
                 <div className="flex items-center text-green-600 mt-1">
                   <Check className="h-4 w-4 mr-1.5" />
-                  <span>מפתחות ה-API של Binance כבר הוגדרו. אתה יכול לעדכן אותם כאן.</span>
+                  <span>Binance API keys are already configured. You can update them here.</span>
                 </div>
               ) : (
-                <span>הזן את מפתחות ה-API של Binance שלך כדי להתחיל לקבל ולנתח ממשק לחשבון שלך ב-Binance.</span>
+                <span>Enter your Binance API keys to start receiving and analyzing your Binance account data.</span>
               )}
             </DialogDescription>
           </DialogHeader>
@@ -388,7 +388,7 @@ export default function Header() {
                 value={binanceApiKey}
                 onChange={(e) => setBinanceApiKey(e.target.value)}
                 className="col-span-3"
-                placeholder="הזן את מפתח ה-API של Binance שלך"
+                placeholder="Enter your Binance API key"
                 autoComplete="off"
               />
             </div>
@@ -403,28 +403,28 @@ export default function Header() {
                 onChange={(e) => setBinanceSecretKey(e.target.value)}
                 className="col-span-3"
                 type="password"
-                placeholder="הזן את המפתח הסודי של Binance שלך"
+                placeholder="Enter your Binance Secret key"
                 autoComplete="off"
               />
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="binance-allowed-ip" className="text-right">
-                כתובת IP מורשית
+                Allowed IP Address
               </Label>
               <Input
                 id="binance-allowed-ip"
                 value={binanceAllowedIp}
                 onChange={(e) => setBinanceAllowedIp(e.target.value)}
                 className="col-span-3"
-                placeholder="כתובת ה-IP שהגדרת ב-Binance"
+                placeholder="IP address you configured in Binance"
                 autoComplete="off"
               />
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="useTestnet" className="text-right">
-                סביבת בדיקות
+                Test Environment
               </Label>
               <div className="flex items-center col-span-3">
                 <Switch
@@ -433,7 +433,7 @@ export default function Header() {
                   onCheckedChange={setUseTestnet}
                 />
                 <Label htmlFor="useTestnet" className="ml-2">
-                  {useTestnet ? 'משתמש בסביבת בדיקות' : 'משתמש בסביבת הייצור (אמיתי)'}
+                  {useTestnet ? 'Using test environment' : 'Using production environment (real)'}
                 </Label>
               </div>
             </div>
@@ -441,7 +441,7 @@ export default function Header() {
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowBinanceDialog(false)}>
-              ביטול
+              Cancel
             </Button>
             <Button 
               type="submit" 
@@ -456,12 +456,12 @@ export default function Header() {
               {isSaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  שומר...
+                  Saving...
                 </>
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  שמור מפתחות
+                  Save Keys
                 </>
               )}
             </Button>

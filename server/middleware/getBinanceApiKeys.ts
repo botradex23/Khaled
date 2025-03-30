@@ -70,7 +70,7 @@ export async function getBinanceApiKeys(req: Request, res: Response, next: NextF
     if (!trimmedApiKey || !trimmedSecretKey) {
       return res.status(400).json({ 
         error: 'Invalid Binance API keys',
-        message: 'המפתחות שלך נראים ריקים או לא חוקיים. אנא הגדר אותם מחדש.'
+        message: 'Your keys appear to be empty or invalid. Please set them again.'
       });
     }
     
@@ -78,14 +78,14 @@ export async function getBinanceApiKeys(req: Request, res: Response, next: NextF
     if (trimmedApiKey.length < 10) {
       return res.status(400).json({
         error: 'Invalid API key format',
-        message: 'מפתח API לא תקין. מפתח API של Binance חייב להיות לפחות 10 תווים.'
+        message: 'Invalid API key. Binance API key must be at least 10 characters long.'
       });
     }
     
     if (trimmedSecretKey.length < 10) {
       return res.status(400).json({
         error: 'Invalid Secret key format',
-        message: 'מפתח סודי לא תקין. מפתח סודי של Binance חייב להיות לפחות 10 תווים.'
+        message: 'Invalid Secret key. Binance Secret key must be at least 10 characters long.'
       });
     }
     
