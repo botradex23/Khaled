@@ -15,18 +15,38 @@ export class BinanceService {
   private axiosInstance: AxiosInstance;
 
   constructor(credentials: BinanceCredentials) {
-    // Clean and validate API key formatting - eliminate ALL whitespace and control characters
-    this.apiKey = credentials.apiKey 
-      ? credentials.apiKey.replace(/\s+/g, '').trim() 
-      : '';
+    // Clean and validate API key formatting - ensure it matches Binance's requirements
+    // Remove ALL whitespace and control characters
+    if (credentials.apiKey) {
+      this.apiKey = credentials.apiKey.replace(/\s+/g, '').trim();
       
-    // Clean and validate Secret key formatting - eliminate ALL whitespace and control characters
-    this.secretKey = credentials.secretKey 
-      ? credentials.secretKey.replace(/\s+/g, '').trim() 
-      : '';
+      // Extra verification for common formatting issues
+      if (this.apiKey.startsWith('"') && this.apiKey.endsWith('"')) {
+        console.log('Removing quote marks from API key');
+        this.apiKey = this.apiKey.substring(1, this.apiKey.length - 1);
+      }
+    } else {
+      this.apiKey = '';
+    }
+      
+    // Clean and validate Secret key formatting
+    if (credentials.secretKey) {
+      this.secretKey = credentials.secretKey.replace(/\s+/g, '').trim();
+      
+      // Extra verification for common formatting issues
+      if (this.secretKey.startsWith('"') && this.secretKey.endsWith('"')) {
+        console.log('Removing quote marks from Secret key');
+        this.secretKey = this.secretKey.substring(1, this.secretKey.length - 1);
+      }
+    } else {
+      this.secretKey = '';
+    }
     
-    // Log the lengths of the cleaned keys for debugging
+    // Log the lengths and first few characters of the cleaned keys for debugging
     console.log(`API key length: ${this.apiKey.length}, Secret key length: ${this.secretKey.length}`);
+    if (this.apiKey.length > 0) {
+      console.log(`API key first chars: ${this.apiKey.substring(0, 4)}..., last chars: ...${this.apiKey.substring(this.apiKey.length - 4)}`);
+    }
     
     // Basic validation for key formats
     if (this.apiKey && this.apiKey.length < 10) {
@@ -78,6 +98,17 @@ export class BinanceService {
     method: 'GET' | 'POST' | 'DELETE' = 'GET',
     params: Record<string, any> = {}
   ): Promise<any> {
+    // Verify API key format before proceeding
+    if (!this.apiKey || this.apiKey.trim() === '') {
+      throw new Error('API key is missing or empty. Please configure your Binance API key.');
+    }
+    
+    // Check for common format issues and try to fix
+    if (/^".*"$/.test(this.apiKey) || /^'.*'$/.test(this.apiKey)) {
+      console.warn('API key has quote marks - removing them before request');
+      this.apiKey = this.apiKey.replace(/^["'](.*)["']$/, '$1');
+    }
+    
     // Add timestamp parameter required for signed requests
     const timestamp = Date.now();
     const queryParams = new URLSearchParams({
@@ -93,6 +124,12 @@ export class BinanceService {
     queryParams.append('signature', signature);
     
     const url = `${this.baseUrl}${endpoint}?${queryParams.toString()}`;
+    
+    // Log the API key format in use for this request
+    console.log(`Using API key (length: ${this.apiKey.length}) for authenticated request`);
+    if (this.apiKey.length > 0) {
+      console.log(`API key starts with: ${this.apiKey.substring(0, 2)}, ends with: ${this.apiKey.substring(this.apiKey.length - 2)}`);
+    }
     
     const config = {
       headers: {
@@ -124,6 +161,19 @@ export class BinanceService {
       const errorCode = errorData?.code || error.code || 'UNKNOWN';
       
       console.error(`Binance API Error (${endpoint}): Code: ${errorCode}, Message: ${errorMessage}`);
+      
+      // Add specific handling for API key format errors
+      if (errorMessage.includes('API-key format invalid')) {
+        console.error('API key format error detected. Current API key details:');
+        console.error(`- Length: ${this.apiKey.length}`);
+        console.error(`- Contains non-alphanumeric: ${!/^[a-zA-Z0-9]+$/.test(this.apiKey)}`);
+        if (this.apiKey.length > 0) {
+          console.error(`- First two chars: ${this.apiKey.substring(0, 2)}`);
+          console.error(`- Last two chars: ${this.apiKey.substring(this.apiKey.length - 2)}`);
+        }
+        console.error(`- Has whitespace: ${/\s/.test(this.apiKey)}`);
+        console.error(`- Has quotes: ${/["']/.test(this.apiKey)}`);
+      }
       
       // Check if it's a proxy-related error
       if (VPN_CONFIG.enabled && error.code) {
@@ -367,6 +417,24 @@ export class BinanceService {
         };
       }
       
+      // Report on possible format issues
+      if (/^".*"$/.test(this.apiKey)) {
+        console.warn('Possible API key format issue - contains surrounding double quotes');
+        // Remove quotes for the test
+        this.apiKey = this.apiKey.replace(/^"(.*)"$/, '$1');
+      }
+      
+      if (/^'.*'$/.test(this.apiKey)) {
+        console.warn('Possible API key format issue - contains surrounding single quotes');
+        // Remove quotes for the test
+        this.apiKey = this.apiKey.replace(/^'(.*)'$/, '$1');
+      }
+      
+      // Additional checks for other possible format issues
+      if (/^[a-zA-Z0-9]+$/.test(this.apiKey) === false) {
+        console.warn('API key contains non-alphanumeric characters. This might cause issues with Binance API.');
+      }
+      
       // Ensure API keys are in the correct format
       if (this.apiKey.includes(' ') || this.apiKey.includes('\n') || this.apiKey.includes('\t')) {
         console.warn('Warning: Binance API key contains whitespace. Cleaning up...');
@@ -378,9 +446,10 @@ export class BinanceService {
         this.secretKey = this.secretKey.replace(/\s+/g, '');
       }
       
-      // Try to get account information as a connectivity test
+      // Log the API key format for debugging
       console.log(`Testing Binance API connectivity with API key: ${this.apiKey.substring(0, 4)}... to ${this.baseUrl}`);
       console.log(`API key length: ${this.apiKey.length}, Secret key length: ${this.secretKey.length}`);
+      console.log(`API key format inspection: alphanumeric only: ${/^[a-zA-Z0-9]+$/.test(this.apiKey)}`);
       
       // Set up headers directly for better proxy compatibility
       this.axiosInstance.defaults.headers['X-MBX-APIKEY'] = this.apiKey;
@@ -396,6 +465,21 @@ export class BinanceService {
       return { success: true };
     } catch (error: any) {
       console.error('Binance connectivity test failed:', error.message);
+      
+      // Add more diagnostic information if it's an API key format error
+      if (error.message && error.message.includes('API-key format invalid')) {
+        console.error('API key format issue detected. Current API key format:');
+        console.error(`- Length: ${this.apiKey.length}`);
+        console.error(`- Contains non-alphanumeric: ${!/^[a-zA-Z0-9]+$/.test(this.apiKey)}`);
+        console.error(`- Starts with: ${this.apiKey.substring(0, 2)}...`);
+        console.error(`- Ends with: ...${this.apiKey.substring(this.apiKey.length - 2)}`);
+        
+        return {
+          success: false,
+          message: 'API key format invalid. Please check that you copied the key correctly without any extra characters, quotes, or whitespace.'
+        };
+      }
+      
       return { 
         success: false, 
         message: error.message 
