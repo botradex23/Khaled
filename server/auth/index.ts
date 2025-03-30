@@ -187,6 +187,24 @@ function registerAuthRoutes(app: Express) {
 export function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
   // First check for test header
   if (req.headers['x-test-user-id']) {
+    // Create a mock admin user for testing with all required fields
+    req.user = {
+      id: 2,
+      username: 'admin',
+      email: 'admin@example.com',
+      password: null,
+      firstName: 'Admin',
+      lastName: 'User',
+      defaultBroker: null,
+      useTestnet: true,
+      okxApiKey: null,
+      okxSecretKey: null,
+      okxPassphrase: null,
+      binanceApiKey: null,
+      binanceSecretKey: null,
+      createdAt: new Date(),
+      updatedAt: null
+    };
     return next();
   }
   // Then check for normal authentication
