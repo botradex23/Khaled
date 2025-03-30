@@ -1,18 +1,92 @@
 import axios from 'axios';
+import { EventEmitter } from 'events';
 
 // Base URLs for Binance API
 const BINANCE_BASE_URL = 'https://api.binance.com';
 const BINANCE_TEST_URL = 'https://testnet.binance.vision';
 
+// ממשק עבור נתוני המחיר בזמן אמת
+export interface LivePriceUpdate {
+  symbol: string;
+  price: number;
+  timestamp: number;
+  source: 'binance' | 'binance-websocket' | 'simulated';
+}
+
 /**
  * Service for fetching market price data from Binance public API
+ * מאפשר גם עדכון מחירים בזמן אמת באמצעות WebSocket
  */
-export class BinanceMarketPriceService {
+export class BinanceMarketPriceService extends EventEmitter {
   private baseUrl: string;
+  private livePrices: Record<string, number> = {}; // שמירת מחירים עדכניים
   
   constructor(useTestnet: boolean = false) {
+    super();
     this.baseUrl = useTestnet ? BINANCE_TEST_URL : BINANCE_BASE_URL;
     console.log(`Binance Market Price Service initialized with base URL: ${this.baseUrl}`);
+  }
+  
+  /**
+   * עדכון מחיר של מטבע בזמן אמת
+   * @param symbol סמל המטבע (לדוגמה BTCUSDT)
+   * @param price המחיר החדש
+   */
+  public updatePrice(symbol: string, price: number): void {
+    const formattedSymbol = symbol.toUpperCase();
+    const oldPrice = this.livePrices[formattedSymbol];
+    this.livePrices[formattedSymbol] = price;
+    
+    // שלח אירוע עדכון מחיר
+    const update: LivePriceUpdate = {
+      symbol: formattedSymbol,
+      price,
+      timestamp: Date.now(),
+      source: 'binance-websocket'
+    };
+    
+    // הפצת האירוע
+    this.emit('price-update', update);
+    this.emit(`price-update:${formattedSymbol}`, update);
+    
+    // אם המחיר השתנה בצורה משמעותית, שלח גם אירוע שינוי גדול
+    if (oldPrice && Math.abs(price - oldPrice) / oldPrice > 0.01) {
+      this.emit('significant-price-change', {
+        ...update,
+        previousPrice: oldPrice,
+        changePercent: ((price - oldPrice) / oldPrice) * 100
+      });
+    }
+    
+    // כאשר עדכון מחיר מגיע, עדכן גם את המחיר האחרון בסימולציה שלנו
+    // כך הסימולציה תמשיך ממחיר אמיתי במקרה של נפילה
+    if (this._lastSimulatedPrices && formattedSymbol in this._lastSimulatedPrices) {
+      this._lastSimulatedPrices[formattedSymbol] = price.toString();
+    }
+  }
+  
+  /**
+   * קבלת המחיר העדכני ביותר של מטבע
+   * @param symbol סמל המטבע
+   * @returns המחיר העדכני או undefined אם לא נמצא
+   */
+  public getLatestPrice(symbol: string): number | undefined {
+    const formattedSymbol = symbol.toUpperCase();
+    return this.livePrices[formattedSymbol];
+  }
+  
+  /**
+   * קבלת כל המחירים העדכניים בזמן אמת
+   * @returns רשימה של כל המחירים
+   */
+  public getAllLatestPrices(): LivePriceUpdate[] {
+    const now = Date.now();
+    return Object.entries(this.livePrices).map(([symbol, price]) => ({
+      symbol,
+      price,
+      timestamp: now,
+      source: 'binance-websocket'
+    }));
   }
   
   /**

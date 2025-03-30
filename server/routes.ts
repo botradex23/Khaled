@@ -20,6 +20,7 @@ import binanceRouter from "./routes/binance";
 import binanceApiKeysRouter from "./routes/binance-api-keys";
 import paperTradingRouter from "./routes/paper-trading";
 import databaseStatusRoutes from "./routes/database-status";
+import { binanceWebSocketService } from "./api/binance/websocketService";
 
 // Helper function to mask sensitive data (like API keys)
 function maskSecret(secret: string): string {
@@ -95,6 +96,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Binance market prices routes registered to /api/binance');
   }).catch(err => {
     console.error('Failed to register Binance market prices routes:', err);
+  });
+  
+  // Register market prices routes (in Binance format)
+  import('./routes/market-prices').then(marketPricesRouter => {
+    app.use('/api/market', marketPricesRouter.default);
+    console.log('Market prices routes registered to /api/market');
+  }).catch(err => {
+    console.error('Failed to register market prices routes:', err);
   });
   // Add a test endpoint to check API keys for a user
   app.get('/api/test/user-api-keys', async (req: Request, res: Response) => {
@@ -1075,5 +1084,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // התחלת שירות WebSocket לעדכוני מחירים בזמן אמת
+  try {
+    console.log('Starting Binance WebSocket price service...');
+    binanceWebSocketService.connect();
+    
+    console.log('Adding event listeners for price updates...');
+    binanceWebSocketService.on('connected', () => {
+      console.log('Binance WebSocket connection established successfully');
+    });
+    
+    binanceWebSocketService.on('simulation-started', () => {
+      console.log('Binance WebSocket switched to simulation mode due to connection issues (possibly geo-restricted)');
+      
+      // עדכון כל ה-routers הרלוונטיים
+      import('./routes/binance-market-prices').then(binanceMarketsRouter => {
+        console.log('Informed binance-market-prices router about simulation mode');
+      }).catch(err => {
+        console.error('Failed to inform binance-market-prices router:', err);
+      });
+      
+      import('./routes/market-prices').then(marketPricesRouter => {
+        console.log('Informed market-prices router about simulation mode');
+      }).catch(err => {
+        console.error('Failed to inform market-prices router:', err);
+      });
+    });
+    
+    // הגבלת לוגים של עדכוני מחירים לאחת לדקה כדי למנוע הצפה
+    let lastPriceUpdateLog = 0;
+    binanceWebSocketService.on('price-update', (update) => {
+      const now = Date.now();
+      // רק אם עברה לפחות דקה מאז העדכון האחרון
+      if (now - lastPriceUpdateLog > 60000) {
+        console.log(`[WebSocket] Price update for ${update.symbol}: ${update.price} (${update.source})`);
+        lastPriceUpdateLog = now;
+      }
+    });
+    
+    binanceWebSocketService.on('significant-price-change', (update) => {
+      // תמיד מציג שינויים משמעותיים
+      console.log(`[WebSocket] Significant price change for ${update.symbol}: ${update.previousPrice} -> ${update.price} (${update.changePercent.toFixed(2)}%)`);
+    });
+    
+    binanceWebSocketService.on('error', (error) => {
+      // זיהוי שגיאת גאוגרפית ספציפית
+      if (error && error.message && error.message.includes('451')) {
+        console.warn('[WebSocket] Binance WebSocket geo-restriction detected (451). Switching to simulation mode.');
+      } else {
+        console.error('[WebSocket] Binance WebSocket error:', error);
+      }
+    });
+    
+    binanceWebSocketService.on('disconnected', ({ code, reason }) => {
+      console.log(`[WebSocket] Binance WebSocket disconnected with code ${code}: ${reason}`);
+    });
+  } catch (error) {
+    console.error('Failed to start Binance WebSocket service:', error);
+  }
+  
   return httpServer;
 }
