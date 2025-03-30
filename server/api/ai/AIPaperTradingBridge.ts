@@ -94,9 +94,9 @@ export class AIPaperTradingBridge {
         };
       }
 
-      // חישוב כמות לעסקה - מגביל ל-2% מהחשבון
+      // חישוב כמות לעסקה - מגביל ל-5% מהחשבון
       const currentBalance = parseFloat(account.currentBalance);
-      const maxTradeAmount = currentBalance * 0.02; // 2% risk management
+      const maxTradeAmount = currentBalance * 0.05; // 5% risk management
       const price = decision.price;
       
       // חישוב כמות המטבע לרכישה/מכירה

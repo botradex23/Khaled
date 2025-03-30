@@ -91,14 +91,14 @@ export class AITradingSystem {
         'AVAX-USDT', 'ATOM-USDT', 'NEAR-USDT', 'UNI-USDT', 'SHIB-USDT'
       ],
       timeframes: [TimeFrame.MINUTE_1, TimeFrame.MINUTE_5, TimeFrame.MINUTE_15, TimeFrame.HOUR_1],
-      minimumConfidence: 0.50, // מוריד את הסף כדי להגדיל משמעותית את מספר העסקאות
+      minimumConfidence: 0.40, // מוריד את הסף עוד יותר כדי להגדיל משמעותית את מספר העסקאות
       relearningInterval: 1 * 60 * 60 * 1000, // 1 שעה
-      forcedTradeInterval: 30 * 1000,    // 30 שניות - תדירות גבוהה מאוד
+      forcedTradeInterval: 5 * 1000,    // 5 שניות - תדירות גבוהה מאוד
       maxPositionSize: 1000,
       enabledStrategies: [
-        StrategyType.GRID_SMALL,
+        StrategyType.GRID_NARROW,
         StrategyType.GRID_MEDIUM,
-        StrategyType.GRID_LARGE,
+        StrategyType.GRID_WIDE,
         StrategyType.TREND_FOLLOWING,
         StrategyType.COUNTER_TREND,
         StrategyType.BREAKOUT
@@ -554,14 +554,14 @@ export class AITradingSystem {
       confidence = 0.5 + (sellVotes / 3) * 0.5;
       reason = 'Multiple signals indicate selling opportunity';
     } else if (forceTradeNow) {
-      // אם עבר מספיק זמן מהעסקה האחרונה, נאלץ החלטה
+      // אם עבר מספיק זמן מהעסקה האחרונה, נאלץ החלטה עם ביטחון גבוה יותר
       if (buyVotes > sellVotes || (buyVotes === sellVotes && Math.random() > 0.5)) {
         finalAction = 'BUY';
-        confidence = 0.51;  // ביטחון נמוך יחסית
+        confidence = 0.60;  // ביטחון גבוה יותר מהסף (0.45)
         reason = 'Forced trade due to time interval - weighted buy signal';
       } else {
         finalAction = 'SELL';
-        confidence = 0.51;  // ביטחון נמוך יחסית
+        confidence = 0.60;  // ביטחון גבוה יותר מהסף (0.45)
         reason = 'Forced trade due to time interval - weighted sell signal';
       }
       
@@ -705,6 +705,7 @@ export class AITradingSystem {
     
     // אם הביטחון נמוך מהסף, לא נבצע את העסקה
     if (decision.confidence < this.config.minimumConfidence) {
+      console.log(`Decision confidence (${decision.confidence}) below threshold (${this.config.minimumConfidence}) - skipping execution`);
       return {
         decision,
         executed: false,
@@ -746,8 +747,8 @@ export class AITradingSystem {
         accountBalance = 1000; // סכום ברירת מחדל
       }
       
-      // חישוב גודל העסקה לפי מגבלת 2% מהקפיטל
-      const riskLimit = 0.02; // 2% מהקפיטל
+      // חישוב גודל העסקה לפי מגבלת 5% מהקפיטל
+      const riskLimit = 0.05; // 5% מהקפיטל
       const maxRiskAmount = accountBalance * riskLimit;
       
       // חישוב כמות לפי מחיר המטבע והסיכון המקסימלי
@@ -1136,7 +1137,7 @@ export class AITradingSystem {
               console.error('Error during trading cycle:', error);
             }
           }
-        }, 5 * 60 * 1000); // מחזור מסחר כל 5 דקות
+        }, 10 * 1000); // מחזור מסחר כל 10 שניות
         
         // הפעלת למידה מחודשת תקופתית
         this.learningInterval = setInterval(async () => {
