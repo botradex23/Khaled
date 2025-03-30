@@ -148,14 +148,14 @@ function AISystemStatusCard({ query }: { query: any }) {
   // Start AI System Mutation
   const startSystemMutation = useMutation({
     mutationFn: async (isActiveMode: boolean) => {
-      const response = await apiRequest('POST', '/api/ai/system/start', { 
+      // apiRequest כבר מחזיר את ה-JSON כאובייקט, אז אין צורך לקרוא .json() שוב
+      return await apiRequest('POST', '/api/ai/system/start', { 
         activeMode: isActiveMode 
       }, {
         headers: {
           'X-Test-User-Id': 'admin'  // Add test user header to bypass authentication
         }
       });
-      return response.json();
     },
     onSuccess: (data) => {
       const modeStr = data.status?.config?.activeMode ? 'ACTIVE' : 'PASSIVE';
@@ -178,12 +178,12 @@ function AISystemStatusCard({ query }: { query: any }) {
   // Stop AI System Mutation
   const stopSystemMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/ai/system/stop', {}, {
+      // apiRequest כבר מחזיר את ה-JSON כאובייקט, אז אין צורך לקרוא .json() שוב
+      return await apiRequest('POST', '/api/ai/system/stop', {}, {
         headers: {
           'X-Test-User-Id': 'admin'  // Add test user header to bypass authentication
         }
       });
-      return response.json();
     },
     onSuccess: () => {
       toast({
