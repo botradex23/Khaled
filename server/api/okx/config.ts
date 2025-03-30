@@ -1,31 +1,18 @@
-// OKX API Configuration
+// OKX API Configuration - DEPRECATED
+// This code is kept only for backwards compatibility
+// The system now uses Binance API exclusively
 
-// Define OKX API endpoints
-// Note: OKX documentation sometimes references different base URLs
-// Options include:
-// - https://www.okx.com (main website with API)
-// - https://api.okx.com (dedicated API endpoint)
-// - https://aws.okx.com (AWS hosted endpoint)
-// Demo trading uses the same base URL but with 'x-simulated-trading' header
+// Define dummy URLs to maintain compatibility with existing code
+export const OKX_BASE_URL = 'https://www.okx.com'; 
+export const OKX_DEMO_BASE_URL = 'https://www.okx.com';
 
-// OKX Testnet URLs
-// https://www.okx.com/docs-v5/en/#overview-demo-trading-and-testing
-// According to OKX, the REST API for the demo trading environment is the same as the production environment
-export const OKX_BASE_URL = 'https://www.okx.com'; // Base URL for production API 
-export const OKX_DEMO_BASE_URL = 'https://www.okx.com'; // Use same URL with 'x-simulated-trading' header for demo/testnet
+// We're no longer using OKX, so we don't need to check for environment variables
+console.log('OKX integration is deprecated. Using Binance exclusively.');
 
-// Use API credentials from environment variables with fallbacks
-// Check and log the environment variables
-console.log('OKX Config - Environment variables check:');
-console.log(`OKX_API_KEY: ${process.env.OKX_API_KEY ? process.env.OKX_API_KEY.substring(0, 4) + '...' : 'missing'}`);
-console.log(`OKX_SECRET_KEY: ${process.env.OKX_SECRET_KEY ? process.env.OKX_SECRET_KEY.substring(0, 4) + '...' : 'missing'}`);
-console.log(`OKX_PASSPHRASE: ${process.env.OKX_PASSPHRASE ? process.env.OKX_PASSPHRASE.substring(0, 2) + '...' : 'missing'}`);
-
-// Use environment variables with fallbacks for API credentials
-// When updating these credentials, you need to restart the server
-export const API_KEY = process.env.OKX_API_KEY || 'a6c726f8-4e11-4c7c-b236-ad3b63d73a3d';
-export const SECRET_KEY = process.env.OKX_SECRET_KEY || 'E5DE2806C9778CCCCCC80D07F719FD3B';
-export const PASSPHRASE = process.env.OKX_PASSPHRASE || 'Khaled123.';
+// Use dummy credentials since we're not making real OKX API calls
+export const API_KEY = 'deprecated';
+export const SECRET_KEY = 'deprecated';
+export const PASSPHRASE = 'deprecated';
 
 // Log the actual values being used (first 4 and last 4 chars for security)
 console.log('Using API Key:', API_KEY.length > 8 ? 
@@ -35,14 +22,10 @@ console.log('Using Secret Key:', SECRET_KEY.length > 8 ?
 
 /**
  * Check if API credentials are configured
- * 
- * Required permissions for the OKX API key:
- * - Read permission (for account information and market data)
- * - Trade permission (for executing trades)
- * - No withdraw permission needed
+ * Always returns true now that OKX is deprecated
  */
 export const isConfigured = () => {
-  return !!(API_KEY && SECRET_KEY && PASSPHRASE);
+  return true; // Always return true to avoid breaking any code that checks this
 };
 
 // Define commonly used currencies and pairs
