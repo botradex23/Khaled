@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { apiRequest } from '@/lib/queryClient';
+import { useBinanceApiKeys } from '@/hooks/useBinanceApiKeys';
 
 // בינתיים נשתמש בסוג זמני עבור מטבעות ויתרות ביננס
 interface BinanceBalance {
@@ -555,12 +556,23 @@ export default function BinancePage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isApiKeysDialogOpen, setIsApiKeysDialogOpen] = useState(false);
-  const [binanceApiKey, setBinanceApiKey] = useState('');
-  const [binanceSecretKey, setBinanceSecretKey] = useState('');
-  const [binanceAllowedIp, setBinanceAllowedIp] = useState("185.199.228.220");
-  const [useTestnet, setUseTestnet] = useState(false);
   const [keysInitialized, setKeysInitialized] = useState(false); // Track if keys have already been initialized
-  const [isSaving, setIsSaving] = useState(false);
+  
+  // שימוש ב-hook ייעודי לניהול מפתחות API של ביננס
+  const { 
+    apiKey: binanceApiKey, 
+    setApiKey: setBinanceApiKey,
+    secretKey: binanceSecretKey,
+    setSecretKey: setBinanceSecretKey,
+    allowedIp: binanceAllowedIp,
+    setAllowedIp: setBinanceAllowedIp,
+    testnet: useTestnet,
+    setTestnet: setUseTestnet,
+    isLoading: keysLoading,
+    isSaving,
+    isConfigured: hasValidApiKeys,
+    saveApiKeys: saveBinanceApiKeys
+  } = useBinanceApiKeys();
   
   // משתנים למיון וסינון
   const [searchTerm, setSearchTerm] = useState('');
@@ -909,56 +921,17 @@ export default function BinancePage() {
     });
   };
 
+  // שימוש בפונקציה מתוך ה-hook לשמירת מפתחות API
   const saveApiKeys = async () => {
     // נקה את המפתחות מרווחים ותווים בעייתיים אחרים לפני הבדיקה
-    // חשוב מאוד: הסרה של כל הרווחים והתווים הלבנים
     const cleanedApiKey = binanceApiKey.replace(/\s+/g, '').trim();
     const cleanedSecretKey = binanceSecretKey.replace(/\s+/g, '').trim();
     const cleanedAllowedIp = binanceAllowedIp ? binanceAllowedIp.replace(/\s+/g, '').trim() : "";
     
-    // וידוא תקינות קלט
-    if (!cleanedApiKey) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid API key",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (cleanedApiKey.length < 10) {
-      toast({
-        title: "Error",
-        description: "The API key appears too short. A Binance API key should be at least 10 characters long.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!cleanedSecretKey) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid Secret key",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (cleanedSecretKey.length < 10) {
-      toast({
-        title: "Error",
-        description: "The Secret key appears too short. A Binance Secret key should be at least 10 characters long.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // עדכן את המשתנים המקומיים עם הגרסה המנוקה
+    // עדכן את המשתנים המקומיים עם הגרסה המנוקה (זה יעודכן גם ב-hook)
     setBinanceApiKey(cleanedApiKey);
     setBinanceSecretKey(cleanedSecretKey);
-    setBinanceAllowedIp(cleanedAllowedIp || "185.199.228.220"); // שמירת ה-IP המנוקה או ברירת המחדל
-
-    setIsSaving(true);
+    setBinanceAllowedIp(cleanedAllowedIp || "185.199.228.220");
 
     try {
       // הדפסת אורך המפתחות לפני השליחה לשרת (עבור דיבוג)
@@ -1044,7 +1017,8 @@ export default function BinancePage() {
     );
   }
 
-  const hasValidApiKeys = apiStatus?.hasBinanceApiKey && apiStatus?.hasBinanceSecretKey;
+  // Replaced with hook-based isConfigured value
+  // const hasValidApiKeys = apiStatus?.hasBinanceApiKey && apiStatus?.hasBinanceSecretKey;
 
   return (
     <div className="container mx-auto px-4 py-8 mt-16">
