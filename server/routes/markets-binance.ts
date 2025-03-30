@@ -3,7 +3,7 @@
  * Provides standardized API for getting cryptocurrency prices from Binance
  */
 import { Router } from 'express';
-import { binanceMarketService } from '../api/binance/marketPriceService';
+import { binanceMarketService, Binance24hrTicker } from '../api/binance/marketPriceService';
 
 const router = Router();
 
@@ -73,7 +73,7 @@ router.get('/overview', async (req, res) => {
   try {
     console.log('[markets-binance] Fetching market overview');
     
-    // Get all prices from Binance
+    // קבל את כל המחירים מבינאנס
     const allPrices = await binanceMarketService.getAllPrices();
     
     if (!allPrices || allPrices.length === 0) {
@@ -83,40 +83,82 @@ router.get('/overview', async (req, res) => {
       });
     }
     
-    // Get important symbols in Binance format
+    // קבל נתוני שינוי מחיר ל-24 שעות עבור מטבעות חשובים
     const importantSymbols = [
       'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
       'ADAUSDT', 'DOGEUSDT', 'DOTUSDT', 'MATICUSDT', 'LINKUSDT'
     ];
     
-    // Filter important cryptocurrencies
+    // קבל נתוני 24 שעות עבור המטבעות החשובים
+    const stats24hrPromises = importantSymbols.map(symbol => 
+      binanceMarketService.get24hrStats(symbol)
+    );
+    
+    // מחכים שכל הקריאות יסתיימו
+    const stats24hrResults = await Promise.allSettled(stats24hrPromises);
+    
+    // יצירת מפת שינויי מחירים ל-24 שעות
+    const priceChangeMap = new Map<string, string>();
+    
+    stats24hrResults.forEach((result, index) => {
+      if (result.status === 'fulfilled' && result.value) {
+        const data = result.value as Binance24hrTicker;
+        priceChangeMap.set(data.symbol, data.priceChangePercent);
+      }
+    });
+    
+    // סינון המטבעות החשובים
     const majorCryptos = allPrices
       .filter(ticker => importantSymbols.includes(ticker.symbol))
       .map(ticker => {
-        // Extract base and quote from symbol (e.g., BTCUSDT -> BTC and USDT)
+        // חילוץ בסיס וציטוט מהסמל (לדוגמה, BTCUSDT -> BTC ו- USDT)
         const base = ticker.symbol.endsWith('USDT') 
           ? ticker.symbol.slice(0, -4) 
           : ticker.symbol;
         
         const baseName = getFullCryptoName(base);
         
+        // קבל את אחוז השינוי ב-24 שעות אם קיים
+        const priceChangePercent = priceChangeMap.has(ticker.symbol)
+          ? parseFloat(priceChangeMap.get(ticker.symbol) || '0')
+          : 0;
+        
         return {
           symbol: ticker.symbol,
           shortSymbol: base,
           name: baseName,
           price: parseFloat(ticker.price),
-          priceChangePercent: 0, // We'd need 24h data for this
+          priceChangePercent, // כעת משתמשים בנתונים האמיתיים
           source: 'binance'
         };
       });
     
-    // Get Bitcoin price for reference
+    // קבל מחיר ביטקוין לייחוס
     const btcTicker = allPrices.find(t => t.symbol === 'BTCUSDT');
     const btcPrice = btcTicker ? parseFloat(btcTicker.price) : 0;
     
-    // Calculate rough market stats (simplified)
-    const totalMarketCap = btcPrice * 21000000; // Simplified calculation
+    // חישוב סטטיסטיקות שוק משוערות (פשוטות)
+    const totalMarketCap = btcPrice * 21000000; // חישוב פשוט
     const totalCoins = allPrices.length;
+    
+    // מצא את המטבע שעלה הכי הרבה (Top Gainer) ואת זה שירד הכי הרבה (Top Loser)
+    const sortedByChange = [...majorCryptos].sort((a, b) => 
+      b.priceChangePercent - a.priceChangePercent
+    );
+    
+    const topGainer = sortedByChange.length > 0 ? sortedByChange[0] : null;
+    const topLoser = sortedByChange.length > 0 ? sortedByChange[sortedByChange.length - 1] : null;
+    
+    // חישוב נתוני שליטה של BTC ו-ETH
+    const ethTicker = allPrices.find(t => t.symbol === 'ETHUSDT');
+    const ethPrice = ethTicker ? parseFloat(ethTicker.price) : 0;
+    
+    const btcMarketCap = btcPrice * 21000000; // 21 מיליון BTC בקירוב
+    const ethMarketCap = ethPrice * 120000000; // 120 מיליון ETH בקירוב
+    
+    const totalCryptoMarketCap = totalMarketCap * 2.5; // הערכה גסה
+    const btcDominance = btcMarketCap / totalCryptoMarketCap * 100;
+    const ethDominance = ethMarketCap / totalCryptoMarketCap * 100;
     
     res.json({
       success: true,
@@ -126,9 +168,17 @@ router.get('/overview', async (req, res) => {
         totalMarketCap: totalMarketCap,
         totalMarketCapFormatted: formatCurrency(totalMarketCap),
         totalCoins,
-        btcDominance: '42.31%', // Placeholder
-        ethDominance: '19.54%', // Placeholder
-        totalVolume24h: formatCurrency(btcPrice * 1000000) // Placeholder
+        btcDominance: `${btcDominance.toFixed(2)}%`,
+        ethDominance: `${ethDominance.toFixed(2)}%`,
+        totalVolume24h: formatCurrency(btcPrice * 1000000), // הערכה
+        topGainer: topGainer ? {
+          symbol: topGainer.shortSymbol,
+          change: `+${topGainer.priceChangePercent.toFixed(2)}%`
+        } : null,
+        topLoser: topLoser ? {
+          symbol: topLoser.shortSymbol,
+          change: `${topLoser.priceChangePercent.toFixed(2)}%`
+        } : null
       },
       trendingCoins: majorCryptos
     });

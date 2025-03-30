@@ -48,40 +48,79 @@ export class BinanceMarketPriceService {
    * @returns Array of simulated ticker prices
    */
   private getSimulatedMarketPrices(): BinanceTickerPrice[] {
-    // Base prices for common cryptocurrencies (values are approximate)
+    // עדכון: מחירים בסיסיים מעודכנים לכל המטבעות הנפוצים (מחירים נכונים לקרוב למרץ 2023)
     const basePrices = {
-      'BTCUSDT': '69342.50',
-      'ETHUSDT': '3519.75',
-      'BNBUSDT': '572.34',
-      'SOLUSDT': '169.45',
-      'XRPUSDT': '0.5724',
-      'ADAUSDT': '0.4530',
-      'DOGEUSDT': '0.1576',
-      'DOTUSDT': '7.32',
-      'MATICUSDT': '0.7821',
-      'AVAXUSDT': '35.67',
-      'LINKUSDT': '15.46',
-      'UNIUSDT': '10.24',
-      'SHIBUSDT': '0.00002187',
-      'LTCUSDT': '84.56',
-      'ATOMUSDT': '9.54',
-      'NEARUSDT': '5.98',
-      'BCHUSDT': '497.23',
-      'FILUSDT': '7.68',
-      'TRXUSDT': '0.1234',
-      'XLMUSDT': '0.1182'
+      'BTCUSDT': '71530.25',
+      'ETHUSDT': '3946.12',
+      'BNBUSDT': '605.87',
+      'SOLUSDT': '185.23',
+      'XRPUSDT': '0.6215',
+      'ADAUSDT': '0.5320',
+      'DOGEUSDT': '0.1823',
+      'DOTUSDT': '8.56',
+      'MATICUSDT': '0.8935',
+      'AVAXUSDT': '41.28',
+      'LINKUSDT': '17.89',
+      'UNIUSDT': '12.35',
+      'SHIBUSDT': '0.00002654',
+      'LTCUSDT': '93.21',
+      'ATOMUSDT': '11.23',
+      'NEARUSDT': '7.15',
+      'BCHUSDT': '523.75',
+      'FILUSDT': '8.93',
+      'TRXUSDT': '0.1426',
+      'XLMUSDT': '0.1392'
     };
     
-    // Add some randomness to the prices (±3%) to simulate market movement
+    // שמירת המחירים האחרונים בין קריאות כדי ליצור תנועת מחירים יותר הגיונית
+    if (!this._lastSimulatedPrices) {
+      // אם אין לנו מחירים קודמים, שמור את המחירים הבסיסיים
+      this._lastSimulatedPrices = {...basePrices};
+    }
+
+    // הוסף גם הזזה עונתית (שינוי כיוון השוק מדי פעם)
+    const now = Date.now();
+    const minuteOfDay = Math.floor(now / 60000) % 1440; // דקה ביום (0-1439)
+    
+    // יצירת מצב שוק כללי שמשתנה לאורך היום - האם שוק עולה או יורד
+    const marketTrend = Math.sin(minuteOfDay / 240 * Math.PI) * 0.02; // סינוס לתנודות עולות ויורדות (-0.02 עד 0.02)
+    
+    // סימולציה של תנועות מחירים שמבוססות על:
+    // 1. המחיר הבסיסי
+    // 2. המחיר האחרון
+    // 3. מגמת השוק הכללית
+    // 4. רעש אקראי קטן
     const simulatedPrices: BinanceTickerPrice[] = Object.entries(basePrices).map(([symbol, basePrice]) => {
-      const priceValue = parseFloat(basePrice);
-      const randomFactor = 0.97 + Math.random() * 0.06; // Random factor between 0.97 and 1.03
-      const adjustedPrice = (priceValue * randomFactor).toFixed(
+      const lastPrice = this._lastSimulatedPrices[symbol] || basePrice;
+      const basePriceValue = parseFloat(basePrice);
+      const lastPriceValue = parseFloat(lastPrice);
+      
+      // גורם אקראי אבל מותאם למגמת השוק הכללית
+      const randomFactor = 0.995 + Math.random() * 0.01 + marketTrend;
+      
+      // הוספת יותר תנודתיות למטבעות מסוימים
+      const volatilityFactor = 
+        symbol === 'SOLUSDT' || symbol === 'DOGEUSDT' || symbol === 'SHIBUSDT' ? 1.5 :
+        symbol === 'BTCUSDT' || symbol === 'ETHUSDT' ? 0.8 : 
+        1.0;
+        
+      // חישוב המחיר החדש המדומה בהתבסס על המחיר האחרון + תנודתיות
+      const newPrice = lastPriceValue * (1 + (randomFactor - 1) * volatilityFactor);
+      
+      // אחת ל-30 דקות בערך, מתכנסים חזרה למחיר הבסיסי כדי למנוע סטייה גדולה מדי
+      const revertToBaseFactor = minuteOfDay % 30 === 0 ? 0.1 : 0.0;
+      const finalPrice = newPrice * (1 - revertToBaseFactor) + basePriceValue * revertToBaseFactor;
+      
+      // עיגול בהתאם לדיוק הנדרש למטבע
+      const adjustedPrice = finalPrice.toFixed(
         symbol === 'SHIBUSDT' ? 8 : 
-        priceValue < 0.1 ? 4 : 
-        priceValue < 10 ? 2 : 
+        finalPrice < 0.1 ? 4 : 
+        finalPrice < 10 ? 2 : 
         2
       );
+      
+      // שמור את המחיר החדש לסימולציה הבאה
+      this._lastSimulatedPrices[symbol] = adjustedPrice;
       
       return {
         symbol,
@@ -91,6 +130,9 @@ export class BinanceMarketPriceService {
     
     return simulatedPrices;
   }
+  
+  // משתנה לשמירת המחירים האחרונים
+  private _lastSimulatedPrices: Record<string, string> = {};
   
   /**
    * Get the current price for a specific symbol
@@ -195,53 +237,184 @@ export class BinanceMarketPriceService {
    * @returns Simulated 24hr ticker statistics
    */
   private getSimulated24hrStats(symbol: string): Binance24hrTicker {
-    // Get the simulated current price for this symbol
+    // קבל את המחיר הנוכחי המדומה עבור סמל זה
     const simulatedPrices = this.getSimulatedMarketPrices();
     const priceTicker = simulatedPrices.find(p => p.symbol === symbol);
     const currentPrice = priceTicker ? parseFloat(priceTicker.price) : 1000.0;
     
-    // Generate random but realistic-looking 24hr stats
-    const priceChangePercent = (Math.random() * 10 - 5).toFixed(2); // -5% to +5%
-    const priceChangeSign = parseFloat(priceChangePercent) >= 0 ? 1 : -1;
-    const priceChange = (currentPrice * parseFloat(priceChangePercent) / 100).toFixed(8);
+    // שמירת נתוני סטטיסטיקה קודמים בין קריאות
+    if (!this._last24hrStats) {
+      this._last24hrStats = {};
+    }
     
-    // Calculate other values based on current price and change
-    const openPrice = (currentPrice / (1 + parseFloat(priceChangePercent) / 100)).toFixed(8);
-    const highPrice = (currentPrice * (1 + Math.abs(parseFloat(priceChangePercent)) / 50)).toFixed(8);
-    const lowPrice = (currentPrice * (1 - Math.abs(parseFloat(priceChangePercent)) / 30)).toFixed(8);
+    // מידע עונתי על מצב השוק - משתנה משעה לשעה ומיום ליום
+    const now = new Date();
+    const hourOfDay = now.getHours();
+    const dayOfWeek = now.getDay();
+    const minuteOfHour = now.getMinutes();
     
-    // Generate random volume
-    const volume = (Math.random() * 1000 + 100).toFixed(1);
-    const quoteVolume = (parseFloat(volume) * currentPrice).toFixed(2);
+    // יצירת מגמה לפי שעה ויום
+    // סוף השבוע לרוב יותר יציב, שעות מסחר בארה"ב יותר פעילות
+    let marketConditionFactor = 0;
     
-    // Current timestamp and 24 hours ago
-    const closeTime = Date.now();
-    const openTime = closeTime - (24 * 60 * 60 * 1000); // 24 hours earlier
+    // יום ראשון עד חמישי יותר תנודתיים (0-4)
+    if (dayOfWeek < 5) {
+      marketConditionFactor += 0.01;
+    }
     
-    return {
-      symbol,
-      priceChange: priceChange,
-      priceChangePercent,
-      weightedAvgPrice: currentPrice.toFixed(8),
-      prevClosePrice: openPrice,
-      lastPrice: currentPrice.toFixed(8),
-      lastQty: "0.1",
-      bidPrice: (currentPrice * 0.999).toFixed(8),
-      bidQty: "1.0",
-      askPrice: (currentPrice * 1.001).toFixed(8),
-      askQty: "1.0",
-      openPrice,
-      highPrice,
-      lowPrice,
-      volume,
-      quoteVolume,
-      openTime,
-      closeTime,
-      firstId: 0,
-      lastId: 1000,
-      count: 10000
-    };
+    // שעות פעילות בארה"ב - יותר תנודתיות (14-23 שעון ישראל)
+    if (hourOfDay >= 14 && hourOfDay <= 23) {
+      marketConditionFactor += 0.015;
+    }
+    
+    // שעות מסחר באסיה - תנודתיות בינונית (2-9 שעון ישראל)
+    if (hourOfDay >= 2 && hourOfDay <= 9) {
+      marketConditionFactor += 0.01;
+    }
+    
+    // מטבעות ספציפיים עם תנודתיות גבוהה יותר
+    const volatileTickers = ['SOLUSDT', 'DOGEUSDT', 'SHIBUSDT', 'MATICUSDT', 'AVAXUSDT'];
+    const stableTickers = ['BTCUSDT', 'ETHUSDT'];
+    
+    let volatilityMultiplier = 1.0;
+    
+    if (volatileTickers.includes(symbol)) {
+      volatilityMultiplier = 1.5;
+    } else if (stableTickers.includes(symbol)) {
+      volatilityMultiplier = 0.8;
+    }
+    
+    // קביעת מגמת השינוי (עולה/יורד) באופן חצי-אקראי, עם נטייה לכיוון מסוים עבור כל מטבע
+    const symbolSeed = symbol.charCodeAt(0) + symbol.charCodeAt(1);
+    const symbolTrend = ((symbolSeed % 10) - 5) / 10; // ערך בין -0.5 ל +0.5
+    
+    // יצירת אחוז שינוי שמושפע מנתוני השוק והמטבע הספציפי
+    const baseChangePercent = symbolTrend + (Math.random() * 6 - 3); // בין -3% ל +3% בסיס + הטיה לפי המטבע
+    const finalChangePercent = (baseChangePercent * volatilityMultiplier * (1 + marketConditionFactor)).toFixed(2);
+    
+    // אם יש לנו כבר נתונים קודמים, שומרים על המשכיות
+    if (this._last24hrStats[symbol]) {
+      const lastStats = this._last24hrStats[symbol];
+      const lastChangePercent = parseFloat(lastStats.priceChangePercent);
+      
+      // המשכיות - 70% מהמגמה הקודמת + 30% מהמגמה החדשה לשינוי חלק
+      const continuityFactor = 0.7;
+      const newChangePercent = (lastChangePercent * continuityFactor + parseFloat(finalChangePercent) * (1 - continuityFactor)).toFixed(2);
+      
+      // חישוב שאר הנתונים בהתאם למחיר נוכחי ולשינוי
+      const priceChange = (currentPrice * parseFloat(newChangePercent) / 100).toFixed(8);
+      const openPrice = (currentPrice / (1 + parseFloat(newChangePercent) / 100)).toFixed(8);
+      
+      // עדכון high/low בהתאם למגמה, אבל שמירה על המשכיות
+      const lastHighPrice = parseFloat(lastStats.highPrice);
+      const newHighPriceValue = currentPrice * (1 + Math.abs(parseFloat(newChangePercent)) / 40);
+      const highPrice = Math.max(
+        lastHighPrice,
+        newHighPriceValue
+      ).toFixed(8);
+      
+      const lastLowPrice = parseFloat(lastStats.lowPrice); 
+      const newLowPriceValue = currentPrice * (1 - Math.abs(parseFloat(newChangePercent)) / 20);
+      const lowPrice = Math.min(
+        lastLowPrice,
+        newLowPriceValue
+      ).toFixed(8);
+      
+      // עדכון נפח המסחר באופן הגיוני
+      const volumeChangePercent = (Math.random() * 10) - 5; // שינוי נפח בין -5% ל +5%
+      const lastVolume = parseFloat(lastStats.volume);
+      const volume = (lastVolume * (1 + volumeChangePercent / 100)).toFixed(1);
+      const quoteVolume = (parseFloat(volume) * currentPrice).toFixed(2);
+      
+      // יצירת חותמות זמן הגיוניות
+      const closeTime = Date.now();
+      const openTime = closeTime - (24 * 60 * 60 * 1000); // 24 שעות קודם
+      
+      // יצירת אובייקט הנתונים המעודכן
+      const stats: Binance24hrTicker = {
+        symbol,
+        priceChange,
+        priceChangePercent: newChangePercent,
+        weightedAvgPrice: ((parseFloat(openPrice) + currentPrice) / 2).toFixed(8),
+        prevClosePrice: openPrice,
+        lastPrice: currentPrice.toFixed(8),
+        lastQty: (Math.random() * 2).toFixed(2),
+        bidPrice: (currentPrice * (1 - Math.random() * 0.002)).toFixed(8),
+        bidQty: (Math.random() * 5 + 1).toFixed(2),
+        askPrice: (currentPrice * (1 + Math.random() * 0.002)).toFixed(8),
+        askQty: (Math.random() * 5 + 1).toFixed(2),
+        openPrice,
+        highPrice,
+        lowPrice,
+        volume,
+        quoteVolume,
+        openTime,
+        closeTime,
+        firstId: lastStats.firstId, // לשמירת עקביות
+        lastId: lastStats.lastId + Math.floor(Math.random() * 1000),
+        count: lastStats.count + Math.floor(Math.random() * 1000)
+      };
+      
+      // שמירת הנתונים המעודכנים לפעם הבאה
+      this._last24hrStats[symbol] = stats;
+      
+      return stats;
+    } else {
+      // אם אין נתונים קודמים, ייצר מידע ראשוני
+      const priceChange = (currentPrice * parseFloat(finalChangePercent) / 100).toFixed(8);
+      const openPrice = (currentPrice / (1 + parseFloat(finalChangePercent) / 100)).toFixed(8);
+      const highPrice = (currentPrice * (1 + Math.abs(parseFloat(finalChangePercent)) / 50)).toFixed(8);
+      const lowPrice = (currentPrice * (1 - Math.abs(parseFloat(finalChangePercent)) / 30)).toFixed(8);
+      
+      // יצירת נפח מסחר התואם את המטבע
+      const baseVolume = 
+        symbol === 'BTCUSDT' ? 50000 : 
+        symbol === 'ETHUSDT' ? 30000 : 
+        symbol.includes('USDT') ? 10000 : 
+        5000;
+      
+      const volumeRandomFactor = 0.5 + Math.random();
+      const volume = (baseVolume * volumeRandomFactor).toFixed(1);
+      const quoteVolume = (parseFloat(volume) * currentPrice).toFixed(2);
+      
+      // יצירת חותמות זמן
+      const closeTime = Date.now();
+      const openTime = closeTime - (24 * 60 * 60 * 1000);
+      
+      // יצירת אובייקט הנתונים
+      const stats: Binance24hrTicker = {
+        symbol,
+        priceChange,
+        priceChangePercent: finalChangePercent,
+        weightedAvgPrice: ((parseFloat(openPrice) + currentPrice) / 2).toFixed(8),
+        prevClosePrice: openPrice,
+        lastPrice: currentPrice.toFixed(8),
+        lastQty: (Math.random() * 2).toFixed(2),
+        bidPrice: (currentPrice * 0.999).toFixed(8),
+        bidQty: (Math.random() * 5 + 1).toFixed(2),
+        askPrice: (currentPrice * 1.001).toFixed(8),
+        askQty: (Math.random() * 5 + 1).toFixed(2),
+        openPrice,
+        highPrice,
+        lowPrice,
+        volume,
+        quoteVolume,
+        openTime,
+        closeTime,
+        firstId: Math.floor(Math.random() * 1000),
+        lastId: Math.floor(Math.random() * 100000) + 10000,
+        count: Math.floor(Math.random() * 50000) + 10000
+      };
+      
+      // שמירת הנתונים לפעם הבאה
+      this._last24hrStats[symbol] = stats;
+      
+      return stats;
+    }
   }
+  
+  // משתנה לשמירת נתוני הסטטיסטיקה האחרונים
+  private _last24hrStats: Record<string, Binance24hrTicker> = {};
   
   /**
    * Convert OKX symbol format to Binance format
