@@ -717,7 +717,30 @@ export class AITradingSystem {
       
       // קביעת פרמטרים לפקודת מסחר
       const orderType = 'market'; // נשתמש בפקודות שוק לביצוע מיידי
-      const amount = '0.001'; // כמות קטנה לדוגמה - בפועל יש לחשב לפי יתרת חשבון וניהול סיכונים
+      
+      // מימוש ניהול סיכונים - מגביל עסקאות ל-2% מהקפיטל
+      let accountBalance = 0;
+      try {
+        // נסה לקבל יתרת חשבון מעודכנת
+        // מקבל את מידע המאזן או משתמש בערך ברירת מחדל אם לא מצליח
+        // בהמשך נוסיף פונקציה getAccountBalance לשירות OKX
+        // כעת נשתמש בערך ברירת מחדל לצורך הדגמה
+        accountBalance = 1000; // סכום ברירת מחדל למטרות הדגמה
+      } catch (error) {
+        console.warn('Could not fetch account balance, using default value for risk calculation');
+        accountBalance = 1000; // סכום ברירת מחדל
+      }
+      
+      // חישוב גודל העסקה לפי מגבלת 2% מהקפיטל
+      const riskLimit = 0.02; // 2% מהקפיטל
+      const maxRiskAmount = accountBalance * riskLimit;
+      
+      // חישוב כמות לפי מחיר המטבע והסיכון המקסימלי
+      const coinPriceUSD = decision.price;
+      const amount = (maxRiskAmount / coinPriceUSD).toFixed(4);
+      
+      console.log(`Risk management: Account balance: $${accountBalance}, Risk limit: ${riskLimit * 100}%, Max risk: $${maxRiskAmount}, Coin price: $${coinPriceUSD}, Order amount: ${amount} ${decision.symbol.split('/')[0]}`);
+      
       
       // המרת פעולה לפורמט שמתקבל על ידי ה-API
       const side = decision.action === 'BUY' ? 'buy' : 'sell';
@@ -1065,23 +1088,57 @@ export class AITradingSystem {
   // שמירת מזהי ה-intervals כדי שנוכל לעצור אותם בצורה מסודרת
   private tradingInterval: NodeJS.Timeout | null = null;
   private saveDataInterval: NodeJS.Timeout | null = null;
+  private learningInterval: NodeJS.Timeout | null = null;
   private cycleInProgress: boolean = false;
 
-  public async start(): Promise<void> {
+  public async start(activeMode: boolean = false): Promise<void> {
     if (this.isRunning) {
       console.log('AI trading system is already running');
       return;
     }
     
-    console.log('Starting AI trading system in PASSIVE mode (no active trading)...');
+    const modeStr = activeMode ? 'ACTIVE' : 'PASSIVE';
+    console.log(`Starting AI trading system in ${modeStr} mode${activeMode ? ' (with active trading)' : ' (no active trading)'}...`);
+    
     this.isRunning = true;
-    this.readyToTrade = true; // נגדיר ישר כמוכן כי אנחנו לא באמת נריץ מסחר
+    this.readyToTrade = true;
     
     try {
-      // נטרל את מערכת המסחר האוטומטית באופן זמני
-      console.log('AI trading system started in passive monitoring mode only');
+      if (activeMode) {
+        // פונקציה להפעלת מחזורי מסחר
+        console.log('AI trading system started in ACTIVE trading mode!');
+        console.log('System will analyze the market and execute trades automatically');
+        
+        // הפעלת מחזורי מסחר בנוסף לשמירת נתונים
+        this.tradingInterval = setInterval(async () => {
+          if (this.isRunning && this.readyToTrade) {
+            try {
+              // מעבר על כל הסימבולים לניתוח וניהול מסחר
+              for (const symbol of this.config.symbols) {
+                await this.runTradingCycle(symbol);
+              }
+            } catch (error) {
+              console.error('Error during trading cycle:', error);
+            }
+          }
+        }, 5 * 60 * 1000); // מחזור מסחר כל 5 דקות
+        
+        // הפעלת למידה מחודשת תקופתית
+        this.learningInterval = setInterval(async () => {
+          if (this.isRunning) {
+            try {
+              await this.relearn();
+            } catch (error) {
+              console.error('Error during scheduled relearning:', error);
+            }
+          }
+        }, this.config.relearningInterval);
+      } else {
+        // נטרל את מערכת המסחר האוטומטית באופן זמני
+        console.log('AI trading system started in passive monitoring mode only');
+      }
       
-      // שמירת נתונים בלבד, ללא מחזורי מסחר פעילים
+      // שמירת נתונים (בכל מקרה, גם במצב פסיבי וגם במצב אקטיבי)
       this.saveDataInterval = setInterval(() => {
         if (this.isRunning) {
           try {
@@ -1101,6 +1158,33 @@ export class AITradingSystem {
   }
   
   // ניקוי intervals בצורה מסודרת
+  /**
+   * ניתוח הזדמנויות מסחר עבור סימבול מסוים
+   * פונקציה זו מופעלת כאשר המערכת במצב אקטיבי
+   * 
+   * @param symbol הסימבול לניתוח
+   * @returns תוצאת המסחר אם בוצע, או null אם לא
+   */
+  private async analyzeTradingOpportunity(symbol: string): Promise<TradingResult | null> {
+    if (this.cycleInProgress) {
+      console.log(`Trading cycle already in progress, skipping analysis for ${symbol}`);
+      return null;
+    }
+    
+    this.cycleInProgress = true;
+    console.log(`Analyzing trading opportunities for ${symbol}...`);
+    
+    try {
+      // איסוף נתונים ועיבוד מידע
+      return await this.runTradingCycle(symbol);
+    } catch (error) {
+      console.error(`Error analyzing trading opportunity for ${symbol}:`, error);
+      return null;
+    } finally {
+      this.cycleInProgress = false;
+    }
+  }
+  
   private cleanupIntervals(): void {
     if (this.tradingInterval) {
       clearInterval(this.tradingInterval);
@@ -1110,6 +1194,11 @@ export class AITradingSystem {
     if (this.saveDataInterval) {
       clearInterval(this.saveDataInterval);
       this.saveDataInterval = null;
+    }
+    
+    if (this.learningInterval) {
+      clearInterval(this.learningInterval);
+      this.learningInterval = null;
     }
   }
   

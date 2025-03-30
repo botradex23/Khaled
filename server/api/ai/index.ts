@@ -319,6 +319,88 @@ router.post('/relearn', ensureAuthenticated, async (req: Request, res: Response)
 });
 
 /**
+ * POST /api/ai/system/start
+ * הפעלת מערכת ה-AI במצב פסיבי או אקטיבי
+ */
+router.post('/system/start', ensureAuthenticated, async (req: Request, res: Response) => {
+  try {
+    // בדיקת הרשאות מנהל
+    if (req.user?.username !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only administrators can control the AI system'
+      });
+    }
+    
+    const { activeMode = false } = req.body;
+    
+    // בדיקה אם המערכת כבר פועלת
+    const status = aiTradingSystem.getStatus();
+    if (status.isRunning) {
+      return res.json({
+        success: true,
+        message: 'AI system is already running',
+        status
+      });
+    }
+    
+    // הפעלת המערכת
+    await aiTradingSystem.start(activeMode);
+    
+    // בדיקת סטטוס אחרי הפעלה
+    const newStatus = aiTradingSystem.getStatus();
+    
+    res.json({
+      success: true,
+      message: `AI system started in ${activeMode ? 'ACTIVE' : 'PASSIVE'} mode successfully`,
+      status: newStatus
+    });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * POST /api/ai/system/stop
+ * עצירת מערכת ה-AI
+ */
+router.post('/system/stop', ensureAuthenticated, async (req: Request, res: Response) => {
+  try {
+    // בדיקת הרשאות מנהל
+    if (req.user?.username !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only administrators can control the AI system'
+      });
+    }
+    
+    // בדיקה אם המערכת פועלת
+    const status = aiTradingSystem.getStatus();
+    if (!status.isRunning) {
+      return res.json({
+        success: true,
+        message: 'AI system is not running',
+        status
+      });
+    }
+    
+    // עצירת המערכת
+    aiTradingSystem.stop();
+    
+    // בדיקת סטטוס אחרי עצירה
+    const newStatus = aiTradingSystem.getStatus();
+    
+    res.json({
+      success: true,
+      message: 'AI system stopped successfully',
+      status: newStatus
+    });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
  * GET /api/ai/trading/signals
  * קבלת איתותי מסחר מה-AI
  */
