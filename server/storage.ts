@@ -16,6 +16,7 @@ import {
   type InsertPaperTradingTrade,
   payments
 } from "@shared/schema";
+import { encrypt, decrypt, isEncrypted } from './utils/encryption';
 
 // modify the interface with any CRUD methods
 // you might need
@@ -469,29 +470,45 @@ export class MemStorage implements IStorage {
       user.profilePicture = insertUser.profilePicture;
     }
     
-    // Add API keys if provided
+    // Add API keys if provided - with encryption
     if (insertUser.okxApiKey) {
-      user.okxApiKey = insertUser.okxApiKey;
+      const cleanedApiKey = insertUser.okxApiKey.trim();
+      // Encrypt API key before storing
+      user.okxApiKey = encrypt(cleanedApiKey);
+      console.log(`Encrypted OKX API key during user creation, length: ${user.okxApiKey.length}`);
     }
     
     if (insertUser.okxSecretKey) {
-      user.okxSecretKey = insertUser.okxSecretKey;
+      const cleanedSecretKey = insertUser.okxSecretKey.trim();
+      // Encrypt Secret key before storing
+      user.okxSecretKey = encrypt(cleanedSecretKey);
+      console.log(`Encrypted OKX Secret key during user creation, length: ${user.okxSecretKey.length}`);
     }
     
     if (insertUser.okxPassphrase) {
-      user.okxPassphrase = insertUser.okxPassphrase;
+      const cleanedPassphrase = insertUser.okxPassphrase.trim();
+      // Encrypt Passphrase before storing
+      user.okxPassphrase = encrypt(cleanedPassphrase);
+      console.log(`Encrypted OKX Passphrase during user creation, length: ${user.okxPassphrase.length}`);
     }
     
     if (insertUser.binanceApiKey) {
-      user.binanceApiKey = insertUser.binanceApiKey;
+      const cleanedApiKey = insertUser.binanceApiKey.trim();
+      // Encrypt API key before storing
+      user.binanceApiKey = encrypt(cleanedApiKey);
+      console.log(`Encrypted Binance API key during user creation, length: ${user.binanceApiKey.length}`);
     }
     
     if (insertUser.binanceSecretKey) {
-      user.binanceSecretKey = insertUser.binanceSecretKey;
+      const cleanedSecretKey = insertUser.binanceSecretKey.trim();
+      // Encrypt Secret key before storing
+      user.binanceSecretKey = encrypt(cleanedSecretKey);
+      console.log(`Encrypted Binance Secret key during user creation, length: ${user.binanceSecretKey.length}`);
     }
     
     if (insertUser.binanceAllowedIp) {
-      user.binanceAllowedIp = insertUser.binanceAllowedIp;
+      // No need to encrypt IP address
+      user.binanceAllowedIp = insertUser.binanceAllowedIp.trim();
     }
     
     this.users.set(id, user);
@@ -505,10 +522,55 @@ export class MemStorage implements IStorage {
       return undefined;
     }
     
-    // Create updated user by merging existing user with updates
+    // Check if any API keys are being updated, and encrypt them if needed
+    const processedUpdates = { ...updates };
+    
+    // Encrypt OKX API keys if provided
+    if (updates.okxApiKey !== undefined && updates.okxApiKey !== null) {
+      const cleanedApiKey = updates.okxApiKey.trim();
+      if (cleanedApiKey) {
+        processedUpdates.okxApiKey = encrypt(cleanedApiKey);
+        console.log(`Encrypted OKX API key in updateUser, length: ${processedUpdates.okxApiKey.length}`);
+      }
+    }
+    
+    if (updates.okxSecretKey !== undefined && updates.okxSecretKey !== null) {
+      const cleanedSecretKey = updates.okxSecretKey.trim();
+      if (cleanedSecretKey) {
+        processedUpdates.okxSecretKey = encrypt(cleanedSecretKey);
+        console.log(`Encrypted OKX Secret key in updateUser, length: ${processedUpdates.okxSecretKey.length}`);
+      }
+    }
+    
+    if (updates.okxPassphrase !== undefined && updates.okxPassphrase !== null) {
+      const cleanedPassphrase = updates.okxPassphrase.trim();
+      if (cleanedPassphrase) {
+        processedUpdates.okxPassphrase = encrypt(cleanedPassphrase);
+        console.log(`Encrypted OKX Passphrase in updateUser, length: ${processedUpdates.okxPassphrase.length}`);
+      }
+    }
+    
+    // Encrypt Binance API keys if provided
+    if (updates.binanceApiKey !== undefined && updates.binanceApiKey !== null) {
+      const cleanedApiKey = updates.binanceApiKey.trim();
+      if (cleanedApiKey) {
+        processedUpdates.binanceApiKey = encrypt(cleanedApiKey);
+        console.log(`Encrypted Binance API key in updateUser, length: ${processedUpdates.binanceApiKey.length}`);
+      }
+    }
+    
+    if (updates.binanceSecretKey !== undefined && updates.binanceSecretKey !== null) {
+      const cleanedSecretKey = updates.binanceSecretKey.trim();
+      if (cleanedSecretKey) {
+        processedUpdates.binanceSecretKey = encrypt(cleanedSecretKey);
+        console.log(`Encrypted Binance Secret key in updateUser, length: ${processedUpdates.binanceSecretKey.length}`);
+      }
+    }
+    
+    // Create updated user by merging existing user with processed updates
     const updatedUser: User = {
       ...existingUser,
-      ...updates
+      ...processedUpdates
     };
     
     // Save the updated user
@@ -543,18 +605,35 @@ export class MemStorage implements IStorage {
 
     // Handle the special cases for empty strings or strings with only whitespace to convert them to null
     // This makes the API behavior more consistent across the app
-    const sanitizedOkxApiKey = !apiKeys.okxApiKey || apiKeys.okxApiKey.trim() === "" ? null : apiKeys.okxApiKey;
-    const sanitizedOkxSecretKey = !apiKeys.okxSecretKey || apiKeys.okxSecretKey.trim() === "" ? null : apiKeys.okxSecretKey;
-    const sanitizedOkxPassphrase = !apiKeys.okxPassphrase || apiKeys.okxPassphrase.trim() === "" ? null : apiKeys.okxPassphrase;
+    const sanitizedOkxApiKey = !apiKeys.okxApiKey || apiKeys.okxApiKey.trim() === "" ? null : apiKeys.okxApiKey.trim();
+    const sanitizedOkxSecretKey = !apiKeys.okxSecretKey || apiKeys.okxSecretKey.trim() === "" ? null : apiKeys.okxSecretKey.trim();
+    const sanitizedOkxPassphrase = !apiKeys.okxPassphrase || apiKeys.okxPassphrase.trim() === "" ? null : apiKeys.okxPassphrase.trim();
+    
+    // Encrypt API keys if they exist
+    const encryptedApiKey = sanitizedOkxApiKey ? encrypt(sanitizedOkxApiKey) : null;
+    const encryptedSecretKey = sanitizedOkxSecretKey ? encrypt(sanitizedOkxSecretKey) : null;
+    const encryptedPassphrase = sanitizedOkxPassphrase ? encrypt(sanitizedOkxPassphrase) : null;
+    
+    if (encryptedApiKey) {
+      console.log(`  Encrypted OKX API key, original length: ${sanitizedOkxApiKey!.length}, encrypted length: ${encryptedApiKey.length}`);
+    }
+    
+    if (encryptedSecretKey) {
+      console.log(`  Encrypted OKX Secret key, original length: ${sanitizedOkxSecretKey!.length}, encrypted length: ${encryptedSecretKey.length}`);
+    }
+    
+    if (encryptedPassphrase) {
+      console.log(`  Encrypted OKX Passphrase, original length: ${sanitizedOkxPassphrase!.length}, encrypted length: ${encryptedPassphrase.length}`);
+    }
     
     // Update the API keys
     const updatedUser: User = {
       ...user,
       // Only update if value is not undefined (explicitly provided)
       // This preserves previous values if a field wasn't specified
-      okxApiKey: sanitizedOkxApiKey !== undefined ? sanitizedOkxApiKey : user.okxApiKey,
-      okxSecretKey: sanitizedOkxSecretKey !== undefined ? sanitizedOkxSecretKey : user.okxSecretKey,
-      okxPassphrase: sanitizedOkxPassphrase !== undefined ? sanitizedOkxPassphrase : user.okxPassphrase,
+      okxApiKey: sanitizedOkxApiKey !== undefined ? encryptedApiKey : user.okxApiKey,
+      okxSecretKey: sanitizedOkxSecretKey !== undefined ? encryptedSecretKey : user.okxSecretKey,
+      okxPassphrase: sanitizedOkxPassphrase !== undefined ? encryptedPassphrase : user.okxPassphrase,
       defaultBroker: apiKeys.defaultBroker || user.defaultBroker || "okx",
       useTestnet: apiKeys.useTestnet !== undefined ? !!apiKeys.useTestnet : (user.useTestnet === null || user.useTestnet === undefined ? true : !!user.useTestnet)
     };
@@ -595,13 +674,51 @@ export class MemStorage implements IStorage {
     console.log("  API key empty string check:", user.okxApiKey === "");
     console.log("  API key length:", user.okxApiKey ? user.okxApiKey.length : "N/A");
     
+    // Check if the values are encrypted and decrypt if necessary
+    let apiKey = user.okxApiKey;
+    let secretKey = user.okxSecretKey;
+    let passphrase = user.okxPassphrase;
+    
+    // Decrypt API key if it's encrypted
+    if (apiKey && isEncrypted(apiKey)) {
+      try {
+        apiKey = decrypt(apiKey);
+        console.log(`  Decrypted OKX API key, new length: ${apiKey.length}`);
+      } catch (error) {
+        console.error("Error decrypting OKX API key:", error);
+        apiKey = null;
+      }
+    }
+    
+    // Decrypt Secret key if it's encrypted
+    if (secretKey && isEncrypted(secretKey)) {
+      try {
+        secretKey = decrypt(secretKey);
+        console.log(`  Decrypted OKX Secret key, new length: ${secretKey.length}`);
+      } catch (error) {
+        console.error("Error decrypting OKX Secret key:", error);
+        secretKey = null;
+      }
+    }
+    
+    // Decrypt Passphrase if it's encrypted
+    if (passphrase && isEncrypted(passphrase)) {
+      try {
+        passphrase = decrypt(passphrase);
+        console.log(`  Decrypted OKX Passphrase, new length: ${passphrase.length}`);
+      } catch (error) {
+        console.error("Error decrypting OKX Passphrase:", error);
+        passphrase = null;
+      }
+    }
+    
     // Prepare for response ensuring type consistency
     const apiKeyResponse = {
       // Always return null if there's no meaningful value (null, undefined, or empty string)
       // This ensures consistent return types and makes client-side checks more reliable
-      okxApiKey: !user.okxApiKey || user.okxApiKey.trim() === '' ? null : user.okxApiKey,
-      okxSecretKey: !user.okxSecretKey || user.okxSecretKey.trim() === '' ? null : user.okxSecretKey, 
-      okxPassphrase: !user.okxPassphrase || user.okxPassphrase.trim() === '' ? null : user.okxPassphrase,
+      okxApiKey: !apiKey || (typeof apiKey === 'string' && apiKey.trim() === '') ? null : apiKey,
+      okxSecretKey: !secretKey || (typeof secretKey === 'string' && secretKey.trim() === '') ? null : secretKey, 
+      okxPassphrase: !passphrase || (typeof passphrase === 'string' && passphrase.trim() === '') ? null : passphrase,
       defaultBroker: user.defaultBroker || "okx",
       // Make sure we always return a boolean, never null or undefined
       useTestnet: user.useTestnet === null || user.useTestnet === undefined ? true : !!user.useTestnet
@@ -674,22 +791,28 @@ export class MemStorage implements IStorage {
     console.log(`Final sanitized API key: ${sanitizedBinanceApiKey ? (typeof sanitizedBinanceApiKey) : 'null'}, length: ${sanitizedBinanceApiKey ? sanitizedBinanceApiKey.length : 0}`);
     console.log(`Final sanitized Secret key: ${sanitizedBinanceSecretKey ? (typeof sanitizedBinanceSecretKey) : 'null'}, length: ${sanitizedBinanceSecretKey ? sanitizedBinanceSecretKey.length : 0}`);
     
+    // Encrypt API keys before storing them
+    const encryptedApiKey = sanitizedBinanceApiKey ? encrypt(sanitizedBinanceApiKey) : null;
+    const encryptedSecretKey = sanitizedBinanceSecretKey ? encrypt(sanitizedBinanceSecretKey) : null;
+    
     // Update the API keys - Fix for the bug where keys are not properly saved
     const updatedUser: User = {
       ...user
     };
     
     // Only update the keys if they are provided and not undefined
-    if (sanitizedBinanceApiKey !== undefined) {
-      updatedUser.binanceApiKey = sanitizedBinanceApiKey;
+    if (encryptedApiKey !== undefined) {
+      updatedUser.binanceApiKey = encryptedApiKey;
+      console.log(`Stored encrypted API key, length: ${encryptedApiKey ? encryptedApiKey.length : 0}`);
     }
     
-    if (sanitizedBinanceSecretKey !== undefined) {
-      updatedUser.binanceSecretKey = sanitizedBinanceSecretKey;
+    if (encryptedSecretKey !== undefined) {
+      updatedUser.binanceSecretKey = encryptedSecretKey;
+      console.log(`Stored encrypted Secret key, length: ${encryptedSecretKey ? encryptedSecretKey.length : 0}`);
     }
     
     if (sanitizedBinanceAllowedIp !== undefined) {
-      updatedUser.binanceAllowedIp = sanitizedBinanceAllowedIp;
+      updatedUser.binanceAllowedIp = sanitizedBinanceAllowedIp; // No need to encrypt IPs
     }
     
     console.log("updateUserBinanceApiKeys - User values after update:", {
@@ -725,9 +848,35 @@ export class MemStorage implements IStorage {
     console.log("  Binance API key empty string check:", user.binanceApiKey === "");
     console.log("  Binance API key length:", user.binanceApiKey ? user.binanceApiKey.length : "N/A");
     
+    // Check if the values are encrypted and decrypt if necessary
+    let apiKey = user.binanceApiKey;
+    let secretKey = user.binanceSecretKey;
+    
+    // Decrypt API key if it's encrypted
+    if (apiKey && isEncrypted(apiKey)) {
+      try {
+        apiKey = decrypt(apiKey);
+        console.log(`  Decrypted API key, new length: ${apiKey.length}`);
+      } catch (error) {
+        console.error("Error decrypting API key:", error);
+        apiKey = null;
+      }
+    }
+    
+    // Decrypt Secret key if it's encrypted
+    if (secretKey && isEncrypted(secretKey)) {
+      try {
+        secretKey = decrypt(secretKey);
+        console.log(`  Decrypted Secret key, new length: ${secretKey.length}`);
+      } catch (error) {
+        console.error("Error decrypting Secret key:", error);
+        secretKey = null;
+      }
+    }
+    
     // Additional cleaning on retrieval too - completely remove all whitespace (inside and outside)
-    let cleanedApiKey = user.binanceApiKey;
-    let cleanedSecretKey = user.binanceSecretKey;
+    let cleanedApiKey = apiKey;
+    let cleanedSecretKey = secretKey;
     let cleanedAllowedIp = user.binanceAllowedIp;
     
     // Clean up the API key by removing all whitespace
