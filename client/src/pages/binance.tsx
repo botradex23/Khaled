@@ -559,7 +559,7 @@ export default function BinancePage() {
   const [binanceSecretKey, setBinanceSecretKey] = useState('');
   const [binanceAllowedIp, setBinanceAllowedIp] = useState("185.199.228.220");
   const [useTestnet, setUseTestnet] = useState(false);
-  const [keysInitialized, setKeysInitialized] = useState(false); // מעקב אם המפתחות אותחלו כברל-false כדי להתחבר לסביבה האמיתית
+  const [keysInitialized, setKeysInitialized] = useState(false); // Track if keys have already been initialized
   const [isSaving, setIsSaving] = useState(false);
   
   // משתנים למיון וסינון
@@ -645,24 +645,24 @@ export default function BinancePage() {
           setBinanceAllowedIp(savedApiKeys.allowedIp);
         }
         
-        // כעת בצע התחברות אוטומטית עם המפתחות שהתקבלו
+        // Now connect automatically with the retrieved keys
         const autoConnectWithSavedKeys = async () => {
           try {
-            // בדיקה נוספת של אורך המפתחות לפני השליחה
+            // Additional validation of key lengths before sending
             if (savedApiKeys.apiKey.length < 10 || savedApiKeys.secretKey.length < 10) {
-              console.error("מפתחות API בפורמט לא תקין, אורך לא מספיק");
+              console.error("API keys in invalid format, insufficient length");
               toast({
-                title: "שגיאה במפתחות API",
-                description: "המפתחות השמורים בפורמט לא תקין. אנא הכנס מפתחות חדשים.",
+                title: "API Key Error",
+                description: "The saved keys are in an invalid format. Please enter new keys.",
                 variant: "destructive"
               });
               setIsApiKeysDialogOpen(true);
               return;
             }
             
-            console.log(`מנסה להתחבר עם מפתחות: API (${savedApiKeys.apiKey.length} תווים), Secret (${savedApiKeys.secretKey.length} תווים)`);
+            console.log(`Attempting to connect with keys: API (${savedApiKeys.apiKey.length} chars), Secret (${savedApiKeys.secretKey.length} chars)`);
             
-            // בצע שמירה של המפתחות לשרת (חיבור אוטומטי)
+            // Save the keys to the server (automatic connection)
             const response = await fetch('/api/binance/api-keys', {
               method: 'POST',
               headers: {
@@ -677,29 +677,29 @@ export default function BinancePage() {
             });
             
             if (response.ok) {
-              // עדכן את מצב המפתחות ורענן את המידע
+              // Update key status and refresh the information
               setKeysInitialized(true);
               refetchApiStatus();
               toast({
-                title: "התחברות אוטומטית לביננס",
-                description: "המפתחות הוטענו והפעלת החיבור בוצעה בהצלחה",
+                title: "Automatic Connection to Binance",
+                description: "Keys loaded and connection activated successfully",
                 variant: "default"
               });
             } else {
-              console.error("ההתחברות האוטומטית נכשלה - תגובת שרת:", response.status);
+              console.error("Automatic connection failed - server response:", response.status);
               const errorData = await response.json();
               toast({
-                title: "שגיאה בהתחברות אוטומטית",
-                description: errorData.message || "אירעה שגיאה בהתחברות עם המפתחות השמורים",
+                title: "Automatic Connection Error",
+                description: errorData.message || "An error occurred connecting with the saved keys",
                 variant: "destructive"
               });
               setIsApiKeysDialogOpen(true);
             }
           } catch (error) {
-            console.error("שגיאה בהתחברות אוטומטית:", error);
+            console.error("Automatic connection error:", error);
             toast({
-              title: "שגיאה בהתחברות אוטומטית",
-              description: "אירעה שגיאה בהתחברות עם המפתחות השמורים",
+              title: "Automatic Connection Error",
+              description: "An error occurred connecting with the saved keys",
               variant: "destructive"
             });
             setIsApiKeysDialogOpen(true);
@@ -711,14 +711,14 @@ export default function BinancePage() {
           autoConnectWithSavedKeys();
         }
       } else {
-        // אם המפתחות לא תקינים, רק נרשום לקונסול ללא הצגת התראה
-        console.log("המפתחות השמורים אינם תקינים או חסרים");
+        // If keys are invalid, just log to console without showing an alert
+        console.log("The saved keys are invalid or missing");
         
-        // לא מציגים הודעה אוטומטית או פותחים חלונית, נאפשר למשתמש ללחוץ על כפתור הגדרות API בעצמו
-        // המשתמש יוכל להגדיר את המפתחות דרך כפתור "הגדרות API" בראש הדף
+        // We don't show an automatic message or open the dialog, let the user click the API settings button themselves
+        // The user can set up the keys through the "API Settings" button at the top of the page
       }
     }
-  }, [savedApiKeys, binanceAllowedIp, keysInitialized, refetchApiStatus, toast, isApiKeysDialogOpen]);
+  }, [savedApiKeys, binanceAllowedIp, keysInitialized, refetchApiStatus, toast]);
 
   // שאילתה לקבלת יתרות חשבון Binance
   const { 
@@ -919,8 +919,8 @@ export default function BinancePage() {
     // וידוא תקינות קלט
     if (!cleanedApiKey) {
       toast({
-        title: "שגיאה",
-        description: "נא להזין מפתח API תקין",
+        title: "Error",
+        description: "Please enter a valid API key",
         variant: "destructive"
       });
       return;
@@ -928,8 +928,8 @@ export default function BinancePage() {
 
     if (cleanedApiKey.length < 10) {
       toast({
-        title: "שגיאה",
-        description: "מפתח ה-API נראה קצר מדי. מפתח API של Binance צריך להיות לפחות 10 תווים.",
+        title: "Error",
+        description: "The API key appears too short. A Binance API key should be at least 10 characters long.",
         variant: "destructive"
       });
       return;
@@ -937,8 +937,8 @@ export default function BinancePage() {
 
     if (!cleanedSecretKey) {
       toast({
-        title: "שגיאה",
-        description: "נא להזין מפתח סודי תקין",
+        title: "Error",
+        description: "Please enter a valid Secret key",
         variant: "destructive"
       });
       return;
@@ -946,8 +946,8 @@ export default function BinancePage() {
     
     if (cleanedSecretKey.length < 10) {
       toast({
-        title: "שגיאה",
-        description: "מפתח הסודי נראה קצר מדי. מפתח סודי של Binance צריך להיות לפחות 10 תווים.",
+        title: "Error",
+        description: "The Secret key appears too short. A Binance Secret key should be at least 10 characters long.",
         variant: "destructive"
       });
       return;
@@ -985,8 +985,8 @@ export default function BinancePage() {
 
       if (response.ok && data.success) {
         toast({
-          title: "מצוין!",
-          description: "מפתחות API של Binance נשמרו בהצלחה",
+          title: "Excellent!",
+          description: "Binance API keys saved successfully",
           variant: "default"
         });
         
@@ -1009,16 +1009,16 @@ export default function BinancePage() {
       } else {
         console.error("Failed to save API keys:", data);
         toast({
-          title: "שגיאה בשמירת המפתחות",
-          description: data.message || "אירעה שגיאה בלתי צפויה",
+          title: "Error Saving Keys",
+          description: data.message || "An unexpected error occurred",
           variant: "destructive"
         });
       }
     } catch (error) {
       console.error("Error saving Binance API keys:", error);
       toast({
-        title: "שגיאה בשמירת המפתחות",
-        description: "אירעה שגיאה בלתי צפויה. נסה שוב מאוחר יותר.",
+        title: "Error Saving Keys",
+        description: "An unexpected error occurred. Please try again later.",
         variant: "destructive"
       });
     } finally {
@@ -1050,12 +1050,12 @@ export default function BinancePage() {
     <div className="container mx-auto px-4 py-8 mt-16">
       <div className="flex flex-col md:flex-row justify-between items-start mb-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2">חשבון Binance</h1>
+          <h1 className="text-3xl font-bold mb-2">Binance Account</h1>
           <p className="text-muted-foreground">
-            צפה ונהל את הנכסים והמסחר שלך ב-Binance
+            View and manage your assets and trading on Binance
             {apiStatus?.testnet && (
               <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800 border-yellow-300">
-                סביבת בדיקות
+                Test Environment
               </Badge>
             )}
           </p>
@@ -1068,7 +1068,7 @@ export default function BinancePage() {
             onClick={() => window.location.href = '/'}
             className="ml-2 rtl:mr-2 rtl:ml-0"
           >
-            חזרה לדף הבית
+            Back to Home
           </Button>
           <Button 
             variant="outline" 
@@ -1076,7 +1076,7 @@ export default function BinancePage() {
             className="flex items-center"
           >
             <Settings className="mr-2 h-4 w-4" />
-            הגדרות API
+            API Settings
           </Button>
           {hasValidApiKeys && (
             <Button 
@@ -1086,7 +1086,7 @@ export default function BinancePage() {
               className="flex items-center"
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${balancesLoading ? 'animate-spin' : ''}`} />
-              רענן נתונים
+              Refresh Data
             </Button>
           )}
         </div>
@@ -1097,13 +1097,13 @@ export default function BinancePage() {
       {/* כרטיסיות תוכן */}
       <Tabs defaultValue="balances" className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="balances">יתרות</TabsTrigger>
-          <TabsTrigger value="trades">היסטוריית מסחר</TabsTrigger>
-          <TabsTrigger value="markets">מחירי שוק</TabsTrigger>
+          <TabsTrigger value="balances">Balances</TabsTrigger>
+          <TabsTrigger value="trades">Trade History</TabsTrigger>
+          <TabsTrigger value="markets">Market Prices</TabsTrigger>
           <TabsTrigger value="paper-trading">
             Paper Trading
             <Badge variant="outline" className="ml-2 bg-green-100 text-green-800 border-green-300">
-              חדש
+              New
             </Badge>
           </TabsTrigger>
         </TabsList>
@@ -1165,12 +1165,12 @@ export default function BinancePage() {
                       <table className="w-full table-auto">
                         <thead>
                           <tr className="border-b">
-                            <th className="pb-2 text-left">מטבע</th>
-                            <th className="pb-2 text-right">זמין</th>
-                            <th className="pb-2 text-right">נעול</th>
-                            <th className="pb-2 text-right">סה"כ</th>
-                            <th className="pb-2 text-right">מחיר ליחידה ($)</th>
-                            <th className="pb-2 text-right">שווי ($)</th>
+                            <th className="pb-2 text-left">Currency</th>
+                            <th className="pb-2 text-right">Available</th>
+                            <th className="pb-2 text-right">Locked</th>
+                            <th className="pb-2 text-right">Total</th>
+                            <th className="pb-2 text-right">Price per Unit ($)</th>
+                            <th className="pb-2 text-right">Value ($)</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1242,7 +1242,7 @@ export default function BinancePage() {
                     disabled={balancesLoading}
                   >
                     <RefreshCw className={`mr-2 h-4 w-4 ${balancesLoading ? 'animate-spin' : ''}`} />
-                    רענן
+                    Refresh
                   </Button>
                 </CardFooter>
               </Card>
@@ -1303,8 +1303,8 @@ export default function BinancePage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>מחירי שוק</CardTitle>
-                <CardDescription>מחירים עדכניים של מטבעות וטוקנים ב-Binance</CardDescription>
+                <CardTitle>Market Prices</CardTitle>
+                <CardDescription>Current prices of cryptocurrencies and tokens on Binance</CardDescription>
               </div>
               <Button 
                 variant="outline" 
@@ -1313,7 +1313,7 @@ export default function BinancePage() {
                 disabled={marketPricesLoading}
               >
                 <RefreshCw className={`mr-2 h-4 w-4 ${marketPricesLoading ? 'animate-spin' : ''}`} />
-                רענן
+                Refresh
               </Button>
             </CardHeader>
             <CardContent>
@@ -1350,7 +1350,7 @@ export default function BinancePage() {
                   <div className="flex flex-col md:flex-row gap-4 mb-6">
                     <div className="flex-1">
                       <Input
-                        placeholder="חיפוש מטבע..."
+                        placeholder="Search currency..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full"
@@ -1364,7 +1364,7 @@ export default function BinancePage() {
                         onClick={() => setFilterCategory('all')}
                         className="flex items-center"
                       >
-                        הכל
+                        All
                       </Button>
                       <Button
                         variant={filterCategory === 'top' ? 'default' : 'outline'}
@@ -1372,7 +1372,7 @@ export default function BinancePage() {
                         onClick={() => setFilterCategory('top')}
                         className="flex items-center"
                       >
-                        מטבעות מובילים
+                        Top Currencies
                       </Button>
                       <Button
                         variant={filterCategory === 'stablecoins' ? 'default' : 'outline'}
@@ -1380,7 +1380,7 @@ export default function BinancePage() {
                         onClick={() => setFilterCategory('stablecoins')}
                         className="flex items-center"
                       >
-                        סטייבלקוינס
+                        Stablecoins
                       </Button>
                       <Button
                         variant={filterCategory === 'defi' ? 'default' : 'outline'}
@@ -1409,7 +1409,7 @@ export default function BinancePage() {
                             }}
                           >
                             <div className="flex items-center">
-                              סמל
+                              Symbol
                               {sortField === 'symbol' && (
                                 <span className="ml-1">
                                   {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
@@ -1430,7 +1430,7 @@ export default function BinancePage() {
                             }}
                           >
                             <div className="flex items-center justify-end">
-                              מחיר
+                              Price
                               {sortField === 'price' && (
                                 <span className="ml-1">
                                   {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
@@ -1451,7 +1451,7 @@ export default function BinancePage() {
                             }}
                           >
                             <div className="flex items-center justify-end">
-                              שינוי 24 שעות
+                              24h Change
                               {sortField === 'priceChangePercent' && (
                                 <span className="ml-1">
                                   {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
@@ -1472,7 +1472,7 @@ export default function BinancePage() {
                             }}
                           >
                             <div className="flex items-center justify-end">
-                              מחזור מסחר 24 שעות
+                              24h Volume
                               {sortField === 'volume' && (
                                 <span className="ml-1">
                                   {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
@@ -1572,16 +1572,16 @@ export default function BinancePage() {
                 alt="Binance Logo" 
                 className="w-5 h-5 mr-2"
               />
-              הגדר מפתחות API של Binance
+              Set Binance API Keys
             </DialogTitle>
             <DialogDescription>
               {hasValidApiKeys ? (
                 <div className="flex items-center text-green-600 mt-1">
                   <AlertCircle className="h-4 w-4 mr-1.5" />
-                  <span>מפתחות ה-API של Binance כבר הוגדרו. אתה יכול לעדכן אותם כאן.</span>
+                  <span>Your Binance API keys are already configured. You can update them here.</span>
                 </div>
               ) : (
-                <span>הזן את מפתחות ה-API של Binance שלך כדי להתחיל לקבל ולנתח נתונים מחשבון ה-Binance שלך.</span>
+                <span>Enter your Binance API keys to start receiving and analyzing data from your Binance account.</span>
               )}
             </DialogDescription>
           </DialogHeader>
@@ -1596,7 +1596,7 @@ export default function BinancePage() {
                 value={binanceApiKey}
                 onChange={(e) => setBinanceApiKey(e.target.value)}
                 className="col-span-3"
-                placeholder="הזן את מפתח ה-API של Binance שלך"
+                placeholder="Enter your Binance API key"
                 autoComplete="off"
               />
             </div>
@@ -1611,27 +1611,27 @@ export default function BinancePage() {
                 onChange={(e) => setBinanceSecretKey(e.target.value)}
                 className="col-span-3"
                 type="password"
-                placeholder="הזן את המפתח הסודי של Binance שלך"
+                placeholder="Enter your Binance Secret key"
                 autoComplete="off"
               />
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="binance-allowed-ip" className="text-right">
-                כתובת IP מורשית
+                Allowed IP
               </Label>
               <Input
                 id="binance-allowed-ip"
                 value={binanceAllowedIp}
                 onChange={(e) => setBinanceAllowedIp(e.target.value)}
                 className="col-span-3"
-                placeholder="כתובת ה-IP שהגדרת ב-Binance"
+                placeholder="IP address configured in Binance"
               />
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="useTestnet" className="text-right">
-                סביבת בדיקות
+                Test Environment
               </Label>
               <div className="flex items-center col-span-3">
                 <Switch
@@ -1640,26 +1640,26 @@ export default function BinancePage() {
                   onCheckedChange={setUseTestnet}
                 />
                 <Label htmlFor="useTestnet" className="ml-2">
-                  {useTestnet ? 'משתמש בסביבת בדיקות' : 'משתמש בסביבת הייצור (אמיתי)'}
+                  {useTestnet ? 'Using test environment' : 'Using production environment (real)'}
                 </Label>
               </div>
             </div>
             
             <Alert className="mt-2 bg-blue-50 border-blue-200">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>הערה חשובה - הגדרת IP מורשה</AlertTitle>
+              <AlertTitle>Important Note - IP Configuration</AlertTitle>
               <AlertDescription>
-                וודא שהוספת את כתובת ה-IP {binanceAllowedIp} לרשימת הכתובות המורשות בהגדרות API Key שלך ב-Binance. 
-                כתובת ה-IP הזו משמשת את הפרוקסי שלנו להתחברות לשרתי Binance.
+                Make sure you've added the IP address {binanceAllowedIp} to the list of allowed IPs in your Binance API Key settings.
+                This IP address is used by our proxy to connect to Binance servers.
               </AlertDescription>
             </Alert>
           </div>
           
           <DialogFooter>
-            {/* נציג כפתור ביטול רק אם כבר יש למשתמש מפתחות מוגדרים */}
+            {/* Only show cancel button if user already has API keys configured */}
             {hasValidApiKeys && (
               <Button variant="outline" onClick={() => setIsApiKeysDialogOpen(false)}>
-                ביטול
+                Cancel
               </Button>
             )}
             <Button 
@@ -1675,12 +1675,12 @@ export default function BinancePage() {
               {isSaving ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  שומר...
+                  Saving...
                 </>
               ) : (
                 <>
                   <Settings className="mr-2 h-4 w-4" />
-                  שמור מפתחות
+                  Save Keys
                 </>
               )}
             </Button>
