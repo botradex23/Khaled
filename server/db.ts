@@ -1,4 +1,4 @@
-import 'dotenv/config';
+// dotenv package not available - environment variables are already loaded by Replit
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from '../shared/schema';

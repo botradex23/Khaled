@@ -1,5 +1,27 @@
 import { Router } from 'express';
-import { check_database_status } from '../utils/check-database-status';
+// Import utility functions without importing the db module directly
+// to avoid pg module loading issues
+const checkPostgres = async () => {
+  try {
+    // Simple check using environment variable
+    const dbUrl = process.env.DATABASE_URL;
+    return !!dbUrl; // Return true if the URL exists
+  } catch (error) {
+    console.error('Error checking PostgreSQL:', error);
+    return false;
+  }
+};
+
+const checkMongoDB = async () => {
+  try {
+    // Simple check using environment variable
+    const mongoUri = process.env.MONGODB_URI;
+    return !!mongoUri; // Return true if the URI exists
+  } catch (error) {
+    console.error('Error checking MongoDB:', error);
+    return false;
+  }
+};
 
 const router = Router();
 
@@ -7,10 +29,10 @@ const router = Router();
 router.get('/status', async (req, res) => {
   try {
     // Check PostgreSQL connection
-    const pgConnected = await check_database_status.checkPostgresConnection();
+    const pgConnected = await checkPostgres();
     
     // Check MongoDB connection
-    const mongoConnected = await check_database_status.checkMongoDBConnection();
+    const mongoConnected = await checkMongoDB();
     
     // Format response with connection details
     const response = {

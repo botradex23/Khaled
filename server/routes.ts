@@ -265,8 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Paper Trading routes
   app.use("/api/paper-trading", paperTradingRouter);
   
-  // Database status routes
-  app.use("/api/database", databaseStatusRoutes);
+  // Database status routes are already registered above via dynamic import
   
   // Direct API Key validation endpoint - No authentication required for validating API keys
   app.post("/api/validate-api-keys", async (req, res) => {

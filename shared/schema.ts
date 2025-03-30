@@ -14,6 +14,16 @@ export const users = pgTable('users', {
   lastName: text('last_name'),
   defaultBroker: text('default_broker'),
   useTestnet: boolean('use_testnet').default(true),
+  
+  // OKX API Keys (direct, for compatibility with existing code)
+  okxApiKey: text('okx_api_key'),
+  okxSecretKey: text('okx_secret_key'),
+  okxPassphrase: text('okx_passphrase'),
+  
+  // Binance API Keys (direct, for compatibility with existing code)  
+  binanceApiKey: text('binance_api_key'),
+  binanceSecretKey: text('binance_secret_key'),
+  
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
