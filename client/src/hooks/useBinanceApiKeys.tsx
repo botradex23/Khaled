@@ -9,6 +9,17 @@ interface BinanceApiKeysData {
   testnet?: boolean;
 }
 
+interface ApiKeysResponse {
+  success: boolean;
+  isValid: boolean;
+  apiKey?: string;
+  secretKey?: string;
+  allowedIp?: string;
+  testnet?: boolean;
+  encryptionChanged?: boolean; // Flag to indicate encryption key change
+  message?: string;
+}
+
 /**
  * Hook for loading, saving and managing Binance API keys
  * It automatically synchronizes keys with the authenticated user
@@ -54,15 +65,32 @@ export function useBinanceApiKeys() {
           throw new Error('Failed to load API keys');
         }
         
-        const keysData = await fullResponse.json();
+        const keysData: ApiKeysResponse = await fullResponse.json();
         console.log("Received API keys data:", { 
           success: keysData.success, 
           isValid: keysData.isValid,
           apiKeyLength: keysData.apiKey?.length || 0,
-          secretKeyLength: keysData.secretKey?.length || 0
+          secretKeyLength: keysData.secretKey?.length || 0,
+          encryptionChanged: keysData.encryptionChanged || false
         });
         
-        if (keysData.success && keysData.isValid) {
+        // Check if encryption keys have changed
+        if (keysData.encryptionChanged) {
+          // Show encryption changed warning
+          toast({
+            title: 'הצפנת המפתחות השתנתה',
+            description: 'מפתחות ההצפנה במערכת השתנו. יש להזין מחדש את מפתחות ה-API שלך.',
+            variant: 'destructive',
+            duration: 10000, // Show longer for important message
+          });
+          
+          // Clear the configured status to prompt re-entry
+          setIsConfigured(false);
+          setApiKey('');
+          setSecretKey('');
+        }
+        // If keys are valid and available
+        else if (keysData.success && keysData.isValid) {
           setApiKey(keysData.apiKey || '');
           setSecretKey(keysData.secretKey || '');
           setAllowedIp(keysData.allowedIp || '185.199.228.220');

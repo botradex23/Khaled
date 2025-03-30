@@ -851,27 +851,62 @@ export class MemStorage implements IStorage {
     // Check if the values are encrypted and decrypt if necessary
     let apiKey = user.binanceApiKey;
     let secretKey = user.binanceSecretKey;
+    let decryptionFailed = false;
     
     // Decrypt API key if it's encrypted
     if (apiKey && isEncrypted(apiKey)) {
       try {
-        apiKey = decrypt(apiKey);
-        console.log(`  Decrypted API key, new length: ${apiKey.length}`);
+        const decryptedApiKey = decrypt(apiKey);
+        console.log(`  Decrypted API key, new length: ${decryptedApiKey.length}`);
+        
+        // Verify basic format validity for a Binance API key (alphanumeric and typical length)
+        // Binance API keys are typically 64 characters long
+        if (/^[a-zA-Z0-9]{10,}$/.test(decryptedApiKey) && decryptedApiKey.length >= 10) {
+          apiKey = decryptedApiKey;
+        } else {
+          console.warn(`  WARNING: Decrypted API key appears to be invalid (length=${decryptedApiKey.length})`);
+          console.warn(`  This may indicate encryption keys have changed between server restarts`);
+          decryptionFailed = true;
+          apiKey = null;
+        }
       } catch (error) {
         console.error("Error decrypting API key:", error);
         apiKey = null;
+        decryptionFailed = true;
       }
     }
     
     // Decrypt Secret key if it's encrypted
     if (secretKey && isEncrypted(secretKey)) {
       try {
-        secretKey = decrypt(secretKey);
-        console.log(`  Decrypted Secret key, new length: ${secretKey.length}`);
+        const decryptedSecretKey = decrypt(secretKey);
+        console.log(`  Decrypted Secret key, new length: ${decryptedSecretKey.length}`);
+        
+        // Verify basic format validity for a Binance Secret key (alphanumeric and typical length)
+        // Binance Secret keys are typically 64 characters long
+        if (/^[a-zA-Z0-9]{10,}$/.test(decryptedSecretKey) && decryptedSecretKey.length >= 10) {
+          secretKey = decryptedSecretKey;
+        } else {
+          console.warn(`  WARNING: Decrypted Secret key appears to be invalid (length=${decryptedSecretKey.length})`);
+          console.warn(`  This may indicate encryption keys have changed between server restarts`);
+          decryptionFailed = true;
+          secretKey = null;
+        }
       } catch (error) {
         console.error("Error decrypting Secret key:", error);
         secretKey = null;
+        decryptionFailed = true;
       }
+    }
+    
+    // Log warning if decryption failed due to changed encryption keys
+    if (decryptionFailed) {
+      console.warn("=== ENCRYPTION KEY MISMATCH DETECTED ===");
+      console.warn("The server's encryption keys have changed since the API keys were stored.");
+      console.warn("To fix this:");
+      console.warn("1. Set ENCRYPTION_KEY and ENCRYPTION_IV as permanent environment variables");
+      console.warn("2. Users will need to re-enter their API keys");
+      console.warn("===========================================");
     }
     
     // Additional cleaning on retrieval too - completely remove all whitespace (inside and outside)

@@ -222,6 +222,17 @@ router.get('/full', ensureAuthenticated, async (req: Request, res: Response) => 
       console.log(`Secret Key first 4 chars: ${cleanSecretKey.substring(0, 4)}, last 4 chars: ${cleanSecretKey.substring(cleanSecretKey.length - 4)}`);
     }
     
+    // בדיקה אם מפתחות ההצפנה השתנו
+    // נבדוק אם מפתחות ה-API נראים כמו מפתחות תקינים, אבל לא יכולים להיפתח
+    let encryptionChanged = false;
+    
+    // אם יש מפתחות מוצפנים שלא יכולים להיפתח בצורה תקינה, סימן שמפתחות ההצפנה השתנו
+    if (apiKeys.binanceApiKey && apiKeys.binanceSecretKey && 
+        (!isApiKeyValid || !isSecretKeyValid)) {
+      console.warn('Detected encryption key change affecting Binance API keys');
+      encryptionChanged = true;
+    }
+    
     // השב את המפתחות המנוקים המלאים
     return res.status(200).json({
       success: true,
@@ -229,7 +240,8 @@ router.get('/full', ensureAuthenticated, async (req: Request, res: Response) => 
       secretKey: cleanSecretKey,  // שליחת המפתח המלא
       allowedIp: cleanAllowedIp,
       testnet: false, // כרגע תמיד משתמשים ב-mainnet ולא ב-testnet
-      isValid: isApiKeyValid && isSecretKeyValid // הוסף שדה לבדיקה אם המפתחות תקינים
+      isValid: isApiKeyValid && isSecretKeyValid, // הוסף שדה לבדיקה אם המפתחות תקינים
+      encryptionChanged: encryptionChanged // דגל שמציין אם מפתחות ההצפנה השתנו
     });
   } catch (error: any) {
     console.error("Error retrieving full Binance API keys:", error);
