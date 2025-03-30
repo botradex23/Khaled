@@ -85,16 +85,23 @@ export class AITradingSystem {
   constructor(config?: Partial<AITradingSystemConfig>, dataDirectory: string = 'data') {
     // הגדרות ברירת מחדל
     this.config = {
-      symbols: ['BTC-USDT', 'ETH-USDT', 'XRP-USDT'],
-      timeframes: [TimeFrame.MINUTE_15, TimeFrame.HOUR_1, TimeFrame.DAY_1],
-      minimumConfidence: 0.6,
-      relearningInterval: 4 * 60 * 60 * 1000, // 4 שעות
-      forcedTradeInterval: 10 * 60 * 1000,    // 10 דקות
+      symbols: [
+        'BTC-USDT', 'ETH-USDT', 'XRP-USDT', 'SOL-USDT', 'DOGE-USDT', 
+        'BNB-USDT', 'ADA-USDT', 'DOT-USDT', 'LINK-USDT', 'LTC-USDT',
+        'AVAX-USDT', 'ATOM-USDT', 'NEAR-USDT', 'UNI-USDT', 'SHIB-USDT'
+      ],
+      timeframes: [TimeFrame.MINUTE_5, TimeFrame.MINUTE_15, TimeFrame.HOUR_1, TimeFrame.DAY_1],
+      minimumConfidence: 0.55, // מוריד מעט את הסף כדי להגדיל את מספר העסקאות
+      relearningInterval: 2 * 60 * 60 * 1000, // 2 שעות
+      forcedTradeInterval: 5 * 60 * 1000,    // 5 דקות - מכריח עסקאות בתדירות גבוהה יותר
       maxPositionSize: 1000,
       enabledStrategies: [
+        StrategyType.GRID_SMALL,
         StrategyType.GRID_MEDIUM,
+        StrategyType.GRID_LARGE,
         StrategyType.TREND_FOLLOWING,
-        StrategyType.COUNTER_TREND
+        StrategyType.COUNTER_TREND,
+        StrategyType.BREAKOUT
       ]
     };
     
