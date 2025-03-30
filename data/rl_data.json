@@ -586,7 +586,7 @@
       "HOLD": 1.137818188221056
     },
     "SIDEWAYS|0|9|50|-1|-1|BUY": {
-      "BUY": -3.799435712807213,
+      "BUY": -3.248914414624373,
       "SELL": 0.9033116237352135,
       "HOLD": 2.062919240348218
     },
@@ -811,7 +811,7 @@
       "HOLD": 1.2209237143305165
     },
     "UPTREND|0|9|65|-1|-1|BUY": {
-      "BUY": -0.522241266044368,
+      "BUY": -0.4424690106893539,
       "SELL": 0,
       "HOLD": 0.9622023317967547
     },
@@ -821,27 +821,27 @@
       "HOLD": 1.132760375020696
     },
     "SIDEWAYS|0|9|60|-1|1|BUY": {
-      "BUY": -2.2866287082366834,
+      "BUY": -2.0435639172110713,
       "SELL": 0,
       "HOLD": 1.1518942317006926
     },
     "SIDEWAYS|0|9|50|-1|1|BUY": {
-      "BUY": -4.578354108282575,
+      "BUY": -4.482962996118697,
       "SELL": 0.6308630393996251,
       "HOLD": 1.7471887051231088
     },
     "SIDEWAYS|0|9|55|-1|1|BUY": {
-      "BUY": -4.3975473329581,
+      "BUY": -3.792445382809225,
       "SELL": 0.26824040890641115,
       "HOLD": 1.859708282149572
     },
     "SIDEWAYS|0|9|55|-1|-1|BUY": {
-      "BUY": -0.6816886879331386,
+      "BUY": -0.31189595474688914,
       "SELL": 1.4489795033953534,
       "HOLD": 1.8182381163118193
     },
     "SIDEWAYS|0|9|60|-1|-1|BUY": {
-      "BUY": -3.1114392026446356,
+      "BUY": -2.9412503299707424,
       "SELL": 1.9722572509457763,
       "HOLD": 1.4276487363194108
     },
@@ -1021,7 +1021,7 @@
       "HOLD": 0.5791849895535024
     },
     "UPTREND|0|9|60|-1|1|BUY": {
-      "BUY": 0.9563532592116578,
+      "BUY": 1.192212967118377,
       "SELL": 0,
       "HOLD": 0.6189421365632907
     },
@@ -1126,8 +1126,8 @@
       "HOLD": 0.648687059276884
     },
     "UPTREND|0|9|65|-1|1|BUY": {
-      "BUY": -2.6949013476642807,
-      "SELL": 4.69140410007651,
+      "BUY": -2.5354199143804315,
+      "SELL": 5.093394099960035,
       "HOLD": 0.9804359163011174
     },
     "BREAKING_OUT|0|9|65|-1|1|BUY": {
@@ -3532,7 +3532,7 @@
     },
     "SIDEWAYS|0|9|50|-1|-1|SELL": {
       "BUY": -0.39196996777257687,
-      "SELL": 0,
+      "SELL": 0.037021317876458536,
       "HOLD": 0
     },
     "WEAK_DOWNTREND|0|0|50|1|-1|SELL": {
@@ -3551,8 +3551,8 @@
       "HOLD": 0
     },
     "UPTREND|0|9|65|-1|1|SELL": {
-      "BUY": -1.9168973359626065,
-      "SELL": 3.2659279804451113,
+      "BUY": -1.7990372038594074,
+      "SELL": 3.765503771130125,
       "HOLD": 0
     },
     "SIDEWAYS|0|9|60|-1|-1|SELL": {
@@ -3568,6 +3568,11 @@
     "SIDEWAYS|0|9|50|-1|1|SELL": {
       "BUY": -0.4571995456195967,
       "SELL": 0,
+      "HOLD": 0
+    },
+    "SIDEWAYS|0|9|60|-1|1|SELL": {
+      "BUY": 0,
+      "SELL": -0.0790832795351843,
       "HOLD": 0
     }
   },
@@ -5493,8 +5498,8 @@
         "takeProfitPercent": 5
       },
       "expectedReward": 2.062919240348218,
-      "timesVisited": 166,
-      "lastUpdated": 1743371818881
+      "timesVisited": 167,
+      "lastUpdated": 1743374128738
     },
     "SIDEWAYS|0|2|50|1|-1|BUY": {
       "action": "HOLD",
@@ -6218,8 +6223,8 @@
         "takeProfitPercent": 15
       },
       "expectedReward": 0.9622023317967547,
-      "timesVisited": 69,
-      "lastUpdated": 1743373416296
+      "timesVisited": 72,
+      "lastUpdated": 1743373733169
     },
     "UPTREND|0|9|60|-1|-1|BUY": {
       "action": "HOLD",
@@ -6247,8 +6252,8 @@
         "takeProfitPercent": 5
       },
       "expectedReward": 1.1518942317006926,
-      "timesVisited": 206,
-      "lastUpdated": 1743373413178
+      "timesVisited": 214,
+      "lastUpdated": 1743373740854
     },
     "SIDEWAYS|0|9|50|-1|1|BUY": {
       "action": "HOLD",
@@ -6264,8 +6269,8 @@
         "takeProfitPercent": 5
       },
       "expectedReward": 1.7471887051231088,
-      "timesVisited": 133,
-      "lastUpdated": 1743373414589
+      "timesVisited": 136,
+      "lastUpdated": 1743373731558
     },
     "SIDEWAYS|0|9|55|-1|1|BUY": {
       "action": "HOLD",
@@ -6281,8 +6286,8 @@
         "takeProfitPercent": 5
       },
       "expectedReward": 1.859708282149572,
-      "timesVisited": 156,
-      "lastUpdated": 1743373415912
+      "timesVisited": 160,
+      "lastUpdated": 1743374132119
     },
     "SIDEWAYS|0|9|55|-1|-1|BUY": {
       "action": "HOLD",
@@ -6298,8 +6303,8 @@
         "takeProfitPercent": 5
       },
       "expectedReward": 1.8182381163118193,
-      "timesVisited": 655,
-      "lastUpdated": 1743373415697
+      "timesVisited": 668,
+      "lastUpdated": 1743373740023
     },
     "SIDEWAYS|0|9|60|-1|-1|BUY": {
       "action": "SELL",
@@ -6315,8 +6320,8 @@
         "takeProfitPercent": 5
       },
       "expectedReward": 1.9722572509457763,
-      "timesVisited": 223,
-      "lastUpdated": 1743373415511
+      "timesVisited": 236,
+      "lastUpdated": 1743373740195
     },
     "UPTREND|0|9|60|1|1|BUY": {
       "action": "HOLD",
@@ -6874,9 +6879,9 @@
         "stopLossPercent": 5,
         "takeProfitPercent": 15
       },
-      "expectedReward": 0.9563532592116578,
-      "timesVisited": 55,
-      "lastUpdated": 1743373413515
+      "expectedReward": 1.192212967118377,
+      "timesVisited": 59,
+      "lastUpdated": 1743373740642
     },
     "BREAKING_OUT|0|9|65|1|1|BUY": {
       "action": "HOLD",
@@ -7201,9 +7206,9 @@
         "stopLossPercent": 5,
         "takeProfitPercent": 15
       },
-      "expectedReward": 4.69140410007651,
-      "timesVisited": 46,
-      "lastUpdated": 1743373414187
+      "expectedReward": 5.093394099960035,
+      "timesVisited": 48,
+      "lastUpdated": 1743373731141
     },
     "BREAKING_OUT|0|9|65|-1|1|BUY": {
       "action": "HOLD",
@@ -14734,9 +14739,9 @@
         "stopLossPercent": 2,
         "takeProfitPercent": 5
       },
-      "expectedReward": 0,
-      "timesVisited": 1,
-      "lastUpdated": 1743371441450
+      "expectedReward": 0.037021317876458536,
+      "timesVisited": 2,
+      "lastUpdated": 1743373971352
     },
     "WEAK_DOWNTREND|0|0|50|1|-1|SELL": {
       "action": "BUY",
@@ -14821,9 +14826,9 @@
         "stopLossPercent": 5,
         "takeProfitPercent": 15
       },
-      "expectedReward": 3.2659279804451113,
-      "timesVisited": 16,
-      "lastUpdated": 1743373393368
+      "expectedReward": 3.765503771130125,
+      "timesVisited": 18,
+      "lastUpdated": 1743373741050
     },
     "SIDEWAYS|0|9|60|-1|-1|SELL": {
       "action": "SELL",
@@ -14875,1494 +14880,26 @@
       "expectedReward": 0,
       "timesVisited": 1,
       "lastUpdated": 1743373223754
+    },
+    "SIDEWAYS|0|9|60|-1|1|SELL": {
+      "action": "BUY",
+      "strategyType": "GRID_NARROW",
+      "strategyParams": {
+        "gridParams": {
+          "upperPrice": 103,
+          "lowerPrice": 97,
+          "gridCount": 10,
+          "investmentPerGrid": 100
+        },
+        "stopLossPercent": 2,
+        "takeProfitPercent": 5
+      },
+      "expectedReward": 0,
+      "timesVisited": 1,
+      "lastUpdated": 1743374135782
     }
   },
   "actionHistory": [
-    {
-      "action": "SELL",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02656186939866409,
-        "trendStrength": 1,
-        "rsiValue": 55.84011879054458,
-        "macdHistogram": -0.00016993534804464808,
-        "bollingerWidth": 0.01365393022646896,
-        "volumeChange": -0.04395999803931394,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02656186939866409,
-        "trendStrength": 1,
-        "rsiValue": 55.84011879054458,
-        "macdHistogram": -0.00016993534804464808,
-        "bollingerWidth": 0.01365393022646896,
-        "volumeChange": -0.04395999803931394,
-        "lastAction": "SELL",
-        "lastActionResult": -0.08378216636744538
-      },
-      "reward": -0.08378216636744538,
-      "timestamp": 1743371626048
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020680984589417344,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 50.09724568437452,
-        "macdHistogram": -0.001009261744859559,
-        "bollingerWidth": 0.012093016777092586,
-        "volumeChange": -0.27834760384456936,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020680984589417344,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 50.09724568437452,
-        "macdHistogram": -0.001009261744859559,
-        "bollingerWidth": 0.012093016777092586,
-        "volumeChange": -0.27834760384456936,
-        "lastAction": "BUY",
-        "lastActionResult": -5.918251490207204
-      },
-      "reward": -5.918251490207204,
-      "timestamp": 1743371626499
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.022290279414407775,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.455765705602886,
-        "macdHistogram": -0.010659817286689608,
-        "bollingerWidth": 0.018168126462073546,
-        "volumeChange": 0.4952364083953811,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.022290279414407775,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.455765705602886,
-        "macdHistogram": -0.010659817286689608,
-        "bollingerWidth": 0.018168126462073546,
-        "volumeChange": 0.4952364083953811,
-        "lastAction": "BUY",
-        "lastActionResult": -5.67359327574131
-      },
-      "reward": -5.67359327574131,
-      "timestamp": 1743371626691
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.013427526305996123,
-        "trendStrength": 1,
-        "rsiValue": 57.48872059140848,
-        "macdHistogram": -0.09997949510936377,
-        "bollingerWidth": 0.008017529067235117,
-        "volumeChange": 0.4753948153500491,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.013427526305996123,
-        "trendStrength": 1,
-        "rsiValue": 57.48872059140848,
-        "macdHistogram": -0.09997949510936377,
-        "bollingerWidth": 0.008017529067235117,
-        "volumeChange": 0.4753948153500491,
-        "lastAction": "BUY",
-        "lastActionResult": -5.545053560176423
-      },
-      "reward": -5.545053560176423,
-      "timestamp": 1743371626817
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.024324967416453874,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.83051760098436,
-        "macdHistogram": -0.027450087571165557,
-        "bollingerWidth": 0.014960481538539733,
-        "volumeChange": -0.5830670977967183,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.024324967416453874,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.83051760098436,
-        "macdHistogram": -0.027450087571165557,
-        "bollingerWidth": 0.014960481538539733,
-        "volumeChange": -0.5830670977967183,
-        "lastAction": "BUY",
-        "lastActionResult": -3.4772612975070047
-      },
-      "reward": -3.4772612975070047,
-      "timestamp": 1743371626960
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.017119986235688965,
-        "trendStrength": 1,
-        "rsiValue": 58.759898699985,
-        "macdHistogram": -0.05104361013725994,
-        "bollingerWidth": 0.008474497150104194,
-        "volumeChange": 1.373436495270953,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.017119986235688965,
-        "trendStrength": 1,
-        "rsiValue": 58.759898699985,
-        "macdHistogram": -0.05104361013725994,
-        "bollingerWidth": 0.008474497150104194,
-        "volumeChange": 1.373436495270953,
-        "lastAction": "BUY",
-        "lastActionResult": -3.625140291806947
-      },
-      "reward": -3.625140291806947,
-      "timestamp": 1743371627145
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020816731185759517,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.974389773679086,
-        "macdHistogram": -0.029946834380805906,
-        "bollingerWidth": 0.010574787079425097,
-        "volumeChange": -0.4734716444908972,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020816731185759517,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.974389773679086,
-        "macdHistogram": -0.029946834380805906,
-        "bollingerWidth": 0.010574787079425097,
-        "volumeChange": -0.4734716444908972,
-        "lastAction": "BUY",
-        "lastActionResult": -0.40547656661399784
-      },
-      "reward": -0.40547656661399784,
-      "timestamp": 1743371627370
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02048467731657281,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 52.57454262320078,
-        "macdHistogram": -0.007189937978183295,
-        "bollingerWidth": 0.012181366591361327,
-        "volumeChange": -0.8523791928209504,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02048467731657281,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 52.57454262320078,
-        "macdHistogram": -0.007189937978183295,
-        "bollingerWidth": 0.012181366591361327,
-        "volumeChange": -0.8523791928209504,
-        "lastAction": "BUY",
-        "lastActionResult": -9.211916332136065
-      },
-      "reward": -9.211916332136065,
-      "timestamp": 1743371627652
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018111600719423172,
-        "trendStrength": 1,
-        "rsiValue": 57.460226239499406,
-        "macdHistogram": -0.004314257712446923,
-        "bollingerWidth": 0.009740520063091037,
-        "volumeChange": -0.7787082197624451,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018111600719423172,
-        "trendStrength": 1,
-        "rsiValue": 57.460226239499406,
-        "macdHistogram": -0.004314257712446923,
-        "bollingerWidth": 0.009740520063091037,
-        "volumeChange": -0.7787082197624451,
-        "lastAction": "BUY",
-        "lastActionResult": 1.6059537798668204
-      },
-      "reward": 1.6059537798668204,
-      "timestamp": 1743371627805
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.014607408258581867,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.191679438835585,
-        "macdHistogram": -0.010091957431820946,
-        "bollingerWidth": 0.01538637253235347,
-        "volumeChange": -0.5875798616447394,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.014607408258581867,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.191679438835585,
-        "macdHistogram": -0.010091957431820946,
-        "bollingerWidth": 0.01538637253235347,
-        "volumeChange": -0.5875798616447394,
-        "lastAction": "BUY",
-        "lastActionResult": -5.266538214515084
-      },
-      "reward": -5.266538214515084,
-      "timestamp": 1743371628044
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "UPTREND",
-        "priceVolatility": 0.025352928669348733,
-        "trendStrength": 1,
-        "rsiValue": 60.567050921890086,
-        "macdHistogram": -1.0392515565321588e-8,
-        "bollingerWidth": 0.013131916979795969,
-        "volumeChange": -0.522197455288218,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "UPTREND",
-        "priceVolatility": 0.025352928669348733,
-        "trendStrength": 1,
-        "rsiValue": 60.567050921890086,
-        "macdHistogram": -1.0392515565321588e-8,
-        "bollingerWidth": 0.013131916979795969,
-        "volumeChange": -0.522197455288218,
-        "lastAction": "BUY",
-        "lastActionResult": -1.2693375644585494
-      },
-      "reward": -1.2693375644585494,
-      "timestamp": 1743371628262
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.011630909719788049,
-        "trendStrength": 1,
-        "rsiValue": 56.608069816199425,
-        "macdHistogram": -42.9590310463073,
-        "bollingerWidth": 0.006735129578408587,
-        "volumeChange": -0.3416817751504684,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.011630909719788049,
-        "trendStrength": 1,
-        "rsiValue": 56.608069816199425,
-        "macdHistogram": -42.9590310463073,
-        "bollingerWidth": 0.006735129578408587,
-        "volumeChange": -0.3416817751504684,
-        "lastAction": "BUY",
-        "lastActionResult": -0.8357121122107498
-      },
-      "reward": -0.8357121122107498,
-      "timestamp": 1743371635169
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.01903580205632175,
-        "trendStrength": 1,
-        "rsiValue": 56.46317048365489,
-        "macdHistogram": -1.9569759962125755,
-        "bollingerWidth": 0.00964690269478066,
-        "volumeChange": -0.42952266091455493,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.01903580205632175,
-        "trendStrength": 1,
-        "rsiValue": 56.46317048365489,
-        "macdHistogram": -1.9569759962125755,
-        "bollingerWidth": 0.00964690269478066,
-        "volumeChange": -0.42952266091455493,
-        "lastAction": "BUY",
-        "lastActionResult": -4.789237668161434
-      },
-      "reward": -4.789237668161434,
-      "timestamp": 1743371635345
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.0235930801440632,
-        "trendStrength": 1,
-        "rsiValue": 59.722602663940485,
-        "macdHistogram": -0.0017807141285341027,
-        "bollingerWidth": 0.011976671214937945,
-        "volumeChange": 1.1504374810728377,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.0235930801440632,
-        "trendStrength": 1,
-        "rsiValue": 59.722602663940485,
-        "macdHistogram": -0.0017807141285341027,
-        "bollingerWidth": 0.011976671214937945,
-        "volumeChange": 1.1504374810728377,
-        "lastAction": "BUY",
-        "lastActionResult": -6.173545718560253
-      },
-      "reward": -6.173545718560253,
-      "timestamp": 1743371635634
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018580214528028553,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 55.70186758751609,
-        "macdHistogram": -0.14591595584390316,
-        "bollingerWidth": 0.010846112992307833,
-        "volumeChange": -0.3182317690573555,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018580214528028553,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 55.70186758751609,
-        "macdHistogram": -0.14591595584390316,
-        "bollingerWidth": 0.010846112992307833,
-        "volumeChange": -0.3182317690573555,
-        "lastAction": "BUY",
-        "lastActionResult": 0.040147743696801956
-      },
-      "reward": 0.040147743696801956,
-      "timestamp": 1743371635819
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02656186939866409,
-        "trendStrength": 1,
-        "rsiValue": 55.84011879054458,
-        "macdHistogram": -0.00016993534804464808,
-        "bollingerWidth": 0.01365393022646896,
-        "volumeChange": -0.04395999803931394,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02656186939866409,
-        "trendStrength": 1,
-        "rsiValue": 55.84011879054458,
-        "macdHistogram": -0.00016993534804464808,
-        "bollingerWidth": 0.01365393022646896,
-        "volumeChange": -0.04395999803931394,
-        "lastAction": "BUY",
-        "lastActionResult": 0.08378216636744538
-      },
-      "reward": 0.08378216636744538,
-      "timestamp": 1743371636179
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.013427526305996123,
-        "trendStrength": 1,
-        "rsiValue": 57.48872059140848,
-        "macdHistogram": -0.09997949510936377,
-        "bollingerWidth": 0.008017529067235117,
-        "volumeChange": 0.4753948153500491,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.013427526305996123,
-        "trendStrength": 1,
-        "rsiValue": 57.48872059140848,
-        "macdHistogram": -0.09997949510936377,
-        "bollingerWidth": 0.008017529067235117,
-        "volumeChange": 0.4753948153500491,
-        "lastAction": "BUY",
-        "lastActionResult": -5.545053560176423
-      },
-      "reward": -5.545053560176423,
-      "timestamp": 1743371636274
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020680984589417344,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 50.09724568410864,
-        "macdHistogram": -0.001009261744857045,
-        "bollingerWidth": 0.012093016777092586,
-        "volumeChange": -0.27834760384456936,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020680984589417344,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 50.09724568410864,
-        "macdHistogram": -0.001009261744857045,
-        "bollingerWidth": 0.012093016777092586,
-        "volumeChange": -0.27834760384456936,
-        "lastAction": "BUY",
-        "lastActionResult": -5.889866590973599
-      },
-      "reward": -5.889866590973599,
-      "timestamp": 1743371636482
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.022290279414407775,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.455765705602886,
-        "macdHistogram": -0.010659817286689608,
-        "bollingerWidth": 0.018168126462073546,
-        "volumeChange": 0.4952364083953811,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.022290279414407775,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.455765705602886,
-        "macdHistogram": -0.010659817286689608,
-        "bollingerWidth": 0.018168126462073546,
-        "volumeChange": 0.4952364083953811,
-        "lastAction": "BUY",
-        "lastActionResult": -5.67359327574131
-      },
-      "reward": -5.67359327574131,
-      "timestamp": 1743371636714
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.024324967416453874,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.83051760098436,
-        "macdHistogram": -0.027450087571165557,
-        "bollingerWidth": 0.014960481538539733,
-        "volumeChange": -0.5830670977967183,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.024324967416453874,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.83051760098436,
-        "macdHistogram": -0.027450087571165557,
-        "bollingerWidth": 0.014960481538539733,
-        "volumeChange": -0.5830670977967183,
-        "lastAction": "BUY",
-        "lastActionResult": -3.455708025001795
-      },
-      "reward": -3.455708025001795,
-      "timestamp": 1743371636953
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.017119986235688965,
-        "trendStrength": 1,
-        "rsiValue": 58.759898699985,
-        "macdHistogram": -0.05104361013725994,
-        "bollingerWidth": 0.008474497150104194,
-        "volumeChange": 1.373436495270953,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.017119986235688965,
-        "trendStrength": 1,
-        "rsiValue": 58.759898699985,
-        "macdHistogram": -0.05104361013725994,
-        "bollingerWidth": 0.008474497150104194,
-        "volumeChange": 1.373436495270953,
-        "lastAction": "BUY",
-        "lastActionResult": -3.625140291806947
-      },
-      "reward": -3.625140291806947,
-      "timestamp": 1743371637163
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020816731185759517,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.974389773679086,
-        "macdHistogram": -0.029946834380805906,
-        "bollingerWidth": 0.010574787079425097,
-        "volumeChange": -0.4734716444908972,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020816731185759517,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.974389773679086,
-        "macdHistogram": -0.029946834380805906,
-        "bollingerWidth": 0.010574787079425097,
-        "volumeChange": -0.4734716444908972,
-        "lastAction": "BUY",
-        "lastActionResult": -0.40547656661399784
-      },
-      "reward": -0.40547656661399784,
-      "timestamp": 1743371637369
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02048467731657281,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 52.57454262320078,
-        "macdHistogram": -0.007189937978183295,
-        "bollingerWidth": 0.012181366591361327,
-        "volumeChange": -0.8523791928209504,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02048467731657281,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 52.57454262320078,
-        "macdHistogram": -0.007189937978183295,
-        "bollingerWidth": 0.012181366591361327,
-        "volumeChange": -0.8523791928209504,
-        "lastAction": "BUY",
-        "lastActionResult": -9.233044580604256
-      },
-      "reward": -9.233044580604256,
-      "timestamp": 1743371637587
-    },
-    {
-      "action": "SELL",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018111600719423172,
-        "trendStrength": 1,
-        "rsiValue": 57.46022624045524,
-        "macdHistogram": -0.00431425771248492,
-        "bollingerWidth": 0.009740520063091037,
-        "volumeChange": -0.7787082197624451,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018111600719423172,
-        "trendStrength": 1,
-        "rsiValue": 57.46022624045524,
-        "macdHistogram": -0.00431425771248492,
-        "bollingerWidth": 0.009740520063091037,
-        "volumeChange": -0.7787082197624451,
-        "lastAction": "SELL",
-        "lastActionResult": -1.6059537798668204
-      },
-      "reward": -1.6059537798668204,
-      "timestamp": 1743371638558
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.014607408258581867,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.191679438835585,
-        "macdHistogram": -0.010091957431820946,
-        "bollingerWidth": 0.01538637253235347,
-        "volumeChange": -0.5875798616447394,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.014607408258581867,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.191679438835585,
-        "macdHistogram": -0.010091957431820946,
-        "bollingerWidth": 0.01538637253235347,
-        "volumeChange": -0.5875798616447394,
-        "lastAction": "BUY",
-        "lastActionResult": -5.266538214515084
-      },
-      "reward": -5.266538214515084,
-      "timestamp": 1743371638805
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "UPTREND",
-        "priceVolatility": 0.025352928669348733,
-        "trendStrength": 1,
-        "rsiValue": 60.56705092226506,
-        "macdHistogram": -1.0392515565421882e-8,
-        "bollingerWidth": 0.013131916979795969,
-        "volumeChange": -0.522197455288218,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "UPTREND",
-        "priceVolatility": 0.025352928669348733,
-        "trendStrength": 1,
-        "rsiValue": 60.56705092226506,
-        "macdHistogram": -1.0392515565421882e-8,
-        "bollingerWidth": 0.013131916979795969,
-        "volumeChange": -0.522197455288218,
-        "lastAction": "BUY",
-        "lastActionResult": -1.2693375644585494
-      },
-      "reward": -1.2693375644585494,
-      "timestamp": 1743371639137
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.011630909719788049,
-        "trendStrength": 1,
-        "rsiValue": 56.608069816123624,
-        "macdHistogram": -42.95903104624833,
-        "bollingerWidth": 0.006735129578408587,
-        "volumeChange": -0.3416817751504684,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.011630909719788049,
-        "trendStrength": 1,
-        "rsiValue": 56.608069816123624,
-        "macdHistogram": -42.95903104624833,
-        "bollingerWidth": 0.006735129578408587,
-        "volumeChange": -0.3416817751504684,
-        "lastAction": "BUY",
-        "lastActionResult": -0.8307613541410072
-      },
-      "reward": -0.8307613541410072,
-      "timestamp": 1743371645098
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.01903580205632175,
-        "trendStrength": 1,
-        "rsiValue": 56.463170483713746,
-        "macdHistogram": -1.9569759962140445,
-        "bollingerWidth": 0.00964690269478066,
-        "volumeChange": -0.42952266091455493,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.01903580205632175,
-        "trendStrength": 1,
-        "rsiValue": 56.463170483713746,
-        "macdHistogram": -1.9569759962140445,
-        "bollingerWidth": 0.00964690269478066,
-        "volumeChange": -0.42952266091455493,
-        "lastAction": "BUY",
-        "lastActionResult": -4.785544711158007
-      },
-      "reward": -4.785544711158007,
-      "timestamp": 1743371645334
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018580214528028553,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 55.70186758758124,
-        "macdHistogram": -0.14591595584403572,
-        "bollingerWidth": 0.010846112992307833,
-        "volumeChange": -0.3182317690573555,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018580214528028553,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 55.70186758758124,
-        "macdHistogram": -0.14591595584403572,
-        "bollingerWidth": 0.010846112992307833,
-        "volumeChange": -0.3182317690573555,
-        "lastAction": "BUY",
-        "lastActionResult": -0.04817729243616691
-      },
-      "reward": -0.04817729243616691,
-      "timestamp": 1743371645777
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.013427526305996123,
-        "trendStrength": 1,
-        "rsiValue": 57.48872059140848,
-        "macdHistogram": -0.09997949510936377,
-        "bollingerWidth": 0.008017529067235117,
-        "volumeChange": 0.4753948153500491,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.013427526305996123,
-        "trendStrength": 1,
-        "rsiValue": 57.48872059140848,
-        "macdHistogram": -0.09997949510936377,
-        "bollingerWidth": 0.008017529067235117,
-        "volumeChange": 0.4753948153500491,
-        "lastAction": "BUY",
-        "lastActionResult": -5.545053560176423
-      },
-      "reward": -5.545053560176423,
-      "timestamp": 1743371646257
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.0235930801440632,
-        "trendStrength": 1,
-        "rsiValue": 59.72260266403444,
-        "macdHistogram": -0.0017807141285380301,
-        "bollingerWidth": 0.011976671214937945,
-        "volumeChange": 1.1504374810728377,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.0235930801440632,
-        "trendStrength": 1,
-        "rsiValue": 59.72260266403444,
-        "macdHistogram": -0.0017807141285380301,
-        "bollingerWidth": 0.011976671214937945,
-        "volumeChange": 1.1504374810728377,
-        "lastAction": "BUY",
-        "lastActionResult": -6.173545718560253
-      },
-      "reward": -6.173545718560253,
-      "timestamp": 1743371646332
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020680984589417344,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 50.09724568424157,
-        "macdHistogram": -0.0010092617448582935,
-        "bollingerWidth": 0.012093016777092586,
-        "volumeChange": -0.27834760384456936,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020680984589417344,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 50.09724568424157,
-        "macdHistogram": -0.0010092617448582935,
-        "bollingerWidth": 0.012093016777092586,
-        "volumeChange": -0.27834760384456936,
-        "lastAction": "BUY",
-        "lastActionResult": -5.904059040590401
-      },
-      "reward": -5.904059040590401,
-      "timestamp": 1743371646434
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.022290279414407775,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.455765705602886,
-        "macdHistogram": -0.010659817286689608,
-        "bollingerWidth": 0.018168126462073546,
-        "volumeChange": 0.4952364083953811,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.022290279414407775,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.455765705602886,
-        "macdHistogram": -0.010659817286689608,
-        "bollingerWidth": 0.018168126462073546,
-        "volumeChange": 0.4952364083953811,
-        "lastAction": "BUY",
-        "lastActionResult": -5.67359327574131
-      },
-      "reward": -5.67359327574131,
-      "timestamp": 1743371646745
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02656186939866409,
-        "trendStrength": 1,
-        "rsiValue": 55.84011879054458,
-        "macdHistogram": -0.00016993534804464808,
-        "bollingerWidth": 0.01365393022646896,
-        "volumeChange": -0.04395999803931394,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02656186939866409,
-        "trendStrength": 1,
-        "rsiValue": 55.84011879054458,
-        "macdHistogram": -0.00016993534804464808,
-        "bollingerWidth": 0.01365393022646896,
-        "volumeChange": -0.04395999803931394,
-        "lastAction": "BUY",
-        "lastActionResult": 0.08378216636744538
-      },
-      "reward": 0.08378216636744538,
-      "timestamp": 1743371646764
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.024324967416453874,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.83051760084707,
-        "macdHistogram": -0.02745008757112785,
-        "bollingerWidth": 0.014960481538539733,
-        "volumeChange": -0.5830670977967183,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.024324967416453874,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.83051760084707,
-        "macdHistogram": -0.02745008757112785,
-        "bollingerWidth": 0.014960481538539733,
-        "volumeChange": -0.5830670977967183,
-        "lastAction": "BUY",
-        "lastActionResult": -3.448523600833396
-      },
-      "reward": -3.448523600833396,
-      "timestamp": 1743371646886
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.017119986235688965,
-        "trendStrength": 1,
-        "rsiValue": 58.759898699985,
-        "macdHistogram": -0.05104361013725994,
-        "bollingerWidth": 0.008474497150104194,
-        "volumeChange": 1.373436495270953,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.017119986235688965,
-        "trendStrength": 1,
-        "rsiValue": 58.759898699985,
-        "macdHistogram": -0.05104361013725994,
-        "bollingerWidth": 0.008474497150104194,
-        "volumeChange": 1.373436495270953,
-        "lastAction": "BUY",
-        "lastActionResult": -3.625140291806947
-      },
-      "reward": -3.625140291806947,
-      "timestamp": 1743371647203
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020816731185759517,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.974389773679086,
-        "macdHistogram": -0.029946834380805906,
-        "bollingerWidth": 0.010574787079425097,
-        "volumeChange": -0.4734716444908972,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020816731185759517,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.974389773679086,
-        "macdHistogram": -0.029946834380805906,
-        "bollingerWidth": 0.010574787079425097,
-        "volumeChange": -0.4734716444908972,
-        "lastAction": "BUY",
-        "lastActionResult": -0.3949447077409126
-      },
-      "reward": -0.3949447077409126,
-      "timestamp": 1743371647367
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02048467731657281,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 52.57454262320078,
-        "macdHistogram": -0.007189937978183295,
-        "bollingerWidth": 0.012181366591361327,
-        "volumeChange": -0.8523791928209504,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02048467731657281,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 52.57454262320078,
-        "macdHistogram": -0.007189937978183295,
-        "bollingerWidth": 0.012181366591361327,
-        "volumeChange": -0.8523791928209504,
-        "lastAction": "BUY",
-        "lastActionResult": -9.233044580604256
-      },
-      "reward": -9.233044580604256,
-      "timestamp": 1743371647592
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018111600719423172,
-        "trendStrength": 1,
-        "rsiValue": 57.46022624045524,
-        "macdHistogram": -0.00431425771248492,
-        "bollingerWidth": 0.009740520063091037,
-        "volumeChange": -0.7787082197624451,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018111600719423172,
-        "trendStrength": 1,
-        "rsiValue": 57.46022624045524,
-        "macdHistogram": -0.00431425771248492,
-        "bollingerWidth": 0.009740520063091037,
-        "volumeChange": -0.7787082197624451,
-        "lastAction": "BUY",
-        "lastActionResult": 1.6059537798668204
-      },
-      "reward": 1.6059537798668204,
-      "timestamp": 1743371647928
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.014607408258581867,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.191679438835585,
-        "macdHistogram": -0.010091957431820946,
-        "bollingerWidth": 0.01538637253235347,
-        "volumeChange": -0.5875798616447394,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.014607408258581867,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.191679438835585,
-        "macdHistogram": -0.010091957431820946,
-        "bollingerWidth": 0.01538637253235347,
-        "volumeChange": -0.5875798616447394,
-        "lastAction": "BUY",
-        "lastActionResult": -5.266538214515084
-      },
-      "reward": -5.266538214515084,
-      "timestamp": 1743371648050
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "UPTREND",
-        "priceVolatility": 0.025352928669348733,
-        "trendStrength": 1,
-        "rsiValue": 60.56705092282751,
-        "macdHistogram": -1.039251556557272e-8,
-        "bollingerWidth": 0.013131916979795969,
-        "volumeChange": -0.522197455288218,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "UPTREND",
-        "priceVolatility": 0.025352928669348733,
-        "trendStrength": 1,
-        "rsiValue": 60.56705092282751,
-        "macdHistogram": -1.039251556557272e-8,
-        "bollingerWidth": 0.013131916979795969,
-        "volumeChange": -0.522197455288218,
-        "lastAction": "BUY",
-        "lastActionResult": -1.3645378817929477
-      },
-      "reward": -1.3645378817929477,
-      "timestamp": 1743371648287
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.011630909719788049,
-        "trendStrength": 1,
-        "rsiValue": 56.60806981614026,
-        "macdHistogram": -42.95903104625717,
-        "bollingerWidth": 0.006735129578408587,
-        "volumeChange": -0.3416817751504684,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.011630909719788049,
-        "trendStrength": 1,
-        "rsiValue": 56.60806981614026,
-        "macdHistogram": -42.95903104625717,
-        "bollingerWidth": 0.006735129578408587,
-        "volumeChange": -0.3416817751504684,
-        "lastAction": "BUY",
-        "lastActionResult": -0.8318481059124231
-      },
-      "reward": -0.8318481059124231,
-      "timestamp": 1743371655112
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.01903580205632175,
-        "trendStrength": 1,
-        "rsiValue": 56.46317048365,
-        "macdHistogram": -1.9569759962124884,
-        "bollingerWidth": 0.00964690269478066,
-        "volumeChange": -0.42952266091455493,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.01903580205632175,
-        "trendStrength": 1,
-        "rsiValue": 56.46317048365,
-        "macdHistogram": -1.9569759962124884,
-        "bollingerWidth": 0.00964690269478066,
-        "volumeChange": -0.42952266091455493,
-        "lastAction": "BUY",
-        "lastActionResult": -4.778686362437347
-      },
-      "reward": -4.778686362437347,
-      "timestamp": 1743371655334
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.0235930801440632,
-        "trendStrength": 1,
-        "rsiValue": 59.72260266415971,
-        "macdHistogram": -0.0017807141285429706,
-        "bollingerWidth": 0.011976671214937945,
-        "volumeChange": 1.1504374810728377,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.0235930801440632,
-        "trendStrength": 1,
-        "rsiValue": 59.72260266415971,
-        "macdHistogram": -0.0017807141285429706,
-        "bollingerWidth": 0.011976671214937945,
-        "volumeChange": 1.1504374810728377,
-        "lastAction": "BUY",
-        "lastActionResult": -6.18234621138785
-      },
-      "reward": -6.18234621138785,
-      "timestamp": 1743371655573
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018580214528028553,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 55.701867588363086,
-        "macdHistogram": -0.14591595584553418,
-        "bollingerWidth": 0.010846112992307833,
-        "volumeChange": -0.3182317690573555,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018580214528028553,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 55.701867588363086,
-        "macdHistogram": -0.14591595584553418,
-        "bollingerWidth": 0.010846112992307833,
-        "volumeChange": -0.3182317690573555,
-        "lastAction": "BUY",
-        "lastActionResult": -0.05620684117553186
-      },
-      "reward": -0.05620684117553186,
-      "timestamp": 1743371655743
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02656186939866409,
-        "trendStrength": 1,
-        "rsiValue": 55.84011879061463,
-        "macdHistogram": -0.0001699353480448647,
-        "bollingerWidth": 0.01365393022646896,
-        "volumeChange": -0.04395999803931394,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02656186939866409,
-        "trendStrength": 1,
-        "rsiValue": 55.84011879061463,
-        "macdHistogram": -0.0001699353480448647,
-        "bollingerWidth": 0.01365393022646896,
-        "volumeChange": -0.04395999803931394,
-        "lastAction": "BUY",
-        "lastActionResult": 0.07181328545781508
-      },
-      "reward": 0.07181328545781508,
-      "timestamp": 1743371655949
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.013427526305996123,
-        "trendStrength": 1,
-        "rsiValue": 57.48872059140848,
-        "macdHistogram": -0.09997949510936377,
-        "bollingerWidth": 0.008017529067235117,
-        "volumeChange": 0.4753948153500491,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.013427526305996123,
-        "trendStrength": 1,
-        "rsiValue": 57.48872059140848,
-        "macdHistogram": -0.09997949510936377,
-        "bollingerWidth": 0.008017529067235117,
-        "volumeChange": 0.4753948153500491,
-        "lastAction": "BUY",
-        "lastActionResult": -5.545053560176423
-      },
-      "reward": -5.545053560176423,
-      "timestamp": 1743371656229
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020680984589417344,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 50.09724568424157,
-        "macdHistogram": -0.0010092617448582935,
-        "bollingerWidth": 0.012093016777092586,
-        "volumeChange": -0.27834760384456936,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020680984589417344,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 50.09724568424157,
-        "macdHistogram": -0.0010092617448582935,
-        "bollingerWidth": 0.012093016777092586,
-        "volumeChange": -0.27834760384456936,
-        "lastAction": "BUY",
-        "lastActionResult": -5.918251490207204
-      },
-      "reward": -5.918251490207204,
-      "timestamp": 1743371656411
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.022290279414407775,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.455765705602886,
-        "macdHistogram": -0.010659817286689608,
-        "bollingerWidth": 0.018168126462073546,
-        "volumeChange": 0.4952364083953811,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.022290279414407775,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.455765705602886,
-        "macdHistogram": -0.010659817286689608,
-        "bollingerWidth": 0.018168126462073546,
-        "volumeChange": 0.4952364083953811,
-        "lastAction": "BUY",
-        "lastActionResult": -5.743637637170218
-      },
-      "reward": -5.743637637170218,
-      "timestamp": 1743371656623
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.024324967416453874,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.83051760084707,
-        "macdHistogram": -0.02745008757112785,
-        "bollingerWidth": 0.014960481538539733,
-        "volumeChange": -0.5830670977967183,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.024324967416453874,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.83051760084707,
-        "macdHistogram": -0.02745008757112785,
-        "bollingerWidth": 0.014960481538539733,
-        "volumeChange": -0.5830670977967183,
-        "lastAction": "BUY",
-        "lastActionResult": -3.448523600833396
-      },
-      "reward": -3.448523600833396,
-      "timestamp": 1743371656858
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.017119986235688965,
-        "trendStrength": 1,
-        "rsiValue": 58.759898699985,
-        "macdHistogram": -0.05104361013725994,
-        "bollingerWidth": 0.008474497150104194,
-        "volumeChange": 1.373436495270953,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.017119986235688965,
-        "trendStrength": 1,
-        "rsiValue": 58.759898699985,
-        "macdHistogram": -0.05104361013725994,
-        "bollingerWidth": 0.008474497150104194,
-        "volumeChange": 1.373436495270953,
-        "lastAction": "BUY",
-        "lastActionResult": -3.6363636363636305
-      },
-      "reward": -3.6363636363636305,
-      "timestamp": 1743371657089
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020816731185759517,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.974389773679086,
-        "macdHistogram": -0.029946834380805906,
-        "bollingerWidth": 0.010574787079425097,
-        "volumeChange": -0.4734716444908972,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.020816731185759517,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 54.974389773679086,
-        "macdHistogram": -0.029946834380805906,
-        "bollingerWidth": 0.010574787079425097,
-        "volumeChange": -0.4734716444908972,
-        "lastAction": "BUY",
-        "lastActionResult": -0.3949447077409126
-      },
-      "reward": -0.3949447077409126,
-      "timestamp": 1743371657278
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02048467731657281,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 52.57454262339464,
-        "macdHistogram": -0.007189937978195778,
-        "bollingerWidth": 0.012181366591361327,
-        "volumeChange": -0.8523791928209504,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.02048467731657281,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 52.57454262339464,
-        "macdHistogram": -0.007189937978195778,
-        "bollingerWidth": 0.012181366591361327,
-        "volumeChange": -0.8523791928209504,
-        "lastAction": "BUY",
-        "lastActionResult": -9.296429326008864
-      },
-      "reward": -9.296429326008864,
-      "timestamp": 1743371657565
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018111600719423172,
-        "trendStrength": 1,
-        "rsiValue": 57.46022624045524,
-        "macdHistogram": -0.00431425771248492,
-        "bollingerWidth": 0.009740520063091037,
-        "volumeChange": -0.7787082197624451,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.018111600719423172,
-        "trendStrength": 1,
-        "rsiValue": 57.46022624045524,
-        "macdHistogram": -0.00431425771248492,
-        "bollingerWidth": 0.009740520063091037,
-        "volumeChange": -0.7787082197624451,
-        "lastAction": "BUY",
-        "lastActionResult": 1.6059537798668204
-      },
-      "reward": 1.6059537798668204,
-      "timestamp": 1743371657702
-    },
-    {
-      "action": "BUY",
-      "state": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.014607408258581867,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.191679438835585,
-        "macdHistogram": -0.010091957431820946,
-        "bollingerWidth": 0.01538637253235347,
-        "volumeChange": -0.5875798616447394,
-        "lastAction": "BUY",
-        "lastActionResult": 0
-      },
-      "nextState": {
-        "marketState": "SIDEWAYS",
-        "priceVolatility": 0.014607408258581867,
-        "trendStrength": 0.9444444444444444,
-        "rsiValue": 49.191679438835585,
-        "macdHistogram": -0.010091957431820946,
-        "bollingerWidth": 0.01538637253235347,
-        "volumeChange": -0.5875798616447394,
-        "lastAction": "BUY",
-        "lastActionResult": -5.266538214515084
-      },
-      "reward": -5.266538214515084,
-      "timestamp": 1743371657938
-    },
     {
       "action": "BUY",
       "state": {
@@ -41877,8 +40414,1493 @@
       },
       "reward": -1.2305233719536466,
       "timestamp": 1743373416296
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.012842599713966875,
+        "trendStrength": 1,
+        "rsiValue": 55.45925159078046,
+        "macdHistogram": -69.72738232027547,
+        "bollingerWidth": 0.007770134829663139,
+        "volumeChange": -0.17570250112560426,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.012842599713966875,
+        "trendStrength": 1,
+        "rsiValue": 55.45925159078046,
+        "macdHistogram": -69.72738232027547,
+        "bollingerWidth": 0.007770134829663139,
+        "volumeChange": -0.17570250112560426,
+        "lastAction": "BUY",
+        "lastActionResult": -0.49805705677703727
+      },
+      "reward": -0.49805705677703727,
+      "timestamp": 1743373709998
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.019919997321833322,
+        "trendStrength": 1,
+        "rsiValue": 58.3050619281042,
+        "macdHistogram": -2.5350196475900653,
+        "bollingerWidth": 0.011667201312406433,
+        "volumeChange": -0.6086480031535025,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.019919997321833322,
+        "trendStrength": 1,
+        "rsiValue": 58.3050619281042,
+        "macdHistogram": -2.5350196475900653,
+        "bollingerWidth": 0.011667201312406433,
+        "volumeChange": -0.6086480031535025,
+        "lastAction": "BUY",
+        "lastActionResult": -5.304959891776498
+      },
+      "reward": -5.304959891776498,
+      "timestamp": 1743373710270
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.027492668036545348,
+        "trendStrength": 1,
+        "rsiValue": 59.95981710468869,
+        "macdHistogram": -0.0028823457540812676,
+        "bollingerWidth": 0.01546286494399621,
+        "volumeChange": 0.08133511455549725,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.027492668036545348,
+        "trendStrength": 1,
+        "rsiValue": 59.95981710468869,
+        "macdHistogram": -0.0028823457540812676,
+        "bollingerWidth": 0.01546286494399621,
+        "volumeChange": 0.08133511455549725,
+        "lastAction": "BUY",
+        "lastActionResult": -5.8230534553654305
+      },
+      "reward": -5.8230534553654305,
+      "timestamp": 1743373710486
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.018933423760455235,
+        "trendStrength": 1,
+        "rsiValue": 62.279274783439014,
+        "macdHistogram": -0.1545046878728612,
+        "bollingerWidth": 0.015935109375751464,
+        "volumeChange": 0.16394806441773957,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.018933423760455235,
+        "trendStrength": 1,
+        "rsiValue": 62.279274783439014,
+        "macdHistogram": -0.1545046878728612,
+        "bollingerWidth": 0.015935109375751464,
+        "volumeChange": 0.16394806441773957,
+        "lastAction": "BUY",
+        "lastActionResult": 0.6717927964386874
+      },
+      "reward": 0.6717927964386874,
+      "timestamp": 1743373710627
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.03126686427027506,
+        "trendStrength": 1,
+        "rsiValue": 58.6279495155397,
+        "macdHistogram": -0.00022967600876239494,
+        "bollingerWidth": 0.02252868596905482,
+        "volumeChange": 0.6842272739707669,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.03126686427027506,
+        "trendStrength": 1,
+        "rsiValue": 58.6279495155397,
+        "macdHistogram": -0.00022967600876239494,
+        "bollingerWidth": 0.02252868596905482,
+        "volumeChange": 0.6842272739707669,
+        "lastAction": "BUY",
+        "lastActionResult": -0.29450655126817554
+      },
+      "reward": -0.29450655126817554,
+      "timestamp": 1743373710848
+    },
+    {
+      "action": "SELL",
+      "state": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.014102763641409258,
+        "trendStrength": 1,
+        "rsiValue": 65.219560408432,
+        "macdHistogram": -0.012621488752047938,
+        "bollingerWidth": 0.010189375737065689,
+        "volumeChange": 1.0013742261512677,
+        "lastAction": "SELL",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.014102763641409258,
+        "trendStrength": 1,
+        "rsiValue": 65.219560408432,
+        "macdHistogram": -0.012621488752047938,
+        "bollingerWidth": 0.010189375737065689,
+        "volumeChange": 1.0013742261512677,
+        "lastAction": "SELL",
+        "lastActionResult": 5.322350704894648
+      },
+      "reward": 5.322350704894648,
+      "timestamp": 1743373711080
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.022552515101152748,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 53.43668632545729,
+        "macdHistogram": -0.0012334714029947351,
+        "bollingerWidth": 0.01370291130187987,
+        "volumeChange": -0.4994744992701635,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.022552515101152748,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 53.43668632545729,
+        "macdHistogram": -0.0012334714029947351,
+        "bollingerWidth": 0.01370291130187987,
+        "volumeChange": -0.4994744992701635,
+        "lastAction": "BUY",
+        "lastActionResult": -6.241094328868617
+      },
+      "reward": -6.241094328868617,
+      "timestamp": 1743373711401
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.025154326755623683,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 49.48812293117055,
+        "macdHistogram": -0.012252242749871842,
+        "bollingerWidth": 0.01876228349019232,
+        "volumeChange": 0.10626026748457673,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.025154326755623683,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 49.48812293117055,
+        "macdHistogram": -0.012252242749871842,
+        "bollingerWidth": 0.01876228349019232,
+        "volumeChange": 0.10626026748457673,
+        "lastAction": "BUY",
+        "lastActionResult": -5.816135084427772
+      },
+      "reward": -5.816135084427772,
+      "timestamp": 1743373711474
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.026963444748465643,
+        "trendStrength": 1,
+        "rsiValue": 58.103235427435145,
+        "macdHistogram": -0.03271550706115965,
+        "bollingerWidth": 0.01730488563654421,
+        "volumeChange": -0.6879087751497146,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.026963444748465643,
+        "trendStrength": 1,
+        "rsiValue": 58.103235427435145,
+        "macdHistogram": -0.03271550706115965,
+        "bollingerWidth": 0.01730488563654421,
+        "volumeChange": -0.6879087751497146,
+        "lastAction": "BUY",
+        "lastActionResult": -2.6532546103943364
+      },
+      "reward": -2.6532546103943364,
+      "timestamp": 1743373711709
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.01844530245112835,
+        "trendStrength": 1,
+        "rsiValue": 57.160009468339176,
+        "macdHistogram": -0.10697142093599571,
+        "bollingerWidth": 0.009967770149732784,
+        "volumeChange": -0.577664564842627,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.01844530245112835,
+        "trendStrength": 1,
+        "rsiValue": 57.160009468339176,
+        "macdHistogram": -0.10697142093599571,
+        "bollingerWidth": 0.009967770149732784,
+        "volumeChange": -0.577664564842627,
+        "lastAction": "BUY",
+        "lastActionResult": -3.407808621078775
+      },
+      "reward": -3.407808621078775,
+      "timestamp": 1743373711920
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.021492273545992147,
+        "trendStrength": 1,
+        "rsiValue": 58.34036219888226,
+        "macdHistogram": -0.036446518989846216,
+        "bollingerWidth": 0.011326118899656174,
+        "volumeChange": -0.8064852028122442,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.021492273545992147,
+        "trendStrength": 1,
+        "rsiValue": 58.34036219888226,
+        "macdHistogram": -0.036446518989846216,
+        "bollingerWidth": 0.011326118899656174,
+        "volumeChange": -0.8064852028122442,
+        "lastAction": "BUY",
+        "lastActionResult": 0.22877207916577602
+      },
+      "reward": 0.22877207916577602,
+      "timestamp": 1743373712157
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.022271767402340485,
+        "trendStrength": 1,
+        "rsiValue": 58.777183590800206,
+        "macdHistogram": -0.006705510209709196,
+        "bollingerWidth": 0.01810134024324523,
+        "volumeChange": -0.25258266564656795,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.022271767402340485,
+        "trendStrength": 1,
+        "rsiValue": 58.777183590800206,
+        "macdHistogram": -0.006705510209709196,
+        "bollingerWidth": 0.01810134024324523,
+        "volumeChange": -0.25258266564656795,
+        "lastAction": "BUY",
+        "lastActionResult": -9.94115174443043
+      },
+      "reward": -9.94115174443043,
+      "timestamp": 1743373712427
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.01846327809794188,
+        "trendStrength": 1,
+        "rsiValue": 57.212226222088255,
+        "macdHistogram": -0.004677773155084226,
+        "bollingerWidth": 0.010628856856462443,
+        "volumeChange": -0.4198690346969587,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.01846327809794188,
+        "trendStrength": 1,
+        "rsiValue": 57.212226222088255,
+        "macdHistogram": -0.004677773155084226,
+        "bollingerWidth": 0.010628856856462443,
+        "volumeChange": -0.4198690346969587,
+        "lastAction": "BUY",
+        "lastActionResult": 1.4566929133858237
+      },
+      "reward": 1.4566929133858237,
+      "timestamp": 1743373712569
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.014472886793368691,
+        "trendStrength": 1,
+        "rsiValue": 56.946042833476696,
+        "macdHistogram": -0.008106513886384031,
+        "bollingerWidth": 0.018855373863008052,
+        "volumeChange": 0.7682958607890154,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.014472886793368691,
+        "trendStrength": 1,
+        "rsiValue": 56.946042833476696,
+        "macdHistogram": -0.008106513886384031,
+        "bollingerWidth": 0.018855373863008052,
+        "volumeChange": 0.7682958607890154,
+        "lastAction": "BUY",
+        "lastActionResult": -5.683464820479804
+      },
+      "reward": -5.683464820479804,
+      "timestamp": 1743373712822
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.02944569549310664,
+        "trendStrength": 1,
+        "rsiValue": 63.84283489769545,
+        "macdHistogram": -1.703809129685144e-8,
+        "bollingerWidth": 0.018697549404439063,
+        "volumeChange": -0.4858471923724874,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.02944569549310664,
+        "trendStrength": 1,
+        "rsiValue": 63.84283489769545,
+        "macdHistogram": -1.703809129685144e-8,
+        "bollingerWidth": 0.018697549404439063,
+        "volumeChange": -0.4858471923724874,
+        "lastAction": "BUY",
+        "lastActionResult": -1.110667199360766
+      },
+      "reward": -1.110667199360766,
+      "timestamp": 1743373712988
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.012842599713966875,
+        "trendStrength": 1,
+        "rsiValue": 55.45925159086561,
+        "macdHistogram": -69.72738232032006,
+        "bollingerWidth": 0.007770134829663139,
+        "volumeChange": -0.17570250112560426,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.012842599713966875,
+        "trendStrength": 1,
+        "rsiValue": 55.45925159086561,
+        "macdHistogram": -69.72738232032006,
+        "bollingerWidth": 0.007770134829663139,
+        "volumeChange": -0.17570250112560426,
+        "lastAction": "BUY",
+        "lastActionResult": -0.5030218852058941
+      },
+      "reward": -0.5030218852058941,
+      "timestamp": 1743373719960
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.019919997321833322,
+        "trendStrength": 1,
+        "rsiValue": 58.30506192803647,
+        "macdHistogram": -2.5350196475887348,
+        "bollingerWidth": 0.011667201312406433,
+        "volumeChange": -0.6086480031535025,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.019919997321833322,
+        "trendStrength": 1,
+        "rsiValue": 58.30506192803647,
+        "macdHistogram": -2.5350196475887348,
+        "bollingerWidth": 0.011667201312406433,
+        "volumeChange": -0.6086480031535025,
+        "lastAction": "BUY",
+        "lastActionResult": -5.299147105761009
+      },
+      "reward": -5.299147105761009,
+      "timestamp": 1743373720206
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.027492668036545348,
+        "trendStrength": 1,
+        "rsiValue": 59.95981710468869,
+        "macdHistogram": -0.0028823457540812676,
+        "bollingerWidth": 0.01546286494399621,
+        "volumeChange": 0.08133511455549725,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.027492668036545348,
+        "trendStrength": 1,
+        "rsiValue": 59.95981710468869,
+        "macdHistogram": -0.0028823457540812676,
+        "bollingerWidth": 0.01546286494399621,
+        "volumeChange": 0.08133511455549725,
+        "lastAction": "BUY",
+        "lastActionResult": -5.836317814033677
+      },
+      "reward": -5.836317814033677,
+      "timestamp": 1743373720435
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.018933423760455235,
+        "trendStrength": 1,
+        "rsiValue": 62.27927478314395,
+        "macdHistogram": -0.1545046878724703,
+        "bollingerWidth": 0.015935109375751464,
+        "volumeChange": 0.16394806441773957,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.018933423760455235,
+        "trendStrength": 1,
+        "rsiValue": 62.27927478314395,
+        "macdHistogram": -0.1545046878724703,
+        "bollingerWidth": 0.015935109375751464,
+        "volumeChange": 0.16394806441773957,
+        "lastAction": "BUY",
+        "lastActionResult": 0.6960744637798457
+      },
+      "reward": 0.6960744637798457,
+      "timestamp": 1743373720570
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.03126686427027506,
+        "trendStrength": 1,
+        "rsiValue": 58.62794951541341,
+        "macdHistogram": -0.0002296760087620029,
+        "bollingerWidth": 0.02252868596905482,
+        "volumeChange": 0.6842272739707669,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.03126686427027506,
+        "trendStrength": 1,
+        "rsiValue": 58.62794951541341,
+        "macdHistogram": -0.0002296760087620029,
+        "bollingerWidth": 0.02252868596905482,
+        "volumeChange": 0.6842272739707669,
+        "lastAction": "BUY",
+        "lastActionResult": -0.27647553792522434
+      },
+      "reward": -0.27647553792522434,
+      "timestamp": 1743373720810
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.014102763641409258,
+        "trendStrength": 1,
+        "rsiValue": 65.219560408432,
+        "macdHistogram": -0.012621488752047938,
+        "bollingerWidth": 0.010189375737065689,
+        "volumeChange": 1.0013742261512677,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.014102763641409258,
+        "trendStrength": 1,
+        "rsiValue": 65.219560408432,
+        "macdHistogram": -0.012621488752047938,
+        "bollingerWidth": 0.010189375737065689,
+        "volumeChange": 1.0013742261512677,
+        "lastAction": "BUY",
+        "lastActionResult": -5.322350704894648
+      },
+      "reward": -5.322350704894648,
+      "timestamp": 1743373721021
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.022552515101152748,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 53.43668632532239,
+        "macdHistogram": -0.0012334714029935156,
+        "bollingerWidth": 0.01370291130187987,
+        "volumeChange": -0.4994744992701635,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.022552515101152748,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 53.43668632532239,
+        "macdHistogram": -0.0012334714029935156,
+        "bollingerWidth": 0.01370291130187987,
+        "volumeChange": -0.4994744992701635,
+        "lastAction": "BUY",
+        "lastActionResult": -6.212596181248215
+      },
+      "reward": -6.212596181248215,
+      "timestamp": 1743373721250
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.025154326755623683,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 49.48812293117055,
+        "macdHistogram": -0.012252242749871842,
+        "bollingerWidth": 0.01876228349019232,
+        "volumeChange": 0.10626026748457673,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.025154326755623683,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 49.48812293117055,
+        "macdHistogram": -0.012252242749871842,
+        "bollingerWidth": 0.01876228349019232,
+        "volumeChange": 0.10626026748457673,
+        "lastAction": "BUY",
+        "lastActionResult": -5.816135084427772
+      },
+      "reward": -5.816135084427772,
+      "timestamp": 1743373721463
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.026963444748465643,
+        "trendStrength": 1,
+        "rsiValue": 58.103235427435145,
+        "macdHistogram": -0.03271550706115965,
+        "bollingerWidth": 0.01730488563654421,
+        "volumeChange": -0.6879087751497146,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.026963444748465643,
+        "trendStrength": 1,
+        "rsiValue": 58.103235427435145,
+        "macdHistogram": -0.03271550706115965,
+        "bollingerWidth": 0.01730488563654421,
+        "volumeChange": -0.6879087751497146,
+        "lastAction": "BUY",
+        "lastActionResult": -2.6532546103943364
+      },
+      "reward": -2.6532546103943364,
+      "timestamp": 1743373721718
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.01844530245112835,
+        "trendStrength": 1,
+        "rsiValue": 57.16000946847586,
+        "macdHistogram": -0.10697142093610379,
+        "bollingerWidth": 0.009967770149732784,
+        "volumeChange": -0.577664564842627,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.01844530245112835,
+        "trendStrength": 1,
+        "rsiValue": 57.16000946847586,
+        "macdHistogram": -0.10697142093610379,
+        "bollingerWidth": 0.009967770149732784,
+        "volumeChange": -0.577664564842627,
+        "lastAction": "BUY",
+        "lastActionResult": -3.407808621078775
+      },
+      "reward": -3.407808621078775,
+      "timestamp": 1743373721892
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.021492273545992147,
+        "trendStrength": 1,
+        "rsiValue": 58.340362198351016,
+        "macdHistogram": -0.03644651898970812,
+        "bollingerWidth": 0.011326118899656174,
+        "volumeChange": -0.8064852028122442,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.021492273545992147,
+        "trendStrength": 1,
+        "rsiValue": 58.340362198351016,
+        "macdHistogram": -0.03644651898970812,
+        "bollingerWidth": 0.011326118899656174,
+        "volumeChange": -0.8064852028122442,
+        "lastAction": "BUY",
+        "lastActionResult": 0.2660140455416084
+      },
+      "reward": 0.2660140455416084,
+      "timestamp": 1743373722111
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.022271767402340485,
+        "trendStrength": 1,
+        "rsiValue": 58.777183590800206,
+        "macdHistogram": -0.006705510209709196,
+        "bollingerWidth": 0.01810134024324523,
+        "volumeChange": -0.25258266564656795,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.022271767402340485,
+        "trendStrength": 1,
+        "rsiValue": 58.777183590800206,
+        "macdHistogram": -0.006705510209709196,
+        "bollingerWidth": 0.01810134024324523,
+        "volumeChange": -0.25258266564656795,
+        "lastAction": "BUY",
+        "lastActionResult": -9.94115174443043
+      },
+      "reward": -9.94115174443043,
+      "timestamp": 1743373722305
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.01846327809794188,
+        "trendStrength": 1,
+        "rsiValue": 57.212226222088255,
+        "macdHistogram": -0.004677773155084226,
+        "bollingerWidth": 0.010628856856462443,
+        "volumeChange": -0.4198690346969587,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.01846327809794188,
+        "trendStrength": 1,
+        "rsiValue": 57.212226222088255,
+        "macdHistogram": -0.004677773155084226,
+        "bollingerWidth": 0.010628856856462443,
+        "volumeChange": -0.4198690346969587,
+        "lastAction": "BUY",
+        "lastActionResult": 1.4566929133858237
+      },
+      "reward": 1.4566929133858237,
+      "timestamp": 1743373722542
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.014472886793368691,
+        "trendStrength": 1,
+        "rsiValue": 56.946042833476696,
+        "macdHistogram": -0.008106513886384031,
+        "bollingerWidth": 0.018855373863008052,
+        "volumeChange": 0.7682958607890154,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.014472886793368691,
+        "trendStrength": 1,
+        "rsiValue": 56.946042833476696,
+        "macdHistogram": -0.008106513886384031,
+        "bollingerWidth": 0.018855373863008052,
+        "volumeChange": 0.7682958607890154,
+        "lastAction": "BUY",
+        "lastActionResult": -5.683464820479804
+      },
+      "reward": -5.683464820479804,
+      "timestamp": 1743373722769
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.02944569549310664,
+        "trendStrength": 1,
+        "rsiValue": 63.8428348974773,
+        "macdHistogram": -1.703809129681265e-8,
+        "bollingerWidth": 0.018697549404439063,
+        "volumeChange": -0.4858471923724874,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.02944569549310664,
+        "trendStrength": 1,
+        "rsiValue": 63.8428348974773,
+        "macdHistogram": -1.703809129681265e-8,
+        "bollingerWidth": 0.018697549404439063,
+        "volumeChange": -0.4858471923724874,
+        "lastAction": "BUY",
+        "lastActionResult": -1.0866959648421899
+      },
+      "reward": -1.0866959648421899,
+      "timestamp": 1743373723058
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.012842599713966875,
+        "trendStrength": 1,
+        "rsiValue": 55.45925159038666,
+        "macdHistogram": -69.72738232003815,
+        "bollingerWidth": 0.007770134829663139,
+        "volumeChange": -0.17570250112560426,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.012842599713966875,
+        "trendStrength": 1,
+        "rsiValue": 55.45925159038666,
+        "macdHistogram": -69.72738232003815,
+        "bollingerWidth": 0.007770134829663139,
+        "volumeChange": -0.17570250112560426,
+        "lastAction": "BUY",
+        "lastActionResult": -0.47565478215905665
+      },
+      "reward": -0.47565478215905665,
+      "timestamp": 1743373730024
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.019919997321833322,
+        "trendStrength": 1,
+        "rsiValue": 58.30506192779017,
+        "macdHistogram": -2.5350196475837183,
+        "bollingerWidth": 0.011667201312406433,
+        "volumeChange": -0.6086480031535025,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.019919997321833322,
+        "trendStrength": 1,
+        "rsiValue": 58.30506192779017,
+        "macdHistogram": -2.5350196475837183,
+        "bollingerWidth": 0.011667201312406433,
+        "volumeChange": -0.6086480031535025,
+        "lastAction": "BUY",
+        "lastActionResult": -5.2780097020683
+      },
+      "reward": -5.2780097020683,
+      "timestamp": 1743373730305
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.027492668036545348,
+        "trendStrength": 1,
+        "rsiValue": 59.959817104606635,
+        "macdHistogram": -0.002882345754078846,
+        "bollingerWidth": 0.01546286494399621,
+        "volumeChange": 0.08133511455549725,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.027492668036545348,
+        "trendStrength": 1,
+        "rsiValue": 59.959817104606635,
+        "macdHistogram": -0.002882345754078846,
+        "bollingerWidth": 0.01546286494399621,
+        "volumeChange": 0.08133511455549725,
+        "lastAction": "BUY",
+        "lastActionResult": -5.836317814033677
+      },
+      "reward": -5.836317814033677,
+      "timestamp": 1743373730478
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.018933423760455235,
+        "trendStrength": 1,
+        "rsiValue": 62.27927478314395,
+        "macdHistogram": -0.1545046878724703,
+        "bollingerWidth": 0.015935109375751464,
+        "volumeChange": 0.16394806441773957,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.018933423760455235,
+        "trendStrength": 1,
+        "rsiValue": 62.27927478314395,
+        "macdHistogram": -0.1545046878724703,
+        "bollingerWidth": 0.015935109375751464,
+        "volumeChange": 0.16394806441773957,
+        "lastAction": "BUY",
+        "lastActionResult": 0.6960744637798457
+      },
+      "reward": 0.6960744637798457,
+      "timestamp": 1743373730673
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.03126686427027506,
+        "trendStrength": 1,
+        "rsiValue": 58.6279495152029,
+        "macdHistogram": -0.00022967600876138338,
+        "bollingerWidth": 0.02252868596905482,
+        "volumeChange": 0.6842272739707669,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.03126686427027506,
+        "trendStrength": 1,
+        "rsiValue": 58.6279495152029,
+        "macdHistogram": -0.00022967600876138338,
+        "bollingerWidth": 0.02252868596905482,
+        "volumeChange": 0.6842272739707669,
+        "lastAction": "BUY",
+        "lastActionResult": -0.24642384902031117
+      },
+      "reward": -0.24642384902031117,
+      "timestamp": 1743373730895
+    },
+    {
+      "action": "SELL",
+      "state": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.014102763641409258,
+        "trendStrength": 1,
+        "rsiValue": 65.219560408432,
+        "macdHistogram": -0.012621488752047938,
+        "bollingerWidth": 0.010189375737065689,
+        "volumeChange": 1.0013742261512677,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.014102763641409258,
+        "trendStrength": 1,
+        "rsiValue": 65.219560408432,
+        "macdHistogram": -0.012621488752047938,
+        "bollingerWidth": 0.010189375737065689,
+        "volumeChange": 1.0013742261512677,
+        "lastAction": "SELL",
+        "lastActionResult": 5.322350704894648
+      },
+      "reward": 5.322350704894648,
+      "timestamp": 1743373731141
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.022552515101152748,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 53.43668632532239,
+        "macdHistogram": -0.0012334714029935156,
+        "bollingerWidth": 0.01370291130187987,
+        "volumeChange": -0.4994744992701635,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.022552515101152748,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 53.43668632532239,
+        "macdHistogram": -0.0012334714029935156,
+        "bollingerWidth": 0.01370291130187987,
+        "volumeChange": -0.4994744992701635,
+        "lastAction": "BUY",
+        "lastActionResult": -6.212596181248215
+      },
+      "reward": -6.212596181248215,
+      "timestamp": 1743373731348
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.025154326755623683,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 49.48812293117055,
+        "macdHistogram": -0.012252242749871842,
+        "bollingerWidth": 0.01876228349019232,
+        "volumeChange": 0.10626026748457673,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.025154326755623683,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 49.48812293117055,
+        "macdHistogram": -0.012252242749871842,
+        "bollingerWidth": 0.01876228349019232,
+        "volumeChange": 0.10626026748457673,
+        "lastAction": "BUY",
+        "lastActionResult": -5.769230769230779
+      },
+      "reward": -5.769230769230779,
+      "timestamp": 1743373731558
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.026963444748465643,
+        "trendStrength": 1,
+        "rsiValue": 58.10323542732757,
+        "macdHistogram": -0.03271550706113281,
+        "bollingerWidth": 0.01730488563654421,
+        "volumeChange": -0.6879087751497146,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.026963444748465643,
+        "trendStrength": 1,
+        "rsiValue": 58.10323542732757,
+        "macdHistogram": -0.03271550706113281,
+        "bollingerWidth": 0.01730488563654421,
+        "volumeChange": -0.6879087751497146,
+        "lastAction": "BUY",
+        "lastActionResult": -2.594941322253808
+      },
+      "reward": -2.594941322253808,
+      "timestamp": 1743373731767
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.01844530245112835,
+        "trendStrength": 1,
+        "rsiValue": 57.160009468339176,
+        "macdHistogram": -0.10697142093599571,
+        "bollingerWidth": 0.009967770149732784,
+        "volumeChange": -0.577664564842627,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.01844530245112835,
+        "trendStrength": 1,
+        "rsiValue": 57.160009468339176,
+        "macdHistogram": -0.10697142093599571,
+        "bollingerWidth": 0.009967770149732784,
+        "volumeChange": -0.577664564842627,
+        "lastAction": "BUY",
+        "lastActionResult": -3.3852403520649963
+      },
+      "reward": -3.3852403520649963,
+      "timestamp": 1743373732017
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.021492273545992147,
+        "trendStrength": 1,
+        "rsiValue": 58.340362198351016,
+        "macdHistogram": -0.03644651898970812,
+        "bollingerWidth": 0.011326118899656174,
+        "volumeChange": -0.8064852028122442,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.021492273545992147,
+        "trendStrength": 1,
+        "rsiValue": 58.340362198351016,
+        "macdHistogram": -0.03644651898970812,
+        "bollingerWidth": 0.011326118899656174,
+        "volumeChange": -0.8064852028122442,
+        "lastAction": "BUY",
+        "lastActionResult": 0.2660140455416084
+      },
+      "reward": 0.2660140455416084,
+      "timestamp": 1743373732274
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.022271767402340485,
+        "trendStrength": 1,
+        "rsiValue": 58.7771835905661,
+        "macdHistogram": -0.006705510209695748,
+        "bollingerWidth": 0.01810134024324523,
+        "volumeChange": -0.25258266564656795,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.022271767402340485,
+        "trendStrength": 1,
+        "rsiValue": 58.7771835905661,
+        "macdHistogram": -0.006705510209695748,
+        "bollingerWidth": 0.01810134024324523,
+        "volumeChange": -0.25258266564656795,
+        "lastAction": "BUY",
+        "lastActionResult": -9.920134510298453
+      },
+      "reward": -9.920134510298453,
+      "timestamp": 1743373732475
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.01846327809794188,
+        "trendStrength": 1,
+        "rsiValue": 57.212226222088255,
+        "macdHistogram": -0.004677773155084226,
+        "bollingerWidth": 0.010628856856462443,
+        "volumeChange": -0.4198690346969587,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.01846327809794188,
+        "trendStrength": 1,
+        "rsiValue": 57.212226222088255,
+        "macdHistogram": -0.004677773155084226,
+        "bollingerWidth": 0.010628856856462443,
+        "volumeChange": -0.4198690346969587,
+        "lastAction": "BUY",
+        "lastActionResult": 1.4566929133858237
+      },
+      "reward": 1.4566929133858237,
+      "timestamp": 1743373732699
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.014472886793368691,
+        "trendStrength": 1,
+        "rsiValue": 56.946042833476696,
+        "macdHistogram": -0.008106513886384031,
+        "bollingerWidth": 0.018855373863008052,
+        "volumeChange": 0.7682958607890154,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.014472886793368691,
+        "trendStrength": 1,
+        "rsiValue": 56.946042833476696,
+        "macdHistogram": -0.008106513886384031,
+        "bollingerWidth": 0.018855373863008052,
+        "volumeChange": 0.7682958607890154,
+        "lastAction": "BUY",
+        "lastActionResult": -5.586862018998557
+      },
+      "reward": -5.586862018998557,
+      "timestamp": 1743373732935
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.02944569549310664,
+        "trendStrength": 1,
+        "rsiValue": 63.8428348974773,
+        "macdHistogram": -1.703809129681265e-8,
+        "bollingerWidth": 0.018697549404439063,
+        "volumeChange": -0.4858471923724874,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.02944569549310664,
+        "trendStrength": 1,
+        "rsiValue": 63.8428348974773,
+        "macdHistogram": -1.703809129681265e-8,
+        "bollingerWidth": 0.018697549404439063,
+        "volumeChange": -0.4858471923724874,
+        "lastAction": "BUY",
+        "lastActionResult": -1.0866959648421899
+      },
+      "reward": -1.0866959648421899,
+      "timestamp": 1743373733169
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.012842599713966875,
+        "trendStrength": 1,
+        "rsiValue": 55.45925159005459,
+        "macdHistogram": -69.7273823198407,
+        "bollingerWidth": 0.007770134829663139,
+        "volumeChange": -0.17570250112560426,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.012842599713966875,
+        "trendStrength": 1,
+        "rsiValue": 55.45925159005459,
+        "macdHistogram": -69.7273823198407,
+        "bollingerWidth": 0.007770134829663139,
+        "volumeChange": -0.17570250112560426,
+        "lastAction": "BUY",
+        "lastActionResult": -0.4567642154541754
+      },
+      "reward": -0.4567642154541754,
+      "timestamp": 1743373740023
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.019919997321833322,
+        "trendStrength": 1,
+        "rsiValue": 58.30506192796874,
+        "macdHistogram": -2.5350196475873155,
+        "bollingerWidth": 0.011667201312406433,
+        "volumeChange": -0.6086480031535025,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.019919997321833322,
+        "trendStrength": 1,
+        "rsiValue": 58.30506192796874,
+        "macdHistogram": -2.5350196475873155,
+        "bollingerWidth": 0.011667201312406433,
+        "volumeChange": -0.6086480031535025,
+        "lastAction": "BUY",
+        "lastActionResult": -5.29333431974551
+      },
+      "reward": -5.29333431974551,
+      "timestamp": 1743373740195
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.027492668036545348,
+        "trendStrength": 1,
+        "rsiValue": 59.959817104606635,
+        "macdHistogram": -0.002882345754078846,
+        "bollingerWidth": 0.01546286494399621,
+        "volumeChange": 0.08133511455549725,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.027492668036545348,
+        "trendStrength": 1,
+        "rsiValue": 59.959817104606635,
+        "macdHistogram": -0.002882345754078846,
+        "bollingerWidth": 0.01546286494399621,
+        "volumeChange": 0.08133511455549725,
+        "lastAction": "BUY",
+        "lastActionResult": -5.814210549586592
+      },
+      "reward": -5.814210549586592,
+      "timestamp": 1743373740453
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.018933423760455235,
+        "trendStrength": 1,
+        "rsiValue": 62.27927478294722,
+        "macdHistogram": -0.15450468787221783,
+        "bollingerWidth": 0.015935109375751464,
+        "volumeChange": 0.16394806441773957,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.018933423760455235,
+        "trendStrength": 1,
+        "rsiValue": 62.27927478294722,
+        "macdHistogram": -0.15450468787221783,
+        "bollingerWidth": 0.015935109375751464,
+        "volumeChange": 0.16394806441773957,
+        "lastAction": "BUY",
+        "lastActionResult": 0.7122622420072923
+      },
+      "reward": 0.7122622420072923,
+      "timestamp": 1743373740642
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.03126686427027506,
+        "trendStrength": 1,
+        "rsiValue": 58.62794951516081,
+        "macdHistogram": -0.00022967600876127822,
+        "bollingerWidth": 0.02252868596905482,
+        "volumeChange": 0.6842272739707669,
+        "lastAction": "BUY",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.03126686427027506,
+        "trendStrength": 1,
+        "rsiValue": 58.62794951516081,
+        "macdHistogram": -0.00022967600876127822,
+        "bollingerWidth": 0.02252868596905482,
+        "volumeChange": 0.6842272739707669,
+        "lastAction": "BUY",
+        "lastActionResult": -0.24041351123933855
+      },
+      "reward": -0.24041351123933855,
+      "timestamp": 1743373740854
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.014102763641409258,
+        "trendStrength": 1,
+        "rsiValue": 65.219560408432,
+        "macdHistogram": -0.012621488752047938,
+        "bollingerWidth": 0.010189375737065689,
+        "volumeChange": 1.0013742261512677,
+        "lastAction": "SELL",
+        "lastActionResult": 0
+      },
+      "nextState": {
+        "marketState": "UPTREND",
+        "priceVolatility": 0.014102763641409258,
+        "trendStrength": 1,
+        "rsiValue": 65.219560408432,
+        "macdHistogram": -0.012621488752047938,
+        "bollingerWidth": 0.010189375737065689,
+        "volumeChange": 1.0013742261512677,
+        "lastAction": "BUY",
+        "lastActionResult": -5.322350704894648
+      },
+      "reward": -5.322350704894648,
+      "timestamp": 1743373741050
+    },
+    {
+      "action": "SELL",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.012886631914551569,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 48.26356682063412,
+        "macdHistogram": -85.88324916635162,
+        "bollingerWidth": 0.007780260495730006,
+        "volumeChange": -0.030976458686874375,
+        "lastAction": "SELL",
+        "lastActionResult": 0.3702131787645853
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.012886631914551569,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 48.26356682063412,
+        "macdHistogram": -85.88324916635162,
+        "bollingerWidth": 0.007780260495730006,
+        "volumeChange": -0.030976458686874375,
+        "lastAction": "SELL",
+        "lastActionResult": 0.3702131787645853
+      },
+      "reward": 0.3702131787645853,
+      "timestamp": 1743373971352
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.012886631914551569,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 48.263566816757645,
+        "macdHistogram": -85.88324916397463,
+        "bollingerWidth": 0.007780260495730006,
+        "volumeChange": -0.030976458686874375,
+        "lastAction": "BUY",
+        "lastActionResult": -0.15085004729221035
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.012886631914551569,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 48.263566816757645,
+        "macdHistogram": -85.88324916397463,
+        "bollingerWidth": 0.007780260495730006,
+        "volumeChange": -0.030976458686874375,
+        "lastAction": "BUY",
+        "lastActionResult": -0.15085004729221035
+      },
+      "reward": -0.15085004729221035,
+      "timestamp": 1743374128737
+    },
+    {
+      "action": "BUY",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.020117947324028267,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 53.406214548043614,
+        "macdHistogram": -2.988845037581733,
+        "bollingerWidth": 0.011674966878731019,
+        "volumeChange": 0.5947468669016887,
+        "lastAction": "BUY",
+        "lastActionResult": -1.0531007048181888
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.020117947324028267,
+        "trendStrength": 0.9444444444444444,
+        "rsiValue": 53.406214548043614,
+        "macdHistogram": -2.988845037581733,
+        "bollingerWidth": 0.011674966878731019,
+        "volumeChange": 0.5947468669016887,
+        "lastAction": "BUY",
+        "lastActionResult": -1.0531007048181888
+      },
+      "reward": -1.0531007048181888,
+      "timestamp": 1743374132119
+    },
+    {
+      "action": "SELL",
+      "state": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.017798592571202972,
+        "trendStrength": 1,
+        "rsiValue": 59.31518150036213,
+        "macdHistogram": -0.1731247818664714,
+        "bollingerWidth": 0.01811858473315974,
+        "volumeChange": 1.0343366478285132,
+        "lastAction": "SELL",
+        "lastActionResult": -0.790832795351843
+      },
+      "nextState": {
+        "marketState": "SIDEWAYS",
+        "priceVolatility": 0.017798592571202972,
+        "trendStrength": 1,
+        "rsiValue": 59.31518150036213,
+        "macdHistogram": -0.1731247818664714,
+        "bollingerWidth": 0.01811858473315974,
+        "volumeChange": 1.0343366478285132,
+        "lastAction": "SELL",
+        "lastActionResult": -0.790832795351843
+      },
+      "reward": -0.790832795351843,
+      "timestamp": 1743374135781
     }
   ],
   "explorationRate": 0.05,
-  "lastUpdated": "2025-03-30T22:23:36.296Z"
+  "lastUpdated": "2025-03-30T22:35:35.782Z"
 }
