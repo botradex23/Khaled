@@ -160,9 +160,21 @@ function DatabaseStatusCard({ query }: { query: any }) {
   const mongoConnected = data?.connections?.mongodb?.connected || false;
   const allConnected = pgConnected && mongoConnected;
   const anyConnected = pgConnected || mongoConnected;
+  const isMongoSimulated = data?.connections?.mongodb?.isSimulated || true; // האם החיבור ל-MongoDB הוא סימולציה
   
-  // Determine card styling
-  const variant = allConnected ? "success" : (anyConnected ? "warning" : "destructive");
+  // Determine badge styling
+  let badgeClass = "";
+  let badgeVariant: "default" | "destructive" | "secondary" | "outline" = "default";
+  
+  if (allConnected) {
+    badgeClass = "bg-green-100 text-green-800 hover:bg-green-200";
+  } else if (anyConnected) {
+    badgeClass = "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
+    badgeVariant = "secondary";
+  } else {
+    badgeVariant = "destructive";
+  }
+  
   const cardClass = allConnected 
     ? "border-green-200" 
     : (anyConnected ? "border-yellow-200" : "border-red-200");
@@ -172,7 +184,7 @@ function DatabaseStatusCard({ query }: { query: any }) {
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle>Database Status</CardTitle>
-          <Badge variant={variant as any}>
+          <Badge variant={badgeVariant} className={badgeClass}>
             {allConnected 
               ? "All Connected" 
               : (anyConnected ? "Partial" : "Disconnected")}
@@ -202,9 +214,16 @@ function DatabaseStatusCard({ query }: { query: any }) {
           <div className="flex items-center gap-2">
             <Database className={`h-5 w-5 ${mongoConnected ? "text-green-500" : "text-destructive"}`} />
             <div className="flex-1">
-              <div className="font-medium">MongoDB</div>
+              <div className="font-medium">
+                MongoDB {isMongoSimulated && <span className="text-amber-600 text-xs font-normal">(Simulated)</span>}
+              </div>
               <p className="text-sm text-muted-foreground">
                 {data?.connections?.mongodb?.description || "Connection status unknown"}
+                {mongoConnected && isMongoSimulated && (
+                  <span className="block text-amber-600 text-xs mt-1">
+                    Data stored in memory only. Not persisted to actual MongoDB.
+                  </span>
+                )}
               </p>
             </div>
             <Badge variant={mongoConnected ? "default" : "destructive"} className={mongoConnected ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}>
@@ -216,6 +235,17 @@ function DatabaseStatusCard({ query }: { query: any }) {
         <p className="text-sm text-muted-foreground mt-4">
           {data?.message || "Database status check completed"}
         </p>
+        
+        {/* הסבר נוסף על הסימולציות */}
+        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+          <h4 className="text-sm font-medium text-amber-800">Database Integration Notes</h4>
+          <ul className="text-xs text-amber-700 mt-1 space-y-1 list-disc pl-4">
+            <li>PostgreSQL is used as the primary database for structured data</li>
+            <li>MongoDB (currently simulated) is used for API key storage</li>
+            <li>API Keys are securely encrypted before storage in either database</li>
+            <li>MongoDB connection requires additional configuration for actual storage</li>
+          </ul>
+        </div>
       </CardContent>
     </Card>
   );

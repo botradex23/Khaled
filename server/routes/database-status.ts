@@ -41,12 +41,18 @@ const checkMongoDB = async () => {
     // Test MongoDB connection using the test function
     const { connected, error } = await testMongoDBConnection();
     
+    // Flag indicating this is a simulated MongoDB (not a real connection)
+    const isSimulated = true;
+    
     return {
       connected,
       status: connected ? 'connected' : 'disconnected',
       description: connected 
-        ? 'MongoDB connection is active and responding to queries' 
-        : `MongoDB connection failed: ${error || 'Unknown reason'}`
+        ? (isSimulated
+            ? 'MongoDB simulated connection is active (data stored in memory only)' 
+            : 'MongoDB connection is active and responding to queries')
+        : `MongoDB connection failed: ${error || 'Unknown reason'}`,
+      isSimulated: isSimulated // Add flag to indicate simulation status
     };
   } catch (error) {
     console.error('Error checking MongoDB:', error);
@@ -54,7 +60,8 @@ const checkMongoDB = async () => {
       connected: false,
       status: 'error',
       description: `MongoDB connection error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      isSimulated: true // Even on error, indicate it's a simulation
     };
   }
 };

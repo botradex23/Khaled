@@ -13,15 +13,33 @@ export const connectToMongoDB = async () => {
     if (process.env.MONGODB_URI) {
       console.log('MongoDB connection string is configured. Using simulated MongoDB store.');
       
-      // Mark the mock connection as ready
-      mongooseConnectionStatus.readyState = 1;
-      return true;
+      try {
+        // בהמשך כאן יהיה קוד חיבור אמיתי ל-MongoDB
+        // כעת אנחנו מדמים חיבור מוצלח אבל גם מציגים שמדובר בסימולציה
+        console.log('NOTICE: This is a MongoDB SIMULATION. Data is stored in memory only.');
+        console.log('NOTICE: To use real MongoDB storage, mongoose package needs to be installed.');
+        console.log(`NOTICE: MongoDB URI configured: ${process.env.MONGODB_URI.substring(0, process.env.MONGODB_URI.indexOf('://') + 3)}...`);
+        
+        // Mark the mock connection as ready
+        mongooseConnectionStatus.readyState = 1;
+        
+        // הצגת מידע ברור למשתמש שזה סימולציה
+        console.log('MongoDB simulated connection established successfully');
+        
+        return true;
+      } catch (connectionError) {
+        console.error('Error establishing MongoDB connection:', connectionError);
+        mongooseConnectionStatus.readyState = 0;
+        return false;
+      }
     } else {
       console.log('MongoDB connection string not found. Using in-memory storage instead.');
+      mongooseConnectionStatus.readyState = 0;
       return false;
     }
   } catch (error) {
     console.error('Error with MongoDB simulation:', error);
+    mongooseConnectionStatus.readyState = 0;
     return false;
   }
 };
