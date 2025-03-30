@@ -1019,7 +1019,8 @@ export default function BinancePage() {
     );
   }
 
-  // Replaced with hook-based isConfigured value
+  // Use hook-based isConfigured value for API key status
+  console.log("API key status from hook:", isConfigured);
   // const hasValidApiKeys = apiStatus?.hasBinanceApiKey && apiStatus?.hasBinanceSecretKey;
 
   return (
