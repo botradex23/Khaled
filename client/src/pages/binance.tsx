@@ -1020,7 +1020,7 @@ export default function BinancePage() {
   }
 
   // Use hook-based isConfigured value for API key status
-  console.log("API key status from hook:", isConfigured);
+  console.log("API key status from hook:", hasValidApiKeys);
   // const hasValidApiKeys = apiStatus?.hasBinanceApiKey && apiStatus?.hasBinanceSecretKey;
 
   return (
