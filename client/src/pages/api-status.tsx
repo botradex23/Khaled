@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
-import { CheckCircle, XCircle, AlertTriangle, Info } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Info, Database } from "lucide-react";
 
 export default function ApiStatus() {
   // Query OKX API status
@@ -18,19 +18,36 @@ export default function ApiStatus() {
     queryKey: ["/api/binance/status"],
     retry: 1
   });
+  
+  // Query Database status
+  const dbQuery = useQuery({
+    queryKey: ["/api/database/status"],
+    retry: 1
+  });
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-grow container max-w-6xl pt-24 pb-12 px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">API Connection Status</h1>
+          <h1 className="text-3xl font-bold mb-2">System Status</h1>
           <p className="text-muted-foreground">
-            Check the connection status to exchange APIs.
+            Check the connection status of databases and exchange APIs.
             The system should be connected to the testnet in all exchanges.
           </p>
         </div>
-
+        
+        {/* Database Status Section */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold mb-4">Database Status</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Database Status Card */}
+            <DatabaseStatusCard query={dbQuery} />
+          </div>
+        </div>
+        
+        {/* Exchange API Status Section */}
+        <h2 className="text-xl font-bold mb-4">Exchange API Status</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Binance Status */}
           <ApiStatusCard
@@ -94,6 +111,116 @@ interface ApiStatusCardProps {
   };
 }
 
+function DatabaseStatusCard({ query }: { query: any }) {
+  const { data, isLoading, error } = query;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>Database Status</CardTitle>
+          <CardDescription>Checking connections...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-4/5" />
+            <Skeleton className="h-4 w-3/5" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-red-200">
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-center">
+            <CardTitle>Database Status</CardTitle>
+            <Badge variant="destructive">Error</Badge>
+          </div>
+          <CardDescription>Connection error</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-2 text-destructive mb-2">
+            <XCircle className="h-5 w-5" />
+            <span>Failed to check database status</span>
+          </div>
+          <p className="text-sm text-muted-foreground overflow-hidden text-ellipsis">
+            {error instanceof Error ? error.message : "Unknown error"}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Parse connection statuses
+  const pgConnected = data?.connections?.postgresql?.connected || false;
+  const mongoConnected = data?.connections?.mongodb?.connected || false;
+  const allConnected = pgConnected && mongoConnected;
+  const anyConnected = pgConnected || mongoConnected;
+  
+  // Determine card styling
+  const variant = allConnected ? "success" : (anyConnected ? "warning" : "destructive");
+  const cardClass = allConnected 
+    ? "border-green-200" 
+    : (anyConnected ? "border-yellow-200" : "border-red-200");
+
+  return (
+    <Card className={cardClass}>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle>Database Status</CardTitle>
+          <Badge variant={variant as any}>
+            {allConnected 
+              ? "All Connected" 
+              : (anyConnected ? "Partial" : "Disconnected")}
+          </Badge>
+        </div>
+        <CardDescription>
+          Database connection status
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {/* PostgreSQL Connection */}
+          <div className="flex items-center gap-2">
+            <Database className={`h-5 w-5 ${pgConnected ? "text-green-500" : "text-destructive"}`} />
+            <div className="flex-1">
+              <div className="font-medium">PostgreSQL</div>
+              <p className="text-sm text-muted-foreground">
+                {data?.connections?.postgresql?.description || "Connection status unknown"}
+              </p>
+            </div>
+            <Badge variant={pgConnected ? "default" : "destructive"} className={pgConnected ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}>
+              {pgConnected ? "Connected" : "Disconnected"}
+            </Badge>
+          </div>
+          
+          {/* MongoDB Connection */}
+          <div className="flex items-center gap-2">
+            <Database className={`h-5 w-5 ${mongoConnected ? "text-green-500" : "text-destructive"}`} />
+            <div className="flex-1">
+              <div className="font-medium">MongoDB</div>
+              <p className="text-sm text-muted-foreground">
+                {data?.connections?.mongodb?.description || "Connection status unknown"}
+              </p>
+            </div>
+            <Badge variant={mongoConnected ? "default" : "destructive"} className={mongoConnected ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}>
+              {mongoConnected ? "Connected" : "Disconnected"}
+            </Badge>
+          </div>
+        </div>
+        
+        <p className="text-sm text-muted-foreground mt-4">
+          {data?.message || "Database status check completed"}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ApiStatusCard({ title, query, getStatus }: ApiStatusCardProps) {
   const { data, isLoading, error } = query;
 
@@ -139,7 +266,21 @@ function ApiStatusCard({ title, query, getStatus }: ApiStatusCardProps) {
   }
 
   const status = getStatus(data);
-  const variant = status.isConnected ? (status.authStatus ? "success" : "warning") : "destructive";
+  // Determine badge styling
+  let badgeClass = "";
+  let badgeVariant: "default" | "destructive" | "secondary" | "outline" = "default";
+  
+  if (status.isConnected) {
+    if (status.authStatus) {
+      badgeClass = "bg-green-100 text-green-800 hover:bg-green-200";
+    } else {
+      badgeClass = "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
+      badgeVariant = "secondary";
+    }
+  } else {
+    badgeVariant = "destructive";
+  }
+  
   const cardClass = status.isConnected 
     ? (status.authStatus ? "border-green-200" : "border-yellow-200") 
     : "border-red-200";
@@ -149,7 +290,7 @@ function ApiStatusCard({ title, query, getStatus }: ApiStatusCardProps) {
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle>{title}</CardTitle>
-          <Badge variant={variant as any}>
+          <Badge variant={badgeVariant} className={badgeClass}>
             {status.isConnected 
               ? (status.authStatus ? "Connected" : "Partial") 
               : "Disconnected"}

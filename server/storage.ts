@@ -825,6 +825,31 @@ export class MemStorage implements IStorage {
     // Save the updated user
     this.users.set(userId, updatedUser);
     
+    // ADDITIONALLY: Also save the API keys to MongoDB for better persistence
+    try {
+      // Check that both API keys exist before saving to MongoDB
+      if (sanitizedBinanceApiKey && sanitizedBinanceSecretKey) {
+        // Import the MongoDB integration dynamically
+        const { saveBinanceApiKeysToMongoDB } = await import('./storage/mongodb');
+        
+        // Save to MongoDB asynchronously (don't wait for it to complete)
+        saveBinanceApiKeysToMongoDB(userId, sanitizedBinanceApiKey, sanitizedBinanceSecretKey)
+          .then(() => {
+            console.log(`Successfully saved Binance API keys to MongoDB for user ${userId}`);
+          })
+          .catch(error => {
+            console.error(`Error saving Binance API keys to MongoDB for user ${userId}:`, error);
+          });
+        
+        console.log(`Initiated saving Binance API keys to MongoDB for user ${userId}`);
+      } else {
+        console.log(`Not saving to MongoDB - missing required sanitized API key or secret key`);
+      }
+    } catch (error) {
+      // Don't let MongoDB errors affect the primary storage mechanism
+      console.error(`Error setting up MongoDB save for Binance API keys:`, error);
+    }
+    
     return updatedUser;
   }
   
@@ -907,6 +932,60 @@ export class MemStorage implements IStorage {
       console.warn("1. Set ENCRYPTION_KEY and ENCRYPTION_IV as permanent environment variables");
       console.warn("2. Users will need to re-enter their API keys");
       console.warn("===========================================");
+      
+      // If decryption failed, try to get the keys from MongoDB
+      console.log("Attempting to get Binance API keys from MongoDB after failed decryption...");
+      try {
+        // Import the MongoDB integration dynamically
+        const { getBinanceApiKeysFromMongoDB } = await import('./storage/mongodb');
+        
+        // Try to get keys from MongoDB
+        const mongoDBKeys = await getBinanceApiKeysFromMongoDB(userId);
+        
+        if (mongoDBKeys && mongoDBKeys.apiKey && mongoDBKeys.secretKey) {
+          console.log("Successfully retrieved Binance API keys from MongoDB backup");
+          apiKey = mongoDBKeys.apiKey;
+          secretKey = mongoDBKeys.secretKey;
+          decryptionFailed = false;
+        } else {
+          console.log("Could not find Binance API keys in MongoDB backup");
+        }
+      } catch (error) {
+        console.error("Error trying to get Binance API keys from MongoDB:", error);
+      }
+    }
+    
+    // If the primary storage doesn't have keys but MongoDB might, try to get them
+    if ((!apiKey || !secretKey) && (!decryptionFailed)) {
+      console.log("Primary storage missing Binance API keys, trying MongoDB backup...");
+      try {
+        // Import the MongoDB integration dynamically
+        const { getBinanceApiKeysFromMongoDB } = await import('./storage/mongodb');
+        
+        // Try to get keys from MongoDB
+        const mongoDBKeys = await getBinanceApiKeysFromMongoDB(userId);
+        
+        if (mongoDBKeys && mongoDBKeys.apiKey && mongoDBKeys.secretKey) {
+          console.log("Successfully retrieved Binance API keys from MongoDB backup");
+          apiKey = mongoDBKeys.apiKey;
+          secretKey = mongoDBKeys.secretKey;
+          
+          // Update primary storage with keys from MongoDB for future use
+          this.updateUserBinanceApiKeys(userId, {
+            binanceApiKey: apiKey,
+            binanceSecretKey: secretKey,
+            binanceAllowedIp: user.binanceAllowedIp
+          }).then(() => {
+            console.log("Updated primary storage with keys from MongoDB backup");
+          }).catch(error => {
+            console.error("Failed to update primary storage with keys from MongoDB:", error);
+          });
+        } else {
+          console.log("Could not find Binance API keys in MongoDB backup");
+        }
+      } catch (error) {
+        console.error("Error trying to get Binance API keys from MongoDB:", error);
+      }
     }
     
     // Additional cleaning on retrieval too - completely remove all whitespace (inside and outside)
@@ -973,6 +1052,26 @@ export class MemStorage implements IStorage {
     // Save the updated user
     this.users.set(userId, updatedUser);
     console.log(`API keys cleared successfully for user ID ${userId}`);
+    
+    // Also clear the Binance API keys from MongoDB
+    try {
+      // Import the MongoDB integration dynamically
+      const { deleteBinanceApiKeysFromMongoDB } = await import('./storage/mongodb');
+      
+      // Attempt to delete from MongoDB
+      deleteBinanceApiKeysFromMongoDB(userId)
+        .then(() => {
+          console.log(`Successfully deleted Binance API keys from MongoDB for user ${userId}`);
+        })
+        .catch(error => {
+          console.error(`Error deleting Binance API keys from MongoDB for user ${userId}:`, error);
+        });
+      
+      console.log(`Initiated deletion of Binance API keys from MongoDB for user ${userId}`);
+    } catch (error) {
+      // Don't let MongoDB errors affect the primary storage mechanism
+      console.error(`Error setting up MongoDB delete for Binance API keys:`, error);
+    }
     
     return true;
   }
