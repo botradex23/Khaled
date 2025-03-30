@@ -570,9 +570,12 @@ export default function BinancePage() {
     setTestnet: setUseTestnet,
     isLoading: keysLoading,
     isSaving,
-    isConfigured: hasValidApiKeys,
+    isConfigured,
     saveApiKeys: saveBinanceApiKeys
   } = useBinanceApiKeys();
+  
+  // Use isConfigured from hook to check API key validity
+  const hasValidApiKeys = isConfigured;
   
   // משתנים למיון וסינון
   const [searchTerm, setSearchTerm] = useState('');
@@ -1020,8 +1023,8 @@ export default function BinancePage() {
   }
 
   // Use hook-based isConfigured value for API key status
-  console.log("API key status from hook:", hasValidApiKeys);
-  // const hasValidApiKeys = apiStatus?.hasBinanceApiKey && apiStatus?.hasBinanceSecretKey;
+  console.log("API key status from hook:", isConfigured);
+  // Use isConfigured from the hook directly to check API key status
 
   return (
     <div className="container mx-auto px-4 py-8 mt-16">
