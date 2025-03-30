@@ -128,6 +128,7 @@ export const paperTradingTrades = pgTable('paper_trading_trades', {
   type: text('type').default('MARKET'),
   isAiGenerated: boolean('is_ai_generated').default(false),
   aiConfidence: text('ai_confidence'),
+  metadata: json('metadata'), // Store AI decision data, signals, etc.
 });
 
 // AI Trading data table - store AI decisions and results

@@ -78,6 +78,7 @@ export class AITradingSystem {
   private lastForcedTradeTime: Map<string, number> = new Map();
   private lastLearnTime: number = 0;
   private dataDirectory: string;
+  private paperTradingBridge: any = null; // גשר למערכת Paper Trading
   private isRunning: boolean = false;
   private readyToTrade: boolean = false;
   
@@ -705,7 +706,14 @@ export class AITradingSystem {
     }
     
     try {
-      // בדיקה אם ה-API מוגדר כראוי (לאחר השינויים שעשינו לא להשתמש במפתחות גלובליים)
+      // אם קיים גשר למערכת ה-Paper Trading, ננסה להשתמש בו תחילה
+      if (this.paperTradingBridge) {
+        // ביצוע המסחר במערכת ה-Paper Trading
+        console.log(`Executing trading decision via Paper Trading: ${decision.action} ${decision.symbol} @ ${decision.price}`);
+        return await this.paperTradingBridge.executeTrading(decision);
+      }
+      
+      // אם אין גשר Paper Trading, ננסה להשתמש ב-API האמיתי
       if (!okxService.isConfigured() || okxService.hasEmptyCredentials()) {
         console.log(`Cannot execute trading decision - missing valid API credentials`);
         return {
@@ -1242,6 +1250,7 @@ export class AITradingSystem {
     decisionCount: number;
     executionCount: number;
     config: AITradingSystemConfig;
+    paperTradingEnabled: boolean;
   } {
     const marketStates: { [symbol: string]: MarketState } = {};
     // Use Array.from to avoid iterator issues in TypeScript
@@ -1263,7 +1272,8 @@ export class AITradingSystem {
       lastDecisions,
       decisionCount: this.decisionHistory.length,
       executionCount: this.executionHistory.length,
-      config: this.config
+      config: this.config,
+      paperTradingEnabled: this.paperTradingBridge !== null
     };
   }
   
@@ -1331,6 +1341,16 @@ export class AITradingSystem {
   public updateConfig(newConfig: Partial<AITradingSystemConfig>): void {
     this.config = { ...this.config, ...newConfig };
     console.log('Updated AI trading system configuration');
+  }
+
+  /**
+   * הגדרת גשר למערכת ה-Paper Trading
+   * 
+   * @param bridge אובייקט הגשר
+   */
+  public setPaperTradingBridge(bridge: any) {
+    this.paperTradingBridge = bridge;
+    console.log('Paper Trading Bridge connected to AI Trading System');
   }
 }
 

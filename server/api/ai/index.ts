@@ -8,10 +8,17 @@ import { Router, Request, Response } from 'express';
 import { aiGridBotManager, AiGridParams } from './AiGridBot';
 import { aiTradingSystem } from './AITradingSystem';
 import { aiTradingBridge, TradingSignal } from './AITradingBridge';
+import { createAIPaperTradingBridge } from './AIPaperTradingBridge';
 import { storage } from '../../storage';
 import { ensureAuthenticated } from '../../auth';
 
 const router = Router();
+
+// יצירת גשר למערכת Paper Trading עבור מערכת ה-AI
+const aiPaperTradingBridge = createAIPaperTradingBridge(aiTradingSystem);
+
+// אתחול הגשר במערכת ה-AI
+aiTradingSystem.setPaperTradingBridge(aiPaperTradingBridge);
 
 /**
  * טיפול בשגיאות API
@@ -551,6 +558,110 @@ router.post('/trading/train', ensureAuthenticated, async (req: Request, res: Res
         message: `Failed to train model for ${symbol}` 
       });
     }
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * POST /api/ai/paper-trading/set-user
+ * הגדרת משתמש עבור מערכת ה-AI Paper Trading
+ */
+router.post('/paper-trading/set-user', ensureAuthenticated, async (req: Request, res: Response) => {
+  try {
+    // קבלת מזהה המשתמש
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'User not authenticated' 
+      });
+    }
+    
+    // הגדרת המשתמש לגשר ה-Paper Trading
+    const success = await aiPaperTradingBridge.setUser(userId);
+    
+    if (success) {
+      return res.json({ 
+        success: true,
+        message: `Paper trading user set successfully for AI system` 
+      });
+    } else {
+      return res.status(500).json({ 
+        success: false,
+        message: `Failed to set paper trading user for AI system` 
+      });
+    }
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * GET /api/ai/paper-trading/trades
+ * קבלת היסטוריית עסקאות של ה-AI ב-Paper Trading
+ */
+router.get('/paper-trading/trades', ensureAuthenticated, async (req: Request, res: Response) => {
+  try {
+    // קבלת מזהה המשתמש
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'User not authenticated' 
+      });
+    }
+    
+    // אם אין משתמש מוגדר, ננסה להגדיר אותו
+    if (!(await aiPaperTradingBridge.setUser(userId))) {
+      return res.status(500).json({ 
+        success: false,
+        message: `Failed to set paper trading user for AI system` 
+      });
+    }
+    
+    // קבלת היסטוריית העסקאות
+    const trades = await aiPaperTradingBridge.getTradeHistory();
+    
+    return res.json({ 
+      success: true,
+      trades
+    });
+  } catch (err) {
+    handleApiError(err, res);
+  }
+});
+
+/**
+ * GET /api/ai/paper-trading/performance
+ * קבלת נתוני ביצועים של ה-AI ב-Paper Trading
+ */
+router.get('/paper-trading/performance', ensureAuthenticated, async (req: Request, res: Response) => {
+  try {
+    // קבלת מזהה המשתמש
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'User not authenticated' 
+      });
+    }
+    
+    // אם אין משתמש מוגדר, ננסה להגדיר אותו
+    if (!(await aiPaperTradingBridge.setUser(userId))) {
+      return res.status(500).json({ 
+        success: false,
+        message: `Failed to set paper trading user for AI system` 
+      });
+    }
+    
+    // קבלת נתוני ביצועים
+    const performance = await aiPaperTradingBridge.getPerformanceStats();
+    
+    return res.json({ 
+      success: true,
+      performance
+    });
   } catch (err) {
     handleApiError(err, res);
   }

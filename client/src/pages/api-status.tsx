@@ -10,7 +10,8 @@ import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import { useState } from "react";
 import { CheckCircle, XCircle, AlertTriangle, Info, Database, 
-         Brain, Bot, PlayCircle, StopCircle, Activity, Zap } from "lucide-react";
+         Brain, Bot, PlayCircle, StopCircle, Activity, Zap,
+         TrendingUp, Link, Loader2 } from "lucide-react";
 
 import { apiRequest } from "@/lib/queryClient";
 
@@ -40,6 +41,21 @@ export default function ApiStatus() {
     refetchInterval: 30000, // refetch every 30 seconds
   });
   
+  // Query AI paper trading status
+  const aiPaperTradingQuery = useQuery({
+    queryKey: ["/api/ai/paper-trading/performance"],
+    retry: 1,
+    refetchInterval: 30000, // refetch every 30 seconds
+  });
+  
+  // Set user for AI paper trading
+  const setAiPaperTradingUserMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/ai/paper-trading/set-user");
+      return await res.json();
+    }
+  });
+  
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
@@ -57,7 +73,7 @@ export default function ApiStatus() {
           <h2 className="text-xl font-bold mb-4">AI Trading System Status</h2>
           <div className="grid grid-cols-1 gap-6">
             {/* AI System Status Card */}
-            <AISystemStatusCard query={aiStatusQuery} />
+            <AISystemStatusCard query={aiStatusQuery} paperTradingQuery={aiPaperTradingQuery} setUserMutation={setAiPaperTradingUserMutation} />
           </div>
         </div>
         
@@ -135,11 +151,12 @@ interface ApiStatusCardProps {
   };
 }
 
-function AISystemStatusCard({ query }: { query: any }) {
+function AISystemStatusCard({ query, paperTradingQuery, setUserMutation }: { query: any, paperTradingQuery: any, setUserMutation: any }) {
   const { data, isLoading, error, refetch } = query;
+  const { data: paperTradingData, isLoading: isPaperTradingLoading, error: paperTradingError, refetch: refetchPaperTrading } = paperTradingQuery;
   const { toast } = useToast();
   const [activeMode, setActiveMode] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState<{open: boolean, action: 'start' | 'stop', mode: boolean}>({
+  const [confirmDialog, setConfirmDialog] = useState<{open: boolean, action: 'start' | 'stop' | 'set-user', mode: boolean}>({
     open: false, 
     action: 'start',
     mode: false
@@ -218,11 +235,38 @@ function AISystemStatusCard({ query }: { query: any }) {
     });
   };
   
+  // Set Paper Trading User Mutation
+  const handleSetPaperTradingUser = () => {
+    setConfirmDialog({
+      open: true,
+      action: 'set-user',
+      mode: false
+    });
+  };
+  
   const handleConfirmAction = () => {
     if (confirmDialog.action === 'start') {
       startSystemMutation.mutate(confirmDialog.mode);
-    } else {
+    } else if (confirmDialog.action === 'stop') {
       stopSystemMutation.mutate();
+    } else if (confirmDialog.action === 'set-user') {
+      setUserMutation.mutate(undefined, {
+        onSuccess: () => {
+          toast({
+            title: "Paper Trading User Set",
+            description: "AI system is now configured to use the Paper Trading account.",
+            variant: "default",
+          });
+          refetchPaperTrading();
+        },
+        onError: (error: any) => {
+          toast({
+            title: "Failed to Set Paper Trading User",
+            description: error instanceof Error ? error.message : "Unknown error occurred",
+            variant: "destructive",
+          });
+        }
+      });
     }
     setConfirmDialog({...confirmDialog, open: false});
   };
@@ -421,6 +465,84 @@ function AISystemStatusCard({ query }: { query: any }) {
         </Button>
       </CardFooter>
       
+      {/* Paper Trading Integration */}
+      <div className="mt-4 border-t border-gray-700 pt-4">
+        <h3 className="text-lg font-medium text-gray-300 mb-3">AI Paper Trading Integration</h3>
+        
+        <div className="bg-[#072252] rounded-md p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <Activity className="h-4 w-4 text-[#00aaff]" />
+                <span className="text-sm font-medium text-gray-300">
+                  Paper Trading Connection
+                </span>
+              </div>
+              <p className="text-xs text-gray-400">
+                The AI system can use Paper Trading to test strategies without risking real funds
+              </p>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white"
+              onClick={handleSetPaperTradingUser}
+              disabled={setUserMutation.isPending}
+            >
+              {setUserMutation.isPending ? (
+                <>
+                  <PlayCircle className="h-4 w-4 mr-2 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="h-4 w-4 mr-2" />
+                  Connect Account
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+        
+        {/* Paper Trading Stats */}
+        {paperTradingData && !isPaperTradingLoading && !paperTradingError && (
+          <div className="bg-[#072252] rounded-md p-4">
+            <h4 className="text-sm font-medium text-gray-300 mb-2">
+              AI Paper Trading Performance
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-[#051838] p-3 rounded-md">
+                <div className="text-[#00aaff] text-xs mb-1">Total Trades</div>
+                <div className="text-xl font-medium">
+                  {paperTradingData.tradeCount || 0}
+                </div>
+              </div>
+              <div className="bg-[#051838] p-3 rounded-md">
+                <div className="text-[#00aaff] text-xs mb-1">PnL</div>
+                <div className={`text-xl font-medium ${(paperTradingData.totalPnl || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {(paperTradingData.totalPnl || 0).toFixed(2)}%
+                </div>
+              </div>
+              <div className="bg-[#051838] p-3 rounded-md">
+                <div className="text-[#00aaff] text-xs mb-1">Win Rate</div>
+                <div className="text-xl font-medium">
+                  {paperTradingData.winRate 
+                    ? `${(paperTradingData.winRate * 100).toFixed(1)}%` 
+                    : 'N/A'}
+                </div>
+              </div>
+              <div className="bg-[#051838] p-3 rounded-md">
+                <div className="text-[#00aaff] text-xs mb-1">Open Positions</div>
+                <div className="text-xl font-medium">
+                  {paperTradingData.openPositionsCount || 0}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
       {/* Confirmation Dialog */}
       <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog({...confirmDialog, open})}>
         <DialogContent>
@@ -428,14 +550,18 @@ function AISystemStatusCard({ query }: { query: any }) {
             <DialogTitle>
               {confirmDialog.action === 'start' 
                 ? `Start AI System in ${confirmDialog.mode ? 'ACTIVE' : 'PASSIVE'} Mode?` 
-                : 'Stop AI System?'}
+                : confirmDialog.action === 'stop'
+                  ? 'Stop AI System?'
+                  : 'Connect Paper Trading Account?'}
             </DialogTitle>
             <DialogDescription>
               {confirmDialog.action === 'start' 
                 ? (confirmDialog.mode 
                     ? 'In ACTIVE mode, the system will execute real trades automatically based on AI recommendations.' 
                     : 'In PASSIVE mode, the system will monitor the market but will not execute trades automatically.')
-                : 'This will stop all AI trading system operations including market monitoring.'}
+                : confirmDialog.action === 'stop'
+                  ? 'This will stop all AI trading system operations including market monitoring.'
+                  : 'This will associate your paper trading account with the AI system, allowing the AI to make paper trades on your behalf.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -443,12 +569,14 @@ function AISystemStatusCard({ query }: { query: any }) {
               Cancel
             </Button>
             <Button 
-              variant={confirmDialog.action === 'start' ? "default" : "destructive"} 
+              variant={confirmDialog.action === 'start' ? "default" : confirmDialog.action === 'stop' ? "destructive" : "default"}
               onClick={handleConfirmAction}
             >
               {confirmDialog.action === 'start' 
                 ? `Start ${confirmDialog.mode ? 'ACTIVE' : 'PASSIVE'} Mode` 
-                : 'Stop System'}
+                : confirmDialog.action === 'stop'
+                  ? 'Stop System'
+                  : 'Connect Account'}
             </Button>
           </DialogFooter>
         </DialogContent>
