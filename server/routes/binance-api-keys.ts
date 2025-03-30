@@ -216,11 +216,17 @@ router.get('/full', ensureAuthenticated, async (req: Request, res: Response) => 
     
     console.log(`Returning cleaned Binance API keys - API Key valid: ${isApiKeyValid}, Secret Key valid: ${isSecretKeyValid}, API Key length: ${cleanApiKey.length}, Secret Key length: ${cleanSecretKey.length}`);
     
-    // השב את המפתחות המנוקים
+    // הדפס את תוכן המפתחות ללא הסתרה לצורך בדיקת אינטגריטי
+    if (cleanApiKey && cleanSecretKey) {
+      console.log(`API Key first 4 chars: ${cleanApiKey.substring(0, 4)}, last 4 chars: ${cleanApiKey.substring(cleanApiKey.length - 4)}`);
+      console.log(`Secret Key first 4 chars: ${cleanSecretKey.substring(0, 4)}, last 4 chars: ${cleanSecretKey.substring(cleanSecretKey.length - 4)}`);
+    }
+    
+    // השב את המפתחות המנוקים המלאים
     return res.status(200).json({
       success: true,
-      apiKey: cleanApiKey,
-      secretKey: cleanSecretKey,
+      apiKey: cleanApiKey,  // שליחת המפתח המלא
+      secretKey: cleanSecretKey,  // שליחת המפתח המלא
       allowedIp: cleanAllowedIp,
       testnet: false, // כרגע תמיד משתמשים ב-mainnet ולא ב-testnet
       isValid: isApiKeyValid && isSecretKeyValid // הוסף שדה לבדיקה אם המפתחות תקינים

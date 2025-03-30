@@ -667,26 +667,36 @@ export class MemStorage implements IStorage {
     // ניהול תקין של מקרי קצה:
     // 1. המרת מחרוזות ריקות או מחרוזות עם רווחים בלבד ל-null לעקביות
     // 2. תמיד נשמור את המחרוזת המנוקה במלואה, ללא קיצורים או שינויים
-    const sanitizedBinanceApiKey = !cleanedApiKey || cleanedApiKey === "" ? null : cleanedApiKey;
-    const sanitizedBinanceSecretKey = !cleanedSecretKey || cleanedSecretKey === "" ? null : cleanedSecretKey;
-    const sanitizedBinanceAllowedIp = !cleanedAllowedIp || cleanedAllowedIp === "" ? null : cleanedAllowedIp;
+    const sanitizedBinanceApiKey = (!cleanedApiKey || cleanedApiKey === "") ? null : cleanedApiKey;
+    const sanitizedBinanceSecretKey = (!cleanedSecretKey || cleanedSecretKey === "") ? null : cleanedSecretKey;
+    const sanitizedBinanceAllowedIp = (!cleanedAllowedIp || cleanedAllowedIp === "") ? null : cleanedAllowedIp;
     
     console.log(`Final sanitized API key: ${sanitizedBinanceApiKey ? (typeof sanitizedBinanceApiKey) : 'null'}, length: ${sanitizedBinanceApiKey ? sanitizedBinanceApiKey.length : 0}`);
     console.log(`Final sanitized Secret key: ${sanitizedBinanceSecretKey ? (typeof sanitizedBinanceSecretKey) : 'null'}, length: ${sanitizedBinanceSecretKey ? sanitizedBinanceSecretKey.length : 0}`);
     
-    // Update the API keys
+    // Update the API keys - Fix for the bug where keys are not properly saved
     const updatedUser: User = {
-      ...user,
-      // Only update if value is not undefined (explicitly provided)
-      // This preserves previous values if a field wasn't specified
-      binanceApiKey: sanitizedBinanceApiKey !== undefined ? sanitizedBinanceApiKey : user.binanceApiKey,
-      binanceSecretKey: sanitizedBinanceSecretKey !== undefined ? sanitizedBinanceSecretKey : user.binanceSecretKey,
-      binanceAllowedIp: sanitizedBinanceAllowedIp !== undefined ? sanitizedBinanceAllowedIp : user.binanceAllowedIp
+      ...user
     };
+    
+    // Only update the keys if they are provided and not undefined
+    if (sanitizedBinanceApiKey !== undefined) {
+      updatedUser.binanceApiKey = sanitizedBinanceApiKey;
+    }
+    
+    if (sanitizedBinanceSecretKey !== undefined) {
+      updatedUser.binanceSecretKey = sanitizedBinanceSecretKey;
+    }
+    
+    if (sanitizedBinanceAllowedIp !== undefined) {
+      updatedUser.binanceAllowedIp = sanitizedBinanceAllowedIp;
+    }
     
     console.log("updateUserBinanceApiKeys - User values after update:", {
       hasBinanceApiKey: !!updatedUser.binanceApiKey,
-      hasBinanceSecretKey: !!updatedUser.binanceSecretKey
+      binanceApiKeyLength: updatedUser.binanceApiKey ? updatedUser.binanceApiKey.length : 0,
+      hasBinanceSecretKey: !!updatedUser.binanceSecretKey,
+      binanceSecretKeyLength: updatedUser.binanceSecretKey ? updatedUser.binanceSecretKey.length : 0
     });
     
     // Save the updated user

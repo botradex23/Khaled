@@ -107,6 +107,34 @@ export function useBinanceApiKeys() {
       setIsSaving(true);
       console.log("Saving API keys to server...");
       
+      // Clean up API key and Secret key by removing whitespace
+      const cleanedApiKey = apiKey.replace(/\s+/g, '').trim();
+      const cleanedSecretKey = secretKey.replace(/\s+/g, '').trim();
+      const cleanedAllowedIp = allowedIp ? allowedIp.replace(/\s+/g, '').trim() : '';
+      
+      // Basic validation for key length - Binance API keys are usually 64 characters
+      if (cleanedApiKey.length < 10) {
+        toast({
+          title: 'Invalid API Key',
+          description: 'API key must be at least 10 characters long',
+          variant: 'destructive',
+        });
+        setIsSaving(false);
+        return false;
+      }
+      
+      if (cleanedSecretKey.length < 10) {
+        toast({
+          title: 'Invalid Secret Key',
+          description: 'Secret key must be at least 10 characters long',
+          variant: 'destructive',
+        });
+        setIsSaving(false);
+        return false;
+      }
+      
+      console.log(`Sending API keys to server - API Key length: ${cleanedApiKey.length}, Secret Key length: ${cleanedSecretKey.length}`);
+      
       const response = await fetch('/api/binance/api-keys', {
         method: 'POST',
         headers: {
@@ -114,9 +142,9 @@ export function useBinanceApiKeys() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          apiKey,
-          secretKey,
-          allowedIp,
+          apiKey: cleanedApiKey,
+          secretKey: cleanedSecretKey,
+          allowedIp: cleanedAllowedIp || '185.199.228.220',
           testnet,
         }),
       });
@@ -128,6 +156,10 @@ export function useBinanceApiKeys() {
         throw new Error(data.message || 'Failed to save API keys');
       }
       
+      // Update the local state with the cleaned values
+      setApiKey(cleanedApiKey);
+      setSecretKey(cleanedSecretKey);
+      setAllowedIp(cleanedAllowedIp || '185.199.228.220');
       setIsConfigured(true);
       
       toast({
