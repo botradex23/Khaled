@@ -77,7 +77,8 @@ export const SaasModel = {
 
 // Mock connection status for MongoDB
 export const mongooseConnectionStatus = {
-  readyState: 0 // 0: disconnected, 1: connected
+  readyState: 0, // 0: disconnected, 1: connected
+  isSimulated: true // Flag to indicate if we're using a real or simulated MongoDB connection
 };
 
 /**

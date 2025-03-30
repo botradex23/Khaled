@@ -39,20 +39,21 @@ const checkPostgres = async () => {
 const checkMongoDB = async () => {
   try {
     // Test MongoDB connection using the test function
-    const { connected, error } = await testMongoDBConnection();
+    const result = await testMongoDBConnection();
     
-    // Flag indicating this is a simulated MongoDB (not a real connection)
-    const isSimulated = true;
+    // Extract connection details from the result
+    const { connected, isSimulated, description, error } = result;
     
     return {
       connected,
       status: connected ? 'connected' : 'disconnected',
-      description: connected 
+      description: description || (connected 
         ? (isSimulated
             ? 'MongoDB simulated connection is active (data stored in memory only)' 
             : 'MongoDB connection is active and responding to queries')
-        : `MongoDB connection failed: ${error || 'Unknown reason'}`,
-      isSimulated: isSimulated // Add flag to indicate simulation status
+        : `MongoDB connection failed: ${error || 'Unknown reason'}`),
+      isSimulated, // Add flag to indicate simulation status
+      error
     };
   } catch (error) {
     console.error('Error checking MongoDB:', error);

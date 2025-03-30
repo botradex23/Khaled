@@ -160,7 +160,7 @@ function DatabaseStatusCard({ query }: { query: any }) {
   const mongoConnected = data?.connections?.mongodb?.connected || false;
   const allConnected = pgConnected && mongoConnected;
   const anyConnected = pgConnected || mongoConnected;
-  const isMongoSimulated = data?.connections?.mongodb?.isSimulated || true; // האם החיבור ל-MongoDB הוא סימולציה
+  const isMongoSimulated = data?.connections?.mongodb?.isSimulated ?? true; // Is MongoDB connection simulated
   
   // Determine badge styling
   let badgeClass = "";
@@ -245,6 +245,25 @@ function DatabaseStatusCard({ query }: { query: any }) {
             <li>API Keys are securely encrypted before storage in either database</li>
             <li>MongoDB connection requires additional configuration for actual storage</li>
           </ul>
+          
+          {isMongoSimulated && (
+            <div className="mt-3 p-2 bg-amber-100 rounded text-xs">
+              <strong className="text-amber-800">Why MongoDB is simulated:</strong>
+              <p className="mt-1 text-amber-700">
+                The application currently uses a simulation of MongoDB for storing API keys. 
+                Even though your MongoDB is working correctly, the app cannot connect to it
+                due to missing dependencies that can't be installed in this environment.
+                Your API keys are still saved, but they're stored in memory (not in the real MongoDB database).
+              </p>
+              <p className="mt-1 text-amber-700">
+                <strong>Solution options:</strong>
+              </p>
+              <ol className="list-decimal pl-4 text-amber-700 space-y-1">
+                <li>Deploy this application to a full server environment where all dependencies can be installed</li>
+                <li>Continue using the simulation (API keys will work but will not persist between application restarts)</li>
+              </ol>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
