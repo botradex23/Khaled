@@ -1592,4 +1592,21 @@ export class MemStorage implements IStorage {
   }
 }
 
+// Import MongoDB connection test
+import { testMongoDBConnection } from './storage/mongodb';
+
+// Initialize the appropriate storage implementation
+let useMongoDBStorage = false;
+
+// Check if MongoDB connection is available
+(async () => {
+  useMongoDBStorage = await testMongoDBConnection();
+  if (useMongoDBStorage) {
+    console.log('MongoDB integration is ready. Pending package installation to use MongoDB.');
+  } else {
+    console.log('Using MemStorage (in-memory storage). Data will be lost on restart.');
+  }
+})();
+
+// For now, use MemStorage
 export const storage = new MemStorage();

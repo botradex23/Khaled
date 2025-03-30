@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { botSchema, pricingPlanSchema, insertUserSchema } from "@shared/schema";
+import { insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import axios from "axios";
 import okxRouter from "./api/okx";
@@ -19,6 +19,7 @@ import updateApiKeysRouter from "./routes/update-api-keys";
 import binanceRouter from "./routes/binance";
 import binanceApiKeysRouter from "./routes/binance-api-keys";
 import paperTradingRouter from "./routes/paper-trading";
+import databaseStatusRoutes from "./routes/database-status";
 
 // Helper function to mask sensitive data (like API keys)
 function maskSecret(secret: string): string {
@@ -80,6 +81,13 @@ const createTestUserWithKeys = async (req: Request, res: Response) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register database status routes
+  import('./routes/database-status').then(databaseStatusRouter => {
+    app.use('/api/database', databaseStatusRouter.default);
+    console.log('Database status routes registered');
+  }).catch(err => {
+    console.error('Failed to register database status routes:', err);
+  });
   // Add a test endpoint to check API keys for a user
   app.get('/api/test/user-api-keys', async (req: Request, res: Response) => {
     if (!req.user) {
@@ -256,6 +264,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Paper Trading routes
   app.use("/api/paper-trading", paperTradingRouter);
+  
+  // Database status routes
+  app.use("/api/database", databaseStatusRoutes);
   
   // Direct API Key validation endpoint - No authentication required for validating API keys
   app.post("/api/validate-api-keys", async (req, res) => {
@@ -504,8 +515,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const userId = req.user.id;
     
     try {
-      // Parse and validate the input using our schema
-      const botData = botSchema.parse({
+      // Validate the input data
+      const botDataSchema = z.object({
+        name: z.string().min(1, "Bot name is required"),
+        description: z.string().optional(),
+        type: z.string().min(1, "Bot type is required"),
+        status: z.string().default("inactive"),
+        parameters: z.string().optional(),
+        isRunning: z.boolean().default(false),
+        userId: z.number()
+      });
+      
+      const botData = botDataSchema.parse({
         ...req.body,
         userId // Ensure the bot is assigned to the current user
       });
