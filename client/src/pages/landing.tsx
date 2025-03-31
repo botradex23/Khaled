@@ -114,9 +114,9 @@ export default function Landing() {
                   size="lg"
                   variant="outline"
                   onClick={() => navigate("/learn")}
-                  className="text-lg h-12"
+                  className="text-lg h-12 bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
                 >
-                  Learn More
+                  Learn More About the System
                 </Button>
               </div>
             </div>
@@ -210,6 +210,62 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Learn About System Section */}
+      <section className="py-20 px-6 bg-blue-900/10">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="md:w-1/2">
+              <h2 className="text-3xl font-bold tracking-tight mb-4">
+                New to Our Platform? Learn How It Works
+              </h2>
+              <p className="text-xl text-muted-foreground mb-6">
+                Before you dive in, explore our comprehensive guide to understand how our
+                AI-powered trading system can help you maximize your crypto investments.
+              </p>
+              <Button
+                size="lg"
+                onClick={() => navigate("/learn")}
+                className="text-lg h-12 bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
+              >
+                Explore System Features
+              </Button>
+            </div>
+            <div className="md:w-1/2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/10 p-4 rounded-lg border border-blue-200/20">
+                  <Bot className="h-8 w-8 text-blue-500 mb-2" />
+                  <h3 className="font-semibold mb-1">AI Grid Bot</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Automated trading across price ranges optimized by artificial intelligence.
+                  </p>
+                </div>
+                <div className="bg-white/10 p-4 rounded-lg border border-blue-200/20">
+                  <TrendingUp className="h-8 w-8 text-blue-500 mb-2" />
+                  <h3 className="font-semibold mb-1">Market Analysis</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Real-time data from multiple exchanges with advanced filters.
+                  </p>
+                </div>
+                <div className="bg-white/10 p-4 rounded-lg border border-blue-200/20">
+                  <Brain className="h-8 w-8 text-blue-500 mb-2" />
+                  <h3 className="font-semibold mb-1">Smart Strategies</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Pre-configured trading strategies based on market conditions.
+                  </p>
+                </div>
+                <div className="bg-white/10 p-4 rounded-lg border border-blue-200/20">
+                  <Shield className="h-8 w-8 text-blue-500 mb-2" />
+                  <h3 className="font-semibold mb-1">Risk Management</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Built-in protections with customizable stop-loss settings.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 px-6 bg-primary/5">
         <div className="max-w-4xl mx-auto text-center">
@@ -235,6 +291,14 @@ export default function Landing() {
               className="text-lg h-12"
             >
               Sign In
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => navigate("/learn")}
+              className="text-lg h-12 bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
+            >
+              Learn More
             </Button>
           </div>
         </div>
