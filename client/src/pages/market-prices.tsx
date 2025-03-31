@@ -53,7 +53,21 @@ export default function MarketPrices() {
 
   // Fetch market data
   const { data, isLoading, error } = useQuery<MarketData[]>({
-    queryKey: ['/api/okx/markets'],
+    queryKey: ['/api/markets/binance/prices'],
+    select: (data) => {
+      // Transform the Binance response format to match our MarketData interface
+      if (data && data.data) {
+        return data.data.map((item: any) => ({
+          symbol: item.symbol,
+          price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
+          change24h: item.priceChangePercent || 0,
+          volume24h: item.volume || 0,
+          high24h: item.highPrice || item.price * 1.01, // Fallback if not available
+          low24h: item.lowPrice || item.price * 0.99   // Fallback if not available
+        }));
+      }
+      return [];
+    },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
