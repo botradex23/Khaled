@@ -61,9 +61,23 @@ router.get('/', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     log(`Error fetching all Binance markets: ${error.message}`, 'api');
+    
+    // Check for geo-restriction error (specific error message from the service)
+    if (error.message.includes('restricted in your region')) {
+      return res.status(403).json({
+        success: false,
+        error: 'geo_restricted',
+        message: 'Binance API access is not available in your region',
+        details: error.message
+      });
+    }
+    
+    // Other API errors
     res.status(500).json({
       success: false,
-      message: `Error fetching Binance markets: ${error.message}`
+      error: 'api_error',
+      message: `Error fetching Binance markets data`,
+      details: error.message
     });
   }
 });

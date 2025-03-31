@@ -113,6 +113,39 @@ export class OkxService {
    */
   async getTicker(symbol: string) {
     console.log(`OKX Service getTicker called (deprecated) for ${symbol} - using simulated data`);
+    
+    // Check if this is a valid symbol that would exist on the exchange
+    const validSymbols = [
+      'BTC-USDT', 'ETH-USDT', 'SOL-USDT', 'XRP-USDT', 'ADA-USDT', 
+      'DOGE-USDT', 'BNB-USDT', 'DOT-USDT', 'AVAX-USDT', 'SHIB-USDT',
+      'LINK-USDT', 'LTC-USDT', 'ATOM-USDT', 'UNI-USDT', 'MATIC-USDT',
+      'XLM-USDT', 'TRX-USDT', 'BCH-USDT', 'NEAR-USDT', 'ICP-USDT',
+      'XMR-USDT', 'APT-USDT', 'FIL-USDT', 'HBAR-USDT', 'VET-USDT',
+      'OP-USDT', 'EGLD-USDT', 'INJ-USDT', 'ARB-USDT', 'SAND-USDT',
+      'STX-USDT', 'AAVE-USDT', 'ETC-USDT', 'XTZ-USDT', 'ALGO-USDT'
+    ];
+    
+    // Also check common base currencies with other quote currencies
+    const validBases = ['BTC', 'ETH', 'SOL'];
+    const validQuotes = ['USDT', 'USDC', 'BTC', 'ETH'];
+    
+    // Check if symbol matches any valid pattern
+    const isValid = validSymbols.includes(symbol) || 
+      validBases.some(base => 
+        validQuotes.some(quote => 
+          symbol === `${base}-${quote}` && base !== quote
+        )
+      );
+    
+    if (!isValid) {
+      console.log(`Invalid symbol requested: ${symbol} - returning error`);
+      return {
+        code: '51001',
+        msg: 'Instrument ID does not exist',
+        data: []
+      };
+    }
+    
     return {
       code: '0',
       data: [{
@@ -142,9 +175,19 @@ export class OkxService {
     const tickers = [
       { instId: 'BTC-USDT', last: '69000.5', askPx: '69001.2', bidPx: '68999.8', vol24h: '86000000', open24h: '68000.1', high24h: '69500.0', low24h: '67800.0' },
       { instId: 'ETH-USDT', last: '3800.2', askPx: '3801.5', bidPx: '3799.6', vol24h: '45000000', open24h: '3750.0', high24h: '3850.0', low24h: '3700.0' },
-      { instId: 'SOL-USDT', last: '175.5', askPx: '175.8', bidPx: '175.3', vol24h: '12000000', open24h: '170.0', high24h: '178.0', low24h: '168.0' }
+      { instId: 'SOL-USDT', last: '175.5', askPx: '175.8', bidPx: '175.3', vol24h: '12000000', open24h: '170.0', high24h: '178.0', low24h: '168.0' },
+      { instId: 'XRP-USDT', last: '0.6220', askPx: '0.6225', bidPx: '0.6215', vol24h: '8500000', open24h: '0.6100', high24h: '0.6300', low24h: '0.6050' },
+      { instId: 'ADA-USDT', last: '0.4520', askPx: '0.4525', bidPx: '0.4515', vol24h: '6200000', open24h: '0.4450', high24h: '0.4550', low24h: '0.4400' },
+      { instId: 'DOGE-USDT', last: '0.1680', askPx: '0.1685', bidPx: '0.1675', vol24h: '4800000', open24h: '0.1650', high24h: '0.1700', low24h: '0.1630' },
+      { instId: 'DOT-USDT', last: '7.2500', askPx: '7.2600', bidPx: '7.2400', vol24h: '3600000', open24h: '7.1800', high24h: '7.3000', low24h: '7.1500' },
+      { instId: 'LINK-USDT', last: '16.3500', askPx: '16.3700', bidPx: '16.3300', vol24h: '2800000', open24h: '16.2000', high24h: '16.4000', low24h: '16.1500' },
+      { instId: 'AVAX-USDT', last: '35.7500', askPx: '35.8000', bidPx: '35.7000', vol24h: '3200000', open24h: '35.5000', high24h: '36.0000', low24h: '35.3000' },
+      { instId: 'SHIB-USDT', last: '0.00002670', askPx: '0.00002675', bidPx: '0.00002665', vol24h: '3900000', open24h: '0.00002650', high24h: '0.00002700', low24h: '0.00002630' }
     ];
-    return tickers;
+    return {
+      code: '0',
+      data: tickers
+    };
   }
   
   /**
@@ -262,6 +305,36 @@ export class OkxService {
     // Return simulated ticker data
     if (endpoint.includes('/market/ticker')) {
       const symbol = params.instId || endpoint.split('instId=')[1]?.split('&')[0] || 'BTC-USDT';
+      
+      // Check if this is a valid symbol
+      const validSymbols = [
+        'BTC-USDT', 'ETH-USDT', 'SOL-USDT', 'XRP-USDT', 'ADA-USDT', 
+        'DOGE-USDT', 'BNB-USDT', 'DOT-USDT', 'AVAX-USDT', 'SHIB-USDT',
+        'LINK-USDT', 'LTC-USDT', 'ATOM-USDT', 'UNI-USDT', 'MATIC-USDT',
+        'XLM-USDT', 'TRX-USDT', 'BCH-USDT', 'NEAR-USDT', 'ICP-USDT'
+      ];
+      
+      // Also check common base currencies with other quote currencies
+      const validBases = ['BTC', 'ETH', 'SOL'];
+      const validQuotes = ['USDT', 'USDC', 'BTC', 'ETH'];
+      
+      // Check if symbol matches any valid pattern
+      const isValid = validSymbols.includes(symbol) || 
+        validBases.some(base => 
+          validQuotes.some(quote => 
+            symbol === `${base}-${quote}` && base !== quote
+          )
+        );
+      
+      if (!isValid) {
+        console.log(`Invalid symbol requested in public request: ${symbol} - returning error`);
+        return {
+          code: '51001',
+          msg: 'Instrument ID does not exist',
+          data: []
+        } as unknown as T;
+      }
+      
       return {
         code: '0',
         data: [{
@@ -287,7 +360,14 @@ export class OkxService {
       const tickers = [
         { instId: 'BTC-USDT', last: '69000.5', askPx: '69001.2', bidPx: '68999.8', vol24h: '86000000', open24h: '68000.1', high24h: '69500.0', low24h: '67800.0' },
         { instId: 'ETH-USDT', last: '3800.2', askPx: '3801.5', bidPx: '3799.6', vol24h: '45000000', open24h: '3750.0', high24h: '3850.0', low24h: '3700.0' },
-        { instId: 'SOL-USDT', last: '175.5', askPx: '175.8', bidPx: '175.3', vol24h: '12000000', open24h: '170.0', high24h: '178.0', low24h: '168.0' }
+        { instId: 'SOL-USDT', last: '175.5', askPx: '175.8', bidPx: '175.3', vol24h: '12000000', open24h: '170.0', high24h: '178.0', low24h: '168.0' },
+        { instId: 'XRP-USDT', last: '0.6220', askPx: '0.6225', bidPx: '0.6215', vol24h: '8500000', open24h: '0.6100', high24h: '0.6300', low24h: '0.6050' },
+        { instId: 'ADA-USDT', last: '0.4520', askPx: '0.4525', bidPx: '0.4515', vol24h: '6200000', open24h: '0.4450', high24h: '0.4550', low24h: '0.4400' },
+        { instId: 'DOGE-USDT', last: '0.1680', askPx: '0.1685', bidPx: '0.1675', vol24h: '4800000', open24h: '0.1650', high24h: '0.1700', low24h: '0.1630' },
+        { instId: 'DOT-USDT', last: '7.2500', askPx: '7.2600', bidPx: '7.2400', vol24h: '3600000', open24h: '7.1800', high24h: '7.3000', low24h: '7.1500' },
+        { instId: 'LINK-USDT', last: '16.3500', askPx: '16.3700', bidPx: '16.3300', vol24h: '2800000', open24h: '16.2000', high24h: '16.4000', low24h: '16.1500' },
+        { instId: 'AVAX-USDT', last: '35.7500', askPx: '35.8000', bidPx: '35.7000', vol24h: '3200000', open24h: '35.5000', high24h: '36.0000', low24h: '35.3000' },
+        { instId: 'SHIB-USDT', last: '0.00002670', askPx: '0.00002675', bidPx: '0.00002665', vol24h: '3900000', open24h: '0.00002650', high24h: '0.00002700', low24h: '0.00002630' }
       ];
       return {
         code: '0',

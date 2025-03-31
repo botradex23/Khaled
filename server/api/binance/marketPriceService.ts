@@ -7,7 +7,7 @@ const BINANCE_BASE_URL = 'https://api.binance.com';
 const BINANCE_TEST_URL = 'https://testnet.binance.vision';
 
 // Proxy configuration for bypassing geo-restrictions - using the proxy that works with WebSocket
-const USE_PROXY = true; // Set to true to use proxy
+const USE_PROXY = false; // Set to false to disable proxy until HttpsProxyAgent is properly installed
 const PROXY_USERNAME = "ahjqspco";
 const PROXY_PASSWORD = "dzx3r1prpz9k";
 const PROXY_IP = process.env.PROXY_IP || '185.199.228.220'; // Working proxy IP from tests
@@ -15,31 +15,8 @@ const PROXY_PORT = process.env.PROXY_PORT || '7300';       // Working proxy port
 
 // Create axios instance with proxy if needed
 const createAxiosInstance = () => {
-  if (USE_PROXY && PROXY_IP) {
-    console.log(`Using proxy: ${PROXY_IP}:${PROXY_PORT} for Binance API requests`);
-    
-    // Import HttpsProxyAgent here to use for axios
-    const { HttpsProxyAgent } = require('https-proxy-agent');
-    
-    // Configure proxy URL
-    const proxyUrl = `http://${PROXY_USERNAME}:${PROXY_PASSWORD}@${PROXY_IP}:${PROXY_PORT}`;
-    const httpsAgent = new HttpsProxyAgent(proxyUrl);
-    
-    // Create axios instance with the agent
-    return axios.create({
-      httpsAgent,
-      timeout: 10000, // 10 seconds timeout
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept': 'application/json',
-        'Origin': 'https://www.binance.com',
-        'Referer': 'https://www.binance.com/'
-      }
-    });
-  }
-  
-  // Return regular axios if proxy is not needed
+  // Use regular axios since proxy is temporarily disabled
+  console.log('Using direct connection to Binance API (proxy disabled)');
   return axios;
 };
 
@@ -305,32 +282,47 @@ export class BinanceMarketPriceService extends EventEmitter {
    */
   async getSymbolPrice(symbol: string): Promise<BinanceTickerPrice | null> {
     try {
-      // Convert symbol format if needed (e.g., "BTC-USDT" -> "BTCUSDT")
-      const formattedSymbol = symbol.replace('-', '');
+      // Check if we have this in the live prices cache first (most up-to-date)
+      const formattedSymbol = symbol.replace('-', '').toUpperCase();
+      
+      if (this.livePrices[formattedSymbol]) {
+        console.log(`Using WebSocket cached price for ${formattedSymbol}: ${this.livePrices[formattedSymbol]}`);
+        return {
+          symbol: formattedSymbol,
+          price: this.livePrices[formattedSymbol].toString()
+        };
+      }
       
       // השתמש ב-Axios עם פרוקסי כשצריך
       const axiosInstance = createAxiosInstance();
-      const response = await axiosInstance.get(
-        `${this.baseUrl}/api/v3/ticker/price`, 
-        { params: { symbol: formattedSymbol } }
-      );
       
-      if (response.status === 200 && response.data?.symbol) {
-        console.log(`Successfully fetched price for ${symbol} from Binance: ${response.data.price}`);
-        return response.data;
-      } else {
-        console.error('Unexpected response format from Binance:', response.data);
-        throw new Error('Invalid response format from Binance API');
+      try {
+        console.log(`Trying to fetch price for ${formattedSymbol} from Binance API...`);
+        const response = await axiosInstance.get(
+          `${this.baseUrl}/api/v3/ticker/price`, 
+          { params: { symbol: formattedSymbol } }
+        );
+        
+        if (response.status === 200 && response.data?.symbol) {
+          console.log(`Successfully fetched price for ${formattedSymbol} from Binance: ${response.data.price}`);
+          return response.data;
+        } else {
+          console.error('Unexpected response format from Binance:', response.data);
+          return null;
+        }
+      } catch (apiError: any) {
+        console.error(`Error fetching price for ${formattedSymbol} from Binance:`, apiError.message);
+        
+        if (apiError.response?.status === 451) {
+          console.log(`Binance API access restricted for ${formattedSymbol} due to geo-restriction (451)`);
+          return null;
+        }
+        
+        return null;
       }
     } catch (error: any) {
-      console.error(`Error fetching price for ${symbol} from Binance:`, error.message);
-      
-      if (error.response?.status === 451) {
-        console.log(`Binance API access restricted for ${symbol} due to geo-restriction (451)`);
-        throw new Error(`Binance API access restricted for ${symbol} in your region`);
-      }
-      
-      throw error;
+      console.error(`Unexpected error in getSymbolPrice for ${symbol}:`, error.message);
+      return null;
     }
   }
   
