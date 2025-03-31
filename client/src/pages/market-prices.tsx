@@ -51,7 +51,7 @@ export default function MarketPrices() {
     refetchInterval: 60000,
   });
 
-  // Fetch market data
+  // Fetch market data from our central API endpoint
   const { data, isLoading, error } = useQuery<{
     success: boolean;
     source: string;
@@ -59,7 +59,7 @@ export default function MarketPrices() {
     count: number;
     data: any[];
   }>({
-    queryKey: ['/api/markets/binance/prices'],
+    queryKey: ['/api/market/prices'],
     select: (response) => {
       // Transform the Binance response format to match our MarketData interface
       if (response?.success && Array.isArray(response.data)) {

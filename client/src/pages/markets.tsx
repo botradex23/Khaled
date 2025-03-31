@@ -142,9 +142,9 @@ export default function Markets() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCoin, setSelectedCoin] = useState<string | null>(null);
   
-  // Fetch market data from Binance
+  // Fetch market data from our central market API
   const { data: marketsData, isLoading, error, refetch } = useQuery<MarketResponse>({
-    queryKey: ["/api/markets/binance/prices"],
+    queryKey: ["/api/market/prices"],
     refetchInterval: 30000 // refresh every 30 seconds
   });
   

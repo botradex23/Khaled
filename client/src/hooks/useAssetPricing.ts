@@ -145,8 +145,8 @@ export function calculateTotalValue(
 export function useAssetPricing(currencies?: string[]) {
   // Build the query URL with the optional currencies parameter
   const queryUrl = currencies && currencies.length 
-    ? `/api/markets/binance/prices?symbols=${currencies.join(',')}`
-    : '/api/markets/binance/prices';
+    ? `/api/market/prices?symbols=${currencies.join(',')}`
+    : '/api/market/prices';
   
   // Fetch cryptocurrency prices
   const { 
