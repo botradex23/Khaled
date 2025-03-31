@@ -83,6 +83,16 @@ export default function MarketPrices() {
     refetchInterval: 30000, // Refresh every 30 seconds
     refetchOnWindowFocus: true, // Refresh when window regains focus
   });
+  
+  // console output for debugging
+  React.useEffect(() => {
+    if (tickersData) {
+      console.log('Tickers data sample:', tickersData.slice(0, 3));
+    }
+    if (marketData24hr) {
+      console.log('24hr data sample:', marketData24hr.slice(0, 3));
+    }
+  }, [tickersData, marketData24hr]);
 
   // Handle sorting
   const requestSort = (key: keyof MarketData) => {
