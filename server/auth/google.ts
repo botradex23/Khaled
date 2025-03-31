@@ -21,11 +21,15 @@ export const setupGoogleAuth = () => {
   console.log(`Client ID: ${process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0, 10) + '...' : 'not set'}`);
   console.log(`Client Secret: ${process.env.GOOGLE_CLIENT_SECRET ? 'set (hidden)' : 'not set'}`);
   console.log('Callback URL: https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback');
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    console.warn('Google OAuth credentials not configured - auth will be disabled');
+    return;
+  }
   passport.use(
     new GoogleStrategy(
       {
-        clientID: process.env.GOOGLE_CLIENT_ID || '',
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback',
         scope: ['profile', 'email']
         // proxy option removed due to TypeScript compatibility issues
@@ -34,12 +38,12 @@ export const setupGoogleAuth = () => {
         try {
           // Check if user exists with this Google ID
           let user = await storage.getUserByGoogleId(profile.id);
-          
+
           if (user) {
             // User found, return the user
             return done(null, user);
           }
-          
+
           // Check if user exists with same email
           const email = profile.emails?.[0]?.value;
           if (email) {
@@ -50,7 +54,7 @@ export const setupGoogleAuth = () => {
               return done(null, user);
             }
           }
-          
+
           // No existing user found, create a new one
           if (email) {
             const newUser = await storage.createUser({
@@ -61,7 +65,7 @@ export const setupGoogleAuth = () => {
               googleId: profile.id,
               profilePicture: profile.photos?.[0]?.value
             });
-            
+
             return done(null, newUser);
           } else {
             // Cannot create user without email
