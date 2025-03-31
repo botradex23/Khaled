@@ -7,6 +7,7 @@ import axios from "axios";
 import okxRouter from "./api/okx";
 import bitgetRouter from "./api/bitget";
 import aiRouter from "./api/ai";
+import unifiedBotRouter from "./api/bots";
 import testAuthRouter from "./routes/test-auth";
 import userApiKeysRouter from './routes/user-api-keys';
 import adminApiRouter from './routes/admin-api';
@@ -292,6 +293,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // AI API routes
   app.use("/api/ai", aiRouter);
+  
+  // Unified Bot API routes
+  app.use("/api/bots", unifiedBotRouter);
   
   // Paper Trading routes
   app.use("/api/paper-trading", paperTradingRouter);
