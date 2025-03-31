@@ -62,6 +62,27 @@ export default function MarketPrices() {
     refetchInterval: 30000, // Refresh every 30 seconds
     refetchOnWindowFocus: true, // Refresh when window regains focus
   });
+  
+  // Fetch 24hr market data for more detailed information
+  const { data: marketData24hr, isLoading: market24hrLoading, error: market24hrError } = useQuery<
+    Array<{ 
+      symbol: string; 
+      priceChange: string;
+      priceChangePercent: string;
+      weightedAvgPrice: string;
+      volume: string;
+      quoteVolume: string;
+      highPrice: string;
+      lowPrice: string;
+      lastPrice: string;
+    }>
+  >({
+    queryKey: ['/api/binance/market/24hr'], 
+    enabled: true, // Always fetch this data regardless of authentication state
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchOnWindowFocus: true, // Refresh when window regains focus
+  });
 
   // Handle sorting
   const requestSort = (key: keyof MarketData) => {
@@ -71,9 +92,27 @@ export default function MarketPrices() {
     });
   };
 
-  // Process Binance ticker data into our MarketData format
-  const processTickerData = (tickers: Array<{ symbol: string; price: string; }> | undefined): MarketData[] => {
+  // Process Binance ticker data into our MarketData format, combining with 24hr data
+  const processTickerData = (
+    tickers: Array<{ symbol: string; price: string; }> | undefined, 
+    data24hr: Array<{ 
+      symbol: string; 
+      priceChangePercent: string;
+      volume: string;
+      quoteVolume: string;
+      highPrice: string;
+      lowPrice: string;
+    }> | undefined
+  ): MarketData[] => {
     if (!tickers || !Array.isArray(tickers)) return [];
+    
+    // Create a map of the 24hr data for fast lookups
+    const data24hrMap = new Map();
+    if (data24hr && Array.isArray(data24hr)) {
+      data24hr.forEach(item => {
+        data24hrMap.set(item.symbol, item);
+      });
+    }
     
     // Filter only USDT pairs for simplicity (e.g., BTCUSDT, ETHUSDT, etc.)
     return tickers
@@ -82,20 +121,24 @@ export default function MarketPrices() {
         // Extract base currency (e.g., BTC from BTCUSDT)
         const baseCurrency = ticker.symbol.replace('USDT', '');
         
+        // Get the 24hr data for this ticker if it exists
+        const ticker24hr = data24hrMap.get(ticker.symbol);
+        
         return {
           symbol: baseCurrency,
           price: parseFloat(ticker.price),
-          change24h: 0, // We don't have this data from the tickers endpoint
-          volume24h: 0, // We don't have this data from the tickers endpoint
-          high24h: 0,   // We don't have this data from the tickers endpoint
-          low24h: 0     // We don't have this data from the tickers endpoint
+          change24h: ticker24hr ? parseFloat(ticker24hr.priceChangePercent) : 0,
+          volume24h: ticker24hr ? parseFloat(ticker24hr.quoteVolume) : 0, // Using quoteVolume for USD volume
+          high24h: ticker24hr ? parseFloat(ticker24hr.highPrice) : 0,
+          low24h: ticker24hr ? parseFloat(ticker24hr.lowPrice) : 0
         } as MarketData;
       });
   };
   
   // Filter and sort market data
   const getFilteredAndSortedData = () => {
-    const marketData = processTickerData(tickersData);
+    // Pass both the price tickers and the 24hr data to the processTickerData function
+    const marketData = processTickerData(tickersData, marketData24hr);
     
     if (!marketData || !Array.isArray(marketData)) return [];
     
