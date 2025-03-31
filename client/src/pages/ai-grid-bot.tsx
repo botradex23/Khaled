@@ -7,6 +7,8 @@ import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
+import BotExplanationGuide from "@/components/bots/bot-explanation-guide";
+import RiskManagementSection from "@/components/bots/risk-management-section";
 import { 
   Card, 
   CardContent, 
@@ -91,6 +93,13 @@ const botFormSchema = z.object({
   lowerPrice: z.string().optional(),
   gridCount: z.string().optional(),
   useAI: z.boolean().default(true),
+  
+  // Risk management fields
+  stopLossPercentage: z.number().min(0.5).max(20).default(5),
+  takeProfitPercentage: z.number().min(0.5).max(50).default(15),
+  maxInvestmentPerTrade: z.string().default("100"),
+  emergencyStopEnabled: z.boolean().default(true),
+  useAdaptiveRiskAdjustment: z.boolean().default(false),
 });
 
 type BotFormValues = z.infer<typeof botFormSchema>;
@@ -127,6 +136,12 @@ export default function AIGridBot() {
       symbol: "BTCUSDT",
       totalInvestment: "1000",
       useAI: true,
+      // Risk management defaults
+      stopLossPercentage: 5,
+      takeProfitPercentage: 15,
+      maxInvestmentPerTrade: "100",
+      emergencyStopEnabled: true,
+      useAdaptiveRiskAdjustment: false,
     },
   });
 
@@ -206,6 +221,12 @@ export default function AIGridBot() {
         gridCount: data.gridCount ? parseInt(data.gridCount, 10) : undefined,
         totalInvestment: parseFloat(data.totalInvestment),
         useAI: data.useAI,
+        // Risk management parameters
+        stopLossPercentage: data.stopLossPercentage,
+        takeProfitPercentage: data.takeProfitPercentage,
+        maxInvestmentPerTrade: data.maxInvestmentPerTrade ? parseFloat(data.maxInvestmentPerTrade) : 100,
+        emergencyStopEnabled: data.emergencyStopEnabled,
+        useAdaptiveRiskAdjustment: data.useAdaptiveRiskAdjustment,
       };
 
       return apiRequest("POST", "/api/okx/bots", {
@@ -349,6 +370,7 @@ export default function AIGridBot() {
 
             {/* Bot Setup Tab */}
             <TabsContent value="settings" className="space-y-4">
+              <BotExplanationGuide botType="ai-grid" />
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <Card>
@@ -495,7 +517,8 @@ export default function AIGridBot() {
                         </div>
                       )}
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="flex flex-col gap-4">
+                      <RiskManagementSection botType="ai-grid" />
                       <Button
                         type="submit"
                         className="w-full md:w-auto"

@@ -10,6 +10,7 @@ import Home from "@/pages/home";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Bots from "@/pages/bots-new";
+import BotsDashboard from "@/pages/bots-dashboard";
 import Markets from "@/pages/markets";
 import MarketsFull from "@/pages/markets-full";
 import MarketPrices from "@/pages/market-prices";
@@ -46,7 +47,8 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/home" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
-      <Route path="/bots" component={Bots} />
+      <Route path="/bots" component={BotsDashboard} />
+      <Route path="/bots-legacy" component={Bots} />
       <Route path="/markets" component={Markets} />
       <Route path="/markets-full" component={MarketsFull} />
       <Route path="/market-prices" component={MarketPrices} />
