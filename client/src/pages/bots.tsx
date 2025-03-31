@@ -334,7 +334,6 @@ export default function Bots() {
                 </Button>
                 <div className="dropdown-content absolute right-0 mt-2 w-56 origin-top-right rounded-md shadow-lg bg-background border z-10">
                   <div className="py-1">
-                    <Link href="/grid-bot" className="block px-4 py-2 text-sm hover:bg-secondary">Grid Trading Bot</Link>
                     <Link href="/dca-bot" className="block px-4 py-2 text-sm hover:bg-secondary">DCA Bot</Link>
                     <Link href="/macd-bot" className="block px-4 py-2 text-sm hover:bg-secondary">MACD Trading Bot</Link>
                   </div>
@@ -583,63 +582,6 @@ export default function Bots() {
                       </CardFooter>
                     </Card>
                     
-                    {/* Grid Trading Strategy */}
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-lg">Grid Trading</CardTitle>
-                          <div className="text-xs px-2 py-1 rounded-full bg-blue-500/10 text-blue-500">
-                            POPULAR
-                          </div>
-                        </div>
-                        <CardDescription>
-                          Buy low and sell high within a price range
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="pb-2">
-                        <div className="h-32">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={gridChartData}>
-                              <Line 
-                                type="monotone" 
-                                dataKey="value" 
-                                stroke="hsl(var(--primary))" 
-                                strokeWidth={2}
-                                dot={false}
-                              />
-                              <XAxis dataKey="name" hide />
-                              <YAxis hide />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                        <div className="mt-2 space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Avg. Monthly Return</span>
-                            <span className="text-sm font-medium">+5.2%</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Risk Level</span>
-                            <div className="flex items-center">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <div 
-                                  key={i} 
-                                  className={`w-1 h-4 mx-0.5 rounded-sm ${i < 2 ? 'bg-primary' : 'bg-border'}`} 
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Link href="/bot-demo" className="w-full">
-                          <Button className="w-full">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Deploy This Strategy
-                          </Button>
-                        </Link>
-                      </CardFooter>
-                    </Card>
-                    
                     {/* DCA Strategy */}
                     <Card>
                       <CardHeader className="pb-2">
@@ -826,7 +768,7 @@ export default function Bots() {
                                 formatter={(value: any) => [`$${value.toLocaleString()}`, 'Value']}
                               />
                               <Line
-                                name="Grid Trading Bot"
+                                name="AI Grid Trading Bot"
                                 type="monotone"
                                 dataKey="value"
                                 stroke="hsl(var(--primary))"

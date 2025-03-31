@@ -19,7 +19,6 @@ import TestLogin from "@/pages/test-login";
 import BotDemo from "@/pages/bot-demo";
 import Learn from "@/pages/learn";
 import AIGridBot from "@/pages/ai-grid-bot";
-import GridBot from "@/pages/grid-bot";
 import DcaBot from "@/pages/dca-bot";
 import MacdBot from "@/pages/macd-bot";
 import AITradingPage from "@/pages/ai-trading";
@@ -59,7 +58,6 @@ function Router() {
       <Route path="/bot-demo" component={BotDemo} />
       <Route path="/learn" component={Learn} />
       <Route path="/ai-grid-bot" component={AIGridBot} />
-      <Route path="/grid-bot" component={GridBot} />
       <Route path="/dca-bot" component={DcaBot} />
       <Route path="/macd-bot" component={MacdBot} />
       <Route path="/ai-trading" component={AITradingPage} />
