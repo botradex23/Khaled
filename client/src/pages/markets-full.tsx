@@ -185,59 +185,7 @@ export default function MarketsFullPage() {
                   <CheckCircle className="h-3 w-3 ml-1" />
                 </span>
               </Badge>
-              
-              <Button variant="ghost" size="icon">
-                <Settings className="h-5 w-5" />
-              </Button>
             </div>
-          </div>
-          
-          {/* Last Updated Card */}
-          <Card className="mb-6 bg-blue-950 text-slate-100 border-slate-800">
-            <CardContent className="p-4 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-slate-300" />
-                <span className="text-sm">Last Updated</span>
-                <span className="font-medium">{formatLastUpdated()}</span>
-              </div>
-              
-              <Button variant="ghost" size="sm" onClick={fetchMarketData} className="text-slate-300 hover:text-white">
-                <RefreshCw className="h-4 w-4 mr-1" />
-                Refresh
-              </Button>
-            </CardContent>
-          </Card>
-          
-          {/* Market Type Tabs */}
-          <div className="flex overflow-x-auto pb-2 mb-6">
-            <Button
-              variant={activeMarketType === 'usdt' ? "default" : "outline"}
-              className={`mr-2 ${activeMarketType === 'usdt' ? "bg-primary" : "bg-card"}`}
-              onClick={() => setActiveMarketType('usdt')}
-            >
-              USDT Markets
-            </Button>
-            <Button
-              variant={activeMarketType === 'btc' ? "default" : "outline"}
-              className={`mr-2 ${activeMarketType === 'btc' ? "bg-primary" : "bg-card"}`}
-              onClick={() => setActiveMarketType('btc')}
-            >
-              BTC Markets
-            </Button>
-            <Button
-              variant={activeMarketType === 'eth' ? "default" : "outline"}
-              className={`mr-2 ${activeMarketType === 'eth' ? "bg-primary" : "bg-card"}`}
-              onClick={() => setActiveMarketType('eth')}
-            >
-              ETH Markets
-            </Button>
-            <Button
-              variant={activeMarketType === 'bnb' ? "default" : "outline"}
-              className={`mr-2 ${activeMarketType === 'bnb' ? "bg-primary" : "bg-card"}`}
-              onClick={() => setActiveMarketType('bnb')}
-            >
-              BNB Markets
-            </Button>
           </div>
           
           {/* Main Content Card */}
@@ -252,12 +200,14 @@ export default function MarketsFullPage() {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-blue-500/20 text-blue-300">
-                    Updated every 30s
-                  </Badge>
-                  <Badge className="bg-gray-600/30 text-gray-300">
-                    {filteredData.length} Markets
-                  </Badge>
+                  <div className="flex flex-col items-end">
+                    <Badge className="bg-blue-500/20 text-blue-300 mb-1">
+                      Updated every 30s
+                    </Badge>
+                    <Badge className="bg-gray-600/30 text-gray-300">
+                      {filteredData.length} Markets
+                    </Badge>
+                  </div>
                 </div>
               </div>
               
@@ -267,7 +217,7 @@ export default function MarketsFullPage() {
                   placeholder="Search markets..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="max-w-sm"
+                  className="max-w-sm bg-blue-900/50 border-blue-800"
                 />
               </div>
             </CardHeader>
@@ -303,57 +253,46 @@ export default function MarketsFullPage() {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="w-full">
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Symbol</TableHead>
-                        <TableHead className="text-right">Price</TableHead>
-                        <TableHead className="text-right">24h Change</TableHead>
-                        <TableHead className="text-right">24h Volume</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                      <TableRow className="border-b border-blue-800">
+                        <TableHead className="py-3 px-4 text-slate-300 font-normal">Price</TableHead>
+                        <TableHead className="py-3 px-4 text-slate-300 font-normal text-right">24h Change</TableHead>
+                        <TableHead className="py-3 px-4 text-slate-300 font-normal text-right">24h Volume</TableHead>
+                        <TableHead className="py-3 px-4 text-slate-300 font-normal text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredData.slice(0, 50).map((market) => (
-                        <TableRow key={market.symbol}>
-                          <TableCell className="font-medium">{market.symbol}</TableCell>
-                          <TableCell className="text-right font-mono">
-                            ${formatPrice(market.price)}
+                        <TableRow key={market.symbol} className="border-b border-blue-800/30 hover:bg-blue-900/30">
+                          <TableCell className="py-4 px-4">
+                            <div className="font-medium">${formatPrice(market.price)}</div>
+                            <div className="text-sm text-slate-400">{market.symbol}</div>
                           </TableCell>
                           <TableCell 
-                            className={`text-right ${
+                            className={`py-4 px-4 text-right ${
                               (market.change24h || 0) > 0 
                                 ? 'text-green-500'
                                 : (market.change24h || 0) < 0
                                 ? 'text-red-500'
-                                : ''
+                                : 'text-slate-300'
                             }`}
                           >
                             {(market.change24h || 0).toFixed(2)}%
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="py-4 px-4 text-right text-slate-300">
                             ${(market.volume24h || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <span>Trade</span>
-                                  <ChevronDown className="ml-1 h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => window.location.href = `/chart?symbol=${market.symbol}`}>
-                                  View Chart
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => window.location.href = `/trade?symbol=${market.symbol}`}>
-                                  Trade Now
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => window.location.href = `/bot/new?symbol=${market.symbol}`}>
-                                  Create Bot
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                          <TableCell className="py-4 px-4 text-right">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="border-blue-700 hover:bg-blue-700 text-blue-300"
+                              onClick={() => window.location.href = `/trade?symbol=${market.symbol}`}
+                            >
+                              <span>Trade</span>
+                              <ChevronDown className="ml-1 h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
