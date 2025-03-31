@@ -11,6 +11,7 @@ import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Bots from "@/pages/bots-new";
 import Markets from "@/pages/markets";
+import MarketsFull from "@/pages/markets-full";
 import MarketPrices from "@/pages/market-prices";
 import Register from "@/pages/register";
 import Login from "@/pages/login";
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/bots" component={Bots} />
       <Route path="/markets" component={Markets} />
+      <Route path="/markets-full" component={MarketsFull} />
       <Route path="/market-prices" component={MarketPrices} />
       <Route path="/live-market" component={LiveMarket} />
       <Route path="/register" component={Register} />

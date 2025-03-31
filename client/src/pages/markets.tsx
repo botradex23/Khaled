@@ -40,6 +40,7 @@ import {
   Bookmark, 
   ArrowUpRight, 
   ArrowDownRight,
+  ArrowRight,
   Clock,
   Wallet,
   BarChart3,
@@ -205,14 +206,22 @@ export default function Markets() {
                 Real-time prices, charts and market data from Binance
               </p>
             </div>
-            <div className="relative w-full md:w-64 mt-4 md:mt-0">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search coins..."
-                className="pl-8 w-full"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            <div className="flex flex-col md:flex-row gap-4 items-end mt-4 md:mt-0">
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search coins..."
+                  className="pl-8 w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Link href="/markets-full">
+                <Button variant="secondary" className="w-full md:w-auto">
+                  View All Binance Markets
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           </div>
           

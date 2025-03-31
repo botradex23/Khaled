@@ -175,15 +175,17 @@ export default function Dashboard() {
                     <div className="text-xs px-2 py-1 rounded-full bg-blue-500/10 text-blue-500">
                       Real-time
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-xs"
-                      onClick={() => window.location.href = '/market-prices'}
-                    >
-                      View Binance Market Prices
-                      <ArrowRight className="ml-2 h-3 w-3" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs"
+                        onClick={() => window.location.href = '/markets-full'}
+                      >
+                        View All Markets
+                        <ArrowRight className="ml-2 h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -385,10 +387,10 @@ export default function Dashboard() {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start" 
-                    onClick={() => window.location.href = "/market-prices"}
+                    onClick={() => window.location.href = "/markets-full"}
                   >
                     <TrendingUp className="mr-2 h-4 w-4" />
-                    Binance Market Prices
+                    All Binance Markets
                   </Button>
                   
                   <Button 
