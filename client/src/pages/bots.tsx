@@ -320,12 +320,27 @@ export default function Bots() {
                 Manage and monitor your automated crypto trading strategies
               </p>
             </div>
-            <Link href="/ai-grid-bot">
-              <Button className="mt-4 md:mt-0">
-                <Plus className="mr-2 h-4 w-4" />
-                Create AI Grid Bot
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-2 mt-4 md:mt-0">
+              <Link href="/ai-grid-bot">
+                <Button className="w-full">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create AI Grid Bot
+                </Button>
+              </Link>
+              <div className="dropdown-root relative">
+                <Button variant="outline" className="w-full">
+                  <Plus className="mr-2 h-4 w-4" />
+                  <span>Other Bots</span>
+                </Button>
+                <div className="dropdown-content absolute right-0 mt-2 w-56 origin-top-right rounded-md shadow-lg bg-background border z-10">
+                  <div className="py-1">
+                    <Link href="/grid-bot" className="block px-4 py-2 text-sm hover:bg-secondary">Grid Trading Bot</Link>
+                    <Link href="/dca-bot" className="block px-4 py-2 text-sm hover:bg-secondary">DCA Bot</Link>
+                    <Link href="/macd-bot" className="block px-4 py-2 text-sm hover:bg-secondary">MACD Trading Bot</Link>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <Tabs defaultValue="active" className="space-y-4">
