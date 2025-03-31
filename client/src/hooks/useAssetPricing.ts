@@ -154,16 +154,33 @@ export function useAssetPricing(currencies?: string[]) {
     isLoading,
     isError,
     error 
-  } = useQuery<{ success: boolean, prices: CryptoPriceData[], message?: string }>({
+  } = useQuery<{ success: boolean, data?: any[], prices?: CryptoPriceData[], count?: number, message?: string }>({
     queryKey: [queryUrl],
     queryFn: getQueryFn({ on401: "returnNull" }),
     refetchInterval: 60000, // Refresh every minute
     staleTime: 30000,     // Consider data stale after 30 seconds
   });
   
-  // Extract prices from the response ONLY if success is true
-  // Don't display any data when the OKX API connection fails
-  const prices = response?.success === true && Array.isArray(response?.prices) ? response.prices : [];
+  // Extract prices from the response - handle both response formats
+  // The API might return data in different formats:
+  // 1. { success: true, prices: [...] } - older format
+  // 2. { success: true, data: [...] }   - newer format from Binance endpoints
+  let prices: CryptoPriceData[] = [];
+  
+  if (response?.success === true) {
+    if (Array.isArray(response.prices)) {
+      // Handle old format
+      prices = response.prices;
+    } else if (Array.isArray(response.data)) {
+      // Handle new format where prices are in data array
+      prices = response.data.map(item => ({
+        symbol: item.symbol,
+        price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
+        source: item.source || 'api',
+        timestamp: item.timestamp || Date.now()
+      }));
+    }
+  }
   
   // Get price for a specific currency
   const getPrice = (currency: string): number => {
