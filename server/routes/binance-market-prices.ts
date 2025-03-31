@@ -1,20 +1,46 @@
 import { Router, Request, Response } from 'express';
 import { binanceMarketService, BinanceTickerPrice } from '../api/binance/marketPriceService';
+import { okxService } from '../api/okx/okxService';
 
 const router = Router();
 
 /**
- * Get all market prices from Binance
+ * Get all market prices from OKX (primary) or Binance (fallback)
  * @route GET /api/binance/market-prices
  */
 router.get('/market-prices', async (req: Request, res: Response) => {
   try {
+    // Try OKX first since it's more reliable in all regions
+    try {
+      const okxTickers = await okxService.getMarketTickers();
+      
+      if (okxTickers && okxTickers.length > 0) {
+        // Format OKX data to match Binance format for compatibility
+        const formattedOkxPrices = okxTickers.map(ticker => ({
+          symbol: ticker.instId.replace('-', ''), // Convert BTC-USDT to BTCUSDT
+          price: ticker.last,
+          source: 'okx'
+        }));
+        
+        return res.json({
+          success: true,
+          source: 'okx',
+          timestamp: new Date().toISOString(),
+          count: formattedOkxPrices.length,
+          data: formattedOkxPrices
+        });
+      }
+    } catch (okxError: any) {
+      console.log('OKX API error, trying Binance as fallback:', okxError?.message || 'Unknown error');
+    }
+    
+    // Fallback to Binance if OKX fails
     const allPrices = await binanceMarketService.getAllPrices();
     
     if (!allPrices || allPrices.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'No price data available from Binance'
+        message: 'No price data available from market providers'
       });
     }
     
@@ -40,17 +66,74 @@ router.get('/market-prices', async (req: Request, res: Response) => {
  */
 router.get('/markets', async (req: Request, res: Response) => {
   try {
+    // Get important symbols for filtering
+    const importantSymbols = getBinanceImportantSymbols();
+    
+    // Try OKX first since it's more reliable in all regions
+    try {
+      const okxTickers = await okxService.getMarketTickers();
+      
+      if (okxTickers && okxTickers.length > 0) {
+        // Convert symbols from OKX format to Binance format for compatibility
+        // OKX uses BTC-USDT format while Binance uses BTCUSDT
+        const formattedOkxData = okxTickers
+          .filter(ticker => {
+            // Convert from OKX format (BTC-USDT) to Binance format (BTCUSDT) for filtering
+            const binanceFormatSymbol = ticker.instId.replace('-', '');
+            return importantSymbols.includes(binanceFormatSymbol);
+          })
+          .map(ticker => {
+            const binanceFormatSymbol = ticker.instId.replace('-', '');
+            // Calculate price change - OKX might use different field names
+            let priceChangePercent = 0;
+            if ('chg24h' in ticker) {
+              priceChangePercent = parseFloat((ticker as any).chg24h || '0');
+            } else if (ticker.open24h && ticker.last) {
+              // Calculate manually if needed
+              const openPrice = parseFloat(ticker.open24h);
+              const currentPrice = parseFloat(ticker.last);
+              if (openPrice > 0) {
+                priceChangePercent = ((currentPrice - openPrice) / openPrice) * 100;
+              }
+            }
+            
+            return {
+              symbol: binanceFormatSymbol,
+              formattedSymbol: formatSymbolForDisplay(binanceFormatSymbol),
+              price: parseFloat(ticker.last),
+              priceChangePercent: priceChangePercent,
+              volume: parseFloat(ticker.vol24h || '0'),
+              high24h: parseFloat(ticker.high24h || ticker.last),
+              low24h: parseFloat(ticker.low24h || ticker.last),
+              source: 'okx',
+              timestamp: new Date().toISOString()
+            };
+          })
+          .sort((a, b) => b.volume - a.volume);
+          
+        return res.json({
+          success: true,
+          source: 'okx',
+          timestamp: new Date().toISOString(),
+          count: formattedOkxData.length,
+          data: formattedOkxData
+        });
+      }
+    } catch (okxError: any) {
+      console.log('OKX API error, trying Binance as fallback:', okxError?.message || 'Unknown error');
+    }
+    
+    // Fallback to Binance if OKX fails
     const allPrices = await binanceMarketService.getAllPrices();
     
     if (!allPrices || allPrices.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'No price data available from Binance'
+        message: 'No price data available from market providers'
       });
     }
     
     // Get 24-hour data for the important symbols
-    const importantSymbols = getBinanceImportantSymbols();
     const responses = await Promise.allSettled(
       importantSymbols.map(symbol => binanceMarketService.get24hrStats(symbol))
     );
