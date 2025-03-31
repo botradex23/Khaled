@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import * as marketPriceService from '../../server/api/okx/marketPriceService';
+import { binanceMarketService } from '../../server/api/binance/marketPriceService';
 import { log } from '../../server/vite';
 
 const router = Router();
@@ -43,8 +43,8 @@ router.get('/prices', async (req: Request, res: Response) => {
     
     // אם אין מטבעות ספציפיים ולא מבקשים פורמט מיוחד, נחזיר את הכל
     if (!useStructuredFormat && (!filterSymbols || filterSymbols.length === 0)) {
-      // שליפת כל המחירים ללא סינון
-      let prices = await marketPriceService.getAllCurrencyPrices(forceRefresh);
+      // שליפת כל המחירים ללא סינון באמצעות Binance
+      let prices = await binanceMarketService.getAllPrices();
       
       // להחזיר רק את המחירים המבוקשים אם הוגדרה מגבלה
       if (limit && !isNaN(limit) && limit > 0) {

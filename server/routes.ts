@@ -13,6 +13,7 @@ import adminApiRouter from './routes/admin-api';
 import marketsRouter from './routes/markets';
 import marketsV2Router from './routes/markets.test';
 import marketsV3Router from './routes/markets-v3';
+import marketApiRouter from './routes/market-api';
 import { setupAuth, ensureAuthenticated } from "./auth";
 import { createOkxServiceWithCustomCredentials, okxService } from "./api/okx/okxService";
 import updateApiKeysRouter from "./routes/update-api-keys";
@@ -105,6 +106,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }).catch(err => {
     console.error('Failed to register market prices routes:', err);
   });
+  
+  // Register our updated market API routes using Binance as source
+  app.use('/api/market', marketApiRouter);
+  console.log('Market API router (Binance source) registered to /api/market');
   // Add a test endpoint to check API keys for a user
   app.get('/api/test/user-api-keys', async (req: Request, res: Response) => {
     if (!req.user) {
