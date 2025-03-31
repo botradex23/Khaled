@@ -31,7 +31,7 @@ import { performanceChartData } from "@/lib/chart-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AccountBalanceCard, TradingHistoryCard } from "@/components/ui/account-overview";
+import { TradingHistoryCard } from "@/components/ui/account-overview";
 import { PriceChart } from "@/components/ui/price-chart";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -203,8 +203,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Account Balance Card */}
-            <AccountBalanceCard />
+            {/* Account Balance Card removed */}
           </div>
 
           {/* Paper Trading Section */}
