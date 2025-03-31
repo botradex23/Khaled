@@ -51,7 +51,7 @@ export default function MarketPrices() {
     refetchInterval: 60000,
   });
 
-  // Fetch market data from our central API endpoint
+  // Fetch market data from the Binance endpoint that we know works
   const { data, isLoading, error } = useQuery<{
     success: boolean;
     source: string;
@@ -60,7 +60,7 @@ export default function MarketPrices() {
     data?: any[];
     prices?: any[];
   }>({
-    queryKey: ['/api/market/prices'],
+    queryKey: ['/api/binance/market-prices'], // Using the endpoint from the Binance page that works
     select: (response) => {
       // Transform the Binance response format to match our MarketData interface
       // Check if response has data or prices array
