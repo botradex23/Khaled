@@ -18,21 +18,23 @@ const createAxiosInstance = () => {
   if (USE_PROXY && PROXY_IP) {
     console.log(`Using proxy: ${PROXY_IP}:${PROXY_PORT} for Binance API requests`);
     
-    // Create direct proxy config for axios
+    // Import HttpsProxyAgent here to use for axios
+    const { HttpsProxyAgent } = require('https-proxy-agent');
+    
+    // Configure proxy URL
+    const proxyUrl = `http://${PROXY_USERNAME}:${PROXY_PASSWORD}@${PROXY_IP}:${PROXY_PORT}`;
+    const httpsAgent = new HttpsProxyAgent(proxyUrl);
+    
+    // Create axios instance with the agent
     return axios.create({
-      proxy: {
-        host: PROXY_IP,
-        port: Number(PROXY_PORT),
-        auth: {
-          username: PROXY_USERNAME,
-          password: PROXY_PASSWORD
-        }
-      },
+      httpsAgent,
       timeout: 10000, // 10 seconds timeout
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Origin': 'https://www.binance.com',
+        'Referer': 'https://www.binance.com/'
       }
     });
   }

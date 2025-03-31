@@ -4,10 +4,10 @@ import { binanceMarketService, BinanceTickerPrice } from './marketPriceService';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 
 // פרטי הפרוקסי שעובד עם WebSocket של Binance
-const PROXY_HOST = '185.199.228.220';
-const PROXY_PORT = 7300;
-const PROXY_USERNAME = 'ahjqspco';
-const PROXY_PASSWORD = 'dzx3r1prpz9k';
+const PROXY_HOST = '185.199.228.220'; // פרוקסי שעובד על פי הבדיקות
+const PROXY_PORT = 7300;             // פורט עובד מהבדיקות
+const PROXY_USERNAME = 'ahjqspco';    // שם משתמש Webshare
+const PROXY_PASSWORD = 'dzx3r1prpz9k'; // סיסמה Webshare
 
 // EventEmitter להעברת עדכוני מחירים בזמן אמת
 class BinanceWebSocketService extends EventEmitter {
