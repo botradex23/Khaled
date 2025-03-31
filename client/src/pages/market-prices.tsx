@@ -51,44 +51,19 @@ export default function MarketPrices() {
     refetchInterval: 60000,
   });
 
-  // Fetch market data from the Binance market tickers route - same endpoint used in the Binance page tab
+  // Fetch market data from the Binance markets endpoint - the same endpoint used successfully in the Binance Account page
   const { data, isLoading, error } = useQuery<{
     success: boolean;
     source: string;
     timestamp: string;
     count: number;
     data?: any[];
-    prices?: any[];
   }>({
-    queryKey: ['/api/binance/market/tickers'], // Using the exact same endpoint as the temp-binance.tsx component
-    select: (response) => {
-      // Transform the Binance tickers response format to match our MarketData interface
-      const sourceData = Array.isArray(response) ? response : [];
-      
-      if (sourceData.length > 0) {
-        // Filter for just USDT pairs to limit the list
-        const filteredTickers = sourceData
-          .filter((item: any) => item.symbol.endsWith('USDT'))
-          .filter((item: any) => !item.symbol.includes('UP') && !item.symbol.includes('DOWN'));
-        
-        return {
-          success: true,
-          source: 'binance',
-          timestamp: new Date().toISOString(),
-          count: filteredTickers.length,
-          data: filteredTickers.map((item: any) => ({
-            symbol: item.symbol,
-            price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
-            change24h: 0, // We don't have this from the tickers endpoint
-            volume24h: 0, // We don't have this from the tickers endpoint
-            high24h: parseFloat(item.price) * 1.01, // Fallback if not available
-            low24h: parseFloat(item.price) * 0.99   // Fallback if not available
-          }))
-        };
-      }
-      return { success: false, source: '', timestamp: '', count: 0, data: [] };
-    },
+    queryKey: ['/api/binance/markets'], 
+    enabled: true, // Always fetch this data regardless of authentication state
+    staleTime: 30000, // Consider data fresh for 30 seconds
     refetchInterval: 30000, // Refresh every 30 seconds
+    refetchOnWindowFocus: true, // Refresh when window regains focus
   });
 
   // Handle sorting
@@ -130,28 +105,34 @@ export default function MarketPrices() {
   const filteredAndSortedData = getFilteredAndSortedData();
 
   // Format price based on value (different formatting for different ranges)
-  const formatPrice = (price: number) => {
-    if (price >= 1000) {
-      return price.toLocaleString(undefined, { maximumFractionDigits: 2 });
-    } else if (price >= 1) {
-      return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
-    } else if (price >= 0.0001) {
-      return price.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 8 });
+  const formatPrice = (price: number | undefined) => {
+    // Handle undefined or null values
+    const value = price || 0;
+    
+    if (value >= 1000) {
+      return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    } else if (value >= 1) {
+      return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+    } else if (value >= 0.0001) {
+      return value.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 8 });
     } else {
-      return price.toExponential(4);
+      return value.toExponential(4);
     }
   };
 
   // Format large numbers with appropriate abbreviations
-  const formatLargeNumber = (num: number) => {
-    if (num >= 1_000_000_000) {
-      return `${(num / 1_000_000_000).toFixed(2)}B`;
-    } else if (num >= 1_000_000) {
-      return `${(num / 1_000_000).toFixed(2)}M`;
-    } else if (num >= 1_000) {
-      return `${(num / 1_000).toFixed(2)}K`;
+  const formatLargeNumber = (num: number | undefined) => {
+    // Handle undefined or null values
+    const value = num || 0;
+    
+    if (value >= 1_000_000_000) {
+      return `${(value / 1_000_000_000).toFixed(2)}B`;
+    } else if (value >= 1_000_000) {
+      return `${(value / 1_000_000).toFixed(2)}M`;
+    } else if (value >= 1_000) {
+      return `${(value / 1_000).toFixed(2)}K`;
     } else {
-      return num.toFixed(2);
+      return value.toFixed(2);
     }
   };
 
@@ -296,12 +277,12 @@ export default function MarketPrices() {
                             }`}
                           >
                             <div className="flex items-center justify-end space-x-1">
-                              {market.change24h > 0 ? (
+                              {(market.change24h || 0) > 0 ? (
                                 <TrendingUp className="h-4 w-4" />
-                              ) : market.change24h < 0 ? (
+                              ) : (market.change24h || 0) < 0 ? (
                                 <TrendingDown className="h-4 w-4" />
                               ) : null}
-                              <span>{market.change24h.toFixed(2)}%</span>
+                              <span>{(market.change24h || 0).toFixed(2)}%</span>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
