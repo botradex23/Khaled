@@ -51,7 +51,7 @@ export default function MarketPrices() {
     refetchInterval: 60000,
   });
 
-  // Fetch market data from the Binance markets endpoint that we know works
+  // Fetch market data from the Binance market tickers route - same endpoint used in the Binance page tab
   const { data, isLoading, error } = useQuery<{
     success: boolean;
     source: string;
@@ -60,23 +60,29 @@ export default function MarketPrices() {
     data?: any[];
     prices?: any[];
   }>({
-    queryKey: ['/api/binance/markets'], // Using the endpoint from the Binance page that works with OKX data
+    queryKey: ['/api/binance/market/tickers'], // Using the exact same endpoint as the temp-binance.tsx component
     select: (response) => {
-      // Transform the Binance response format to match our MarketData interface
-      // Check if response has data or prices array
-      const sourceData = Array.isArray(response?.data) ? response.data : 
-                          Array.isArray(response?.prices) ? response.prices : [];
+      // Transform the Binance tickers response format to match our MarketData interface
+      const sourceData = Array.isArray(response) ? response : [];
       
-      if (response?.success && sourceData.length > 0) {
+      if (sourceData.length > 0) {
+        // Filter for just USDT pairs to limit the list
+        const filteredTickers = sourceData
+          .filter((item: any) => item.symbol.endsWith('USDT'))
+          .filter((item: any) => !item.symbol.includes('UP') && !item.symbol.includes('DOWN'));
+        
         return {
-          ...response,
-          data: sourceData.map((item: any) => ({
+          success: true,
+          source: 'binance',
+          timestamp: new Date().toISOString(),
+          count: filteredTickers.length,
+          data: filteredTickers.map((item: any) => ({
             symbol: item.symbol,
             price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
-            change24h: item.priceChangePercent || 0,
-            volume24h: item.volume || 0,
-            high24h: item.highPrice || item.price * 1.01, // Fallback if not available
-            low24h: item.lowPrice || item.price * 0.99   // Fallback if not available
+            change24h: 0, // We don't have this from the tickers endpoint
+            volume24h: 0, // We don't have this from the tickers endpoint
+            high24h: parseFloat(item.price) * 1.01, // Fallback if not available
+            low24h: parseFloat(item.price) * 0.99   // Fallback if not available
           }))
         };
       }
