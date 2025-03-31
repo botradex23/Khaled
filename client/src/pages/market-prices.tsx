@@ -277,10 +277,10 @@ export default function MarketPrices() {
           </div>
         )}
       
-        <Card className="border shadow-sm">
+        <Card className="border shadow-sm bg-blue-950 text-white">
           <CardHeader className="pb-3">
             <CardTitle className="text-2xl font-bold">Market Prices</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-slate-300">
               Current prices of cryptocurrencies and tokens on Binance
             </CardDescription>
             <div className="flex flex-col md:flex-row justify-between gap-4 mt-3">
