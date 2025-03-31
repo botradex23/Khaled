@@ -52,21 +52,30 @@ export default function MarketPrices() {
   });
 
   // Fetch market data
-  const { data, isLoading, error } = useQuery<MarketData[]>({
+  const { data, isLoading, error } = useQuery<{
+    success: boolean;
+    source: string;
+    timestamp: string;
+    count: number;
+    data: any[];
+  }>({
     queryKey: ['/api/markets/binance/prices'],
-    select: (data) => {
+    select: (response) => {
       // Transform the Binance response format to match our MarketData interface
-      if (data && data.data) {
-        return data.data.map((item: any) => ({
-          symbol: item.symbol,
-          price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
-          change24h: item.priceChangePercent || 0,
-          volume24h: item.volume || 0,
-          high24h: item.highPrice || item.price * 1.01, // Fallback if not available
-          low24h: item.lowPrice || item.price * 0.99   // Fallback if not available
-        }));
+      if (response?.success && Array.isArray(response.data)) {
+        return {
+          ...response,
+          data: response.data.map((item: any) => ({
+            symbol: item.symbol,
+            price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
+            change24h: item.priceChangePercent || 0,
+            volume24h: item.volume || 0,
+            high24h: item.highPrice || item.price * 1.01, // Fallback if not available
+            low24h: item.lowPrice || item.price * 0.99   // Fallback if not available
+          }))
+        };
       }
-      return [];
+      return { success: false, source: '', timestamp: '', count: 0, data: [] };
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
@@ -81,9 +90,9 @@ export default function MarketPrices() {
 
   // Filter and sort market data
   const getFilteredAndSortedData = () => {
-    if (!data) return [];
+    if (!data || !data.data || !Array.isArray(data.data)) return [];
 
-    let filteredData = [...data];
+    let filteredData = [...data.data];
 
     // Apply search filter
     if (searchQuery.trim() !== '') {
@@ -190,7 +199,7 @@ export default function MarketPrices() {
                   Updated every 30s
                 </Badge>
                 <Badge variant="outline" className="font-normal">
-                  {data?.length || 0} Markets
+                  {data?.count || 0} Markets
                 </Badge>
               </div>
             </div>
