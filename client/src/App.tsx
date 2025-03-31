@@ -25,6 +25,7 @@ import Account from "@/pages/account";
 import CompleteProfile from "@/pages/complete-profile";
 import Binance from "@/pages/binance";
 import LiveMarket from "@/pages/live-market";
+import RiskManagement from "@/pages/risk-management";
 
 function Router() {
   const { isAuthenticated, needsProfileCompletion, isLoading } = useAuth();
@@ -58,6 +59,7 @@ function Router() {
       <Route path="/api-keys" component={ApiKeys} />
       <Route path="/account" component={Account} />
       <Route path="/binance" component={Binance} />
+      <Route path="/risk-management" component={RiskManagement} />
       <Route component={NotFound} />
     </Switch>
   );

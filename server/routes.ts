@@ -21,6 +21,7 @@ import binanceRouter from "./routes/binance";
 import binanceApiKeysRouter from "./routes/binance-api-keys";
 import paperTradingRouter from "./routes/paper-trading";
 import databaseStatusRoutes from "./routes/database-status";
+import riskSettingsRouter from "./api/risk-settings";
 import { binanceWebSocketService } from "./api/binance/websocketService";
 
 // Helper function to mask sensitive data (like API keys)
@@ -294,6 +295,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Paper Trading routes
   app.use("/api/paper-trading", paperTradingRouter);
+  
+  // Risk Management routes
+  import('./api/risk-settings').then(riskSettingsRouter => {
+    app.use('', riskSettingsRouter.default);
+    console.log('Risk settings routes registered');
+  }).catch(err => {
+    console.error('Failed to register risk settings routes:', err);
+  });
   
   // Database status routes are already registered above via dynamic import
   

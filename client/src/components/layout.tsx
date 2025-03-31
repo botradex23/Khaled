@@ -16,7 +16,8 @@ import {
   LineChart,
   BookOpen,
   Wallet,
-  DollarSign
+  DollarSign,
+  ShieldAlert
 } from "lucide-react";
 
 // Import the API Keys Banner
@@ -51,6 +52,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: "Binance Market Prices", href: "/market-prices", icon: LineChart },
     { name: "Live Market", href: "/live-market", icon: LineChart, isNew: true },
     { name: "Bots", href: "/bots", icon: FlaskConical, auth: true },
+    { name: "Risk Management", href: "/risk-management", icon: ShieldAlert, auth: true },
     { name: "API Keys", href: "/api-keys", icon: Key, auth: true },
     { name: "Learn", href: "/learn", icon: BookOpen },
   ];
@@ -58,6 +60,7 @@ export default function Layout({ children }: LayoutProps) {
   const profileItems = [
     { name: "API Keys", href: "/api-keys", icon: Key },
     { name: "API Status", href: "/api-status", icon: LineChart },
+    { name: "Risk Management", href: "/risk-management", icon: ShieldAlert },
   ];
 
   // Get initials for avatar

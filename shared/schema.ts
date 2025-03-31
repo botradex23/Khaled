@@ -1,5 +1,5 @@
 // Shared schema definitions for the entire application
-import { pgTable, serial, text, boolean, timestamp, integer, json, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, boolean, timestamp, integer, json, varchar, decimal } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { relations } from 'drizzle-orm';
 import { z } from 'zod';
@@ -146,12 +146,34 @@ export const aiTradingData = pgTable('ai_trading_data', {
   metadata: json('metadata'), // Additional AI-specific data
 });
 
+// Risk settings table - store user's risk management preferences
+export const riskSettings = pgTable('risk_settings', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id).unique(),
+  globalStopLoss: decimal('global_stop_loss', { precision: 10, scale: 2 }).notNull().default('5'),
+  globalTakeProfit: decimal('global_take_profit', { precision: 10, scale: 2 }).notNull().default('10'),
+  maxPositionSize: decimal('max_position_size', { precision: 10, scale: 2 }).notNull().default('10'),
+  maxPortfolioRisk: decimal('max_portfolio_risk', { precision: 10, scale: 2 }).notNull().default('20'),
+  maxTradesPerDay: integer('max_trades_per_day').notNull().default(10),
+  enableGlobalStopLoss: boolean('enable_global_stop_loss').notNull().default(true),
+  enableGlobalTakeProfit: boolean('enable_global_take_profit').notNull().default(true),
+  enableMaxPositionSize: boolean('enable_max_position_size').notNull().default(true),
+  stopLossStrategy: text('stop_loss_strategy').notNull().default('fixed'),
+  enableEmergencyStopLoss: boolean('enable_emergency_stop_loss').notNull().default(true),
+  emergencyStopLossThreshold: decimal('emergency_stop_loss_threshold', { precision: 10, scale: 2 }).notNull().default('15'),
+  defaultStopLossPercent: decimal('default_stop_loss_percent', { precision: 10, scale: 2 }).notNull().default('3'),
+  defaultTakeProfitPercent: decimal('default_take_profit_percent', { precision: 10, scale: 2 }).notNull().default('6'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   apiKeys: many(userApiKeys),
   bots: many(tradingBots),
   paperAccounts: many(paperTradingAccounts),
   aiData: many(aiTradingData),
+  riskSettings: one(riskSettings),
 }));
 
 export const userApiKeysRelations = relations(userApiKeys, ({ one }) => ({
@@ -215,6 +237,13 @@ export const aiTradingDataRelations = relations(aiTradingData, ({ one }) => ({
   }),
 }));
 
+export const riskSettingsRelations = relations(riskSettings, ({ one }) => ({
+  user: one(users, {
+    fields: [riskSettings.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas for validation
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertUserApiKeysSchema = createInsertSchema(userApiKeys).omit({ id: true, createdAt: true, updatedAt: true });
@@ -224,6 +253,7 @@ export const insertPaperTradingAccountSchema = createInsertSchema(paperTradingAc
 export const insertPaperTradingPositionSchema = createInsertSchema(paperTradingPositions).omit({ id: true, openedAt: true });
 export const insertPaperTradingTradeSchema = createInsertSchema(paperTradingTrades).omit({ id: true, openedAt: true, closedAt: true });
 export const insertAiTradingDataSchema = createInsertSchema(aiTradingData).omit({ id: true, timestamp: true });
+export const insertRiskSettingsSchema = createInsertSchema(riskSettings).omit({ id: true, createdAt: true, updatedAt: true });
 
 // Type definitions
 export type User = typeof users.$inferSelect;
@@ -249,3 +279,6 @@ export type InsertPaperTradingTrade = z.infer<typeof insertPaperTradingTradeSche
 
 export type AiTradingData = typeof aiTradingData.$inferSelect;
 export type InsertAiTradingData = z.infer<typeof insertAiTradingDataSchema>;
+
+export type RiskSettings = typeof riskSettings.$inferSelect;
+export type InsertRiskSettings = z.infer<typeof insertRiskSettingsSchema>;
