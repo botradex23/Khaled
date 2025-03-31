@@ -147,7 +147,7 @@ export default function MarketPrices() {
         const ticker24hr = data24hrMap.get(ticker.symbol);
         
         return {
-          symbol: baseCurrency,
+          symbol: ticker.symbol, // Use the full symbol (BTCUSDT) instead of just the base currency
           price: parseFloat(ticker.price),
           change24h: ticker24hr ? parseFloat(ticker24hr.priceChangePercent) : 0,
           volume24h: ticker24hr ? parseFloat(ticker24hr.quoteVolume) : 0, // Using quoteVolume for USD volume
@@ -190,9 +190,11 @@ export default function MarketPrices() {
           break;
       }
       
-      filteredData = filteredData.filter(market => 
-        categoryList.includes(market.symbol)
-      );
+      filteredData = filteredData.filter(market => {
+        // Extract base currency for category matching (e.g., BTC from BTCUSDT)
+        const baseCurrency = market.symbol.replace('USDT', '');
+        return categoryList.includes(baseCurrency);
+      });
     }
 
     // Apply sorting

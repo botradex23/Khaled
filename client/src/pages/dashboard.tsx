@@ -66,6 +66,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { MarketPriceWidget } from "@/components/ui/market-price-widget";
+import { MarketPricesTable } from "@/components/ui/market-prices-table";
 
 export default function Dashboard() {
   const { isAuthenticated, isLoading: authLoading, checkSession, user } = useAuth();
@@ -351,6 +352,11 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          {/* Market Prices Table */}
+          <div className="mb-8">
+            <MarketPricesTable />
+          </div>
+          
           {/* Market Prices and Trading cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Trading Activity Card */}
