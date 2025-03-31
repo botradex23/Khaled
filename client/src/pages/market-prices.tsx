@@ -172,9 +172,9 @@ export default function MarketPrices() {
       
         <Card className="border shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-2xl font-bold">Cryptocurrency Market</CardTitle>
+            <CardTitle className="text-2xl font-bold">Binance Market Prices</CardTitle>
             <CardDescription>
-              Live market data for top cryptocurrencies
+              Live market data from Binance for top cryptocurrencies
             </CardDescription>
             <div className="flex flex-col md:flex-row justify-between gap-4 mt-3">
               <div className="relative w-full md:w-64">

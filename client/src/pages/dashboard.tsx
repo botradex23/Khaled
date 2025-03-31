@@ -169,7 +169,7 @@ export default function Dashboard() {
                 <div className="flex justify-between items-center">
                   <div>
                     <CardTitle className="text-xl font-medium">Market Overview</CardTitle>
-                    <CardDescription>Live cryptocurrency market prices</CardDescription>
+                    <CardDescription>Live Binance market data and prices</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-xs px-2 py-1 rounded-full bg-blue-500/10 text-blue-500">
@@ -181,7 +181,7 @@ export default function Dashboard() {
                       className="text-xs"
                       onClick={() => window.location.href = '/market-prices'}
                     >
-                      View All
+                      View Market Prices
                       <ArrowRight className="ml-2 h-3 w-3" />
                     </Button>
                   </div>
@@ -388,7 +388,7 @@ export default function Dashboard() {
                     onClick={() => window.location.href = "/market-prices"}
                   >
                     <TrendingUp className="mr-2 h-4 w-4" />
-                    Market Prices
+                    Binance Market Prices
                   </Button>
                   
                   <Button 
