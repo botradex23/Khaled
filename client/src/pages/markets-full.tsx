@@ -67,10 +67,26 @@ export default function MarketsFullPage() {
       
       const data = await response.json();
       
-      setMarketData(data);
-      setLastUpdated(new Date());
-      setError(null);
-    } catch (err) {
+      // Make sure we're setting the actual array of market data
+      if (data.success && Array.isArray(data.data)) {
+        // Transform the data to include missing properties with default values
+        const transformedData: MarketData[] = data.data.map((item: any): MarketData => ({
+          symbol: item.symbol || '',
+          price: typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0,
+          change24h: item.change24h || 0, // Default to 0% change if not provided
+          volume24h: item.volume24h || 0,  // Default to 0 volume if not provided
+          high24h: item.high24h || 0,  // Default to 0 high if not provided
+          low24h: item.low24h || 0,    // Default to 0 low if not provided
+        }));
+        
+        setMarketData(transformedData);
+        setLastUpdated(new Date());
+        setError(null);
+      } else {
+        console.error('Unexpected data format from API:', data);
+        throw new Error('Invalid data format received from server');
+      }
+    } catch (err: any) {
       console.error('Error fetching market data:', err);
       setError(err.message || 'Failed to load market data');
       setMarketData([]);
