@@ -278,10 +278,10 @@ export default function MarketsFullPage() {
                                 : 'text-slate-300'
                             }`}
                           >
-                            {(market.change24h || 0).toFixed(2)}%
+                            {market.change24h ? `${market.change24h.toFixed(2)}%` : '0.00%'}
                           </TableCell>
                           <TableCell className="py-4 px-4 text-right text-slate-300">
-                            ${(market.volume24h || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                            {market.volume24h ? `$${market.volume24h.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '$0'}
                           </TableCell>
                           <TableCell className="py-4 px-4 text-right">
                             <Button 
