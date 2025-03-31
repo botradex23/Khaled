@@ -107,9 +107,9 @@ export class BinanceMarketPriceService extends EventEmitter {
     } catch (error: any) {
       console.error('Error fetching all prices from Binance:', error.message);
       
-      // If we have a 451 error (geo-restriction) or any other error, provide simulated data
-      if (error.response?.status === 451 || true) {
-        console.log('Providing simulated price data due to API access restrictions');
+      // אם יש שגיאת 451 (חסימה גאוגרפית), ספק נתונים מדומים
+      if (error.response?.status === 451) {
+        console.log('Providing simulated price data due to geo-restriction (451)');
         return this.getSimulatedMarketPrices();
       }
       
@@ -233,9 +233,9 @@ export class BinanceMarketPriceService extends EventEmitter {
     } catch (error: any) {
       console.error(`Error fetching price for ${symbol} from Binance:`, error.message);
       
-      // Provide simulated data for this specific symbol
-      if (error.response?.status === 451 || true) {
-        console.log(`Providing simulated price data for ${symbol} due to API access restrictions`);
+      // Provide simulated data only if geo-restricted
+      if (error.response?.status === 451) {
+        console.log(`Providing simulated price data for ${symbol} due to geo-restriction (451)`);
         const simulatedPrices = this.getSimulatedMarketPrices();
         const matchingPrice = simulatedPrices.find(p => p.symbol === symbol);
         
@@ -287,9 +287,9 @@ export class BinanceMarketPriceService extends EventEmitter {
     } catch (error: any) {
       console.error(`Error fetching 24hr stats from Binance:`, error.message);
       
-      // Provide simulated 24hr data
-      if (error.response?.status === 451 || true) {
-        console.log(`Providing simulated 24hr stats ${symbol ? 'for ' + symbol : ''} due to API access restrictions`);
+      // Provide simulated 24hr data only if geo-restricted
+      if (error.response?.status === 451) {
+        console.log(`Providing simulated 24hr stats ${symbol ? 'for ' + symbol : ''} due to geo-restriction (451)`);
         
         if (symbol) {
           // Return data for a specific symbol
