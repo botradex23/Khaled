@@ -16,7 +16,7 @@ const router = express.Router();
 
 /**
  * GET /api/market/prices
- * מחזיר את מחירי הקריפטו מבינאנס או ממקור מדומה אם אין גישה
+ * מחזיר את מחירי הקריפטו מבינאנס בלבד - אין נתונים מדומים
  */
 router.get('/prices', async (req: Request, res: Response) => {
   try {
@@ -73,100 +73,21 @@ router.get('/prices', async (req: Request, res: Response) => {
         data: filteredPrices
       });
     } 
-    // במקרה של שגיאת API נשתמש במחירים מדומים
+    // במקרה של שגיאת API נחזיר שגיאה - לא נשתמש בנתונים מדומים
     catch (apiError: any) {
       log(`API error fetching market prices: ${apiError.message}`, 'api');
       
-      // נסה לספק מחירים מדומים
-      try {
-        log('Using fallback prices', 'api');
-        
-        // מחירים מדומים קבועים
-        const generateFallbackPrices = () => {
-          // מחירים בסיסיים לשימוש כשאין מקור אחר
-          const baseData = [
-            { symbol: 'BTC', price: 69250.25, priceChangePercent: 1.24 },
-            { symbol: 'ETH', price: 3475.50, priceChangePercent: 0.85 },
-            { symbol: 'BNB', price: 608.75, priceChangePercent: -0.32 },
-            { symbol: 'SOL', price: 188.15, priceChangePercent: 2.15 },
-            { symbol: 'XRP', price: 0.6125, priceChangePercent: -1.05 },
-            { symbol: 'ADA', price: 0.45, priceChangePercent: 0.72 },
-            { symbol: 'DOGE', price: 0.16, priceChangePercent: 3.21 },
-            { symbol: 'DOT', price: 8.25, priceChangePercent: -0.65 },
-            { symbol: 'MATIC', price: 0.78, priceChangePercent: 1.18 },
-            { symbol: 'LINK', price: 15.85, priceChangePercent: 0.92 },
-            { symbol: 'AVAX', price: 41.28, priceChangePercent: -1.25 },
-            { symbol: 'UNI', price: 12.35, priceChangePercent: 0.48 },
-            { symbol: 'SHIB', price: 0.00002654, priceChangePercent: 2.35 },
-            { symbol: 'LTC', price: 93.21, priceChangePercent: -0.28 },
-            { symbol: 'ATOM', price: 11.23, priceChangePercent: 0.75 },
-            { symbol: 'NEAR', price: 7.15, priceChangePercent: -0.52 },
-            { symbol: 'BCH', price: 523.75, priceChangePercent: 1.32 },
-            { symbol: 'FIL', price: 8.93, priceChangePercent: 0.65 },
-            { symbol: 'TRX', price: 0.1426, priceChangePercent: -0.42 },
-            { symbol: 'XLM', price: 0.1392, priceChangePercent: 0.38 }
-          ];
-          
-          // עדכון המחירים בסימולציה קטנה
-          return baseData.map(coin => {
-            const randomChange = (Math.random() * 0.01 - 0.005); // -0.5% עד +0.5%
-            const newPrice = coin.price * (1 + randomChange);
-            const changePercent = coin.priceChangePercent + randomChange * 100;
-            
-            return {
-              ...coin,
-              price: newPrice,
-              priceChangePercent: changePercent.toFixed(2)
-            };
-          });
-        };
-        
-        // יצירת מחירים מדומים
-        const fallbackPrices = generateFallbackPrices();
-        
-        // סינון לפי המטבעות המבוקשים
-        let filteredPrices = fallbackPrices;
-        if (filterSymbols && filterSymbols.length > 0) {
-          filteredPrices = fallbackPrices.filter(p => 
-            filterSymbols!.includes(p.symbol) || 
-            filterSymbols!.some(s => p.symbol.startsWith(s))
-          );
-        }
-        
-        // הגבלת כמות התוצאות אם נדרש
-        if (limit && !isNaN(limit) && limit > 0) {
-          filteredPrices = filteredPrices.slice(0, limit);
-        }
-        
-        // החזרת תשובה עם המחירים המדומים
-        return res.json({
-          success: true,
-          timestamp: new Date().toISOString(),
-          totalRequested: filterSymbols ? filterSymbols.length : 0,
-          totalFound: filteredPrices.length,
-          source: 'fallback-data',
-          count: filteredPrices.length,
-          prices: filteredPrices,
-          data: filteredPrices,
-          isSimulated: true
-        });
-      } 
-      // אם גם הסימולציה נכשלה
-      catch (simulationError: any) {
-        log(`Failed to use simulated prices: ${simulationError}`, 'api');
+      // לפי דרישת המשתמש: רק נתונים אמיתיים, ללא נתונים מדומים
+      const statusCode = apiError.response?.status || 503;
+      const errorMessage = apiError.message.includes('geo-restriction') ? 
+        'Binance API unavailable in your region - please use a VPN to access real market data' : 
+        'Market data service temporarily unavailable - real-time data cannot be displayed';
       
-        // נחזיר שגיאה מתאימה
-        const statusCode = apiError.response?.status || 503;
-        const errorMessage = apiError.message.includes('geo-restriction') ? 
-          'Binance API unavailable in your region' : 
-          'Market data service temporarily unavailable';
-        
-        res.status(statusCode).json({ 
-          success: false,
-          error: errorMessage,
-          details: apiError.message 
-        });
-      }
+      res.status(statusCode).json({ 
+        success: false,
+        error: errorMessage,
+        details: apiError.message
+      });
     }
   } 
   // שגיאה כללית בטיפול בבקשה
@@ -175,7 +96,7 @@ router.get('/prices', async (req: Request, res: Response) => {
     res.status(500).json({ 
       success: false,
       error: 'Failed to process market price request', 
-      details: error.message 
+      details: error.message
     });
   }
 });
