@@ -341,6 +341,13 @@ class BinanceWebSocketService extends EventEmitter {
   public isWebSocketConnected(): boolean {
     return this.isConnected && this.ws !== null;
   }
+  
+  /**
+   * קבלת המחירים האחרונים (אמיתיים או מדומים)
+   */
+  public getLastPrices(): Record<string, number> {
+    return this.lastPrices;
+  }
 
   /**
    * הוספת מטבעות למעקב
