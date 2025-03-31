@@ -29,9 +29,15 @@ export default function MarketPrices() {
     direction: 'asc',
   });
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'top' | 'stablecoins' | 'defi'>('all');
   
   // Keep track if user needs to set up API keys
   const [apiKeysSetup, setApiKeysSetup] = useState(false);
+  
+  // Define categories of cryptocurrencies
+  const topCurrencies = ['BTC', 'ETH', 'SOL', 'BNB', 'ADA', 'XRP', 'DOT', 'DOGE', 'AVAX', 'MATIC', 'ATOM', 'LINK', 'UNI', 'LTC', 'ALGO'];
+  const stablecoins = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'UST', 'USDP', 'USDN', 'GUSD', 'FRAX'];
+  const defiTokens = ['UNI', 'AAVE', 'CAKE', 'COMP', 'MKR', 'SNX', 'SUSHI', 'YFI', 'CRV', 'BAL', '1INCH', 'ALPHA', 'BADGER', 'BIFI', 'BNT', 'CVX', 'ENJ', 'FARM', 'FTM', 'HBAR', 'INJ', 'KNC', 'KAVA', 'LUNA', 'LINA', 'MANA', 'PERP', 'SAND', 'SRM', 'WAVES'];
   
   // Check for API keys via API
   const { data: apiKeysData } = useQuery({
@@ -53,7 +59,7 @@ export default function MarketPrices() {
   });
 
   // Fetch market tickers data from the Binance market tickers endpoint
-  const { data: tickersData, isLoading: tickersLoading, error: tickersError } = useQuery<
+  const { data: tickersData, isLoading: tickersLoading, error: tickersError, refetch: refetchTickers } = useQuery<
     Array<{ symbol: string; price: string; }>
   >({
     queryKey: ['/api/binance/market/tickers'], 
@@ -64,7 +70,7 @@ export default function MarketPrices() {
   });
   
   // Fetch 24hr market data for more detailed information
-  const { data: marketData24hr, isLoading: market24hrLoading, error: market24hrError } = useQuery<
+  const { data: marketData24hr, isLoading: market24hrLoading, error: market24hrError, refetch: refetch24hr } = useQuery<
     Array<{ 
       symbol: string; 
       priceChange: string;
@@ -83,6 +89,12 @@ export default function MarketPrices() {
     refetchInterval: 30000, // Refresh every 30 seconds
     refetchOnWindowFocus: true, // Refresh when window regains focus
   });
+  
+  // Function to refresh all market data
+  const refreshAllData = () => {
+    refetchTickers();
+    refetch24hr();
+  };
   
   // console output for debugging
   React.useEffect(() => {
@@ -159,6 +171,27 @@ export default function MarketPrices() {
       const query = searchQuery.toLowerCase();
       filteredData = filteredData.filter(
         (market) => market.symbol.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply category filter
+    if (activeCategory !== 'all') {
+      let categoryList: string[] = [];
+      
+      switch (activeCategory) {
+        case 'top':
+          categoryList = topCurrencies;
+          break;
+        case 'stablecoins':
+          categoryList = stablecoins;
+          break;
+        case 'defi':
+          categoryList = defiTokens;
+          break;
+      }
+      
+      filteredData = filteredData.filter(market => 
+        categoryList.includes(market.symbol)
       );
     }
 
@@ -246,28 +279,66 @@ export default function MarketPrices() {
       
         <Card className="border shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-2xl font-bold">Binance Market Prices</CardTitle>
+            <CardTitle className="text-2xl font-bold">Market Prices</CardTitle>
             <CardDescription>
-              Live market data from Binance for top cryptocurrencies
+              Current prices of cryptocurrencies and tokens on Binance
             </CardDescription>
             <div className="flex flex-col md:flex-row justify-between gap-4 mt-3">
               <div className="relative w-full md:w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search market..."
+                  placeholder="Search currency..."
                   className="pl-8"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="font-normal">
-                  Updated every 30s
-                </Badge>
-                <Badge variant="outline" className="font-normal">
-                  {filteredAndSortedData.length} Markets
-                </Badge>
+                <Button
+                  variant="outline"
+                  className="hover:bg-primary/10"
+                  onClick={refreshAllData}
+                  disabled={tickersLoading || market24hrLoading}
+                >
+                  Refresh
+                </Button>
               </div>
+            </div>
+            
+            {/* Filter tabs */}
+            <div className="flex flex-wrap gap-2 mt-4">
+              <Button 
+                variant={activeCategory === 'all' ? "default" : "outline"} 
+                size="sm" 
+                className={`rounded-full ${activeCategory === 'all' ? "bg-primary text-white" : ""}`}
+                onClick={() => setActiveCategory('all')}
+              >
+                All
+              </Button>
+              <Button 
+                variant={activeCategory === 'top' ? "default" : "outline"} 
+                size="sm" 
+                className={`rounded-full ${activeCategory === 'top' ? "bg-primary text-white" : ""}`}
+                onClick={() => setActiveCategory('top')}
+              >
+                Top Currencies
+              </Button>
+              <Button 
+                variant={activeCategory === 'stablecoins' ? "default" : "outline"} 
+                size="sm" 
+                className={`rounded-full ${activeCategory === 'stablecoins' ? "bg-primary text-white" : ""}`}
+                onClick={() => setActiveCategory('stablecoins')}
+              >
+                Stablecoins
+              </Button>
+              <Button 
+                variant={activeCategory === 'defi' ? "default" : "outline"} 
+                size="sm" 
+                className={`rounded-full ${activeCategory === 'defi' ? "bg-primary text-white" : ""}`}
+                onClick={() => setActiveCategory('defi')}
+              >
+                DeFi
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
