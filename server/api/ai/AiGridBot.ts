@@ -8,10 +8,29 @@
 import { okxService } from '../okx/okxService';
 import { aiTradingSystem, MarketState } from './AITradingSystem';
 import { dataCollector, TimeFrame } from './DataCollector';
-import { Bot } from '../../../shared/schema';
 import { storage } from '../../storage';
 import fs from 'fs';
 import path from 'path';
+import { executeAiGridBotTrade } from './AiGridBotPaperTrading';
+
+// מכיוון ש- Bot לא קיים בסכמה, אנחנו מגדירים את הטיפוס הזה כאן
+interface Bot {
+  id: number;
+  name: string;
+  strategy: string;
+  description: string;
+  isRunning: boolean;
+  userId: number;
+  parameters: string;
+  tradingPair: string;
+  createdAt: Date;
+  lastStartedAt: Date | null;
+  lastStoppedAt: Date | null;
+  profitLoss: string;
+  profitLossPercent: string;
+  totalTrades: number;
+  [key: string]: any; // שדות נוספים שעשויים להיות קיימים
+}
 
 // פרמטרים של בוט גריד מתקדם
 export interface AiGridParams {
@@ -288,6 +307,17 @@ export class AiGridBotManager {
     try {
       // וודא שמערכת ה-AI מאותחלת
       await aiTradingSystem.start();
+      
+      // הפעלת ה-Paper Trading Bridge למסחר באמצעות Paper Trading
+      console.log('Initializing Paper Trading support for AI Grid Bots...');
+      try {
+        // ייבוא והפעלת הגשר
+        const { enablePaperTradingForAiGridBots } = await import('./AiGridBotPaperTrading');
+        enablePaperTradingForAiGridBots(this);
+        console.log('Paper Trading support initialized successfully');
+      } catch (error) {
+        console.error(`Failed to initialize Paper Trading support: ${error}`);
+      }
       
       // אתחול כל הבוטים ששמורים במערכת
       const botIds = botDatabase.getAllBotIds();
@@ -681,12 +711,25 @@ export class AiGridBotManager {
           // המר את הפעולה לפורמט שמתקבל ע"י ה-API
           const side = finalAction === 'BUY' ? 'buy' : 'sell';
           
-          const result = await okxService.placeOrder(
+          // ביצוע העסקה באמצעות Paper Trading במקום OKX
+          // ייבוא והשתמש בפונקציה מהמודול
+          const { executeAiGridBotTrade } = await import('./AiGridBotPaperTrading');
+          const paperTradingResult = await executeAiGridBotTrade(
+            botId,
             symbol,
-            side,
-            orderType,
-            amount
+            currentPrice,
+            parseFloat(amount),
+            side === 'buy',
+            reason,
+            aiConfidence || 0.5
           );
+          
+          // לשם תאימות עם הקוד הקיים, גם אם אנחנו מבצעים ב-Paper Trading, נשמור את התשובה בפורמט דומה
+          const result = paperTradingResult ? { 
+            data: { ordId: `paper_${Date.now()}` },
+            code: '0',
+            msg: 'success'
+          } : null;
           
           if (result && typeof result === 'object' && 'data' in result && result.data && typeof result.data === 'object' && 'ordId' in result.data) {
             console.log(`AI Bot ${botId}: ${finalAction} order executed successfully - Order ID: ${result.data.ordId}`);
