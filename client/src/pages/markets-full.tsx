@@ -73,8 +73,8 @@ export default function MarketsFullPage() {
         const transformedData: MarketData[] = data.data.map((item: any): MarketData => ({
           symbol: item.symbol || '',
           price: typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0,
-          change24h: item.change24h || 0, // Default to 0% change if not provided
-          volume24h: item.volume24h || 0,  // Default to 0 volume if not provided
+          change24h: item.priceChangePercent != null ? parseFloat(item.priceChangePercent) : 0, // Use price change percent from API
+          volume24h: item.volume != null ? parseFloat(item.volume) : 0,  // Use volume from API
           high24h: item.high24h || 0,  // Default to 0 high if not provided
           low24h: item.low24h || 0,    // Default to 0 low if not provided
         }));
@@ -257,9 +257,9 @@ export default function MarketsFullPage() {
                     <TableHeader>
                       <TableRow className="border-b border-blue-800">
                         <TableHead className="py-3 px-4 text-slate-300 font-normal">Price</TableHead>
-                        <TableHead className="py-3 px-4 text-slate-300 font-normal text-right">24h Change</TableHead>
-                        <TableHead className="py-3 px-4 text-slate-300 font-normal text-right">24h Volume</TableHead>
-                        <TableHead className="py-3 px-4 text-slate-300 font-normal text-right">Actions</TableHead>
+                        <TableHead className="py-3 px-4 text-slate-300 font-normal text-center">24h<br/>Change</TableHead>
+                        <TableHead className="py-3 px-4 text-slate-300 font-normal text-center">24h<br/>Volume</TableHead>
+                        <TableHead className="py-3 px-4 text-slate-300 font-normal text-right"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -270,7 +270,7 @@ export default function MarketsFullPage() {
                             <div className="text-sm text-slate-400">{market.symbol}</div>
                           </TableCell>
                           <TableCell 
-                            className={`py-4 px-4 text-right ${
+                            className={`py-4 px-4 text-center ${
                               (market.change24h || 0) > 0 
                                 ? 'text-green-500'
                                 : (market.change24h || 0) < 0
@@ -280,18 +280,17 @@ export default function MarketsFullPage() {
                           >
                             {market.change24h ? `${market.change24h.toFixed(2)}%` : '0.00%'}
                           </TableCell>
-                          <TableCell className="py-4 px-4 text-right text-slate-300">
+                          <TableCell className="py-4 px-4 text-center text-slate-300">
                             {market.volume24h ? `$${market.volume24h.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '$0'}
                           </TableCell>
                           <TableCell className="py-4 px-4 text-right">
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="border-blue-700 hover:bg-blue-700 text-blue-300"
+                              className="border-blue-900 bg-blue-950 hover:bg-blue-900 text-blue-300 rounded-md px-4"
                               onClick={() => window.location.href = `/trade?symbol=${market.symbol}`}
                             >
                               <span>Trade</span>
-                              <ChevronDown className="ml-1 h-4 w-4" />
                             </Button>
                           </TableCell>
                         </TableRow>
