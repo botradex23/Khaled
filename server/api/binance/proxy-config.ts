@@ -12,9 +12,9 @@ export const VPN_CONFIG = {
   // Type of proxy: 'https' or 'socks'
   type: 'https' as 'https' | 'socks', // Reverting back to HTTPS proxy
 
-  // Webshare proxy server details
-  host: '185.199.228.220', // Webshare proxy IP address in UK (works with Binance)
-  port: 7300,             // Corresponding port
+  // Webshare proxy server details - this is the proxy that works with WebSocket
+  host: '185.199.228.220', // Working proxy IP address verified for Binance WebSocket
+  port: 7300,             // Working proxy port
   
   // Webshare authentication credentials
   auth: {

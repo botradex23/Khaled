@@ -1,6 +1,13 @@
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
 import { binanceMarketService, BinanceTickerPrice } from './marketPriceService';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+
+// פרטי הפרוקסי שעובד עם WebSocket של Binance
+const PROXY_HOST = '185.199.228.220';
+const PROXY_PORT = 7300;
+const PROXY_USERNAME = 'ahjqspco';
+const PROXY_PASSWORD = 'dzx3r1prpz9k';
 
 // EventEmitter להעברת עדכוני מחירים בזמן אמת
 class BinanceWebSocketService extends EventEmitter {
@@ -49,7 +56,22 @@ class BinanceWebSocketService extends EventEmitter {
       
       console.log(`Connecting to Binance WebSocket: ${wsUrl}`);
       
-      this.ws = new WebSocket(wsUrl);
+      // יצירת מופע פרוקסי להתחברות ל-WebSocket
+      const proxyUrl = `http://${PROXY_USERNAME}:${PROXY_PASSWORD}@${PROXY_HOST}:${PROXY_PORT}`;
+      console.log(`Using HTTPS proxy for WebSocket: ${PROXY_HOST}:${PROXY_PORT}`);
+      const agent = new HttpsProxyAgent(proxyUrl);
+      
+      // יצירת אפשרויות WebSocket עם הפרוקסי
+      const wsOptions = {
+        agent,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Origin': 'https://www.binance.com'
+        }
+      };
+      
+      // התחברות ל-WebSocket דרך הפרוקסי
+      this.ws = new WebSocket(wsUrl, wsOptions);
       
       this.ws.on('open', () => {
         console.log('Connected to Binance WebSocket');

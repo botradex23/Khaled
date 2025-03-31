@@ -6,12 +6,12 @@ import https from 'https';
 const BINANCE_BASE_URL = 'https://api.binance.com';
 const BINANCE_TEST_URL = 'https://testnet.binance.vision';
 
-// Proxy configuration for bypassing geo-restrictions (using the credentials from check_proxy.js)
+// Proxy configuration for bypassing geo-restrictions - using the proxy that works with WebSocket
 const USE_PROXY = true; // Set to true to use proxy
 const PROXY_USERNAME = "ahjqspco";
 const PROXY_PASSWORD = "dzx3r1prpz9k";
-const PROXY_IP = process.env.PROXY_IP || '38.154.227.167'; // Use environment variable or value from check_proxy.js
-const PROXY_PORT = process.env.PROXY_PORT || '5868';       // Port from check_proxy.js
+const PROXY_IP = process.env.PROXY_IP || '185.199.228.220'; // Working proxy IP from tests
+const PROXY_PORT = process.env.PROXY_PORT || '7300';       // Working proxy port
 
 // Create axios instance with proxy if needed
 const createAxiosInstance = () => {
