@@ -104,10 +104,10 @@ class BinanceWebSocketService extends EventEmitter {
         console.error('Binance WebSocket error:', error);
         this.emit('error', error);
         
-        // במקרה ויש שגיאת חיבור עם קוד 451 (הגבלה גיאוגרפית) עבור לסימולציה
+        // במקרה ויש שגיאת חיבור עם קוד 451 (הגבלה גיאוגרפית), נדווח אבל לא נפעיל סימולציה
         if (error && (error.message?.includes('451') || error.code === 451)) {
-          console.log('Detected geo-restriction (451), switching to simulation mode');
-          this.startSimulation();
+          console.log('[WebSocket] Binance WebSocket geo-restriction detected (451)');
+          // לא מפעילים סימולציה - this.startSimulation();
         }
       });
       
@@ -116,23 +116,17 @@ class BinanceWebSocketService extends EventEmitter {
         this.isConnected = false;
         this.ws = null;
         
-        // במקרה של סגירה לא רצויה, מעבר למצב סימולציה
-        if (code !== 1000) { // 1000 הוא קוד סגירה נורמלי
-          this.startSimulation();
-        }
+        // אין מעבר למצב סימולציה, רק דיווח על הסגירה
+        this.emit('disconnected', { code, reason });
         
         // ניסיון חיבור מחדש
         this.scheduleReconnect();
-        
-        this.emit('disconnected', { code, reason });
       });
     } catch (error) {
       console.error('Error creating Binance WebSocket connection:', error);
       this.emit('error', error);
       
-      // במקרה של כשלון יצירת חיבור, מעבר למצב סימולציה
-      this.startSimulation();
-      
+      // ניסיון חיבור מחדש, ללא סימולציה
       this.scheduleReconnect();
     }
   }

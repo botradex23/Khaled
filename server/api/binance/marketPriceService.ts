@@ -1,9 +1,45 @@
 import axios from 'axios';
 import { EventEmitter } from 'events';
+import https from 'https';
 
 // Base URLs for Binance API
 const BINANCE_BASE_URL = 'https://api.binance.com';
 const BINANCE_TEST_URL = 'https://testnet.binance.vision';
+
+// Proxy configuration for bypassing geo-restrictions (using the credentials from check_proxy.js)
+const USE_PROXY = true; // Set to true to use proxy
+const PROXY_USERNAME = "ahjqspco";
+const PROXY_PASSWORD = "dzx3r1prpz9k";
+const PROXY_IP = process.env.PROXY_IP || '38.154.227.167'; // Use environment variable or value from check_proxy.js
+const PROXY_PORT = process.env.PROXY_PORT || '5868';       // Port from check_proxy.js
+
+// Create axios instance with proxy if needed
+const createAxiosInstance = () => {
+  if (USE_PROXY && PROXY_IP) {
+    console.log(`Using proxy: ${PROXY_IP}:${PROXY_PORT} for Binance API requests`);
+    
+    // Create direct proxy config for axios
+    return axios.create({
+      proxy: {
+        host: PROXY_IP,
+        port: Number(PROXY_PORT),
+        auth: {
+          username: PROXY_USERNAME,
+          password: PROXY_PASSWORD
+        }
+      },
+      timeout: 10000, // 10 seconds timeout
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept': 'application/json'
+      }
+    });
+  }
+  
+  // Return regular axios if proxy is not needed
+  return axios;
+};
 
 // ממשק עבור נתוני המחיר בזמן אמת
 export interface LivePriceUpdate {
@@ -95,25 +131,26 @@ export class BinanceMarketPriceService extends EventEmitter {
    */
   async getAllPrices(): Promise<BinanceTickerPrice[]> {
     try {
-      const response = await axios.get(`${this.baseUrl}/api/v3/ticker/price`);
+      // השתמש ב-Axios עם פרוקסי כשצריך
+      const axiosInstance = createAxiosInstance();
+      const response = await axiosInstance.get(`${this.baseUrl}/api/v3/ticker/price`);
       
       if (response.status === 200 && Array.isArray(response.data)) {
         console.log(`Successfully fetched ${response.data.length} prices from Binance`);
         return response.data;
       } else {
         console.error('Unexpected response format from Binance:', response.data);
-        return [];
+        throw new Error('Invalid response format from Binance API');
       }
     } catch (error: any) {
       console.error('Error fetching all prices from Binance:', error.message);
       
-      // אם יש שגיאת 451 (חסימה גאוגרפית), ספק נתונים מדומים
       if (error.response?.status === 451) {
-        console.log('Providing simulated price data due to geo-restriction (451)');
-        return this.getSimulatedMarketPrices();
+        console.log('Binance API access restricted due to geo-restriction (451)');
+        throw new Error('Binance API access restricted in your region');
+      } else {
+        throw error; // זרוק את השגיאה המקורית
       }
-      
-      return [];
     }
   }
   
@@ -218,7 +255,9 @@ export class BinanceMarketPriceService extends EventEmitter {
       // Convert symbol format if needed (e.g., "BTC-USDT" -> "BTCUSDT")
       const formattedSymbol = symbol.replace('-', '');
       
-      const response = await axios.get(
+      // השתמש ב-Axios עם פרוקסי כשצריך
+      const axiosInstance = createAxiosInstance();
+      const response = await axiosInstance.get(
         `${this.baseUrl}/api/v3/ticker/price`, 
         { params: { symbol: formattedSymbol } }
       );
@@ -228,29 +267,17 @@ export class BinanceMarketPriceService extends EventEmitter {
         return response.data;
       } else {
         console.error('Unexpected response format from Binance:', response.data);
-        return null;
+        throw new Error('Invalid response format from Binance API');
       }
     } catch (error: any) {
       console.error(`Error fetching price for ${symbol} from Binance:`, error.message);
       
-      // Provide simulated data only if geo-restricted
       if (error.response?.status === 451) {
-        console.log(`Providing simulated price data for ${symbol} due to geo-restriction (451)`);
-        const simulatedPrices = this.getSimulatedMarketPrices();
-        const matchingPrice = simulatedPrices.find(p => p.symbol === symbol);
-        
-        if (matchingPrice) {
-          return matchingPrice;
-        } else {
-          // If no predefined price for this symbol, generate a reasonable one
-          return {
-            symbol,
-            price: '1.0000' // Default fallback price
-          };
-        }
+        console.log(`Binance API access restricted for ${symbol} due to geo-restriction (451)`);
+        throw new Error(`Binance API access restricted for ${symbol} in your region`);
       }
       
-      return null;
+      throw error;
     }
   }
   
@@ -267,7 +294,9 @@ export class BinanceMarketPriceService extends EventEmitter {
         params.symbol = symbol.replace('-', '');
       }
       
-      const response = await axios.get(
+      // השתמש ב-Axios עם פרוקסי כשצריך
+      const axiosInstance = createAxiosInstance();
+      const response = await axiosInstance.get(
         `${this.baseUrl}/api/v3/ticker/24hr`, 
         { params }
       );
@@ -282,26 +311,17 @@ export class BinanceMarketPriceService extends EventEmitter {
         }
       } else {
         console.error('Unexpected response format from Binance:', response.data);
-        return null;
+        throw new Error('Invalid response format from Binance API');
       }
     } catch (error: any) {
       console.error(`Error fetching 24hr stats from Binance:`, error.message);
       
-      // Provide simulated 24hr data only if geo-restricted
       if (error.response?.status === 451) {
-        console.log(`Providing simulated 24hr stats ${symbol ? 'for ' + symbol : ''} due to geo-restriction (451)`);
-        
-        if (symbol) {
-          // Return data for a specific symbol
-          return this.getSimulated24hrStats(symbol);
-        } else {
-          // Return data for all important symbols
-          const importantSymbols = BinanceMarketPriceService.getImportantCurrencyPairs();
-          return importantSymbols.map(sym => this.getSimulated24hrStats(sym));
-        }
+        console.log(`Binance API access restricted for 24hr data due to geo-restriction (451)`);
+        throw new Error('Binance API access restricted in your region');
       }
       
-      return null;
+      throw error;
     }
   }
   

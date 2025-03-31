@@ -28,49 +28,64 @@ router.get('/prices', async (req: Request, res: Response) => {
       filterSymbols = defaultCoins;
     }
     
-    // שליפת המחירים מבינאנס
-    const allPrices = await binanceMarketService.getAllPrices();
-    
-    // מיפוי המחירים לפורמט הסטנדרטי של המערכת
-    const mappedPrices = allPrices.map(price => ({
-      symbol: price.symbol.replace('USDT', ''),  // הסרת USDT כדי לקבל רק את סמל המטבע
-      price: typeof price.price === 'string' ? parseFloat(price.price) : price.price,
-      found: true,
-      source: 'binance',
-      timestamp: Date.now()
-    }));
-    
-    // סינון לפי המטבעות המבוקשים
-    let filteredPrices = mappedPrices;
-    if (filterSymbols && filterSymbols.length > 0) {
-      filteredPrices = mappedPrices.filter(p => 
-        filterSymbols!.includes(p.symbol) || 
-        filterSymbols!.some(s => p.symbol.startsWith(s))
-      );
+    try {
+      // שליפת המחירים מבינאנס
+      const allPrices = await binanceMarketService.getAllPrices();
+      
+      // מיפוי המחירים לפורמט הסטנדרטי של המערכת
+      const mappedPrices = allPrices.map(price => ({
+        symbol: price.symbol.replace('USDT', ''),  // הסרת USDT כדי לקבל רק את סמל המטבע
+        price: typeof price.price === 'string' ? parseFloat(price.price) : price.price,
+        found: true,
+        source: 'binance',
+        timestamp: Date.now()
+      }));
+      
+      // סינון לפי המטבעות המבוקשים
+      let filteredPrices = mappedPrices;
+      if (filterSymbols && filterSymbols.length > 0) {
+        filteredPrices = mappedPrices.filter(p => 
+          filterSymbols!.includes(p.symbol) || 
+          filterSymbols!.some(s => p.symbol.startsWith(s))
+        );
+      }
+      
+      // הגבלת כמות התוצאות אם נדרש
+      if (limit && !isNaN(limit) && limit > 0) {
+        filteredPrices = filteredPrices.slice(0, limit);
+      }
+      
+      // החזרת תשובה בפורמט המוכר למערכת
+      // הוספת גם data וגם prices לתמיכה בכל הקומפוננטות השונות
+      res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        totalRequested: filterSymbols.length,
+        totalFound: filteredPrices.length,
+        source: 'binance',
+        count: filteredPrices.length,
+        prices: filteredPrices,
+        data: filteredPrices // הוספת שדה data עבור קומפוננטות שמצפות לו
+      });
+    } catch (apiError: any) {
+      // במקרה של שגיאת API מחזירים סטטוס מתאים עם הודעת שגיאה ברורה
+      const statusCode = apiError.response?.status || 503;
+      const errorMessage = apiError.message.includes('geo-restriction') ? 
+        'Binance API unavailable in your region' : 
+        'Market data service temporarily unavailable';
+        
+      log(`API error fetching market prices: ${apiError.message}`, 'api');
+      res.status(statusCode).json({ 
+        success: false,
+        error: errorMessage,
+        details: apiError.message 
+      });
     }
-    
-    // הגבלת כמות התוצאות אם נדרש
-    if (limit && !isNaN(limit) && limit > 0) {
-      filteredPrices = filteredPrices.slice(0, limit);
-    }
-    
-    // החזרת תשובה בפורמט המוכר למערכת
-    // הוספת גם data וגם prices לתמיכה בכל הקומפוננטות השונות
-    res.json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      totalRequested: filterSymbols.length,
-      totalFound: filteredPrices.length,
-      source: 'binance',
-      count: filteredPrices.length,
-      prices: filteredPrices,
-      data: filteredPrices // הוספת שדה data עבור קומפוננטות שמצפות לו
-    });
   } catch (error: any) {
-    log(`Error fetching market prices: ${error.message}`, 'api');
+    log(`Error in market prices endpoint: ${error.message}`, 'api');
     res.status(500).json({ 
       success: false,
-      error: 'Failed to fetch market prices', 
+      error: 'Failed to process market price request', 
       details: error.message 
     });
   }
