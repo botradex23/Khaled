@@ -52,7 +52,7 @@ export default function MarketPrices() {
     refetchInterval: 60000,
   });
 
-  // Fetch market data from the Binance markets endpoint - the same endpoint used successfully in the Binance Account page
+  // Fetch market data from the Binance market tickers endpoint - the same endpoint used successfully in the Binance Account page
   const { data, isLoading, error } = useQuery<{
     success: boolean;
     source: string;
@@ -60,7 +60,7 @@ export default function MarketPrices() {
     count: number;
     data?: any[];
   }>({
-    queryKey: ['/api/binance/markets'], 
+    queryKey: ['/api/binance/market/tickers'], 
     enabled: true, // Always fetch this data regardless of authentication state
     staleTime: 30000, // Consider data fresh for 30 seconds
     refetchInterval: 30000, // Refresh every 30 seconds
