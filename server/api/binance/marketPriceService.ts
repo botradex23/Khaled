@@ -126,6 +126,57 @@ export class BinanceMarketPriceService extends EventEmitter {
   }
   
   /**
+   * קבלת המחירים המדומים (סימולציה) לשימוש כאשר ה-API אינו זמין
+   * @returns אובייקט עם כל המחירים המדומים
+   */
+  public getSimulatedPrices(): Record<string, number> {
+    // אם יש מחירים במערכת המדומה, השתמש בהם
+    if (this._lastSimulatedPrices && Object.keys(this._lastSimulatedPrices).length > 0) {
+      // המר את המחירים ממחרוזות למספרים
+      return Object.entries(this._lastSimulatedPrices).reduce((acc, [symbol, price]) => {
+        acc[symbol] = typeof price === 'string' ? parseFloat(price) : price;
+        return acc;
+      }, {} as Record<string, number>);
+    }
+    
+    // אם אין מחירים מדומים, השתמש במחירים אמיתיים אם יש
+    if (Object.keys(this.livePrices).length > 0) {
+      return { ...this.livePrices };
+    }
+    
+    // אם אין מחירים אמיתיים או מדומים, יצור מחירים בסיסיים
+    const defaultPrices: Record<string, number> = {
+      'BTCUSDT': 69250.25,
+      'ETHUSDT': 3475.50,
+      'BNBUSDT': 608.75,
+      'SOLUSDT': 188.15,
+      'XRPUSDT': 0.6125,
+      'ADAUSDT': 0.45,
+      'DOGEUSDT': 0.16,
+      'DOTUSDT': 8.25,
+      'MATICUSDT': 0.78,
+      'LINKUSDT': 15.85,
+      'AVAXUSDT': 41.28,
+      'UNIUSDT': 12.35,
+      'SHIBUSDT': 0.00002654,
+      'LTCUSDT': 93.21,
+      'ATOMUSDT': 11.23,
+      'NEARUSDT': 7.15,
+      'BCHUSDT': 523.75,
+      'FILUSDT': 8.93,
+      'TRXUSDT': 0.1426,
+      'XLMUSDT': 0.1392
+    };
+    
+    // עדכן את המחירים המדומים הבסיסיים ב-1% לחץ או למעלה באופן אקראי
+    return Object.entries(defaultPrices).reduce((acc, [symbol, basePrice]) => {
+      const randomChange = (Math.random() * 0.02) - 0.01; // -1% עד +1%
+      acc[symbol] = basePrice * (1 + randomChange);
+      return acc;
+    }, {} as Record<string, number>);
+  }
+  
+  /**
    * Get the current price for all available symbols
    * @returns Array of ticker prices
    */
