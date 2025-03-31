@@ -5,6 +5,7 @@
 import express, { Request, Response } from 'express';
 import { binanceMarketService } from '../api/binance/marketPriceService';
 import { log } from '../vite';
+import { okxService } from '../api/okx/okxService';
 
 // ממשק עבור מחירי בינאנס כפי שמגיע מה-API המקורי
 interface BinanceTickerPrice {
@@ -12,11 +13,24 @@ interface BinanceTickerPrice {
   price: string;
 }
 
+// ממשק עבור תגובת OKX API
+interface OkxTicker {
+  instId: string;  // למשל "BTC-USDT"
+  last: string;    // המחיר האחרון
+  askPx: string;   // מחיר מכירה מינימלי
+  bidPx: string;   // מחיר קנייה מקסימלי
+  open24h: string; // מחיר פתיחה ב-24 שעות אחרונות
+  high24h: string; // מחיר הגבוה ביותר ב-24 שעות אחרונות
+  low24h: string;  // מחיר הנמוך ביותר ב-24 שעות אחרונות
+  volCcy24h: string; // נפח מסחר במטבע הבסיס
+  vol24h: string;  // נפח מסחר
+}
+
 const router = express.Router();
 
 /**
  * GET /api/market/prices
- * מחזיר את מחירי הקריפטו מבינאנס בלבד - אין נתונים מדומים
+ * מחזיר מחירי קריפטו מ-OKX (מקור ראשי) או בינאנס (גיבוי)
  */
 router.get('/prices', async (req: Request, res: Response) => {
   try {
@@ -34,7 +48,59 @@ router.get('/prices', async (req: Request, res: Response) => {
       filterSymbols = defaultCoins;
     }
     
-    // נסה להשיג מחירים מ-API בינאנס
+    // בגלל שהמשתמש רוצה נתונים אמיתיים, ננסה קודם להשתמש ב-OKX שעובד
+    try {
+      // קבלת מחירים מ-OKX
+      const okxTickers = await okxService.getMarketTickers();
+      
+      if (okxTickers && okxTickers.length > 0) {
+        // המרת פורמט OKX לפורמט סטנדרטי של המערכת
+        const mappedPrices = okxTickers.map(ticker => {
+          // המרת פורמט BTC-USDT לפורמט BTCUSDT
+          const symbolParts = ticker.instId.split('-');
+          const baseSymbol = symbolParts[0]; // BTC
+          
+          return {
+            symbol: baseSymbol,  // השתמש בסמל הבסיס בלבד (BTC במקום BTCUSDT)
+            price: parseFloat(ticker.last),
+            found: true,
+            source: 'okx',
+            timestamp: Date.now()
+          };
+        });
+        
+        // סינון לפי המטבעות המבוקשים
+        let filteredPrices = mappedPrices;
+        if (filterSymbols && filterSymbols.length > 0) {
+          filteredPrices = mappedPrices.filter(p => 
+            filterSymbols!.includes(p.symbol) || 
+            filterSymbols!.some(s => p.symbol.startsWith(s))
+          );
+        }
+        
+        // הגבלת כמות התוצאות אם נדרש
+        if (limit && !isNaN(limit) && limit > 0) {
+          filteredPrices = filteredPrices.slice(0, limit);
+        }
+        
+        // החזרת תשובה בפורמט המוכר למערכת
+        return res.json({
+          success: true,
+          timestamp: new Date().toISOString(),
+          totalRequested: filterSymbols.length,
+          totalFound: filteredPrices.length,
+          source: 'okx',
+          count: filteredPrices.length,
+          prices: filteredPrices,
+          data: filteredPrices
+        });
+      }
+    } catch (okxError: any) {
+      log(`API error fetching market prices from OKX: ${okxError.message}`, 'api');
+      // נמשיך לנסות בינאנס
+    }
+    
+    // נסה להשיג מחירים מ-API בינאנס כגיבוי
     try {
       const allPrices = await binanceMarketService.getAllPrices();
       
@@ -62,7 +128,7 @@ router.get('/prices', async (req: Request, res: Response) => {
       }
       
       // החזרת תשובה בפורמט המוכר למערכת
-      res.json({
+      return res.json({
         success: true,
         timestamp: new Date().toISOString(),
         totalRequested: filterSymbols.length,
@@ -75,12 +141,12 @@ router.get('/prices', async (req: Request, res: Response) => {
     } 
     // במקרה של שגיאת API נחזיר שגיאה - לא נשתמש בנתונים מדומים
     catch (apiError: any) {
-      log(`API error fetching market prices: ${apiError.message}`, 'api');
+      log(`API error fetching market prices from Binance (fallback): ${apiError.message}`, 'api');
       
       // לפי דרישת המשתמש: רק נתונים אמיתיים, ללא נתונים מדומים
       const statusCode = apiError.response?.status || 503;
       const errorMessage = apiError.message.includes('geo-restriction') ? 
-        'Binance API unavailable in your region - please use a VPN to access real market data' : 
+        'Market data APIs unavailable - please try again later' : 
         'Market data service temporarily unavailable - real-time data cannot be displayed';
       
       res.status(statusCode).json({ 
