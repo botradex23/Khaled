@@ -55,12 +55,16 @@ router.get('/prices', async (req: Request, res: Response) => {
     }
     
     // החזרת תשובה בפורמט המוכר למערכת
+    // הוספת גם data וגם prices לתמיכה בכל הקומפוננטות השונות
     res.json({
       success: true,
       timestamp: new Date().toISOString(),
       totalRequested: filterSymbols.length,
       totalFound: filteredPrices.length,
-      prices: filteredPrices
+      source: 'binance',
+      count: filteredPrices.length,
+      prices: filteredPrices,
+      data: filteredPrices // הוספת שדה data עבור קומפוננטות שמצפות לו
     });
   } catch (error: any) {
     log(`Error fetching market prices: ${error.message}`, 'api');

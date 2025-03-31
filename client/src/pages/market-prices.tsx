@@ -57,15 +57,20 @@ export default function MarketPrices() {
     source: string;
     timestamp: string;
     count: number;
-    data: any[];
+    data?: any[];
+    prices?: any[];
   }>({
     queryKey: ['/api/market/prices'],
     select: (response) => {
       // Transform the Binance response format to match our MarketData interface
-      if (response?.success && Array.isArray(response.data)) {
+      // Check if response has data or prices array
+      const sourceData = Array.isArray(response?.data) ? response.data : 
+                          Array.isArray(response?.prices) ? response.prices : [];
+      
+      if (response?.success && sourceData.length > 0) {
         return {
           ...response,
-          data: response.data.map((item: any) => ({
+          data: sourceData.map((item: any) => ({
             symbol: item.symbol,
             price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
             change24h: item.priceChangePercent || 0,

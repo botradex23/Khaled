@@ -53,7 +53,8 @@ interface MarketResponse {
   source: string;
   timestamp: string;
   count: number;
-  data: MarketData[];
+  data?: MarketData[];
+  prices?: MarketData[];
 }
 
 interface MarketData {
@@ -155,8 +156,12 @@ export default function Markets() {
   });
   
   // Format data and add market cap estimates
-  const markets = marketsData?.data 
-    ? marketsData.data.map((market: MarketData): FormattedMarketData => {
+  // Check if data exists in marketsData.data or marketsData.prices
+  const sourceData = (marketsData?.data && Array.isArray(marketsData.data)) ? marketsData.data : 
+                    (marketsData?.prices && Array.isArray(marketsData.prices)) ? marketsData.prices : [];
+                    
+  const markets = sourceData.length > 0
+    ? sourceData.map((market: MarketData): FormattedMarketData => {
         // Extract base symbol (BTC from BTCUSDT)
         const symbol = market.symbol.endsWith('USDT') 
           ? market.symbol.slice(0, -4) 
