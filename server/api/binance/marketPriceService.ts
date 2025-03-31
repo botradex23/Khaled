@@ -7,7 +7,7 @@ const BINANCE_BASE_URL = 'https://api.binance.com';
 const BINANCE_TEST_URL = 'https://testnet.binance.vision';
 
 // Proxy configuration for bypassing geo-restrictions - using the proxy that works with WebSocket
-const USE_PROXY = false; // Set to false to disable proxy until HttpsProxyAgent is properly installed
+const USE_PROXY = true; // Enable proxy to overcome geographical restrictions
 const PROXY_USERNAME = "ahjqspco";
 const PROXY_PASSWORD = "dzx3r1prpz9k";
 const PROXY_IP = process.env.PROXY_IP || '185.199.228.220'; // Working proxy IP from tests
@@ -15,9 +15,48 @@ const PROXY_PORT = process.env.PROXY_PORT || '7300';       // Working proxy port
 
 // Create axios instance with proxy if needed
 const createAxiosInstance = () => {
-  // Use regular axios since proxy is temporarily disabled
-  console.log('Using direct connection to Binance API (proxy disabled)');
-  return axios;
+  if (USE_PROXY) {
+    try {
+      // This requires HttpsProxyAgent to be properly installed
+      // Note: using dynamic import to avoid requiring the module if not used
+      // Use an alternative approach with proxy config passed to axios
+      
+      // Configure a proxy URL for axios
+      const proxyUrl = `http://${PROXY_USERNAME}:${PROXY_PASSWORD}@${PROXY_IP}:${PROXY_PORT}`;
+      console.log(`Using proxy connection to Binance API via ${PROXY_IP}:${PROXY_PORT}`);
+      
+      // Using a special environment variable to inform Node.js about the proxy
+      // This is an alternative way to configure a proxy without using an agent
+      process.env.HTTP_PROXY = proxyUrl;
+      process.env.HTTPS_PROXY = proxyUrl;
+      
+      // Create and return a new axios instance with proxy-friendly configuration
+      return axios.create({
+        timeout: 10000, // 10 second timeout
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept': 'application/json'
+        },
+        proxy: {
+          host: PROXY_IP,
+          port: parseInt(PROXY_PORT, 10),
+          auth: {
+            username: PROXY_USERNAME,
+            password: PROXY_PASSWORD
+          },
+          protocol: 'http'
+        }
+      });
+    } catch (error) {
+      console.error('Failed to create proxy-enabled axios instance:', error);
+      console.log('Falling back to direct connection');
+      return axios;
+    }
+  } else {
+    console.log('Using direct connection to Binance API (proxy disabled)');
+    return axios;
+  }
 };
 
 // ממשק עבור נתוני המחיר בזמן אמת
