@@ -22,6 +22,7 @@ import {
   TrendingUp, 
   TrendingDown
 } from 'lucide-react';
+import { MarketErrorState } from '@/components/ui/market-error-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
@@ -302,12 +303,11 @@ export const MarketPricesTable = () => {
             ))}
           </div>
         ) : error ? (
-          <div className="text-center py-8">
-            <p className="text-red-500">Error loading market data</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Please try again later or contact support
-            </p>
-          </div>
+          <MarketErrorState 
+            onRetry={fetchMarketData}
+            title="Unable to load market data"
+            message="There was an error fetching data from Binance. Please check your connection and try again."
+          />
         ) : (
           <div className="overflow-x-auto">
             <Table>

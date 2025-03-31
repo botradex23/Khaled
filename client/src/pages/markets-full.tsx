@@ -1,20 +1,28 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
-import Header from "@/components/ui/header";
-import Footer from "@/components/ui/footer";
+import React, { useState, useEffect } from 'react';
+import Header from '@/components/ui/header';
 import { 
   Card, 
-  CardContent, 
-  CardHeader, 
+  CardContent,
+  CardHeader,
   CardTitle,
-  CardDescription,
-  CardFooter
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+  CardDescription
+} from '@/components/ui/card';
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { 
+  RefreshCw, 
+  Clock, 
+  CheckCircle, 
+  Settings, 
+  ChevronDown
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { MarketErrorState } from '@/components/ui/market-error-state';
 import { 
   Table, 
   TableBody, 
@@ -22,637 +30,333 @@ import {
   TableHead, 
   TableHeader, 
   TableRow 
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Search, 
-  Star, 
-  TrendingUp, 
-  TrendingDown, 
-  ArrowUpRight, 
-  ArrowDownRight,
-  RefreshCw,
-  AlertCircle,
-  ChevronDown,
-  ChevronUp,
-  BarChart3
-} from "lucide-react";
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-// Define interfaces for our market data
-interface BinanceMarketResponse {
-  success: boolean;
-  source: string;
-  timestamp: string;
-  count: number;
-  data: BinanceMarketData[];
-}
-
-interface BinanceMarketData {
+interface MarketData {
   symbol: string;
-  baseSymbol: string;
-  quoteSymbol: string;
   price: number;
-  formattedPrice: string;
-  source: string;
-}
-
-// Interface for 24hr price statistics
-interface Binance24hrResponse {
-  success: boolean;
-  data: Binance24hrData[];
-}
-
-interface Binance24hrData {
-  symbol: string;
-  priceChange: string;
-  priceChangePercent: string;
-  weightedAvgPrice: string;
-  volume: string;
-  quoteVolume: string;
-  lastPrice: string;
-  highPrice: string;
-  lowPrice: string;
-}
-
-// Combined market data after processing
-interface ProcessedMarketData {
-  symbol: string;
-  baseSymbol: string;
-  quoteSymbol: string;
-  name: string;
-  price: number;
-  formattedPrice: string;
-  priceChangePercent: number;
-  volume: number;
-  formattedVolume: string;
+  change24h: number;
+  volume24h: number;
   high24h: number;
   low24h: number;
 }
 
-// Coin name mapping for popular cryptocurrencies
-const coinNames: Record<string, string> = {
-  "BTC": "Bitcoin",
-  "ETH": "Ethereum",
-  "SOL": "Solana",
-  "BNB": "Binance Coin",
-  "XRP": "XRP",
-  "ADA": "Cardano",
-  "DOT": "Polkadot",
-  "DOGE": "Dogecoin",
-  "AVAX": "Avalanche",
-  "LINK": "Chainlink",
-  "UNI": "Uniswap",
-  "ATOM": "Cosmos",
-  "LTC": "Litecoin",
-  "FTM": "Fantom",
-  "AAVE": "Aave",
-  "ALGO": "Algorand",
-  "APE": "ApeCoin",
-  "APT": "Aptos",
-  "ARB": "Arbitrum",
-  "AXS": "Axie Infinity",
-  "BCH": "Bitcoin Cash",
-  "COMP": "Compound",
-  "CRO": "Cronos",
-  "DAI": "Dai",
-  "DASH": "Dash",
-  "EGLD": "MultiversX",
-  "EOS": "EOS",
-  "ETC": "Ethereum Classic",
-  "FIL": "Filecoin",
-  "FLOW": "Flow",
-  "GALA": "Gala",
-  "HBAR": "Hedera",
-  "ICP": "Internet Computer",
-  "IMX": "Immutable X",
-  "INJ": "Injective",
-  "MANA": "Decentraland",
-  "MATIC": "Polygon",
-  "NEAR": "NEAR Protocol",
-  "OP": "Optimism",
-  "SAND": "The Sandbox",
-  "SHIB": "Shiba Inu",
-  "SUI": "Sui",
-  "TON": "Toncoin",
-  "TRX": "TRON",
-  "VET": "VeChain",
-  "XLM": "Stellar",
-  "XMR": "Monero",
-  "XTZ": "Tezos",
-  "ZEC": "Zcash",
-  // Add more coins as needed
-  "1INCH": "1inch",
-  "AKRO": "Akropolis",
-  "ALPHA": "Alpha Finance",
-  "BAT": "Basic Attention Token",
-  "CAKE": "PancakeSwap",
-  "CHZ": "Chiliz",
-  "COTI": "COTI",
-  "ENJ": "Enjin Coin",
-  "GRT": "The Graph",
-  "KSM": "Kusama",
-  "LUNA": "Terra Luna",
-  "NEO": "NEO",
-  "ONE": "Harmony",
-  "QTUM": "Qtum",
-  "REEF": "Reef",
-  "REN": "Ren",
-  "RSR": "Reserve Rights",
-  "RVN": "Ravencoin",
-  "SC": "Siacoin",
-  "SKL": "SKALE",
-  "SNX": "Synthetix",
-  "STX": "Stacks",
-  "SUSHI": "SushiSwap",
-  "THETA": "Theta Network",
-  "WRX": "WazirX",
-  "XEM": "NEM",
-  "XVG": "Verge",
-  "YFI": "yearn.finance",
-  "ZIL": "Zilliqa",
-  "ZRX": "0x"
-};
-
-export default function MarketsFull() {
-  // State for search and sorting
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({
-    key: 'volume',
-    direction: 'desc'
-  });
-  const [processedData, setProcessedData] = useState<ProcessedMarketData[]>([]);
-  const [selectedQuote, setSelectedQuote] = useState<string>("USDT");
-
-  // Available quote currencies
-  const quoteCurrencies = ["USDT", "BTC", "ETH", "BNB", "BUSD"];
-
-  // Fetch all Binance markets
-  const { 
-    data: marketsData, 
-    isLoading: isMarketsLoading, 
-    error: marketsError,
-    refetch: refetchMarkets 
-  } = useQuery<BinanceMarketResponse>({
-    queryKey: ["/api/binance/all-markets"],
-    refetchInterval: 30000 // refresh every 30 seconds
-  });
-
-  // Fetch 24hr price statistics 
-  const {
-    data: priceStatsData,
-    isLoading: isPriceStatsLoading,
-    error: priceStatsError,
-    refetch: refetchPriceStats
-  } = useQuery<Binance24hrResponse>({
-    queryKey: ["/api/binance/market/24hr"],
-    refetchInterval: 30000
-  });
-
-  // Loading state based on both queries
-  const isLoading = isMarketsLoading || isPriceStatsLoading;
-  const hasError = marketsError || priceStatsError;
-
-  // Refetch all data
-  const refetchAll = () => {
-    refetchMarkets();
-    refetchPriceStats();
+export default function MarketsFullPage() {
+  const [marketData, setMarketData] = useState<MarketData[]>([]);
+  const [filteredData, setFilteredData] = useState<MarketData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [activeMarketType, setActiveMarketType] = useState('usdt');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Function to fetch market data
+  const fetchMarketData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch all Binance markets
+      const response = await fetch('/api/binance/all-markets');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch market data');
+      }
+      
+      const data = await response.json();
+      
+      setMarketData(data);
+      setLastUpdated(new Date());
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching market data:', err);
+      setError(err.message || 'Failed to load market data');
+      setMarketData([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
-
-  // Process and combine the data once both are available
+  
+  // Filter data based on active market type and search query
   useEffect(() => {
-    if (marketsData?.data && priceStatsData?.data) {
-      const combinedData: ProcessedMarketData[] = marketsData.data.map(market => {
-        // Find matching 24hr stats
-        const stats = priceStatsData.data.find(
-          stat => stat.symbol === market.symbol
-        );
-
-        // Format volume with appropriate precision based on value
-        const volume = stats ? parseFloat(stats.quoteVolume) : 0;
-        const formattedVolume = formatLargeNumber(volume);
-
-        // Return processed market data with stats
-        return {
-          symbol: market.symbol,
-          baseSymbol: market.baseSymbol,
-          quoteSymbol: market.quoteSymbol,
-          name: coinNames[market.baseSymbol] || market.baseSymbol,
-          price: market.price,
-          formattedPrice: market.formattedPrice,
-          priceChangePercent: stats ? parseFloat(stats.priceChangePercent) : 0,
-          volume: volume,
-          formattedVolume: formattedVolume,
-          high24h: stats ? parseFloat(stats.highPrice) : 0,
-          low24h: stats ? parseFloat(stats.lowPrice) : 0,
-        };
+    if (!marketData || !Array.isArray(marketData)) {
+      setFilteredData([]);
+      return;
+    }
+    
+    let filtered = [...marketData];
+    
+    // Filter by market type (USDT, BTC, ETH, etc.)
+    if (activeMarketType) {
+      filtered = filtered.filter(market => {
+        if (activeMarketType === 'usdt') return market.symbol.endsWith('USDT');
+        if (activeMarketType === 'btc') return market.symbol.endsWith('BTC');
+        if (activeMarketType === 'eth') return market.symbol.endsWith('ETH');
+        if (activeMarketType === 'bnb') return market.symbol.endsWith('BNB');
+        return true; // Default case
       });
-
-      setProcessedData(combinedData);
     }
-  }, [marketsData, priceStatsData]);
-
-  // Format large numbers (e.g., for volume)
-  function formatLargeNumber(num: number): string {
-    if (num >= 1_000_000_000) {
-      return `$${(num / 1_000_000_000).toFixed(2)}B`;
-    } else if (num >= 1_000_000) {
-      return `$${(num / 1_000_000).toFixed(2)}M`;
-    } else if (num >= 1_000) {
-      return `$${(num / 1_000).toFixed(2)}K`;
+    
+    // Apply search filter
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(market => market.symbol.toLowerCase().includes(query));
+    }
+    
+    setFilteredData(filtered);
+  }, [marketData, activeMarketType, searchQuery]);
+  
+  // Initial data fetch and refresh interval
+  useEffect(() => {
+    fetchMarketData();
+    
+    // Set up interval to refresh data every 30 seconds
+    const interval = setInterval(fetchMarketData, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Format date to show "Last Updated: X minutes ago"
+  const formatLastUpdated = () => {
+    if (!lastUpdated) return 'Unknown';
+    
+    const now = new Date();
+    const diffMs = now.getTime() - lastUpdated.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    
+    if (diffSec < 10) return 'Just now';
+    if (diffSec < 60) return `${diffSec} seconds ago`;
+    
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
+    
+    const diffHours = Math.floor(diffMin / 60);
+    return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  };
+  
+  // Format price based on value
+  const formatPrice = (price: number | undefined) => {
+    // Handle undefined or null values
+    const value = price || 0;
+    
+    if (value >= 1000) {
+      return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    } else if (value >= 1) {
+      return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+    } else if (value >= 0.0001) {
+      return value.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 8 });
     } else {
-      return `$${num.toFixed(2)}`;
+      return value.toExponential(4);
     }
-  }
-
-  // Handle sorting
-  const requestSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'desc';
-    if (sortConfig.key === key && sortConfig.direction === 'desc') {
-      direction = 'asc';
-    }
-    setSortConfig({ key, direction });
   };
-
-  // Filter and sort the data
-  const filteredAndSortedData = processedData
-    // Filter by search query
-    .filter(market => {
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        market.symbol.toLowerCase().includes(searchLower) ||
-        market.baseSymbol.toLowerCase().includes(searchLower) ||
-        (market.name && market.name.toLowerCase().includes(searchLower))
-      );
-    })
-    // Filter by selected quote currency
-    .filter(market => market.quoteSymbol === selectedQuote)
-    // Sort the data
-    .sort((a, b) => {
-      const sortKey = sortConfig.key as keyof ProcessedMarketData;
-      
-      if (a[sortKey] === b[sortKey]) {
-        // Secondary sort by volume if values are equal
-        return b.volume - a.volume;
-      }
-      
-      if (sortConfig.direction === 'asc') {
-        // Handle string vs number comparisons
-        return typeof a[sortKey] === 'string' 
-          ? (a[sortKey] as string).localeCompare(b[sortKey] as string)
-          : (a[sortKey] as number) - (b[sortKey] as number);
-      } else {
-        return typeof a[sortKey] === 'string'
-          ? (b[sortKey] as string).localeCompare(a[sortKey] as string)
-          : (b[sortKey] as number) - (a[sortKey] as number);
-      }
-    });
-
-  // Get data summary
-  const marketSummary = {
-    totalMarkets: processedData.length,
-    filteredMarkets: filteredAndSortedData.length,
-    topGainers: [...processedData]
-      .sort((a, b) => b.priceChangePercent - a.priceChangePercent)
-      .slice(0, 3),
-    topLosers: [...processedData]
-      .sort((a, b) => a.priceChangePercent - b.priceChangePercent)
-      .slice(0, 3)
-  };
-
+  
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background flex-col">
       <Header />
-      <main className="flex-grow pt-24 pb-12 px-4 md:px-6">
-        <div className="max-w-7xl mx-auto">
+      <main className="flex-grow pt-16 px-4">
+        <div className="max-w-7xl mx-auto py-6">
+          {/* Page Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Binance Markets</h1>
-              <p className="text-muted-foreground">
-                Comprehensive list of all cryptocurrency markets from Binance
-              </p>
-            </div>
-            <div className="relative w-full md:w-64 mt-4 md:mt-0">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search markets..."
-                className="pl-8 w-full"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            <h1 className="text-3xl font-bold text-primary mb-2 md:mb-0">Cryptex</h1>
+            
+            <div className="flex items-center space-x-2">
+              <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 hover:bg-yellow-500/30">
+                <span className="flex items-center gap-1">
+                  <img src="https://cryptologos.cc/logos/binance-coin-bnb-logo.svg" alt="Binance" className="h-4 w-4" />
+                  Binance
+                  <CheckCircle className="h-3 w-3 ml-1" />
+                </span>
+              </Badge>
+              
+              <Button variant="ghost" size="icon">
+                <Settings className="h-5 w-5" />
+              </Button>
             </div>
           </div>
-
-          {/* Market Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Markets</p>
-                    <h3 className="text-2xl font-bold mt-1">{marketsData?.count || 0}</h3>
-                  </div>
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <BarChart3 className="h-5 w-5 text-primary" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {marketSummary.topGainers[0] && (
-              <Card className="bg-green-500/5 border-green-500/20">
-                <CardContent className="p-4">
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Top Gainer</p>
-                      <h3 className="text-xl font-bold mt-1">{marketSummary.topGainers[0].baseSymbol}</h3>
-                      <div className="flex items-center text-green-500 mt-1">
-                        <ArrowUpRight className="h-3 w-3 mr-1" />
-                        <span className="text-sm font-medium">{marketSummary.topGainers[0].priceChangePercent.toFixed(2)}%</span>
-                      </div>
-                    </div>
-                    <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <TrendingUp className="h-5 w-5 text-green-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            
-            {marketSummary.topLosers[0] && (
-              <Card className="bg-red-500/5 border-red-500/20">
-                <CardContent className="p-4">
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Top Loser</p>
-                      <h3 className="text-xl font-bold mt-1">{marketSummary.topLosers[0].baseSymbol}</h3>
-                      <div className="flex items-center text-red-500 mt-1">
-                        <ArrowDownRight className="h-3 w-3 mr-1" />
-                        <span className="text-sm font-medium">{Math.abs(marketSummary.topLosers[0].priceChangePercent).toFixed(2)}%</span>
-                      </div>
-                    </div>
-                    <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
-                      <TrendingDown className="h-5 w-5 text-red-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Last Updated</p>
-                    <h3 className="text-lg font-medium mt-1">
-                      {marketsData?.timestamp 
-                        ? new Date(marketsData.timestamp).toLocaleTimeString() 
-                        : 'Unknown'}
-                    </h3>
-                    <div className="flex items-center mt-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-7 px-2 -ml-2 text-primary" 
-                        onClick={refetchAll}
-                      >
-                        <RefreshCw className={`h-3 w-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-                        <span className="text-xs">Refresh</span>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Quote Currency Tabs */}
-          <div className="mb-6">
-            <Tabs 
-              defaultValue={selectedQuote} 
-              value={selectedQuote}
-              onValueChange={(value) => setSelectedQuote(value)}
-              className="w-full"
+          
+          {/* Last Updated Card */}
+          <Card className="mb-6 bg-blue-950 text-slate-100 border-slate-800">
+            <CardContent className="p-4 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-slate-300" />
+                <span className="text-sm">Last Updated</span>
+                <span className="font-medium">{formatLastUpdated()}</span>
+              </div>
+              
+              <Button variant="ghost" size="sm" onClick={fetchMarketData} className="text-slate-300 hover:text-white">
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Refresh
+              </Button>
+            </CardContent>
+          </Card>
+          
+          {/* Market Type Tabs */}
+          <div className="flex overflow-x-auto pb-2 mb-6">
+            <Button
+              variant={activeMarketType === 'usdt' ? "default" : "outline"}
+              className={`mr-2 ${activeMarketType === 'usdt' ? "bg-primary" : "bg-card"}`}
+              onClick={() => setActiveMarketType('usdt')}
             >
-              <TabsList className="mb-4">
-                {quoteCurrencies.map(quote => (
-                  <TabsTrigger key={quote} value={quote}>
-                    {quote} Markets
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
+              USDT Markets
+            </Button>
+            <Button
+              variant={activeMarketType === 'btc' ? "default" : "outline"}
+              className={`mr-2 ${activeMarketType === 'btc' ? "bg-primary" : "bg-card"}`}
+              onClick={() => setActiveMarketType('btc')}
+            >
+              BTC Markets
+            </Button>
+            <Button
+              variant={activeMarketType === 'eth' ? "default" : "outline"}
+              className={`mr-2 ${activeMarketType === 'eth' ? "bg-primary" : "bg-card"}`}
+              onClick={() => setActiveMarketType('eth')}
+            >
+              ETH Markets
+            </Button>
+            <Button
+              variant={activeMarketType === 'bnb' ? "default" : "outline"}
+              className={`mr-2 ${activeMarketType === 'bnb' ? "bg-primary" : "bg-card"}`}
+              onClick={() => setActiveMarketType('bnb')}
+            >
+              BNB Markets
+            </Button>
           </div>
-
-          {/* Markets Table */}
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-2xl font-bold">Binance Markets</CardTitle>
-              <CardDescription>
-                Live cryptocurrency market data from Binance
-              </CardDescription>
-              <div className="flex flex-col md:flex-row justify-between gap-4 mt-3">
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="font-normal">
+          
+          {/* Main Content Card */}
+          <Card className="bg-blue-950 text-white border-slate-800">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-xl font-bold">Binance Markets</CardTitle>
+                  <CardDescription className="text-slate-300">
+                    Live cryptocurrency market data from Binance
+                  </CardDescription>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-blue-500/20 text-blue-300">
                     Updated every 30s
                   </Badge>
-                  <Badge variant="outline" className="font-normal">
-                    {filteredAndSortedData.length} Markets
+                  <Badge className="bg-gray-600/30 text-gray-300">
+                    {filteredData.length} Markets
                   </Badge>
                 </div>
               </div>
+              
+              {/* Search and Filter */}
+              <div className="mt-4 mb-2">
+                <Input
+                  placeholder="Search markets..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
             </CardHeader>
+            
             <CardContent>
-              {hasError ? (
-                <div className="text-center py-8">
-                  <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Unable to load market data</h3>
-                  <p className="text-muted-foreground mb-4">
-                    There was an error fetching data from Binance. Please check your connection and try again.
-                  </p>
-                  <Button onClick={refetchAll}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Retry
+              {isLoading ? (
+                <div className="animate-pulse space-y-4 py-4">
+                  <div className="h-6 bg-blue-900/50 rounded w-1/3"></div>
+                  <div className="h-6 bg-blue-900/50 rounded w-full"></div>
+                  <div className="h-6 bg-blue-900/50 rounded w-full"></div>
+                  <div className="h-6 bg-blue-900/50 rounded w-full"></div>
+                  <div className="h-6 bg-blue-900/50 rounded w-2/3"></div>
+                </div>
+              ) : error ? (
+                <MarketErrorState 
+                  onRetry={fetchMarketData}
+                  title="Unable to load market data"
+                  message="There was an error fetching data from Binance. Please check your connection and try again."
+                />
+              ) : filteredData.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-slate-300">No markets found matching your criteria</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setActiveMarketType('usdt');
+                    }}
+                  >
+                    Clear filters
                   </Button>
                 </div>
               ) : (
-                <div className="rounded-md border overflow-hidden">
+                <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead 
-                          className="w-12 cursor-pointer"
-                          onClick={() => requestSort('baseSymbol')}
-                        >
-                          <div className="flex items-center">
-                            #
-                            {sortConfig.key === 'baseSymbol' && (
-                              sortConfig.direction === 'asc' ? 
-                                <ChevronUp className="h-4 w-4 ml-1" /> : 
-                                <ChevronDown className="h-4 w-4 ml-1" />
-                            )}
-                          </div>
-                        </TableHead>
-                        <TableHead 
-                          className="cursor-pointer"
-                          onClick={() => requestSort('name')}
-                        >
-                          <div className="flex items-center">
-                            Name
-                            {sortConfig.key === 'name' && (
-                              sortConfig.direction === 'asc' ? 
-                                <ChevronUp className="h-4 w-4 ml-1" /> : 
-                                <ChevronDown className="h-4 w-4 ml-1" />
-                            )}
-                          </div>
-                        </TableHead>
-                        <TableHead 
-                          className="text-right cursor-pointer"
-                          onClick={() => requestSort('price')}
-                        >
-                          <div className="flex items-center justify-end">
-                            Price
-                            {sortConfig.key === 'price' && (
-                              sortConfig.direction === 'asc' ? 
-                                <ChevronUp className="h-4 w-4 ml-1" /> : 
-                                <ChevronDown className="h-4 w-4 ml-1" />
-                            )}
-                          </div>
-                        </TableHead>
-                        <TableHead 
-                          className="text-right cursor-pointer"
-                          onClick={() => requestSort('priceChangePercent')}
-                        >
-                          <div className="flex items-center justify-end">
-                            24h Change
-                            {sortConfig.key === 'priceChangePercent' && (
-                              sortConfig.direction === 'asc' ? 
-                                <ChevronUp className="h-4 w-4 ml-1" /> : 
-                                <ChevronDown className="h-4 w-4 ml-1" />
-                            )}
-                          </div>
-                        </TableHead>
-                        <TableHead 
-                          className="text-right cursor-pointer hidden md:table-cell"
-                          onClick={() => requestSort('volume')}
-                        >
-                          <div className="flex items-center justify-end">
-                            24h Volume
-                            {sortConfig.key === 'volume' && (
-                              sortConfig.direction === 'asc' ? 
-                                <ChevronUp className="h-4 w-4 ml-1" /> : 
-                                <ChevronDown className="h-4 w-4 ml-1" />
-                            )}
-                          </div>
-                        </TableHead>
+                        <TableHead>Symbol</TableHead>
+                        <TableHead className="text-right">Price</TableHead>
+                        <TableHead className="text-right">24h Change</TableHead>
+                        <TableHead className="text-right">24h Volume</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {isLoading ? (
-                        Array(10).fill(0).map((_, i) => (
-                          <TableRow key={i}>
-                            <TableCell><Skeleton className="h-4 w-6" /></TableCell>
-                            <TableCell>
-                              <div className="flex items-center">
-                                <Skeleton className="h-6 w-6 rounded-full mr-2" />
-                                <div>
-                                  <Skeleton className="h-4 w-24 mb-1" />
-                                  <Skeleton className="h-3 w-12" />
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Skeleton className="h-4 w-20 ml-auto" />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Skeleton className="h-4 w-16 ml-auto" />
-                            </TableCell>
-                            <TableCell className="text-right hidden md:table-cell">
-                              <Skeleton className="h-4 w-16 ml-auto" />
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : filteredAndSortedData.length > 0 ? (
-                        filteredAndSortedData.map((market, index) => {
-                          const isPositive = market.priceChangePercent >= 0;
-                          
-                          return (
-                            <TableRow 
-                              key={market.symbol} 
-                              className="cursor-pointer hover:bg-muted/40"
-                            >
-                              <TableCell>{index + 1}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center">
-                                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2">
-                                    <span className="text-xs font-medium">{market.baseSymbol.substring(0, 1)}</span>
-                                  </div>
-                                  <div>
-                                    <div className="font-medium">{market.name}</div>
-                                    <div className="text-xs text-muted-foreground">{market.baseSymbol}/{market.quoteSymbol}</div>
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right font-medium">
-                                ${market.formattedPrice}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <span className={`flex items-center justify-end ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                                  {isPositive ? 
-                                    <ArrowUpRight className="h-3 w-3 mr-1" /> : 
-                                    <ArrowDownRight className="h-3 w-3 mr-1" />
-                                  }
-                                  {Math.abs(market.priceChangePercent).toFixed(2)}%
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right text-muted-foreground hidden md:table-cell">
-                                {market.formattedVolume}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-4">
-                            {searchQuery ? (
-                              <div>
-                                <p className="text-muted-foreground">No markets found matching "{searchQuery}"</p>
-                                <Button 
-                                  variant="link" 
-                                  className="mt-2" 
-                                  onClick={() => setSearchQuery("")}
-                                >
-                                  Clear search
+                      {filteredData.slice(0, 50).map((market) => (
+                        <TableRow key={market.symbol}>
+                          <TableCell className="font-medium">{market.symbol}</TableCell>
+                          <TableCell className="text-right font-mono">
+                            ${formatPrice(market.price)}
+                          </TableCell>
+                          <TableCell 
+                            className={`text-right ${
+                              (market.change24h || 0) > 0 
+                                ? 'text-green-500'
+                                : (market.change24h || 0) < 0
+                                ? 'text-red-500'
+                                : ''
+                            }`}
+                          >
+                            {(market.change24h || 0).toFixed(2)}%
+                          </TableCell>
+                          <TableCell className="text-right">
+                            ${(market.volume24h || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <span>Trade</span>
+                                  <ChevronDown className="ml-1 h-4 w-4" />
                                 </Button>
-                              </div>
-                            ) : (
-                              <p className="text-muted-foreground">No market data available</p>
-                            )}
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => window.location.href = `/chart?symbol=${market.symbol}`}>
+                                  View Chart
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => window.location.href = `/trade?symbol=${market.symbol}`}>
+                                  Trade Now
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => window.location.href = `/bot/new?symbol=${market.symbol}`}>
+                                  Create Bot
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
-                      )}
+                      ))}
                     </TableBody>
                   </Table>
+                  
+                  {filteredData.length > 50 && (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-slate-400">
+                        Showing 50 of {filteredData.length} markets. Refine your search to see more.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <div className="text-xs text-muted-foreground">
-                Data provided by Binance API
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={refetchAll}
-                disabled={isLoading}
-              >
-                <RefreshCw className={`h-3 w-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-            </CardFooter>
           </Card>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
