@@ -611,7 +611,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       email: z.string().email("Invalid email address"),
       password: z.string().min(8, "Password must be at least 8 characters")
         .regex(/[0-9]/, "Password must contain at least one number")
-        .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character")
+        .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+        .regex(/^[a-zA-Z0-9]+$/, "Password must contain only English letters and numbers")
     });
 
     try {
@@ -1038,9 +1039,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : [];
       
       // Get data using the okxService.getMarketTickers method 
-      const marketData = await okxService.getMarketTickers();
+      const marketDataResponse = await okxService.getMarketTickers();
       
-      if (!marketData || !marketData.length) {
+      // Check if we have valid data in the response
+      if (!marketDataResponse || !marketDataResponse.data || marketDataResponse.data.length === 0) {
         // Don't return any approximate data if the API fails
         return res.status(503).json({
           success: false,
@@ -1052,6 +1054,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Process all pairs and extract price data
       const pricesMap: Record<string, number> = {};
+      
+      // Extract the data array for correct typing
+      const marketData = marketDataResponse.data;
       
       marketData.forEach((ticker: any) => {
         // Handle both USDT pairs (most common) and USD pairs
