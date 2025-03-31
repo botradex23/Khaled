@@ -63,6 +63,9 @@ export interface AITradingSystemConfig {
   forcedTradeInterval: number;         // מרווח זמן מקסימלי בין עסקאות (במילישניות)
   maxPositionSize: number;             // גודל פוזיציה מקסימלי
   enabledStrategies: StrategyType[];   // אסטרטגיות מאופשרות
+  autoSelectCoins: boolean;            // האם לבחור מטבעות באופן אוטומטי
+  maxCoinsToAnalyze: number;           // מספר מקסימלי של מטבעות לניתוח
+  coinSelectionInterval: number;       // מרווח זמן בין סריקות בחירת מטבעות (במילישניות)
 }
 
 /**
@@ -102,7 +105,10 @@ export class AITradingSystem {
         StrategyType.TREND_FOLLOWING,
         StrategyType.COUNTER_TREND,
         StrategyType.BREAKOUT
-      ]
+      ],
+      autoSelectCoins: true,           // פעיל כברירת מחדל - בחירת מטבעות אוטומטית
+      maxCoinsToAnalyze: 30,           // מספר מקסימלי של מטבעות לניתוח
+      coinSelectionInterval: 30 * 60 * 1000 // סריקת מטבעות כל 30 דקות
     };
     
     // החלת הגדרות מותאמות אישית
@@ -1107,6 +1113,7 @@ export class AITradingSystem {
   private tradingInterval: NodeJS.Timeout | null = null;
   private saveDataInterval: NodeJS.Timeout | null = null;
   private learningInterval: NodeJS.Timeout | null = null;
+  private coinSelectionInterval: NodeJS.Timeout | null = null;
   private cycleInProgress: boolean = false;
 
   public async start(activeMode: boolean = false): Promise<void> {
@@ -1122,6 +1129,23 @@ export class AITradingSystem {
     this.readyToTrade = true;
     
     try {
+      // אם הבחירה האוטומטית מופעלת, נריץ את הבחירה פעם אחת בהתחלה
+      if (this.config.autoSelectCoins) {
+        console.log("Auto-selecting best coins for trading...");
+        await this.selectBestCoins();
+        
+        // הפעלת מנגנון בחירת מטבעות אוטומטית
+        this.coinSelectionInterval = setInterval(async () => {
+          if (this.isRunning) {
+            try {
+              await this.selectBestCoins();
+            } catch (error) {
+              console.error('Error during automatic coin selection:', error);
+            }
+          }
+        }, this.config.coinSelectionInterval);
+      }
+      
       if (activeMode) {
         // פונקציה להפעלת מחזורי מסחר
         console.log('AI trading system started in ACTIVE trading mode!');
@@ -1203,6 +1227,191 @@ export class AITradingSystem {
     }
   }
   
+  /**
+   * בחירת מטבעות אוטומטית לסחר
+   * פונקציה זו סורקת את כל המטבעות הזמינים ובוחרת את המתאימים ביותר לסחר
+   * על בסיס תנודתיות, נפח מסחר, ומדדים נוספים
+   */
+  private async selectBestCoins(): Promise<void> {
+    if (!this.config.autoSelectCoins) {
+      console.log("Auto coin selection is disabled, skipping");
+      return;
+    }
+
+    try {
+      console.log("Starting automatic coin selection process...");
+      
+      // קבלת רשימת כל המטבעות הזמינים
+      const allCoinsData = await this.fetchAllAvailableCoins();
+      
+      if (!allCoinsData || allCoinsData.length === 0) {
+        console.error("Failed to fetch available coins or empty list returned");
+        return;
+      }
+      
+      console.log(`Analyzing ${allCoinsData.length} available coins to find best trading opportunities`);
+      
+      // ניתוח וסינון המטבעות על פי מספר קריטריונים
+      const analyzedCoins = await this.analyzeCoins(allCoinsData);
+      
+      // מיון המטבעות לפי דירוג כולל
+      analyzedCoins.sort((a, b) => b.score - a.score);
+      
+      // בחירת המטבעות הטובים ביותר (עד למספר המקסימלי שהוגדר)
+      const bestCoins = analyzedCoins
+        .slice(0, this.config.maxCoinsToAnalyze)
+        .map(coin => coin.symbol);
+      
+      console.log(`Selected ${bestCoins.length} best coins for trading: ${bestCoins.join(', ')}`);
+      
+      // עדכון רשימת המטבעות של המערכת
+      this.config.symbols = bestCoins;
+      
+    } catch (error) {
+      console.error(`Error in automatic coin selection: ${error}`);
+    }
+  }
+  
+  /**
+   * קבלת רשימת כל המטבעות הזמינים למסחר
+   */
+  private async fetchAllAvailableCoins(): Promise<any[]> {
+    try {
+      // נשתמש ברשימת מטבעות קבועה עבור הדוגמה
+      console.log("Using predefined list of coins for automatic selection");
+      return [
+        { symbol: 'BTC-USDT', volume: 1000000, price: 30000 },
+        { symbol: 'ETH-USDT', volume: 500000, price: 2000 },
+        { symbol: 'XRP-USDT', volume: 200000, price: 0.5 },
+        { symbol: 'SOL-USDT', volume: 300000, price: 100 },
+        { symbol: 'DOGE-USDT', volume: 150000, price: 0.1 },
+        { symbol: 'BNB-USDT', volume: 250000, price: 300 },
+        { symbol: 'ADA-USDT', volume: 180000, price: 0.4 },
+        { symbol: 'DOT-USDT', volume: 120000, price: 8 },
+        { symbol: 'LINK-USDT', volume: 100000, price: 15 },
+        { symbol: 'LTC-USDT', volume: 90000, price: 80 },
+      ];
+    } catch (error) {
+      console.error(`Error fetching available coins: ${error}`);
+      return [];
+    }
+  }
+  
+  /**
+   * ניתוח מטבעות וחישוב ציון לכל אחד
+   */
+  private async analyzeCoins(coinsData: any[]): Promise<{ symbol: string; score: number }[]> {
+    const results: { symbol: string; score: number }[] = [];
+    
+    // עיבוד במקביל של עד 5 מטבעות בכל פעם כדי לא לעמיס את המערכת
+    const batchSize = 5;
+    
+    for (let i = 0; i < coinsData.length; i += batchSize) {
+      const batch = coinsData.slice(i, i + batchSize);
+      const batchResults = await Promise.all(
+        batch.map(async (coin) => {
+          try {
+            const symbol = coin.symbol || coin.instId;
+            if (!symbol) return null;
+            
+            // קבלת נתוני מסחר בסיסיים
+            const volume = coin.volume || coin.volCcy || 0;
+            const price = coin.price || coin.last || 0;
+            
+            // ניתוח נתוני עבר
+            let volatilityScore = 0;
+            let trendScore = 0;
+            let volumeScore = 0;
+            
+            try {
+              // ניסיון לקבל ולנתח נתוני מחיר היסטוריים
+              const historicalData = await this.collectMarketData(symbol, TimeFrame.HOUR_1);
+              
+              if (historicalData && historicalData.candles.length > 0) {
+                // חישוב תנודתיות
+                const volatility = this.calculateVolatility(historicalData.candles);
+                volatilityScore = this.normalizeScore(volatility, 0.005, 0.1);
+                
+                // זיהוי מגמה
+                const trend = this.identifyTrend(historicalData);
+                trendScore = trend.trend === 'bullish' ? trend.strength : 
+                             (trend.trend === 'bearish' ? -trend.strength : 0);
+                trendScore = (trendScore + 1) / 2; // ממיר לטווח 0-1
+                
+                // ניתוח נפח מסחר
+                const avgVolume = this.calculateAverageVolume(historicalData.candles);
+                volumeScore = this.normalizeScore(avgVolume, 10000, 10000000);
+              }
+            } catch (error) {
+              console.log(`Could not analyze historical data for ${symbol}: ${error}`);
+              // נמשיך בכל מקרה עם הנתונים שיש לנו
+            }
+            
+            // חישוב ציון כולל
+            const totalScore = (
+              volumeScore * 0.4 +    // נפח מסחר: 40%
+              volatilityScore * 0.4 + // תנודתיות: 40%
+              trendScore * 0.2        // מגמה: 20%
+            );
+            
+            return {
+              symbol,
+              score: totalScore
+            };
+          } catch (error) {
+            console.log(`Error analyzing coin ${coin.symbol || 'unknown'}: ${error}`);
+            return null;
+          }
+        })
+      );
+      
+      // הוספת התוצאות התקינות לרשימה הכוללת
+      results.push(...batchResults.filter(result => result !== null) as { symbol: string; score: number }[]);
+    }
+    
+    return results;
+  }
+  
+  /**
+   * חישוב תנודתיות על בסיס מחירים היסטוריים
+   */
+  private calculateVolatility(candles: Candle[]): number {
+    if (candles.length < 2) return 0;
+    
+    const returns: number[] = [];
+    for (let i = 1; i < candles.length; i++) {
+      const prevClose = candles[i-1].close;
+      const currentClose = candles[i].close;
+      const returnVal = (currentClose - prevClose) / prevClose;
+      returns.push(returnVal);
+    }
+    
+    // חישוב סטיית תקן של התשואות
+    const mean = returns.reduce((sum, val) => sum + val, 0) / returns.length;
+    const squaredDiffs = returns.map(val => Math.pow(val - mean, 2));
+    const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / returns.length;
+    const stdDev = Math.sqrt(variance);
+    
+    return stdDev;
+  }
+  
+  /**
+   * חישוב ממוצע נפח מסחר
+   */
+  private calculateAverageVolume(candles: Candle[]): number {
+    if (candles.length === 0) return 0;
+    return candles.reduce((sum, candle) => sum + candle.volume, 0) / candles.length;
+  }
+  
+  /**
+   * נירמול ציון לטווח 0-1
+   */
+  private normalizeScore(value: number, min: number, max: number): number {
+    if (value <= min) return 0;
+    if (value >= max) return 1;
+    return (value - min) / (max - min);
+  }
+
   private cleanupIntervals(): void {
     if (this.tradingInterval) {
       clearInterval(this.tradingInterval);
@@ -1217,6 +1426,11 @@ export class AITradingSystem {
     if (this.learningInterval) {
       clearInterval(this.learningInterval);
       this.learningInterval = null;
+    }
+    
+    if (this.coinSelectionInterval) {
+      clearInterval(this.coinSelectionInterval);
+      this.coinSelectionInterval = null;
     }
   }
   
@@ -1407,12 +1621,14 @@ export class AITradingSystem {
         strategy: StrategyType.GRID_MEDIUM,
         parameters: {
           // הפרמטרים של אסטרטגיית GRID בהתאם לסכמה של הפרויקט
-          gridSize: 5, 
-          minPrice: 0,  // יוחלף דינמית בהתאם למחיר הנוכחי
-          maxPrice: 0,  // יוחלף דינמית בהתאם למחיר הנוכחי
-          orderQuantity: 0.01,
-          stopLoss: 2,
-          takeProfit: 2
+          gridParams: {
+            upperPrice: currentPrice * 1.1,
+            lowerPrice: currentPrice * 0.9,
+            gridCount: 5,
+            investmentPerGrid: 100
+          },
+          stopLossPercent: 2,
+          takeProfitPercent: 2
         },
         tradingSignals: {
           reinforcementLearning: action,
