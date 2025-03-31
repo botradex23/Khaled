@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePortfolioValue } from "@/hooks/use-portfolio-value";
 import { cn } from "@/lib/utils";
 import {
+  BarChart,
   BarChart3,
   CandlestickChart,
   Home,
