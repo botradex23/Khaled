@@ -24,7 +24,64 @@ router.get('/prices', async (req, res) => {
     
     console.log(`[markets-binance] Fetching prices${symbols.length ? ` for ${symbols.join(', ')}` : ' for all currencies'}`);
     
-    // Get all prices from Binance
+    // נסה לקבל מחירים ישירות מ-API של Binance
+    try {
+      const response = await fetch('https://api.binance.com/api/v3/ticker/price');
+      
+      if (response.status === 200) {
+        const data = await response.json();
+        
+        // וודא שקיבלנו נתונים תקינים
+        if (Array.isArray(data) && data.length > 0) {
+          console.log(`[markets-binance] Successfully fetched ${data.length} prices directly from Binance API`);
+          
+          // סנן לפי USDT pairs ושמות ספציפיים
+          let filteredData = data.filter((item: any) => 
+            item.symbol.endsWith('USDT') && 
+            !item.symbol.includes('UP') && 
+            !item.symbol.includes('DOWN') && 
+            !item.symbol.includes('BEAR') && 
+            !item.symbol.includes('BULL')
+          );
+          
+          // סנן לפי הסמלים שהתבקשו, אם יש כאלה
+          if (symbols.length > 0) {
+            filteredData = filteredData.filter((ticker: any) => symbols.includes(ticker.symbol));
+          }
+          
+          // עיצוב התשובה
+          const formattedPrices = filteredData.map((ticker: any) => {
+            // חילוץ הבסיס (למשל BTC מתוך BTCUSDT)
+            const baseSymbol = ticker.symbol.endsWith('USDT') 
+              ? ticker.symbol.slice(0, -4) 
+              : ticker.symbol;
+            
+            return {
+              symbol: baseSymbol,
+              price: parseFloat(ticker.price),
+              source: 'binance',
+              timestamp: new Date().toISOString()
+            };
+          });
+          
+          return res.json({
+            success: true,
+            source: 'binance',
+            timestamp: new Date().toISOString(),
+            count: formattedPrices.length,
+            data: formattedPrices
+          });
+        }
+      }
+    } catch (directApiError: any) {
+      console.log("[markets-binance] Direct Binance API failed:", directApiError.message);
+      // במקרה של שגיאה נמשיך לשימוש בשירות שלנו
+    }
+    
+    // אם הגענו לכאן, הגישה הישירה נכשלה, נשתמש בשירות שלנו
+    console.log("[markets-binance] Falling back to our market price service");
+    
+    // Get all prices from our Binance service
     const allPrices = await binanceMarketService.getAllPrices();
     
     if (!allPrices || allPrices.length === 0) {
@@ -39,13 +96,19 @@ router.get('/prices', async (req, res) => {
       ? allPrices.filter(ticker => symbols.includes(ticker.symbol))
       : allPrices;
     
-    // Format the response
-    const formattedPrices = filteredPrices.map(ticker => ({
-      symbol: ticker.symbol,
-      price: parseFloat(ticker.price),
-      source: 'binance',
-      timestamp: new Date().toISOString()
-    }));
+    // Format the response - extract base symbol (BTC from BTCUSDT)
+    const formattedPrices = filteredPrices.map(ticker => {
+      const baseSymbol = ticker.symbol.endsWith('USDT') 
+        ? ticker.symbol.slice(0, -4) 
+        : ticker.symbol;
+        
+      return {
+        symbol: baseSymbol,
+        price: parseFloat(ticker.price),
+        source: 'binance',
+        timestamp: new Date().toISOString()
+      };
+    });
     
     res.json({
       success: true,
