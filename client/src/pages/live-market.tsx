@@ -54,11 +54,9 @@ export default function LiveMarketPage() {
     }
   }, [error, toast]);
   
-  // Filter only USDT pairs
+  // Use all available market prices without filtering
   const filteredPrices = prices
-    ? prices
-        .filter(price => price.symbol?.endsWith('USDT'))
-        .sort((a, b) => a.symbol.localeCompare(b.symbol))
+    ? prices.sort((a, b) => a.symbol.localeCompare(b.symbol))
     : [];
   
   return (
@@ -116,7 +114,15 @@ export default function LiveMarketPage() {
                       className="flex justify-between p-4 rounded-lg border"
                     >
                       <div className="font-medium">{ticker.symbol}</div>
-                      <div className="font-bold">${parseFloat(ticker.price).toFixed(4)}</div>
+                      <div className="flex flex-col items-end">
+                        <div className="font-bold">${parseFloat(ticker.price).toFixed(4)}</div>
+                        {ticker.priceChangePercent && (
+                          <div className={`text-xs ${parseFloat(ticker.priceChangePercent) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {parseFloat(ticker.priceChangePercent) >= 0 ? '▲' : '▼'} 
+                            {Math.abs(parseFloat(ticker.priceChangePercent)).toFixed(2)}%
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

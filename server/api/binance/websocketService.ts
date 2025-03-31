@@ -10,7 +10,9 @@ class BinanceWebSocketService extends EventEmitter {
   private reconnectInterval: number = 5000; // 5 שניות לניסיון חיבור מחדש
   private currencyPairs: string[] = [
     'btcusdt', 'ethusdt', 'bnbusdt', 'solusdt', 'xrpusdt',
-    'adausdt', 'dogeusdt', 'dotusdt', 'maticusdt', 'linkusdt'
+    'adausdt', 'dogeusdt', 'dotusdt', 'maticusdt', 'linkusdt',
+    'avaxusdt', 'uniusdt', 'shibusdt', 'ltcusdt', 'atomusdt',
+    'nearusdt', 'bchusdt', 'filusdt', 'trxusdt', 'xlmusdt'
   ];
 
   constructor() {
@@ -25,7 +27,9 @@ class BinanceWebSocketService extends EventEmitter {
   private simulationIntervalTime: number = 3000; // עדכון כל 3 שניות
   private importantCurrencyPairs: string[] = [
     'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
-    'ADAUSDT', 'DOGEUSDT', 'DOTUSDT', 'MATICUSDT', 'LINKUSDT'
+    'ADAUSDT', 'DOGEUSDT', 'DOTUSDT', 'MATICUSDT', 'LINKUSDT',
+    'AVAXUSDT', 'UNIUSDT', 'SHIBUSDT', 'LTCUSDT', 'ATOMUSDT',
+    'NEARUSDT', 'BCHUSDT', 'FILUSDT', 'TRXUSDT', 'XLMUSDT'
   ];
   private lastPrices: Record<string, number> = {};
 
@@ -104,10 +108,11 @@ class BinanceWebSocketService extends EventEmitter {
         console.error('Binance WebSocket error:', error);
         this.emit('error', error);
         
-        // במקרה ויש שגיאת חיבור עם קוד 451 (הגבלה גיאוגרפית), נדווח אבל לא נפעיל סימולציה
+        // במקרה ויש שגיאת חיבור עם קוד 451 (הגבלה גיאוגרפית), נפעיל סימולציה
         if (error && (error.message?.includes('451') || error.code === 451)) {
           console.log('[WebSocket] Binance WebSocket geo-restriction detected (451)');
-          // לא מפעילים סימולציה - this.startSimulation();
+          // מפעילים סימולציה
+          this.startSimulation();
         }
       });
       
@@ -116,8 +121,11 @@ class BinanceWebSocketService extends EventEmitter {
         this.isConnected = false;
         this.ws = null;
         
-        // אין מעבר למצב סימולציה, רק דיווח על הסגירה
+        // הודעה על סגירת החיבור
         this.emit('disconnected', { code, reason });
+        
+        // מעבר למצב סימולציה במקרה של ניתוק
+        this.startSimulation();
         
         // ניסיון חיבור מחדש
         this.scheduleReconnect();
@@ -126,7 +134,10 @@ class BinanceWebSocketService extends EventEmitter {
       console.error('Error creating Binance WebSocket connection:', error);
       this.emit('error', error);
       
-      // ניסיון חיבור מחדש, ללא סימולציה
+      // התחל סימולציה במקרה של שגיאה ביצירת החיבור
+      this.startSimulation();
+      
+      // ניסיון חיבור מחדש
       this.scheduleReconnect();
     }
   }
@@ -210,7 +221,17 @@ class BinanceWebSocketService extends EventEmitter {
       'DOGEUSDT': 0.16,
       'DOTUSDT': 8.25,
       'MATICUSDT': 0.78,
-      'LINKUSDT': 15.85
+      'LINKUSDT': 15.85,
+      'AVAXUSDT': 41.28,
+      'UNIUSDT': 12.35,
+      'SHIBUSDT': 0.00002654,
+      'LTCUSDT': 93.21,
+      'ATOMUSDT': 11.23,
+      'NEARUSDT': 7.15,
+      'BCHUSDT': 523.75,
+      'FILUSDT': 8.93,
+      'TRXUSDT': 0.1426,
+      'XLMUSDT': 0.1392
     };
     
     this.lastPrices = { ...defaultPrices };
@@ -221,8 +242,9 @@ class BinanceWebSocketService extends EventEmitter {
    * יצירת עדכוני מחירים מדומים וריאליסטיים ושליחתם
    */
   private emitSimulatedPriceUpdates(): void {
-    // עבור כל זוג מטבעות בסימולציה
-    this.importantCurrencyPairs.forEach(symbol => {
+    // נשתמש בכל המטבעות בלאסט פרייס במקום רק החשובים
+    // כך נכלול את כל המטבעות שהוגדרו בברירת מחדל
+    Object.keys(this.lastPrices).forEach(symbol => {
       // אם אין מחיר קודם, דלג
       if (!this.lastPrices[symbol]) {
         return;
