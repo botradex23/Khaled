@@ -52,14 +52,10 @@ export default function MarketPrices() {
     refetchInterval: 60000,
   });
 
-  // Fetch market data from the Binance market tickers endpoint - the same endpoint used successfully in the Binance Account page
-  const { data, isLoading, error } = useQuery<{
-    success: boolean;
-    source: string;
-    timestamp: string;
-    count: number;
-    data?: any[];
-  }>({
+  // Fetch market tickers data from the Binance market tickers endpoint
+  const { data: tickersData, isLoading: tickersLoading, error: tickersError } = useQuery<
+    Array<{ symbol: string; price: string; }>
+  >({
     queryKey: ['/api/binance/market/tickers'], 
     enabled: true, // Always fetch this data regardless of authentication state
     staleTime: 30000, // Consider data fresh for 30 seconds
@@ -75,11 +71,35 @@ export default function MarketPrices() {
     });
   };
 
+  // Process Binance ticker data into our MarketData format
+  const processTickerData = (tickers: Array<{ symbol: string; price: string; }> | undefined): MarketData[] => {
+    if (!tickers || !Array.isArray(tickers)) return [];
+    
+    // Filter only USDT pairs for simplicity (e.g., BTCUSDT, ETHUSDT, etc.)
+    return tickers
+      .filter(ticker => ticker.symbol.endsWith('USDT'))
+      .map(ticker => {
+        // Extract base currency (e.g., BTC from BTCUSDT)
+        const baseCurrency = ticker.symbol.replace('USDT', '');
+        
+        return {
+          symbol: baseCurrency,
+          price: parseFloat(ticker.price),
+          change24h: 0, // We don't have this data from the tickers endpoint
+          volume24h: 0, // We don't have this data from the tickers endpoint
+          high24h: 0,   // We don't have this data from the tickers endpoint
+          low24h: 0     // We don't have this data from the tickers endpoint
+        } as MarketData;
+      });
+  };
+  
   // Filter and sort market data
   const getFilteredAndSortedData = () => {
-    if (!data || !data.data || !Array.isArray(data.data)) return [];
-
-    let filteredData = [...data.data];
+    const marketData = processTickerData(tickersData);
+    
+    if (!marketData || !Array.isArray(marketData)) return [];
+    
+    let filteredData = [...marketData];
 
     // Apply search filter
     if (searchQuery.trim() !== '') {
@@ -192,13 +212,13 @@ export default function MarketPrices() {
                   Updated every 30s
                 </Badge>
                 <Badge variant="outline" className="font-normal">
-                  {data?.count || 0} Markets
+                  {filteredAndSortedData.length} Markets
                 </Badge>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {tickersLoading ? (
               <div className="space-y-2">
                 {Array.from({ length: 10 }).map((_, index) => (
                   <div key={index} className="flex justify-between items-center py-2">
@@ -210,7 +230,7 @@ export default function MarketPrices() {
                   </div>
                 ))}
               </div>
-            ) : error ? (
+            ) : tickersError ? (
               <div className="text-center py-8">
                 <p className="text-red-500">Error loading market data</p>
                 <p className="text-sm text-muted-foreground mt-2">
