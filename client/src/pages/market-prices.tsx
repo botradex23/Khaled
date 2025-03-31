@@ -22,6 +22,7 @@ interface MarketData {
 }
 
 export default function MarketPrices() {
+  // This page displays Binance market price data
   const { isAuthenticated, user } = useAuth();
   const [sortConfig, setSortConfig] = useState<{ key: keyof MarketData; direction: 'asc' | 'desc' }>({
     key: 'symbol',

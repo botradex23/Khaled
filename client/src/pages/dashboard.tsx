@@ -181,7 +181,7 @@ export default function Dashboard() {
                       className="text-xs"
                       onClick={() => window.location.href = '/market-prices'}
                     >
-                      View Market Prices
+                      View Binance Market Prices
                       <ArrowRight className="ml-2 h-3 w-3" />
                     </Button>
                   </div>

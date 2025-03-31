@@ -139,6 +139,7 @@ const marketCapEstimates: Record<string, number> = {
 };
 
 export default function Markets() {
+  // This page displays Binance market data
   // State for search and filters
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCoin, setSelectedCoin] = useState<string | null>(null);
@@ -199,9 +200,9 @@ export default function Markets() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Crypto Markets</h1>
+              <h1 className="text-3xl font-bold mb-2">Binance Markets</h1>
               <p className="text-muted-foreground">
-                Real-time prices, charts and market data
+                Real-time prices, charts and market data from Binance
               </p>
             </div>
             <div className="relative w-full md:w-64 mt-4 md:mt-0">
@@ -218,9 +219,9 @@ export default function Markets() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card className="md:col-span-2">
               <CardHeader>
-                <CardTitle>Market Overview</CardTitle>
+                <CardTitle>Binance Markets Overview</CardTitle>
                 <CardDescription className="flex items-center gap-2">
-                  <span>Top trending cryptocurrencies</span>
+                  <span>Top trending cryptocurrencies from Binance</span>
                   {isLoading ? (
                     <span className="text-xs text-muted-foreground flex items-center">
                       <RefreshCw className="h-3 w-3 animate-spin mr-1" />
