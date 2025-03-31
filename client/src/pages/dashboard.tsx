@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
@@ -46,7 +46,10 @@ import {
   RefreshCw,
   KeyRound,
   AlertCircle,
-  Bot as BotIcon
+  Bot as BotIcon,
+  TrendingUp,
+  TrendingDown,
+  Loader2
 } from "lucide-react";
 import {
   Alert,
@@ -61,6 +64,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { MarketPriceWidget } from "@/components/ui/market-price-widget";
 
 export default function Dashboard() {
   const { isAuthenticated, isLoading: authLoading, checkSession, user } = useAuth();
@@ -163,18 +168,35 @@ export default function Dashboard() {
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle className="text-xl font-medium">Market Chart</CardTitle>
-                    <CardDescription>Live price data from Bitget</CardDescription>
+                    <CardTitle className="text-xl font-medium">Market Overview</CardTitle>
+                    <CardDescription>Live cryptocurrency market prices</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-xs px-2 py-1 rounded-full bg-blue-500/10 text-blue-500">
                       Real-time
                     </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={() => window.location.href = '/market-prices'}
+                    >
+                      View All
+                      <ArrowRight className="ml-2 h-3 w-3" />
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <PriceChart symbol="BTCUSDT" />
+                <div className="w-full aspect-[16/9]">
+                  <PriceChart symbol="BTCUSDT" />
+                </div>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* We'll fetch and display the same market data used in the Binance page */}
+                  <MarketPriceWidget symbol="BTCUSDT" name="Bitcoin" />
+                  <MarketPriceWidget symbol="ETHUSDT" name="Ethereum" />
+                  <MarketPriceWidget symbol="SOLUSDT" name="Solana" />
+                </div>
               </CardContent>
             </Card>
 
@@ -182,6 +204,85 @@ export default function Dashboard() {
             <AccountBalanceCard />
           </div>
 
+          {/* Paper Trading Section */}
+          <Card className="mb-8">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-xl font-medium">Paper Trading</CardTitle>
+                  <CardDescription>Practice trading without real money</CardDescription>
+                </div>
+                <Button 
+                  className="flex items-center" 
+                  onClick={() => window.location.href = "/binance"}
+                  variant="outline"
+                >
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                  Go to Paper Trading
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="bg-card/60">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-medium">Account Balance</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="text-sm text-muted-foreground">Initial Balance</div>
+                      <div className="font-medium">$10,000.00</div>
+                    </div>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="text-sm text-muted-foreground">Current Balance</div>
+                      <div className="font-medium">$10,000.00</div>
+                    </div>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="text-sm text-muted-foreground">Profit/Loss</div>
+                      <div className="font-medium text-green-500">$0.00 (0.00%)</div>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => window.location.href = "/binance"}>
+                      <span>Open Trading Dashboard</span>
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-card/60">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-medium">Open Positions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col space-y-2">
+                      <div className="text-center text-sm text-muted-foreground py-6">
+                        No open positions
+                      </div>
+                      <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => window.location.href = "/binance"}>
+                        <span>Create New Position</span>
+                        <Plus className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-card/60">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-medium">Trading History</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center text-sm text-muted-foreground py-6">
+                      No trading history yet
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => window.location.href = "/binance"}>
+                      <span>View All Trades</span>
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+            
           {/* Active Bots Section */}
           <Card className="mb-8">
             <CardHeader>
@@ -248,9 +349,9 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Analytics Tabs Section */}
+          {/* Market Prices and Trading cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Trading Activity Card - Real data from Bitget */}
+            {/* Trading Activity Card */}
             <div className="md:col-span-2">
               <TradingHistoryCard />
             </div>
@@ -272,17 +373,31 @@ export default function Dashboard() {
                     הגדר מפתחות API
                   </Button>
                   
-                  <Button variant="outline" className="w-full justify-start" onClick={() => window.alert("Deposit funds functionality coming soon!")}>
-                    <Wallet className="mr-2 h-4 w-4" />
-                    Deposit Funds
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" onClick={() => window.location.href = "/markets"}>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => window.location.href = "/binance"}
+                  >
                     <BarChart4 className="mr-2 h-4 w-4" />
-                    Market Analysis
+                    Binance Trading
                   </Button>
-                  <Button variant="outline" className="w-full justify-start" onClick={() => window.alert("Portfolio rebalance functionality coming soon!")}>
-                    <PieChartIcon className="mr-2 h-4 w-4" />
-                    Portfolio Rebalance
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    onClick={() => window.location.href = "/market-prices"}
+                  >
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Market Prices
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    onClick={() => window.location.href = "/bots"}
+                  >
+                    <BotIcon className="mr-2 h-4 w-4" />
+                    Auto Trading Bots
                   </Button>
                 </div>
               </CardContent>
