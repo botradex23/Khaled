@@ -229,9 +229,9 @@ export default function AIGridBot() {
         useAdaptiveRiskAdjustment: data.useAdaptiveRiskAdjustment,
       };
 
-      return apiRequest("POST", "/api/okx/bots", {
+      return apiRequest("POST", "/api/bots", {
         name: data.name,
-        strategy: "grid",
+        strategy: "ai_grid", // Changed to AI_GRID strategy
         description: data.useAI 
           ? "AI-powered grid trading bot that automatically analyzes market conditions" 
           : "Grid trading bot with manual configuration",
@@ -267,7 +267,7 @@ export default function AIGridBot() {
   // Start bot mutation
   const startBotMutation = useMutation({
     mutationFn: (id: number) => {
-      return apiRequest("POST", `/api/okx/bots/${id}/start`);
+      return apiRequest("POST", `/api/bots/${id}/start`);
     },
     onSuccess: () => {
       setIsRunning(true);
@@ -277,7 +277,7 @@ export default function AIGridBot() {
       });
       
       // Refetch bot status
-      queryClient.invalidateQueries({ queryKey: ['/api/okx/bots', botId, 'status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bots', botId, 'status'] });
     },
     onError: (error) => {
       toast({
@@ -291,7 +291,7 @@ export default function AIGridBot() {
   // Stop bot mutation
   const stopBotMutation = useMutation({
     mutationFn: (id: number) => {
-      return apiRequest("POST", `/api/okx/bots/${id}/stop`);
+      return apiRequest("POST", `/api/bots/${id}/stop`);
     },
     onSuccess: () => {
       setIsRunning(false);
@@ -301,7 +301,7 @@ export default function AIGridBot() {
       });
       
       // Refetch bot status
-      queryClient.invalidateQueries({ queryKey: ['/api/okx/bots', botId, 'status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bots', botId, 'status'] });
     },
     onError: (error) => {
       toast({
@@ -317,7 +317,7 @@ export default function AIGridBot() {
     data: botStatus = { stats: {}, trades: [] },
     isLoading: isLoadingStatus,
   } = useQuery<{ stats: any, trades: any[] }>({
-    queryKey: ['/api/okx/bots', botId, 'status'],
+    queryKey: ['/api/bots', botId, 'status'],
     enabled: !!botId,
     refetchInterval: isRunning ? 10000 : false,
   });
@@ -327,7 +327,7 @@ export default function AIGridBot() {
     data: performanceData = [],
     isLoading: isLoadingPerformance,
   } = useQuery<any[]>({
-    queryKey: ['/api/okx/bots', botId, 'performance'],
+    queryKey: ['/api/bots', botId, 'performance'],
     enabled: !!botId,
     refetchInterval: isRunning ? 30000 : false,
   });
