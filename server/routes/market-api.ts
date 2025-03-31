@@ -30,7 +30,7 @@ const router = express.Router();
 
 /**
  * GET /api/market/prices
- * מחזיר מחירי קריפטו מ-OKX (מקור ראשי) או בינאנס (גיבוי)
+ * מחזיר מחירי קריפטו מבינאנס כמקור בלעדי (לפי בקשת המשתמש)
  */
 router.get('/prices', async (req: Request, res: Response) => {
   try {
@@ -48,59 +48,7 @@ router.get('/prices', async (req: Request, res: Response) => {
       filterSymbols = defaultCoins;
     }
     
-    // בגלל שהמשתמש רוצה נתונים אמיתיים, ננסה קודם להשתמש ב-OKX שעובד
-    try {
-      // קבלת מחירים מ-OKX
-      const okxTickers = await okxService.getMarketTickers();
-      
-      if (okxTickers && okxTickers.length > 0) {
-        // המרת פורמט OKX לפורמט סטנדרטי של המערכת
-        const mappedPrices = okxTickers.map(ticker => {
-          // המרת פורמט BTC-USDT לפורמט BTCUSDT
-          const symbolParts = ticker.instId.split('-');
-          const baseSymbol = symbolParts[0]; // BTC
-          
-          return {
-            symbol: baseSymbol,  // השתמש בסמל הבסיס בלבד (BTC במקום BTCUSDT)
-            price: parseFloat(ticker.last),
-            found: true,
-            source: 'okx',
-            timestamp: Date.now()
-          };
-        });
-        
-        // סינון לפי המטבעות המבוקשים
-        let filteredPrices = mappedPrices;
-        if (filterSymbols && filterSymbols.length > 0) {
-          filteredPrices = mappedPrices.filter(p => 
-            filterSymbols!.includes(p.symbol) || 
-            filterSymbols!.some(s => p.symbol.startsWith(s))
-          );
-        }
-        
-        // הגבלת כמות התוצאות אם נדרש
-        if (limit && !isNaN(limit) && limit > 0) {
-          filteredPrices = filteredPrices.slice(0, limit);
-        }
-        
-        // החזרת תשובה בפורמט המוכר למערכת
-        return res.json({
-          success: true,
-          timestamp: new Date().toISOString(),
-          totalRequested: filterSymbols.length,
-          totalFound: filteredPrices.length,
-          source: 'okx',
-          count: filteredPrices.length,
-          prices: filteredPrices,
-          data: filteredPrices
-        });
-      }
-    } catch (okxError: any) {
-      log(`API error fetching market prices from OKX: ${okxError.message}`, 'api');
-      // נמשיך לנסות בינאנס
-    }
-    
-    // נסה להשיג מחירים מ-API בינאנס כגיבוי
+    // לפי בקשת המשתמש, נשתמש ישירות בבינאנס כמקור בלעדי
     try {
       const allPrices = await binanceMarketService.getAllPrices();
       
@@ -141,7 +89,7 @@ router.get('/prices', async (req: Request, res: Response) => {
     } 
     // במקרה של שגיאת API נחזיר שגיאה - לא נשתמש בנתונים מדומים
     catch (apiError: any) {
-      log(`API error fetching market prices from Binance (fallback): ${apiError.message}`, 'api');
+      log(`API error fetching market prices from Binance: ${apiError.message}`, 'api');
       
       // לפי דרישת המשתמש: רק נתונים אמיתיים, ללא נתונים מדומים
       const statusCode = apiError.response?.status || 503;
