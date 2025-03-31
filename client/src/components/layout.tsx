@@ -49,6 +49,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: "AI Trading", href: "/ai-trading", icon: Bot, auth: true },
     { name: "Markets", href: "/markets", icon: CandlestickChart, auth: true },
     { name: "Market Prices", href: "/market-prices", icon: LineChart },
+    { name: "Live Market", href: "/live-market", icon: LineChart, isNew: true },
     { name: "Bots", href: "/bots", icon: FlaskConical, auth: true },
     { name: "API Keys", href: "/api-keys", icon: Key, auth: true },
     { name: "Learn", href: "/learn", icon: BookOpen },
@@ -122,6 +123,11 @@ export default function Layout({ children }: LayoutProps) {
                       >
                         <item.icon className="h-4 w-4 mr-2" />
                         {item.name}
+                        {item.isNew && (
+                          <span className="ml-2 text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-md">
+                            חדש
+                          </span>
+                        )}
                       </Button>
                     </Link>
                   );
@@ -233,7 +239,14 @@ export default function Layout({ children }: LayoutProps) {
                     size="sm"
                   >
                     <item.icon className="h-5 w-5" />
-                    <span className="text-xs mt-1">{item.name}</span>
+                    <div className="flex items-center">
+                      <span className="text-xs mt-1">{item.name}</span>
+                      {item.isNew && (
+                        <span className="ml-1 text-[0.6rem] bg-primary text-primary-foreground px-1 py-0 rounded-md">
+                          חדש
+                        </span>
+                      )}
+                    </div>
                   </Button>
                 </Link>
               );

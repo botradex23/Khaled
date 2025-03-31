@@ -24,6 +24,7 @@ import ApiKeys from "@/pages/api-keys";
 import Account from "@/pages/account";
 import CompleteProfile from "@/pages/complete-profile";
 import Binance from "@/pages/binance";
+import LiveMarket from "@/pages/live-market";
 
 function Router() {
   const { isAuthenticated, needsProfileCompletion, isLoading } = useAuth();
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/bots" component={Bots} />
       <Route path="/markets" component={Markets} />
       <Route path="/market-prices" component={MarketPrices} />
+      <Route path="/live-market" component={LiveMarket} />
       <Route path="/register" component={Register} />
       <Route path="/login" component={Login} />
       <Route path="/test-login" component={TestLogin} />
