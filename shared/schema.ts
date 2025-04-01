@@ -108,6 +108,7 @@ export const paperTradingPositions = pgTable('paper_trading_positions', {
   quantity: text('quantity').notNull(),
   direction: text('direction').notNull(), // "LONG" or "SHORT"
   openedAt: timestamp('opened_at').defaultNow(),
+  metadata: json('metadata'), // For storing additional position data like current price, PnL, etc.
 });
 
 // Paper trading trades table

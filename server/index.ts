@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 // Import file for side effects only to override console messages
 import './override-console.js';
+// Import risk manager to start monitoring positions for SL/TP
+import './api/risk-management/RiskManager.js';
 
 const app = express();
 app.use(express.json());

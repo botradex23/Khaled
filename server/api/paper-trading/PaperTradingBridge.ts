@@ -1,12 +1,13 @@
 /**
  * PaperTradingBridge.ts
  * 
- * גשר המקשר בין מערכת הבוטים לבין מערכת ה-Paper Trading
- * מאפשר לבוטים לבצע עסקאות ב-Paper Trading בלי צורך באינטגרציה ישירה עם בורסה
+ * Bridge between trading bots and the Paper Trading system
+ * Allows bots to execute trades in Paper Trading without direct integration with an exchange
  */
 
 import { storage } from '../../storage';
 import { InsertPaperTradingPosition, InsertPaperTradingTrade } from '@shared/schema';
+import paperTradingApi from './PaperTradingApi';
 
 export enum TradeDirection {
   LONG = 'LONG',
@@ -348,7 +349,7 @@ export class PaperTradingBridge {
   
   /**
    * Get Open Positions
-   * מחזיר את כל הפוזיציות הפתוחות בחשבון
+   * Returns all open positions in the account
    */
   public async getOpenPositions(): Promise<any[]> {
     if (!this.isInitialized || this.accountId === null) {
@@ -366,6 +367,33 @@ export class PaperTradingBridge {
       console.error(`Failed to get open positions: ${error.message}`);
       return [];
     }
+  }
+  
+  /**
+   * Get the current price for a symbol
+   * Uses the PaperTradingApi to get simulated or real prices
+   */
+  public async getCurrentPrice(symbol: string): Promise<number> {
+    return paperTradingApi.getCurrentPrice(symbol);
+  }
+  
+  /**
+   * Get the PaperTradingApi instance
+   * Used for testing and simulating price changes
+   */
+  public getPaperTradingApi() {
+    return paperTradingApi;
+  }
+  
+  /**
+   * Initialize account with a specific balance
+   * Used for testing
+   */
+  public async initializeAccount(balance: number): Promise<number> {
+    if (!this.userId) {
+      throw new Error('User ID is required to initialize account');
+    }
+    return paperTradingApi.initializeAccount(this.userId, balance);
   }
 }
 

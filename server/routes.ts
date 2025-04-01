@@ -327,6 +327,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register risk settings routes:', err);
   });
   
+  // Risk testing routes
+  import('./routes/risk-test').then(riskTestRouter => {
+    app.use('/api/risk-test', riskTestRouter.default);
+    console.log('Risk testing routes registered to /api/risk-test');
+  }).catch(err => {
+    console.error('Failed to register risk testing routes:', err);
+  });
+  
   // Database status routes are already registered above via dynamic import
   
   // Portfolio routes for dashboard data visualization
