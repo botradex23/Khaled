@@ -1,7 +1,7 @@
 /**
  * routes.ts
  * 
- * נתיבי API לניהול בוטים
+ * API routes for bot management
  */
 
 import { Request, Response, Router } from 'express';
@@ -14,13 +14,13 @@ import { insertTradingBotSchema } from '@shared/schema';
 const router = Router();
 
 /**
- * Schema לוולידציה של בוט AI Grid
+ * Validation schema for AI Grid bot
  */
 const aiGridBotSchema = z.object({
   name: z.string().min(1, "Bot name is required"),
   description: z.string().optional(),
   symbol: z.string().min(1, "Trading pair is required"),
-  broker: z.string().min(1, "Broker is required"),
+  broker: z.string().default("binance").transform(() => "binance"), // Always use Binance
   gridLevels: z.number().int().min(3).max(20),
   upperLimit: z.number().positive(),
   lowerLimit: z.number().positive(),
@@ -32,13 +32,13 @@ const aiGridBotSchema = z.object({
 });
 
 /**
- * Schema לוולידציה של בוט DCA
+ * Validation schema for DCA bot
  */
 const dcaBotSchema = z.object({
   name: z.string().min(1, "Bot name is required"),
   description: z.string().optional(),
   symbol: z.string().min(1, "Trading pair is required"),
-  broker: z.string().min(1, "Broker is required"),
+  broker: z.string().default("binance").transform(() => "binance"), // Always use Binance
   intervalHours: z.number().int().min(1),
   totalBudget: z.number().positive(),
   purchaseAmount: z.number().positive(),
@@ -49,13 +49,13 @@ const dcaBotSchema = z.object({
 });
 
 /**
- * Schema לוולידציה של בוט MACD
+ * Validation schema for MACD bot
  */
 const macdBotSchema = z.object({
   name: z.string().min(1, "Bot name is required"),
   description: z.string().optional(),
   symbol: z.string().min(1, "Trading pair is required"),
-  broker: z.string().min(1, "Broker is required"),
+  broker: z.string().default("binance").transform(() => "binance"), // Always use Binance
   shortEMA: z.number().int().min(1),
   longEMA: z.number().int().min(1),
   signalPeriod: z.number().int().min(1),
@@ -68,7 +68,7 @@ const macdBotSchema = z.object({
 
 /**
  * GET /bots
- * קבלת רשימת הבוטים של המשתמש
+ * Get user's bots list
  */
 router.get('/', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
@@ -90,7 +90,7 @@ router.get('/', ensureAuthenticated, async (req: Request, res: Response) => {
 
 /**
  * GET /bots/:id
- * קבלת פרטי בוט ספציפי
+ * Get details of a specific bot
  */
 router.get('/:id', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
@@ -129,7 +129,7 @@ router.get('/:id', ensureAuthenticated, async (req: Request, res: Response) => {
 
 /**
  * POST /bots/ai-grid
- * יצירת בוט AI Grid חדש
+ * Create a new AI Grid bot
  */
 router.post('/ai-grid', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
@@ -210,7 +210,7 @@ router.post('/ai-grid', ensureAuthenticated, async (req: Request, res: Response)
 
 /**
  * POST /bots/dca
- * יצירת בוט DCA חדש
+ * Create a new DCA bot
  */
 router.post('/dca', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
@@ -290,7 +290,7 @@ router.post('/dca', ensureAuthenticated, async (req: Request, res: Response) => 
 
 /**
  * POST /bots/macd
- * יצירת בוט MACD חדש
+ * Create a new MACD bot
  */
 router.post('/macd', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
@@ -372,7 +372,7 @@ router.post('/macd', ensureAuthenticated, async (req: Request, res: Response) =>
 
 /**
  * POST /bots/:id/activate
- * הפעלת בוט
+ * Activate a bot
  */
 router.post('/:id/activate', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
@@ -414,7 +414,7 @@ router.post('/:id/activate', ensureAuthenticated, async (req: Request, res: Resp
 
 /**
  * POST /bots/:id/deactivate
- * הפסקת בוט
+ * Deactivate a bot
  */
 router.post('/:id/deactivate', ensureAuthenticated, async (req: Request, res: Response) => {
   try {

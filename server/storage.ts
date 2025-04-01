@@ -583,9 +583,8 @@ export class MemStorage implements IStorage {
   async updateUserApiKeys(
     userId: number,
     apiKeys: {
-      okxApiKey?: string;
-      okxSecretKey?: string;
-      okxPassphrase?: string;
+      binanceApiKey?: string;
+      binanceSecretKey?: string;
       defaultBroker?: string;
       useTestnet?: boolean;
     }
@@ -598,32 +597,26 @@ export class MemStorage implements IStorage {
     }
     
     console.log(`updateUserApiKeys for user ${userId} (${user.email}):`);
-    console.log("  Received API key type:", typeof apiKeys.okxApiKey);
-    console.log("  Received API key undefined check:", apiKeys.okxApiKey === undefined);
-    console.log("  Received API key empty string check:", apiKeys.okxApiKey === "");
-    console.log("  Received API key length:", apiKeys.okxApiKey ? apiKeys.okxApiKey.length : "N/A");
+    console.log("  Received API key type:", typeof apiKeys.binanceApiKey);
+    console.log("  Received API key undefined check:", apiKeys.binanceApiKey === undefined);
+    console.log("  Received API key empty string check:", apiKeys.binanceApiKey === "");
+    console.log("  Received API key length:", apiKeys.binanceApiKey ? apiKeys.binanceApiKey.length : "N/A");
 
     // Handle the special cases for empty strings or strings with only whitespace to convert them to null
     // This makes the API behavior more consistent across the app
-    const sanitizedOkxApiKey = !apiKeys.okxApiKey || apiKeys.okxApiKey.trim() === "" ? null : apiKeys.okxApiKey.trim();
-    const sanitizedOkxSecretKey = !apiKeys.okxSecretKey || apiKeys.okxSecretKey.trim() === "" ? null : apiKeys.okxSecretKey.trim();
-    const sanitizedOkxPassphrase = !apiKeys.okxPassphrase || apiKeys.okxPassphrase.trim() === "" ? null : apiKeys.okxPassphrase.trim();
+    const sanitizedBinanceApiKey = !apiKeys.binanceApiKey || apiKeys.binanceApiKey.trim() === "" ? null : apiKeys.binanceApiKey.trim();
+    const sanitizedBinanceSecretKey = !apiKeys.binanceSecretKey || apiKeys.binanceSecretKey.trim() === "" ? null : apiKeys.binanceSecretKey.trim();
     
     // Encrypt API keys if they exist
-    const encryptedApiKey = sanitizedOkxApiKey ? encrypt(sanitizedOkxApiKey) : null;
-    const encryptedSecretKey = sanitizedOkxSecretKey ? encrypt(sanitizedOkxSecretKey) : null;
-    const encryptedPassphrase = sanitizedOkxPassphrase ? encrypt(sanitizedOkxPassphrase) : null;
+    const encryptedApiKey = sanitizedBinanceApiKey ? encrypt(sanitizedBinanceApiKey) : null;
+    const encryptedSecretKey = sanitizedBinanceSecretKey ? encrypt(sanitizedBinanceSecretKey) : null;
     
     if (encryptedApiKey) {
-      console.log(`  Encrypted OKX API key, original length: ${sanitizedOkxApiKey!.length}, encrypted length: ${encryptedApiKey.length}`);
+      console.log(`  Encrypted Binance API key, original length: ${sanitizedBinanceApiKey!.length}, encrypted length: ${encryptedApiKey.length}`);
     }
     
     if (encryptedSecretKey) {
-      console.log(`  Encrypted OKX Secret key, original length: ${sanitizedOkxSecretKey!.length}, encrypted length: ${encryptedSecretKey.length}`);
-    }
-    
-    if (encryptedPassphrase) {
-      console.log(`  Encrypted OKX Passphrase, original length: ${sanitizedOkxPassphrase!.length}, encrypted length: ${encryptedPassphrase.length}`);
+      console.log(`  Encrypted Binance Secret key, original length: ${sanitizedBinanceSecretKey!.length}, encrypted length: ${encryptedSecretKey.length}`);
     }
     
     // Update the API keys
@@ -631,17 +624,15 @@ export class MemStorage implements IStorage {
       ...user,
       // Only update if value is not undefined (explicitly provided)
       // This preserves previous values if a field wasn't specified
-      okxApiKey: sanitizedOkxApiKey !== undefined ? encryptedApiKey : user.okxApiKey,
-      okxSecretKey: sanitizedOkxSecretKey !== undefined ? encryptedSecretKey : user.okxSecretKey,
-      okxPassphrase: sanitizedOkxPassphrase !== undefined ? encryptedPassphrase : user.okxPassphrase,
-      defaultBroker: apiKeys.defaultBroker || user.defaultBroker || "okx",
+      binanceApiKey: sanitizedBinanceApiKey !== undefined ? encryptedApiKey : user.binanceApiKey,
+      binanceSecretKey: sanitizedBinanceSecretKey !== undefined ? encryptedSecretKey : user.binanceSecretKey,
+      defaultBroker: 'binance', // Always use Binance
       useTestnet: apiKeys.useTestnet !== undefined ? !!apiKeys.useTestnet : (user.useTestnet === null || user.useTestnet === undefined ? true : !!user.useTestnet)
     };
     
     console.log("updateUserApiKeys - User values after update:", {
-      hasApiKey: !!updatedUser.okxApiKey,
-      hasSecretKey: !!updatedUser.okxSecretKey,
-      hasPassphrase: !!updatedUser.okxPassphrase,
+      hasApiKey: !!updatedUser.binanceApiKey,
+      hasSecretKey: !!updatedUser.binanceSecretKey,
       defaultBroker: updatedUser.defaultBroker,
       useTestnet: updatedUser.useTestnet
     });
@@ -653,9 +644,8 @@ export class MemStorage implements IStorage {
   }
   
   async getUserApiKeys(userId: number): Promise<{
-    okxApiKey: string | null;
-    okxSecretKey: string | null;
-    okxPassphrase: string | null;
+    binanceApiKey: string | null;
+    binanceSecretKey: string | null;
     defaultBroker: string;
     useTestnet: boolean;
   } | undefined> {
@@ -668,24 +658,23 @@ export class MemStorage implements IStorage {
     
     // Log the user properties and API key info for debugging
     console.log(`getUserApiKeys for user ${userId} (${user.email}):`);
-    console.log("  API key type:", typeof user.okxApiKey);
-    console.log("  API key null check:", user.okxApiKey === null);
-    console.log("  API key undefined check:", user.okxApiKey === undefined);
-    console.log("  API key empty string check:", user.okxApiKey === "");
-    console.log("  API key length:", user.okxApiKey ? user.okxApiKey.length : "N/A");
+    console.log("  API key type:", typeof user.binanceApiKey);
+    console.log("  API key null check:", user.binanceApiKey === null);
+    console.log("  API key undefined check:", user.binanceApiKey === undefined);
+    console.log("  API key empty string check:", user.binanceApiKey === "");
+    console.log("  API key length:", user.binanceApiKey ? user.binanceApiKey.length : "N/A");
     
     // Check if the values are encrypted and decrypt if necessary
-    let apiKey = user.okxApiKey;
-    let secretKey = user.okxSecretKey;
-    let passphrase = user.okxPassphrase;
+    let apiKey = user.binanceApiKey;
+    let secretKey = user.binanceSecretKey;
     
     // Decrypt API key if it's encrypted
     if (apiKey && isEncrypted(apiKey)) {
       try {
         apiKey = decrypt(apiKey);
-        console.log(`  Decrypted OKX API key, new length: ${apiKey.length}`);
+        console.log(`  Decrypted Binance API key, new length: ${apiKey.length}`);
       } catch (error) {
-        console.error("Error decrypting OKX API key:", error);
+        console.error("Error decrypting Binance API key:", error);
         apiKey = null;
       }
     }
@@ -694,21 +683,10 @@ export class MemStorage implements IStorage {
     if (secretKey && isEncrypted(secretKey)) {
       try {
         secretKey = decrypt(secretKey);
-        console.log(`  Decrypted OKX Secret key, new length: ${secretKey.length}`);
+        console.log(`  Decrypted Binance Secret key, new length: ${secretKey.length}`);
       } catch (error) {
-        console.error("Error decrypting OKX Secret key:", error);
+        console.error("Error decrypting Binance Secret key:", error);
         secretKey = null;
-      }
-    }
-    
-    // Decrypt Passphrase if it's encrypted
-    if (passphrase && isEncrypted(passphrase)) {
-      try {
-        passphrase = decrypt(passphrase);
-        console.log(`  Decrypted OKX Passphrase, new length: ${passphrase.length}`);
-      } catch (error) {
-        console.error("Error decrypting OKX Passphrase:", error);
-        passphrase = null;
       }
     }
     
@@ -716,19 +694,17 @@ export class MemStorage implements IStorage {
     const apiKeyResponse = {
       // Always return null if there's no meaningful value (null, undefined, or empty string)
       // This ensures consistent return types and makes client-side checks more reliable
-      okxApiKey: !apiKey || (typeof apiKey === 'string' && apiKey.trim() === '') ? null : apiKey,
-      okxSecretKey: !secretKey || (typeof secretKey === 'string' && secretKey.trim() === '') ? null : secretKey, 
-      okxPassphrase: !passphrase || (typeof passphrase === 'string' && passphrase.trim() === '') ? null : passphrase,
-      defaultBroker: user.defaultBroker || "okx",
+      binanceApiKey: !apiKey || (typeof apiKey === 'string' && apiKey.trim() === '') ? null : apiKey,
+      binanceSecretKey: !secretKey || (typeof secretKey === 'string' && secretKey.trim() === '') ? null : secretKey,
+      defaultBroker: 'binance', // Always binance
       // Make sure we always return a boolean, never null or undefined
       useTestnet: user.useTestnet === null || user.useTestnet === undefined ? true : !!user.useTestnet
     };
     
     // Log what we're returning (excluding secret values) for debugging
     console.log("getUserApiKeys return value:", {
-      hasApiKey: !!apiKeyResponse.okxApiKey,
-      hasSecretKey: !!apiKeyResponse.okxSecretKey,
-      hasPassphrase: !!apiKeyResponse.okxPassphrase,
+      hasApiKey: !!apiKeyResponse.binanceApiKey,
+      hasSecretKey: !!apiKeyResponse.binanceSecretKey,
       defaultBroker: apiKeyResponse.defaultBroker,
       useTestnet: apiKeyResponse.useTestnet
     });
@@ -1043,12 +1019,9 @@ export class MemStorage implements IStorage {
     
     console.log(`Clearing API keys for user ID ${userId} (${user.email || 'unknown email'})`);
     
-    // Clear all API keys - both OKX and Binance
+    // Clear all Binance API keys
     const updatedUser: User = {
       ...user,
-      okxApiKey: null,
-      okxSecretKey: null,
-      okxPassphrase: null,
       binanceApiKey: null,
       binanceSecretKey: null,
       binanceAllowedIp: null

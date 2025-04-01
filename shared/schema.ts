@@ -12,15 +12,12 @@ export const users = pgTable('users', {
   password: text('password'), // Stored hashed with bcrypt
   firstName: text('first_name'),
   lastName: text('last_name'),
-  defaultBroker: text('default_broker'),
+  defaultBroker: text('default_broker').default('binance'), // Always set to 'binance'
   useTestnet: boolean('use_testnet').default(true),
   
-  // OKX API Keys (direct, for compatibility with existing code)
-  okxApiKey: text('okx_api_key'),
-  okxSecretKey: text('okx_secret_key'),
-  okxPassphrase: text('okx_passphrase'),
+  // Removed OKX API Keys since we exclusively use Binance now
   
-  // Binance API Keys (direct, for compatibility with existing code)  
+  // Binance API Keys  
   binanceApiKey: text('binance_api_key'),
   binanceSecretKey: text('binance_secret_key'),
   
@@ -33,12 +30,7 @@ export const userApiKeys = pgTable('user_api_keys', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id),
   
-  // OKX API Keys (encrypted)
-  okxApiKey: text('okx_api_key'),
-  okxSecretKey: text('okx_secret_key'),
-  okxPassphrase: text('okx_passphrase'),
-  
-  // Binance API Keys (encrypted)
+  // Binance API Keys only (encrypted)
   binanceApiKey: text('binance_api_key'),
   binanceSecretKey: text('binance_secret_key'),
   
@@ -53,8 +45,8 @@ export const tradingBots = pgTable('trading_bots', {
   userId: integer('user_id').notNull().references(() => users.id),
   name: text('name').notNull(),
   description: text('description'),
-  symbol: text('symbol').notNull(), // Trading pair like "BTC-USDT"
-  broker: text('broker').notNull(), // "okx", "binance", etc.
+  symbol: text('symbol').notNull(), // Trading pair like "BTCUSDT"
+  broker: text('broker').notNull().default('binance'), // Always "binance" (removed support for other brokers)
   strategyType: text('strategy_type').notNull(), // "grid", "ai", "martingale", etc.
   parameters: json('parameters'), // Strategy-specific parameters as JSON
   isActive: boolean('is_active').default(false),

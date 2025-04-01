@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { ensureAuthenticated } from '../auth';
 import { storage } from '../storage';
 import { z } from 'zod';
-import { OkxService, createOkxServiceWithCustomCredentials } from '../api/okx/okxService';
+import { createBinanceServiceWithCustomCredentials } from '../api/binance/binanceService';
 import { User } from '@shared/schema';
 
 const router = Router();
@@ -33,10 +33,9 @@ router.get('/api-keys', ensureAuthenticated, async (req: Request, res: Response)
     
     // Mask API keys for security
     const maskedApiKeys = {
-      okxApiKey: apiKeys.okxApiKey ? maskSecret(apiKeys.okxApiKey) : null,
-      okxSecretKey: apiKeys.okxSecretKey ? maskSecret(apiKeys.okxSecretKey) : null,
-      okxPassphrase: apiKeys.okxPassphrase ? maskSecret(apiKeys.okxPassphrase) : null,
-      defaultBroker: apiKeys.defaultBroker,
+      binanceApiKey: apiKeys.binanceApiKey ? maskSecret(apiKeys.binanceApiKey) : null,
+      binanceSecretKey: apiKeys.binanceSecretKey ? maskSecret(apiKeys.binanceSecretKey) : null,
+      defaultBroker: 'binance', // Always binance now
       useTestnet: apiKeys.useTestnet
     };
     
@@ -57,10 +56,8 @@ router.put('/api-keys', ensureAuthenticated, async (req: Request, res: Response)
   console.log("API Keys Update - Request received");
   
   const apiKeysSchema = z.object({
-    okxApiKey: z.string().min(1, "API key is required"),
-    okxSecretKey: z.string().min(1, "Secret key is required"),
-    okxPassphrase: z.string().min(1, "Passphrase is required"),
-    defaultBroker: z.string().default("okx"),
+    binanceApiKey: z.string().min(1, "API key is required"),
+    binanceSecretKey: z.string().min(1, "Secret key is required"),
     useTestnet: z.boolean().default(true)
   });
   
@@ -75,20 +72,18 @@ router.put('/api-keys', ensureAuthenticated, async (req: Request, res: Response)
     
     // Validate input
     console.log("API Keys Update - Validating input data", {
-      hasApiKey: !!req.body.okxApiKey,
-      hasSecretKey: !!req.body.okxSecretKey,
-      hasPassphrase: !!req.body.okxPassphrase,
+      hasApiKey: !!req.body.binanceApiKey,
+      hasSecretKey: !!req.body.binanceSecretKey,
     });
     
     const data = apiKeysSchema.parse(req.body);
     
     // Test the API keys to make sure they're valid before saving
     try {
-      console.log("Testing API keys against broker API");
-      const testService = createOkxServiceWithCustomCredentials(
-        data.okxApiKey,
-        data.okxSecretKey,
-        data.okxPassphrase,
+      console.log("Testing API keys against Binance API");
+      const testService = createBinanceServiceWithCustomCredentials(
+        data.binanceApiKey,
+        data.binanceSecretKey,
         data.useTestnet
       );
       
@@ -106,10 +101,9 @@ router.put('/api-keys', ensureAuthenticated, async (req: Request, res: Response)
     // Update the API keys
     console.log("API Keys Update - Updating API keys in storage");
     const updatedUser = await storage.updateUserApiKeys(userId, {
-      okxApiKey: data.okxApiKey,
-      okxSecretKey: data.okxSecretKey,
-      okxPassphrase: data.okxPassphrase,
-      defaultBroker: data.defaultBroker,
+      binanceApiKey: data.binanceApiKey,
+      binanceSecretKey: data.binanceSecretKey,
+      defaultBroker: 'binance', // Always use Binance
       useTestnet: data.useTestnet
     });
     
@@ -168,9 +162,8 @@ router.delete('/api-keys', ensureAuthenticated, async (req: Request, res: Respon
  */
 router.post('/validate-api-keys', async (req: Request, res: Response) => {
   const validationSchema = z.object({
-    okxApiKey: z.string().min(1, "API key is required"),
-    okxSecretKey: z.string().min(1, "Secret key is required"),
-    okxPassphrase: z.string().min(1, "Passphrase is required"),
+    binanceApiKey: z.string().min(1, "API key is required"),
+    binanceSecretKey: z.string().min(1, "Secret key is required"),
     useTestnet: z.boolean().default(true)
   });
   
@@ -182,11 +175,10 @@ router.post('/validate-api-keys', async (req: Request, res: Response) => {
     const data = validationSchema.parse(req.body);
     
     try {
-      console.log("Testing OKX API connection...");
-      const testService = createOkxServiceWithCustomCredentials(
-        data.okxApiKey,
-        data.okxSecretKey, 
-        data.okxPassphrase,
+      console.log("Testing Binance API connection...");
+      const testService = createBinanceServiceWithCustomCredentials(
+        data.binanceApiKey,
+        data.binanceSecretKey,
         data.useTestnet
       );
       
@@ -203,11 +195,11 @@ router.post('/validate-api-keys', async (req: Request, res: Response) => {
       
       // Try an authenticated request
       try {
-        console.log("Testing OKX API authentication...");
+        console.log("Testing Binance API authentication...");
         const accountInfo = await testService.getAccountInfo();
         
-        if (!accountInfo || !(accountInfo as any).data) {
-          throw new Error("Invalid response from OKX API");
+        if (!accountInfo) {
+          throw new Error("Invalid response from Binance API");
         }
         
         console.log("API authentication successful");
@@ -261,11 +253,10 @@ router.get('/api-keys/status', ensureAuthenticated, async (req: Request, res: Re
       return res.status(404).json({ message: "User not found" });
     }
     
-    // Check if the user has API keys configured - ensure none are empty strings
+    // Check if the user has Binance API keys configured - ensure none are empty strings
     const hasApiKeys = !!(
-      apiKeys.okxApiKey && apiKeys.okxApiKey.trim() !== '' &&
-      apiKeys.okxSecretKey && apiKeys.okxSecretKey.trim() !== '' &&
-      apiKeys.okxPassphrase && apiKeys.okxPassphrase.trim() !== ''
+      apiKeys.binanceApiKey && apiKeys.binanceApiKey.trim() !== '' &&
+      apiKeys.binanceSecretKey && apiKeys.binanceSecretKey.trim() !== ''
     );
     
     // By default, if the API keys exist and are not empty, we'll consider them valid
@@ -275,11 +266,10 @@ router.get('/api-keys/status', ensureAuthenticated, async (req: Request, res: Re
     
     if (hasApiKeys) {
       try {
-        // Create a service with the user's API keys
-        const service = createOkxServiceWithCustomCredentials(
-          apiKeys.okxApiKey || '',
-          apiKeys.okxSecretKey || '',
-          apiKeys.okxPassphrase || '',
+        // Create a service with the user's Binance API keys
+        const service = createBinanceServiceWithCustomCredentials(
+          apiKeys.binanceApiKey || '',
+          apiKeys.binanceSecretKey || '',
           apiKeys.useTestnet
         );
         
@@ -319,7 +309,7 @@ router.get('/api-keys/status', ensureAuthenticated, async (req: Request, res: Re
     res.status(200).json({
       configured: hasApiKeys,
       hasValidApiKeys: hasValidApiKeys,
-      broker: apiKeys.defaultBroker,
+      broker: 'binance', // Always binance
       useTestnet: apiKeys.useTestnet,
       validation: validationStatus
     });
