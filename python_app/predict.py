@@ -42,23 +42,15 @@ except ImportError:
     logging.error("Binance connector SDK not found. Please install it using 'pip install binance-connector'")
     sys.exit(1)
     
-# Proxy configuration
-USE_PROXY = active_config.USE_PROXY
-PROXY_USERNAME = active_config.PROXY_USERNAME
-PROXY_PASSWORD = active_config.PROXY_PASSWORD
-PROXY_IP = active_config.PROXY_IP
-PROXY_PORT = active_config.PROXY_PORT
+# Binance configuration
+USE_TESTNET = active_config.USE_BINANCE_TESTNET
+BINANCE_API_KEY = active_config.BINANCE_API_KEY
+BINANCE_SECRET_KEY = active_config.BINANCE_SECRET_KEY
+BINANCE_BASE_URL = active_config.BINANCE_TEST_URL if USE_TESTNET else active_config.BINANCE_BASE_URL
 
-# Configure proxy
-if USE_PROXY:
-    logging.info(f"Using proxy connection to Binance API via {PROXY_IP}:{PROXY_PORT}")
-    proxies = {
-        "http": f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@{PROXY_IP}:{PROXY_PORT}",
-        "https": f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@{PROXY_IP}:{PROXY_PORT}"
-    }
-else:
-    logging.info("Not using proxy for Binance API connection")
-    proxies = None
+logging.info(f"Configuring Binance SDK - Base URL: {'testnet' if USE_TESTNET else 'production'}")
+logging.info(f"API Key available: {bool(BINANCE_API_KEY)}")
+logging.info(f"Direct SDK integration enabled")
 
 # Load the trained model for a given symbol
 def load_model(symbol: str) -> Optional[Dict[str, Any]]:
@@ -107,26 +99,26 @@ def fetch_recent_data(symbol: str, interval: str = '4h', limit: int = 100) -> pd
     try:
         logging.info(f"Fetching recent data for {symbol} ({interval} timeframe)")
         
-        # Initialize Binance client
-        # Check if API keys are available in environment
-        api_key = os.environ.get('BINANCE_API_KEY')
-        api_secret = os.environ.get('BINANCE_API_SECRET')
+        # Use SDK-provided credentials or environment variables
+        api_key = BINANCE_API_KEY or os.environ.get('BINANCE_API_KEY')
+        api_secret = BINANCE_SECRET_KEY or os.environ.get('BINANCE_API_SECRET')
         
-        # Create request kwargs with proxy settings if enabled
-        kwargs = {}
-        if USE_PROXY:
-            kwargs['proxies'] = proxies
-            kwargs['timeout'] = 30  # Extended timeout for proxy connections
-            logging.info("Using configured proxy for Binance API request")
+        # Set up client options
+        client_options = {
+            'base_url': BINANCE_BASE_URL,
+            'timeout': 30  # Extended timeout for API requests
+        }
         
+        # Initialize the Binance Spot client with our configuration
         if api_key and api_secret:
-            logging.info("Using Binance API keys from environment")
-            client = Spot(key=api_key, secret=api_secret, **kwargs)
+            logging.info("Using Binance API keys for authenticated request")
+            client = Spot(key=api_key, secret=api_secret, **client_options)
         else:
             logging.info("No API keys found. Using public API endpoints")
-            client = Spot(**kwargs)
+            client = Spot(**client_options)
         
-        # Fetch klines (candlestick) data
+        # Fetch klines (candlestick) data directly through the SDK
+        logging.info(f"Requesting data from Binance using official SDK (base URL: {BINANCE_BASE_URL})")
         klines = client.klines(symbol=symbol, interval=interval, limit=limit)
         
         # Convert to DataFrame
@@ -144,7 +136,7 @@ def fetch_recent_data(symbol: str, interval: str = '4h', limit: int = 100) -> pd
         # Set timestamp as index
         df.set_index('timestamp', inplace=True)
         
-        logging.info(f"Successfully fetched {len(df)} records for {symbol}")
+        logging.info(f"Successfully fetched {len(df)} records for {symbol} using SDK")
         return df
     
     except ClientError as e:
@@ -384,9 +376,9 @@ def make_prediction(symbol: str, interval: str = '4h', use_sample: bool = False)
                 logging.info("Sample data explicitly requested by user")
                 df = get_sample_data(symbol)
             else:
-                logging.info(f"Attempting to fetch real data for {symbol} through proxy")
+                logging.info(f"Attempting to fetch real data for {symbol} using Binance SDK")
                 df = fetch_recent_data(symbol, interval)
-                logging.info(f"Successfully fetched real market data via proxy for {symbol}")
+                logging.info(f"Successfully fetched real market data via Binance SDK for {symbol}")
         except Exception as data_e:
             # Always use sample data as fallback
             logging.warning(f"Failed to fetch data from API: {data_e}")
