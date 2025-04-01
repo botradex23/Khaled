@@ -3,7 +3,7 @@
  */
 import { Router, Request, Response } from 'express';
 import { binanceMarketService } from '../api/binance/marketPriceService';
-import { pythonBinanceMarketService } from '../api/binance/python-binance-bridge';
+import { pythonBinanceBridge } from '../api/binance/python-binance-bridge';
 import { log } from '../vite';
 
 const router = Router();
@@ -17,7 +17,7 @@ router.get('/', async (req: Request, res: Response) => {
     log('Fetching all Binance market pairs', 'api');
     
     // Use the Python bridge to get all prices from Binance
-    const allPrices = await pythonBinanceMarketService.getAllPrices();
+    const allPrices = await pythonBinanceBridge.getAllPrices();
     
     if (!allPrices || allPrices.length === 0) {
       // Fallback to the original TypeScript implementation

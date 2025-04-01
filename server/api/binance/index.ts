@@ -1,8 +1,8 @@
 import { BinanceService } from './binanceService';
 import { binanceMarketService } from './marketPriceService';
-import { pythonBinanceMarketService } from './python-binance-bridge';
+import { pythonBinanceBridge } from './python-binance-bridge';
 
-export { BinanceService, binanceMarketService, pythonBinanceMarketService };
+export { BinanceService, binanceMarketService, pythonBinanceBridge };
 
 // Function to create a BinanceService instance with user's credentials
 export function createBinanceService(apiKey: string, secretKey: string, testnet: boolean = true): BinanceService {
