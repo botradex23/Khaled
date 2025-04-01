@@ -91,7 +91,18 @@ router.get('/', ensureAuthenticated, async (req: Request, res: Response) => {
 // Save/Update Binance API keys
 router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
+    // Check for user authentication
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        message: 'You must be logged in to save API keys'
+      });
+    }
+
     const { apiKey, secretKey, allowedIp, testnet } = req.body;
+    const userId = req.user.id;
+    
+    console.log(`Request to save Binance API keys for user ${userId}`);
     
     // Simple validation
     if (!apiKey || !secretKey) {
@@ -102,7 +113,6 @@ router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
     }
     
     // Clean up the API keys to remove any whitespace that might cause format errors
-    // שימוש ב-replace לפני trim כדי לטפל ברווחים ותווים לבנים בכל המחרוזת
     const cleanedApiKey = apiKey ? apiKey.replace(/\s+/g, '').trim() : '';
     const cleanedSecretKey = secretKey ? secretKey.replace(/\s+/g, '').trim() : '';
     const cleanedAllowedIp = allowedIp ? allowedIp.replace(/\s+/g, '').trim() : allowedIp;
@@ -130,49 +140,47 @@ router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
       });
     }
     
-    console.log(`Saving Binance API keys for user ${req.user!.id} - API Key length: ${cleanedApiKey.length}, Secret Key length: ${cleanedSecretKey.length}`);
+    console.log(`Saving Binance API keys for user ${userId} - API Key length: ${cleanedApiKey.length}, Secret Key length: ${cleanedSecretKey.length}`);
     
-    // Update the user's Binance API keys using our storage implementation
-    const userId = req.user!.id;
-    // במקרה שמשתמש לא מספק כתובת IP מאושרת, השתמש בברירת מחדל של הפרוקסי שלנו
+    // Default to proxy IP if none provided
     const finalAllowedIp = cleanedAllowedIp || "185.199.228.220";
-    
     console.log(`Using allowed IP: ${finalAllowedIp} for Binance API`);
     
-    const updatedUser = await storage.updateUserBinanceApiKeys(userId, {
-      binanceApiKey: cleanedApiKey,
-      binanceSecretKey: cleanedSecretKey,
-      binanceAllowedIp: finalAllowedIp
-    });
-    
-    console.log(`Update result: ${updatedUser ? "Success" : "Failed"}`);
-    
-    if (!updatedUser) {
-      return res.status(404).json({
-        error: 'User not found',
-        message: 'Could not update API keys for this user'
+    try {
+      // Update the user's Binance API keys using our storage implementation
+      const updatedUser = await storage.updateUserBinanceApiKeys(userId, {
+        binanceApiKey: cleanedApiKey,
+        binanceSecretKey: cleanedSecretKey,
+        binanceAllowedIp: finalAllowedIp
       });
-    }
-    
-    console.log(`User updated successfully. Has API Key: ${!!updatedUser.binanceApiKey}, Has Secret Key: ${!!updatedUser.binanceSecretKey}`);
-    
-    // Log success
-    console.log(`Binance API keys saved successfully for user ${userId} (Using testnet: ${testnet})`);
-    console.log(`API Key format: ${cleanedApiKey.substring(0, 4)}... (length: ${cleanedApiKey.length})`);
-    
-    // Make sure session is saved after updating API keys
-    req.session.save((err) => {
-      if (err) {
-        console.error("Error saving session after updating Binance API keys:", err);
-      } else {
-        console.log("Session saved successfully after updating Binance API keys");
+      
+      console.log(`Update result: ${updatedUser ? "Success" : "Failed"}`);
+      
+      if (!updatedUser) {
+        return res.status(404).json({
+          error: 'User not found',
+          message: 'Could not update API keys for this user'
+        });
       }
       
+      console.log(`User updated successfully. Has API Key: ${!!updatedUser.binanceApiKey}, Has Secret Key: ${!!updatedUser.binanceSecretKey}`);
+      
+      // Log success
+      console.log(`Binance API keys saved successfully for user ${userId} (Using testnet: ${testnet})`);
+      console.log(`API Key format: ${cleanedApiKey.substring(0, 4)}... (length: ${cleanedApiKey.length})`);
+      
+      // Return success response immediately - don't wait for session save
       return res.status(200).json({
         success: true,
         message: 'Binance API keys saved successfully'
       });
-    });
+    } catch (storageError) {
+      console.error("Error in storage layer when saving Binance API keys:", storageError);
+      return res.status(500).json({
+        error: 'Storage error',
+        message: 'An error occurred while storing Binance API keys'
+      });
+    }
   } catch (error: any) {
     console.error("Error saving Binance API keys:", error);
     return res.status(500).json({
