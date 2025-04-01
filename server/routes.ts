@@ -361,6 +361,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register ML routes:', err);
   });
   
+  // Register ML CLI routes for direct prediction via command line
+  import('./routes/ml-cli-routes.js').then(mlCliRoutes => {
+    app.use('/api/ml-cli', mlCliRoutes.default || mlCliRoutes);
+    console.log('ML CLI routes registered to /api/ml-cli');
+  }).catch(err => {
+    console.error('Failed to register ML CLI routes:', err);
+  });
+  
   // Portfolio routes for dashboard data visualization
   app.use("/api/portfolio", portfolioRouter);
   

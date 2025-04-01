@@ -15,6 +15,7 @@ from config import active_config
 from routes.binance_routes import binance_bp
 from routes.ml_routes import ml_bp
 from routes.ml_prediction_routes import ml_prediction_bp, register_routes as register_ml_prediction_routes
+from routes.live_prediction_routes import live_prediction_bp, register_routes as register_live_prediction_routes
 
 # Configure logging
 try:
@@ -73,6 +74,7 @@ def create_app(config=None):
     
     # Register additional routes using custom registration functions
     register_ml_prediction_routes(app)
+    register_live_prediction_routes(app)
     
     # Register error handlers
     @app.errorhandler(404)
@@ -142,9 +144,60 @@ def create_app(config=None):
             'environment': os.environ.get('FLASK_ENV', 'development'),
             'services': {
                 'binance': True,
-                'ml': True
+                'ml': True,
+                'live_prediction': True
             }
         })
+    
+    # Add direct prediction endpoint for testing
+    @app.route('/api/direct-predict/<symbol>', methods=['GET'])
+    def direct_predict_endpoint(symbol):
+        """Direct prediction endpoint for testing"""
+        import os
+        import sys
+        import json
+        from datetime import datetime
+        
+        # Add app directory to path
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+        
+        # Import the direct prediction function
+        try:
+            from direct_test import direct_predict
+            
+            # Get query parameters
+            model_type = request.args.get('model_type', 'balanced')
+            
+            # Validate model_type
+            if model_type not in ['standard', 'balanced']:
+                return jsonify({
+                    'success': False,
+                    'error': f'Invalid model_type: {model_type}. Must be "standard" or "balanced"',
+                    'symbol': symbol,
+                    'timestamp': datetime.now().isoformat()
+                }), 400
+            
+            # Make prediction
+            result = direct_predict(symbol, model_type)
+            
+            if result:
+                return jsonify(result)
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Prediction failed',
+                    'symbol': symbol,
+                    'timestamp': datetime.now().isoformat()
+                }), 500
+                
+        except Exception as e:
+            logging.error(f"Error in direct prediction endpoint: {e}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'symbol': symbol,
+                'timestamp': datetime.now().isoformat()
+            }), 500
     
     return app
 

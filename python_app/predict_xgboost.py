@@ -149,14 +149,30 @@ class XGBoostPredictor:
             return None
         
         try:
+            # Make a copy of the market data to avoid modifying the original
+            market_data_copy = market_data.copy()
+            
+            # Check if 'future_price' and 'price_change_pct' are missing and add them if needed
+            if 'future_price' not in market_data_copy:
+                # In live prediction, use current price as future price placeholder
+                market_data_copy['future_price'] = market_data_copy.get('close', 0.0)
+            
+            if 'price_change_pct' not in market_data_copy:
+                # In live prediction, assume no price change as placeholder
+                market_data_copy['price_change_pct'] = 0.0
+            
             # Create a DataFrame with all required features
-            features_df = pd.DataFrame([market_data])
+            features_df = pd.DataFrame([market_data_copy])
             
             # Check if all required features are present
             missing_features = [f for f in self.features[model_key] if f not in features_df.columns]
             if missing_features:
                 logging.error(f"Missing features for {model_key}: {missing_features}")
-                return None
+                
+                # Add missing features with default values
+                for feature in missing_features:
+                    features_df[feature] = 0.0
+                    logging.warning(f"Added missing feature '{feature}' with default value 0.0")
             
             # Select and order features according to the model's expected feature list
             features_df = features_df[self.features[model_key]]
