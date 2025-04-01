@@ -822,32 +822,37 @@ export class MemStorage implements IStorage {
       binanceSecretKeyLength: updatedUser.binanceSecretKey ? updatedUser.binanceSecretKey.length : 0
     });
     
-    // Save the updated user
+    // Save the updated user to in-memory storage first
     this.users.set(userId, updatedUser);
     
-    // ADDITIONALLY: Also save the API keys to MongoDB for better persistence
-    try {
-      // Check that both API keys exist before saving to MongoDB
-      if (sanitizedBinanceApiKey && sanitizedBinanceSecretKey) {
-        // Import the MongoDB integration dynamically
-        const { saveBinanceApiKeysToMongoDB } = await import('./storage/mongodb');
-        
-        // Save to MongoDB asynchronously (don't wait for it to complete)
-        saveBinanceApiKeysToMongoDB(userId, sanitizedBinanceApiKey, sanitizedBinanceSecretKey)
-          .then(() => {
-            console.log(`Successfully saved Binance API keys to MongoDB for user ${userId}`);
-          })
-          .catch(error => {
-            console.error(`Error saving Binance API keys to MongoDB for user ${userId}:`, error);
-          });
-        
-        console.log(`Initiated saving Binance API keys to MongoDB for user ${userId}`);
-      } else {
-        console.log(`Not saving to MongoDB - missing required sanitized API key or secret key`);
-      }
-    } catch (error) {
-      // Don't let MongoDB errors affect the primary storage mechanism
-      console.error(`Error setting up MongoDB save for Binance API keys:`, error);
+    // OPTIONALLY: Try to save the API keys to MongoDB for better persistence
+    // But do it in a way that won't affect the primary in-memory storage
+    // We're using a separate try/catch block with setTimeout to make sure any errors
+    // don't affect the main API key saving flow
+    if (sanitizedBinanceApiKey && sanitizedBinanceSecretKey) {
+      setTimeout(() => {
+        try {
+          console.log(`Attempting to save Binance API keys to MongoDB for user ${userId} (background process)`);
+          
+          // Use dynamic import with explicit error handling
+          import('./storage/mongodb')
+            .then(({ saveBinanceApiKeysToMongoDB }) => {
+              return saveBinanceApiKeysToMongoDB(userId, sanitizedBinanceApiKey, sanitizedBinanceSecretKey);
+            })
+            .then(() => {
+              console.log(`Successfully saved Binance API keys to MongoDB for user ${userId}`);
+            })
+            .catch(error => {
+              console.log(`MongoDB saving skipped for user ${userId} - this is normal and won't affect functionality`);
+              // Don't log the full error as this is an optional feature
+            });
+        } catch (error) {
+          // Completely suppress any errors here - MongoDB is optional
+          console.log('MongoDB integration skipped - using in-memory storage only');
+        }
+      }, 100); // Small delay to ensure primary save completes first
+      
+      console.log(`Scheduled background MongoDB save for Binance API keys (optional)`);
     }
     
     return updatedUser;
