@@ -14,12 +14,30 @@ from flask_cors import CORS
 from config import active_config
 from routes.binance_routes import binance_bp
 from routes.ml_routes import ml_bp
+from routes.ml_prediction_routes import ml_prediction_bp, register_routes as register_ml_prediction_routes
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+try:
+    # Create logs directory if it doesn't exist
+    os.makedirs('logs', exist_ok=True)
+    
+    # Configure both file and console logging
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler('logs/api.log'),
+            logging.StreamHandler()
+        ]
+    )
+    logging.info("Logging initialized successfully with both console and file handlers")
+except Exception as e:
+    # Fall back to console-only logging if file handler creation fails
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    logging.warning(f"Could not set up file logging, falling back to console only: {e}")
 
 def create_app(config=None):
     """
@@ -51,6 +69,10 @@ def create_app(config=None):
     # Register blueprints
     app.register_blueprint(binance_bp)
     app.register_blueprint(ml_bp)
+    app.register_blueprint(ml_prediction_bp)
+    
+    # Register additional routes using custom registration functions
+    register_ml_prediction_routes(app)
     
     # Register error handlers
     @app.errorhandler(404)

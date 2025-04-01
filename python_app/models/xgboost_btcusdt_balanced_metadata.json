@@ -1,0 +1,173 @@
+{
+  "symbol": "btcusdt",
+  "feature_count": 33,
+  "training_samples": {
+    "original": 1514,
+    "oversampled": 4518
+  },
+  "test_samples": 379,
+  "class_mapping": {
+    "0": "BUY",
+    "1": "HOLD",
+    "2": "SELL"
+  },
+  "class_weights": {
+    "0": 504.6666666666667,
+    "1": 0.33510402833111996,
+    "2": 72.0952380952381
+  },
+  "params": {
+    "objective": "multi:softmax",
+    "base_score": null,
+    "booster": null,
+    "callbacks": null,
+    "colsample_bylevel": null,
+    "colsample_bynode": null,
+    "colsample_bytree": 0.8,
+    "device": null,
+    "early_stopping_rounds": null,
+    "enable_categorical": false,
+    "eval_metric": "mlogloss",
+    "feature_types": null,
+    "feature_weights": null,
+    "gamma": 0.1,
+    "grow_policy": null,
+    "importance_type": null,
+    "interaction_constraints": null,
+    "learning_rate": 0.05,
+    "max_bin": null,
+    "max_cat_threshold": null,
+    "max_cat_to_onehot": null,
+    "max_delta_step": null,
+    "max_depth": 6,
+    "max_leaves": null,
+    "min_child_weight": 2,
+    "missing": NaN,
+    "monotone_constraints": null,
+    "multi_strategy": null,
+    "n_estimators": 200,
+    "n_jobs": null,
+    "num_parallel_tree": null,
+    "random_state": null,
+    "reg_alpha": null,
+    "reg_lambda": null,
+    "sampling_method": null,
+    "scale_pos_weight": 1,
+    "subsample": 0.8,
+    "tree_method": null,
+    "validate_parameters": null,
+    "verbosity": 1,
+    "num_class": 3,
+    "seed": 42,
+    "use_label_encoder": false
+  },
+  "evaluation": {
+    "accuracy": 0.9920844327176781,
+    "precision": [
+      1.0,
+      0.9916201117318436,
+      1.0
+    ],
+    "recall": [
+      0.8636363636363636,
+      1.0,
+      1.0
+    ],
+    "f1": [
+      0.926829268292683,
+      0.9957924263674615,
+      1.0
+    ],
+    "support": [
+      22,
+      355,
+      2
+    ],
+    "classification_report": {
+      "BUY": {
+        "precision": 1.0,
+        "recall": 0.8636363636363636,
+        "f1-score": 0.926829268292683,
+        "support": 22.0
+      },
+      "HOLD": {
+        "precision": 0.9916201117318436,
+        "recall": 1.0,
+        "f1-score": 0.9957924263674615,
+        "support": 355.0
+      },
+      "SELL": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 2.0
+      },
+      "accuracy": 0.9920844327176781,
+      "macro avg": {
+        "precision": 0.9972067039106145,
+        "recall": 0.9545454545454546,
+        "f1-score": 0.9742072315533815,
+        "support": 379.0
+      },
+      "weighted avg": {
+        "precision": 0.9921507642870832,
+        "recall": 0.9920844327176781,
+        "f1-score": 0.991811491458807,
+        "support": 379.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        19,
+        3,
+        0
+      ],
+      [
+        0,
+        355,
+        0
+      ],
+      [
+        0,
+        0,
+        2
+      ]
+    ]
+  },
+  "features": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "sma_5",
+    "sma_10",
+    "sma_20",
+    "sma_50",
+    "sma_100",
+    "ema_5",
+    "ema_10",
+    "ema_20",
+    "ema_50",
+    "ema_100",
+    "rsi_14",
+    "ema_12",
+    "ema_26",
+    "macd",
+    "macd_signal",
+    "macd_hist",
+    "bb_middle",
+    "bb_std",
+    "bb_upper",
+    "bb_lower",
+    "atr_14",
+    "roc_5",
+    "roc_10",
+    "roc_20",
+    "stoch_k",
+    "stoch_d",
+    "future_price",
+    "price_change_pct"
+  ],
+  "resampling": "SMOTE"
+}

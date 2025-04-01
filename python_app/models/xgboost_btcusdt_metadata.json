@@ -1,0 +1,140 @@
+{
+  "symbol": "btcusdt",
+  "feature_count": 33,
+  "training_samples": 1514,
+  "test_samples": 379,
+  "class_mapping": {
+    "0": "BUY",
+    "1": "HOLD",
+    "2": "SELL"
+  },
+  "class_weights": {
+    "0": 504.6666666666667,
+    "1": 0.33510402833111996,
+    "2": 72.0952380952381
+  },
+  "params": {
+    "objective": "multi:softmax",
+    "num_class": 3,
+    "learning_rate": 0.05,
+    "max_depth": 6,
+    "min_child_weight": 2,
+    "gamma": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "scale_pos_weight": 1,
+    "seed": 42,
+    "verbosity": 1,
+    "n_estimators": 200,
+    "use_label_encoder": false,
+    "eval_metric": "mlogloss"
+  },
+  "evaluation": {
+    "accuracy": 0.9656992084432717,
+    "precision": [
+      1.0,
+      0.9646739130434783,
+      1.0
+    ],
+    "recall": [
+      0.4090909090909091,
+      1.0,
+      1.0
+    ],
+    "f1": [
+      0.5806451612903226,
+      0.9820193637621023,
+      1.0
+    ],
+    "support": [
+      22,
+      355,
+      2
+    ],
+    "classification_report": {
+      "BUY": {
+        "precision": 1.0,
+        "recall": 0.4090909090909091,
+        "f1-score": 0.5806451612903226,
+        "support": 22.0
+      },
+      "HOLD": {
+        "precision": 0.9646739130434783,
+        "recall": 1.0,
+        "f1-score": 0.9820193637621023,
+        "support": 355.0
+      },
+      "SELL": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 2.0
+      },
+      "accuracy": 0.9656992084432717,
+      "macro avg": {
+        "precision": 0.9882246376811595,
+        "recall": 0.8030303030303031,
+        "f1-score": 0.8542215083508083,
+        "support": 379.0
+      },
+      "weighted avg": {
+        "precision": 0.9669109211884823,
+        "recall": 0.9656992084432717,
+        "f1-score": 0.9588154820156554,
+        "support": 379.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        9,
+        13,
+        0
+      ],
+      [
+        0,
+        355,
+        0
+      ],
+      [
+        0,
+        0,
+        2
+      ]
+    ]
+  },
+  "features": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "sma_5",
+    "sma_10",
+    "sma_20",
+    "sma_50",
+    "sma_100",
+    "ema_5",
+    "ema_10",
+    "ema_20",
+    "ema_50",
+    "ema_100",
+    "rsi_14",
+    "ema_12",
+    "ema_26",
+    "macd",
+    "macd_signal",
+    "macd_hist",
+    "bb_middle",
+    "bb_std",
+    "bb_upper",
+    "bb_lower",
+    "atr_14",
+    "roc_5",
+    "roc_10",
+    "roc_20",
+    "stoch_k",
+    "stoch_d",
+    "future_price",
+    "price_change_pct"
+  ]
+}
