@@ -10,6 +10,16 @@ import { pythonBinanceMarketService } from '../api/binance/python-binance-bridge
 
 const router = Router();
 
+// In-memory cache for market data
+let marketDataCache: {
+  data: any[];
+  timestamp: Date;
+  source: string;
+} | null = null;
+
+// Cache expiration time in milliseconds (5 minutes)
+const CACHE_EXPIRATION = 5 * 60 * 1000;
+
 /**
  * Get all market prices from Binance via Python bridge
  * 
@@ -19,6 +29,29 @@ const router = Router();
  */
 router.get('/all-markets', async (req: Request, res: Response) => {
   try {
+    // Check if we should force refresh cache
+    const forceRefresh = req.query.refresh === 'true';
+    
+    // Check if we have a valid cache
+    if (!forceRefresh && marketDataCache && 
+        marketDataCache.data && 
+        marketDataCache.data.length > 0 &&
+        (new Date().getTime() - marketDataCache.timestamp.getTime()) < CACHE_EXPIRATION) {
+      
+      console.log('[api] Returning cached Binance market data (age: ' + 
+                 ((new Date().getTime() - marketDataCache.timestamp.getTime()) / 1000).toFixed(0) + 
+                 's)');
+      
+      return res.json({
+        success: true,
+        source: marketDataCache.source,
+        timestamp: marketDataCache.timestamp.toISOString(),
+        count: marketDataCache.data.length,
+        data: marketDataCache.data,
+        fromCache: true
+      });
+    }
+    
     console.log('[api] Fetching all Binance market pairs via Python bridge');
     const allPrices = await pythonBinanceMarketService.getAllPrices();
     
@@ -65,14 +98,21 @@ router.get('/all-markets', async (req: Request, res: Response) => {
         price: typeof ticker.price === 'string' ? parseFloat(ticker.price) : ticker.price,
         formattedPrice: formatPrice(typeof ticker.price === 'string' ? parseFloat(ticker.price) : ticker.price),
         // Add 24hr statistics if available
-        priceChangePercent: stats ? parseFloat(stats.priceChangePercent) : 0,
-        volume: stats ? parseFloat(stats.volume) : 0,
-        quoteVolume: stats ? parseFloat(stats.quoteVolume) : 0,
-        high24h: stats ? parseFloat(stats.highPrice) : 0,
-        low24h: stats ? parseFloat(stats.lowPrice) : 0,
+        priceChangePercent: stats ? parseFloat(stats.priceChangePercent || 0) : 0,
+        volume: stats ? parseFloat(stats.volume || 0) : 0,
+        quoteVolume: stats ? parseFloat(stats.quoteVolume || 0) : 0,
+        high24h: stats ? parseFloat(stats.highPrice || 0) : 0,
+        low24h: stats ? parseFloat(stats.lowPrice || 0) : 0,
         source: 'binance-python'
       };
     });
+    
+    // Update cache
+    marketDataCache = {
+      data: processedPrices,
+      timestamp: new Date(),
+      source: 'binance-python'
+    };
     
     // Return all processed prices
     return res.json({
@@ -80,10 +120,27 @@ router.get('/all-markets', async (req: Request, res: Response) => {
       source: 'binance-python',
       timestamp: new Date().toISOString(),
       count: processedPrices.length,
-      data: processedPrices
+      data: processedPrices,
+      fromCache: false
     });
   } catch (error: any) {
     console.error(`Error fetching Binance markets data via Python bridge: ${error}`);
+    
+    // If we have cache data, return it even if it's expired
+    if (marketDataCache && marketDataCache.data && marketDataCache.data.length > 0) {
+      console.log('[api] Returning expired cache data due to API error');
+      
+      return res.json({
+        success: true,
+        source: marketDataCache.source,
+        timestamp: marketDataCache.timestamp.toISOString(),
+        count: marketDataCache.data.length,
+        data: marketDataCache.data,
+        fromCache: true,
+        cacheAge: Math.floor((new Date().getTime() - marketDataCache.timestamp.getTime()) / 1000)
+      });
+    }
+    
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch market data',
