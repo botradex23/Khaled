@@ -151,7 +151,17 @@ class RiskManager extends EventEmitter {
    */
   private async checkPositionRiskLevels(position: any, currentPrice: number): Promise<void> {
     try {
+      // Make sure we have a position object with required fields
+      if (!position || !position.id || !position.entryPrice || !position.direction) {
+        console.error(`Invalid position object provided:`, position);
+        return;
+      }
+
       const entryPrice = parseFloat(position.entryPrice);
+      if (isNaN(entryPrice)) {
+        console.error(`Invalid entry price for position ${position.id}: ${position.entryPrice}`);
+        return;
+      }
       
       // Enhanced metadata handling to ensure we can parse it correctly
       let metadata = null;
@@ -167,11 +177,6 @@ class RiskManager extends EventEmitter {
         console.error(`Error parsing metadata for position ${position.id}:`, e);
         console.error(`Raw metadata value:`, position.metadata);
         metadata = null;
-      }
-      
-      // Debug logging - only log every 10 checks to avoid flooding the console
-      if (Math.random() < 0.1) {
-        console.log(`Position ${position.id} metadata check:`, metadata);
       }
       
       // If no metadata or no risk parameters, skip
@@ -195,59 +200,68 @@ class RiskManager extends EventEmitter {
         return;
       }
       
+      // Parse the SL/TP values and ensure they're valid
+      const stopLossPercent = parseFloat(stopLossValue) || null;
+      const takeProfitPercent = parseFloat(takeProfitValue) || null;
+      
+      if (!stopLossPercent && !takeProfitPercent) {
+        return;
+      }
+      
       // Calculate current PnL percent
       const pnlPercent = position.direction === TradeDirection.LONG
         ? ((currentPrice - entryPrice) / entryPrice) * 100
         : ((entryPrice - currentPrice) / entryPrice) * 100;
       
-      // Log position and calculation details for debugging when risk levels are close
-      const stopLossPercent = parseFloat(stopLossValue) || null;
-      const takeProfitPercent = parseFloat(takeProfitValue) || null;
-      
-      // Only log when we're within 20% of hitting a threshold or when thresholds are reached
-      const closeToStopLoss = stopLossPercent !== null && pnlPercent <= -(stopLossPercent * 0.8);
-      const closeToTakeProfit = takeProfitPercent !== null && pnlPercent >= (takeProfitPercent * 0.8);
-      
-      if (closeToStopLoss || closeToTakeProfit) {
-        console.log(`Position ${position.id} approaching risk levels:`, {
-          symbol: position.symbol,
-          direction: position.direction,
-          entryPrice,
-          currentPrice,
-          pnlPercent: pnlPercent.toFixed(2) + '%',
-          stopLossPercent,
-          takeProfitPercent
-        });
-      }
-      
+      // Debug logging - Log details about the position checking
+      console.log(`Checking position ${position.id} for risk levels:`, {
+        symbol: position.symbol,
+        direction: position.direction,
+        entryPrice,
+        currentPrice,
+        pnlPercent: pnlPercent.toFixed(2) + '%',
+        stopLossPercent,
+        takeProfitPercent
+      });
+
       // Check stop loss (negative P&L exceeding stop loss)
       if (stopLossPercent !== null && pnlPercent <= -stopLossPercent) {
         console.log(`🛑 Stop-loss triggered for position ${position.id}: PnL ${pnlPercent.toFixed(2)}% exceeds stop-loss ${stopLossPercent}%`);
         
-        // Get the bridge for the user who owns this position
-        const account = await storage.getPaperTradingAccount(position.accountId);
-        if (!account) {
-          console.error(`Cannot close position ${position.id}: Account ${position.accountId} not found`);
-          return;
-        }
-        
-        // Initialize the bridge and make sure we have access to the position
-        const bridge = getPaperTradingBridge(account.userId);
-        await bridge.initialize();
-        
-        // Close the position with the current price directly
-        const closeResult = await bridge.closePosition(position.id, currentPrice);
-        
-        if (closeResult.success) {
-          console.log(`✅ Successfully closed position ${position.id} due to stop-loss`);
-          this.emit('positionClosed', {
-            positionId: position.id,
+        try {
+          // Get the bridge for the user who owns this position
+          const account = await storage.getPaperTradingAccount(position.accountId);
+          if (!account) {
+            console.error(`Cannot close position ${position.id}: Account ${position.accountId} not found`);
+            return;
+          }
+          
+          // Initialize the bridge and make sure we have access to the position
+          const bridge = getPaperTradingBridge(account.userId);
+          await bridge.initialize();
+          
+          // Close the position with the current price directly
+          const closeResult = await bridge.closePosition(position.id, {
+            exitPrice: currentPrice,
             reason: 'stop_loss',
-            pnlPercent,
-            closePrice: currentPrice
+            automatic: true,
+            stopLossPercent,
+            actualPnlPercent: pnlPercent
           });
-        } else {
-          console.error(`❌ Failed to close position ${position.id}:`, closeResult.error);
+          
+          if (closeResult.success) {
+            console.log(`✅ Successfully closed position ${position.id} due to stop-loss at ${currentPrice}`);
+            this.emit('positionClosed', {
+              positionId: position.id,
+              reason: 'stop_loss',
+              pnlPercent,
+              closePrice: currentPrice
+            });
+          } else {
+            console.error(`❌ Failed to close position ${position.id} due to stop-loss:`, closeResult.error || closeResult.message);
+          }
+        } catch (closeError) {
+          console.error(`Error closing position ${position.id} for stop-loss:`, closeError);
         }
         
         return;
@@ -257,30 +271,40 @@ class RiskManager extends EventEmitter {
       if (takeProfitPercent !== null && pnlPercent >= takeProfitPercent) {
         console.log(`🎯 Take-profit triggered for position ${position.id}: PnL ${pnlPercent.toFixed(2)}% exceeds take-profit ${takeProfitPercent}%`);
         
-        // Get the bridge for the user who owns this position
-        const account = await storage.getPaperTradingAccount(position.accountId);
-        if (!account) {
-          console.error(`Cannot close position ${position.id}: Account ${position.accountId} not found`);
-          return;
-        }
-        
-        // Initialize the bridge and make sure we have access to the position
-        const bridge = getPaperTradingBridge(account.userId);
-        await bridge.initialize();
-        
-        // Close the position with the current price directly
-        const closeResult = await bridge.closePosition(position.id, currentPrice);
-        
-        if (closeResult.success) {
-          console.log(`✅ Successfully closed position ${position.id} due to take-profit`);
-          this.emit('positionClosed', {
-            positionId: position.id,
+        try {
+          // Get the bridge for the user who owns this position
+          const account = await storage.getPaperTradingAccount(position.accountId);
+          if (!account) {
+            console.error(`Cannot close position ${position.id}: Account ${position.accountId} not found`);
+            return;
+          }
+          
+          // Initialize the bridge and make sure we have access to the position
+          const bridge = getPaperTradingBridge(account.userId);
+          await bridge.initialize();
+          
+          // Close the position with the current price directly
+          const closeResult = await bridge.closePosition(position.id, {
+            exitPrice: currentPrice,
             reason: 'take_profit',
-            pnlPercent,
-            closePrice: currentPrice
+            automatic: true,
+            takeProfitPercent,
+            actualPnlPercent: pnlPercent
           });
-        } else {
-          console.error(`❌ Failed to close position ${position.id}:`, closeResult.error);
+          
+          if (closeResult.success) {
+            console.log(`✅ Successfully closed position ${position.id} due to take-profit at ${currentPrice}`);
+            this.emit('positionClosed', {
+              positionId: position.id,
+              reason: 'take_profit',
+              pnlPercent,
+              closePrice: currentPrice
+            });
+          } else {
+            console.error(`❌ Failed to close position ${position.id} due to take-profit:`, closeResult.error || closeResult.message);
+          }
+        } catch (closeError) {
+          console.error(`Error closing position ${position.id} for take-profit:`, closeError);
         }
       }
     } catch (error) {

@@ -335,6 +335,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register risk testing routes:', err);
   });
   
+  // Flash crash/spike testing routes
+  import('./routes/flash-test').then(flashTestRouter => {
+    app.use('/api/flash-test', flashTestRouter.default);
+    console.log('Flash test routes registered to /api/flash-test');
+  }).catch(err => {
+    console.error('Failed to register flash test routes:', err);
+  });
+  
   // Database status routes are already registered above via dynamic import
   
   // Portfolio routes for dashboard data visualization

@@ -288,17 +288,23 @@ export class PaperTradingBridge {
         // Store metadata
         metadata = exitPriceOrMetadata;
         
-        // Use direct API call to get the current price
-        try {
-          // Get current price from PaperTradingApi
-          exitPrice = await paperTradingApi.getCurrentPrice(position.symbol);
-          console.log(`Got current price for ${position.symbol}: ${exitPrice} from PaperTradingApi`);
-        } catch (error) {
-          console.error(`Failed to get current price for ${position.symbol} from PaperTradingApi:`, error);
-          
-          // Use entry price as fallback to avoid blocking the operation
-          exitPrice = parseFloat(position.entryPrice);
-          console.log(`Using fallback entry price: ${exitPrice}`);
+        // Check if exit price is provided in metadata
+        if (metadata && 'exitPrice' in metadata && typeof metadata.exitPrice === 'number') {
+          exitPrice = metadata.exitPrice;
+          console.log(`Using exit price provided in metadata: ${exitPrice}`);
+        } else {
+          // Use direct API call to get the current price
+          try {
+            // Get current price from PaperTradingApi
+            exitPrice = await paperTradingApi.getCurrentPrice(position.symbol);
+            console.log(`Got current price for ${position.symbol}: ${exitPrice} from PaperTradingApi`);
+          } catch (error) {
+            console.error(`Failed to get current price for ${position.symbol} from PaperTradingApi:`, error);
+            
+            // Use entry price as fallback to avoid blocking the operation
+            exitPrice = parseFloat(position.entryPrice);
+            console.log(`Using fallback entry price: ${exitPrice}`);
+          }
         }
       }
       
