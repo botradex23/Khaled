@@ -52,50 +52,55 @@ export function useMlPrediction({
         // First attempt to get real data through SDK
         try {
           console.log(`Attempting to fetch ${symbol} prediction data using Binance SDK...`);
-          const res = await apiRequest('GET', `/api/ml/predict/${symbol}?interval=${interval}&sample=false`, { 
-            timeout: 5000 // Extended timeout for SDK processing
+          // Using fetch directly with proper error handling for better debugging
+          const res = await fetch(`/api/ml/predict/${symbol}?interval=${interval}&sample=false`, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
           });
-          
-          if (!res.ok) {
-            throw new Error(`API returned status: ${res.status}`);
-          }
           
           const data = await res.json();
           
-          if (data.success) {
+          if (res.ok && data.success) {
             console.log(`Successfully fetched ${symbol} prediction with SDK: ${data.signal} (${data.confidence.toFixed(2)})`);
             return data;
           }
           
           // If we got here but success is false, throw to trigger the fallback
-          throw new Error(data.error || 'Failed to get prediction data');
+          throw new Error(data.error || `API returned status: ${res.status}`);
           
         } catch (realDataError) {
-          console.warn(`Falling back to sample data for ${symbol}:`, realDataError);
+          console.warn(`Falling back to sample data for ${symbol}`);
           
           // If real data fails, explicitly request sample data
           try {
-            const fallbackRes = await apiRequest('GET', `/api/ml/predict/${symbol}?interval=${interval}&sample=true`);
-            
-            if (!fallbackRes.ok) {
-              throw new Error(`Fallback API returned status: ${fallbackRes.status}`);
-            }
+            const fallbackRes = await fetch(`/api/ml/predict/${symbol}?interval=${interval}&sample=true`, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+              credentials: 'include',
+            });
             
             const fallbackData = await fallbackRes.json();
             
-            if (fallbackData.success) {
+            if (fallbackRes.ok && fallbackData.success) {
               console.log(`Using fallback sample data for ${symbol}: ${fallbackData.signal}`);
               return fallbackData;
             }
             
-            throw new Error(fallbackData.error || 'Failed to get fallback prediction data');
+            throw new Error(fallbackData.error || `Fallback API returned status: ${fallbackRes.status}`);
           } catch (fallbackError) {
-            console.error(`Failed to get fallback data for ${symbol}:`, fallbackError);
+            console.error(`Failed to get fallback data for ${symbol}`);
             throw fallbackError;
           }
         }
       } catch (error) {
-        console.error(`Failed to fetch ML prediction for ${symbol} (even with fallback):`, error);
+        console.error(`Failed to fetch ML prediction for ${symbol} (even with fallback)`);
         throw error;
       }
     },
