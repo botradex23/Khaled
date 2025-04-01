@@ -48,16 +48,35 @@ export function useMlPrediction({
     queryKey: [`/api/ml/predict/${symbol}`, interval],
     queryFn: async () => {
       try {
-        const res = await apiRequest('GET', `/api/ml/predict/${symbol}?interval=${interval}&sample=false`);
-        return await res.json();
+        // First attempt to get real data
+        try {
+          const res = await apiRequest('GET', `/api/ml/predict/${symbol}?interval=${interval}&sample=false`, { 
+            timeout: 3000 // Set a shorter timeout for the real data attempt
+          });
+          const data = await res.json();
+          if (data.success) {
+            return data;
+          }
+          // If we got here but success is false, throw to trigger the fallback
+          throw new Error('Failed to get prediction data');
+        } catch (realDataError) {
+          console.warn(`Falling back to sample data for ${symbol}:`, realDataError);
+          // If real data fails, explicitly request sample data
+          const fallbackRes = await apiRequest('GET', `/api/ml/predict/${symbol}?interval=${interval}&sample=true`);
+          return await fallbackRes.json();
+        }
       } catch (error) {
-        console.error(`Failed to fetch ML prediction for ${symbol}:`, error);
+        console.error(`Failed to fetch ML prediction for ${symbol} (even with fallback):`, error);
         throw error;
       }
     },
     enabled,
     refetchInterval,
     staleTime: refetchInterval * 0.9, // Consider data stale after 90% of the refetch interval
+    // Add retry for better robustness
+    retry: 2,
+    // If all attempts fail, use our error boundary
+    useErrorBoundary: false,
   });
 
   return {
