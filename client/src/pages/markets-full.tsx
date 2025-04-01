@@ -98,17 +98,17 @@ export default function MarketsFullPage() {
     try {
       setIsLoading(true);
       
-      // Try the Python-based Binance API first (more reliable for geo-restricted regions)
+      // Try the Python-based Binance API first using the official Binance connector SDK (more reliable for geo-restricted regions)
       let response = await fetch('/api/markets/python/all-markets');
       
-      // If Python API fails, fall back to the standard API
+      // If Python-based Binance connector API fails, fall back to the standard API
       if (!response.ok) {
-        console.log('Python Binance API failed, falling back to standard API');
+        console.log('Official Binance connector API failed, falling back to standard API');
         response = await fetch('/api/binance/all-markets');
         
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to fetch market data from both APIs');
+          throw new Error(errorData.message || 'Failed to fetch market data from both Binance APIs');
         }
       }
       
@@ -288,7 +288,7 @@ export default function MarketsFullPage() {
                 <div>
                   <CardTitle className="text-xl font-bold">Binance Markets</CardTitle>
                   <CardDescription className="text-slate-300">
-                    Live cryptocurrency market data from Binance
+                    Live cryptocurrency market data via official Binance connector API
                   </CardDescription>
                 </div>
                 
@@ -495,7 +495,7 @@ export default function MarketsFullPage() {
                 <MarketErrorState 
                   onRetry={fetchMarketData}
                   title="Unable to load market data"
-                  message="There was an error fetching data from Binance. Please check your connection and try again."
+                  message="There was an error fetching data via official Binance connector API. Please check your connection and try again."
                 />
               ) : filteredData.length === 0 ? (
                 <div className="text-center py-12">

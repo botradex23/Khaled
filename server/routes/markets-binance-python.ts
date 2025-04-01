@@ -2,7 +2,7 @@
  * Binance Market API Routes using Python Bridge
  * 
  * These routes provide access to Binance market data via the Python implementation
- * which uses the ccxt library for improved stability and proxy support.
+ * which uses the official Binance connector SDK (binance-connector) for improved stability and proxy support.
  */
 
 import { Router, Request, Response } from 'express';
