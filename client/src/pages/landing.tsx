@@ -9,6 +9,7 @@ import { GuidedTour, useGuidedTour } from "@/components/ui/guided-tour";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FeatureTooltip, PopoverHelpButton } from "@/components/ui/feature-tooltip";
 import { cn } from "@/lib/utils";
+import { PremiumHeader } from "@/components/ui/premium-header";
 import {
   Brain,
   TrendingUp,
@@ -91,34 +92,34 @@ export default function Landing() {
   const botTypes = [
     {
       name: "AI Grid Bot",
-      description: "הבוט יוצר רשת של הוראות קנייה ומכירה לאורך טווח מחירים ומתאים את הרשת באופן אוטומטי לפי תנאי השוק המשתנים.",
+      description: "Creates a network of buy and sell orders across a price range and automatically adjusts the grid based on changing market conditions.",
       icon: <Bot className="h-10 w-10 text-primary mb-2" />,
       benefits: [
-        "פועל היטב בשווקים תנודתיים",
-        "קונה במחירים נמוכים, מוכר במחירים גבוהים",
-        "ביצועים טובים בשווקים ללא כיוון ברור"
+        "Works well in volatile markets",
+        "Buys low, sells high automatically",
+        "Performs well in sideways markets"
       ],
       path: "/ai-grid-bot"
     },
     {
       name: "DCA Bot",
-      description: "בוט העלות הממוצעת בדולרים רוכש באופן קבוע כמויות מוגדרות מראש של מטבע בזמנים קבועים, ללא תלות במחיר השוק הנוכחי.",
+      description: "Dollar Cost Averaging bot purchases predefined amounts of cryptocurrency at fixed intervals, regardless of the current market price.",
       icon: <HandCoins className="h-10 w-10 text-primary mb-2" />,
       benefits: [
-        "הורדת עלות רכישה ממוצעת לאורך זמן",
-        "מקטין את השפעת התנודתיות לטווח ארוך",
-        "אסטרטגיה פשוטה אך יעילה לטווח ארוך"
+        "Reduces average purchase cost over time",
+        "Minimizes impact of volatility long-term",
+        "Simple yet effective long-term strategy"
       ],
       path: "/dca-bot"
     },
     {
       name: "MACD Bot",
-      description: "בוט המבוסס על אינדיקטור המתכנס-מתפצל של ממוצעים נעים (MACD) לזיהוי שינויי מגמה ומומנטום במחירי שוק.",
+      description: "Based on the Moving Average Convergence Divergence indicator to identify trend changes and momentum in market prices.",
       icon: <LineChart className="h-10 w-10 text-primary mb-2" />,
       benefits: [
-        "זיהוי מגמות וסימני היפוך",
-        "חיפוש נקודות כניסה ויציאה אופטימליות",
-        "אסטרטגיה טכנית מוכחת לכל סוגי השווקים"
+        "Identifies trends and reversal signals",
+        "Seeks optimal entry and exit points",
+        "Proven technical strategy for all markets"
       ],
       path: "/macd-bot"
     }
@@ -127,18 +128,18 @@ export default function Landing() {
   // Quick tips for new users
   const quickTips = [
     {
-      title: "התחל עם מסחר נייר",
-      description: "נסה את האסטרטגיות השונות ללא סיכון כספי אמיתי בסביבת המסחר הווירטואלית שלנו.",
+      title: "Start with Paper Trading",
+      description: "Try different strategies without financial risk in our virtual trading environment.",
       icon: <MousePointerClick className="h-5 w-5 text-primary" />,
     },
     {
-      title: "הגדר אזורי סיכון",
-      description: "תמיד השתמש בהגדרות ניהול סיכונים כמו Stop Loss כדי להגביל הפסדים פוטנציאליים.",
+      title: "Set Risk Boundaries",
+      description: "Always use risk management settings like Stop Loss to limit potential losses.",
       icon: <AlertCircle className="h-5 w-5 text-orange-500" />,
     },
     {
-      title: "בדוק את המדריכים",
-      description: "לחץ על סמלי העזרה ועיין במדריכים השונים כדי להכיר את כל תכונות המערכת.",
+      title: "Check the Guides",
+      description: "Click on help icons and review various guides to understand all system features.",
       icon: <Lightbulb className="h-5 w-5 text-yellow-500" />,
     },
   ];
@@ -154,33 +155,8 @@ export default function Landing() {
       {/* Guided Tour Dialog */}
       <GuidedTour open={showTour} onOpenChange={setShowTour} />
       
-      {/* Header */}
-      <header className="w-full py-4 px-6 bg-background/80 backdrop-blur-sm border-b border-border/40 fixed z-10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <AreaChart className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">CryptoTrade AI</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              onClick={() => setShowTour(true)}
-              className="text-muted-foreground hover:text-foreground flex items-center"
-            >
-              <HelpCircle className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Guided Tour</span>
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/login")}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Login
-            </Button>
-            <Button onClick={() => navigate("/register")}>Register</Button>
-          </div>
-        </div>
-      </header>
+      {/* Use Premium Header instead of custom header */}
+      <PremiumHeader />
 
       {/* Hero section */}
       <section className="pt-32 pb-16 px-6 bg-gradient-to-b from-background to-primary/5">

@@ -133,7 +133,7 @@ export function PremiumHeader() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-2 px-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.profilePicture || undefined} alt={user.username || 'User'} />
+                      <AvatarImage src={undefined} alt={user.username || 'User'} />
                       <AvatarFallback className="bg-primary/20 text-primary">
                         {(user.username || 'U').charAt(0).toUpperCase()}
                       </AvatarFallback>
