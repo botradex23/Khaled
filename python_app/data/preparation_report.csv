@@ -1,0 +1,4 @@
+symbol,input_file,output_file,initial_rows,final_rows,dropped_rows,feature_count,buy_labels,sell_labels,hold_labels,time_range
+BTCUSDT,data/validated/binance_btcusdt_5m_data.csv,data/processed/binance_btcusdt_5m_processed.csv,2016,1893,123,37,23,9,1861,2025-03-26T06:20:00 to 2025-04-01T20:00:00
+ETHUSDT,data/validated/binance_ethusdt_5m_data.csv,data/processed/binance_ethusdt_5m_processed.csv,2016,1893,123,37,59,67,1767,2025-03-26T06:20:00 to 2025-04-01T20:00:00
+SOLUSDT,data/validated/binance_solusdt_5m_data.csv,data/processed/binance_solusdt_5m_processed.csv,2016,1893,123,37,85,124,1684,2025-03-26T06:20:00 to 2025-04-01T20:00:00

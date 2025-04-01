@@ -1,0 +1,61 @@
+{
+  "preparation_time": "2025-04-01T22:09:55.416543",
+  "input_directory": "data/validated",
+  "output_directory": "data/processed",
+  "files_processed": 3,
+  "all_successful": true,
+  "parameters": {
+    "forward_period": 24,
+    "threshold_pct": 1.5
+  },
+  "results": [
+    {
+      "symbol": "BTCUSDT",
+      "input_file": "data/validated/binance_btcusdt_5m_data.csv",
+      "output_file": "data/processed/binance_btcusdt_5m_processed.csv",
+      "initial_rows": 2016,
+      "final_rows": 1893,
+      "dropped_rows": 123,
+      "label_distribution": {
+        "HOLD": 1861,
+        "BUY": 23,
+        "SELL": 9
+      },
+      "feature_count": 37,
+      "time_range_start": "2025-03-26T06:20:00",
+      "time_range_end": "2025-04-01T20:00:00"
+    },
+    {
+      "symbol": "ETHUSDT",
+      "input_file": "data/validated/binance_ethusdt_5m_data.csv",
+      "output_file": "data/processed/binance_ethusdt_5m_processed.csv",
+      "initial_rows": 2016,
+      "final_rows": 1893,
+      "dropped_rows": 123,
+      "label_distribution": {
+        "HOLD": 1767,
+        "SELL": 67,
+        "BUY": 59
+      },
+      "feature_count": 37,
+      "time_range_start": "2025-03-26T06:20:00",
+      "time_range_end": "2025-04-01T20:00:00"
+    },
+    {
+      "symbol": "SOLUSDT",
+      "input_file": "data/validated/binance_solusdt_5m_data.csv",
+      "output_file": "data/processed/binance_solusdt_5m_processed.csv",
+      "initial_rows": 2016,
+      "final_rows": 1893,
+      "dropped_rows": 123,
+      "label_distribution": {
+        "HOLD": 1684,
+        "SELL": 124,
+        "BUY": 85
+      },
+      "feature_count": 37,
+      "time_range_start": "2025-03-26T06:20:00",
+      "time_range_end": "2025-04-01T20:00:00"
+    }
+  ]
+}

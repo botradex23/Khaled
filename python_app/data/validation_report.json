@@ -1,0 +1,173 @@
+{
+  "validation_time": "2025-04-01T22:08:46.931986",
+  "files_processed": 3,
+  "files_passed": 3,
+  "files_failed": 0,
+  "results": [
+    {
+      "symbol": "BTCUSDT",
+      "file": "data/binance_btcusdt_5m_data.csv",
+      "validation_time": "2025-04-01T22:08:46.843127",
+      "tests": {
+        "file_exists": true,
+        "file_readable": true,
+        "required_columns": true,
+        "no_null_values": true,
+        "no_time_gaps": true,
+        "no_duplicate_timestamps": true,
+        "price_range_check": true,
+        "high_gte_low": true
+      },
+      "overall_result": "PASSED",
+      "null_counts": {
+        "timestamp": 0,
+        "open": 0,
+        "high": 0,
+        "low": 0,
+        "close": 0,
+        "volume": 0
+      },
+      "dataset_stats": {
+        "total_records": 2016,
+        "time_range_start": "2025-03-25T22:05:00",
+        "time_range_end": "2025-04-01T22:00:00",
+        "min_time_diff": "0 days 00:05:00",
+        "max_time_diff": "0 days 00:05:00",
+        "std_dev_time_diff": "0 days 00:00:00",
+        "unexpected_intervals_count": 0,
+        "total_intervals": 2015
+      },
+      "open_range": {
+        "min": 81361.5,
+        "max": 88235.35
+      },
+      "high_range": {
+        "min": 81476.0,
+        "max": 88275.0
+      },
+      "low_range": {
+        "min": 81278.52,
+        "max": 88192.56
+      },
+      "close_range": {
+        "min": 81361.51,
+        "max": 88235.34
+      },
+      "volume_range": {
+        "min": 4.50545,
+        "max": 557.67832
+      },
+      "validated_data_path": "data/validated/binance_btcusdt_5m_data.csv"
+    },
+    {
+      "symbol": "ETHUSDT",
+      "file": "data/binance_ethusdt_5m_data.csv",
+      "validation_time": "2025-04-01T22:08:46.874003",
+      "tests": {
+        "file_exists": true,
+        "file_readable": true,
+        "required_columns": true,
+        "no_null_values": true,
+        "no_time_gaps": true,
+        "no_duplicate_timestamps": true,
+        "price_range_check": true,
+        "high_gte_low": true
+      },
+      "overall_result": "PASSED",
+      "null_counts": {
+        "timestamp": 0,
+        "open": 0,
+        "high": 0,
+        "low": 0,
+        "close": 0,
+        "volume": 0
+      },
+      "dataset_stats": {
+        "total_records": 2016,
+        "time_range_start": "2025-03-25T22:05:00",
+        "time_range_end": "2025-04-01T22:00:00",
+        "min_time_diff": "0 days 00:05:00",
+        "max_time_diff": "0 days 00:05:00",
+        "std_dev_time_diff": "0 days 00:00:00",
+        "unexpected_intervals_count": 0,
+        "total_intervals": 2015
+      },
+      "open_range": {
+        "min": 1775.92,
+        "max": 2077.08
+      },
+      "high_range": {
+        "min": 1783.7,
+        "max": 2079.21
+      },
+      "low_range": {
+        "min": 1767.69,
+        "max": 2075.81
+      },
+      "close_range": {
+        "min": 1775.93,
+        "max": 2077.07
+      },
+      "volume_range": {
+        "min": 192.0507,
+        "max": 43560.7984
+      },
+      "validated_data_path": "data/validated/binance_ethusdt_5m_data.csv"
+    },
+    {
+      "symbol": "SOLUSDT",
+      "file": "data/binance_solusdt_5m_data.csv",
+      "validation_time": "2025-04-01T22:08:46.907439",
+      "tests": {
+        "file_exists": true,
+        "file_readable": true,
+        "required_columns": true,
+        "no_null_values": true,
+        "no_time_gaps": true,
+        "no_duplicate_timestamps": true,
+        "price_range_check": true,
+        "high_gte_low": true
+      },
+      "overall_result": "PASSED",
+      "null_counts": {
+        "timestamp": 0,
+        "open": 0,
+        "high": 0,
+        "low": 0,
+        "close": 0,
+        "volume": 0
+      },
+      "dataset_stats": {
+        "total_records": 2016,
+        "time_range_start": "2025-03-25T22:05:00",
+        "time_range_end": "2025-04-01T22:00:00",
+        "min_time_diff": "0 days 00:05:00",
+        "max_time_diff": "0 days 00:05:00",
+        "std_dev_time_diff": "0 days 00:00:00",
+        "unexpected_intervals_count": 0,
+        "total_intervals": 2015
+      },
+      "open_range": {
+        "min": 123.09,
+        "max": 145.43
+      },
+      "high_range": {
+        "min": 123.37,
+        "max": 145.49
+      },
+      "low_range": {
+        "min": 122.68,
+        "max": 145.18
+      },
+      "close_range": {
+        "min": 123.08,
+        "max": 145.44
+      },
+      "volume_range": {
+        "min": 1023.059,
+        "max": 247748.247
+      },
+      "validated_data_path": "data/validated/binance_solusdt_5m_data.csv"
+    }
+  ]
+}
