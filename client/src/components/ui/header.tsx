@@ -59,10 +59,10 @@ export default function Header() {
 
   // Query to check if the user has Binance API keys configured
   const { data: binanceApiKeysData, isLoading: binanceApiKeysLoading, refetch: refetchBinanceApiKeys } = useQuery({
-    queryKey: ['/api/users/binance-api-keys'],
+    queryKey: ['/api/binance/api-keys'],
     queryFn: async () => {
       if (!isAuthenticated) return null;
-      const response = await fetch('/api/users/binance-api-keys');
+      const response = await fetch('/api/binance/api-keys');
       if (!response.ok) throw new Error('Failed to fetch Binance API keys status');
       return response.json();
     },
@@ -111,7 +111,7 @@ export default function Header() {
 
     try {
       // Call the API endpoint to save the Binance API keys
-      const response = await fetch("/api/users/binance-api-keys", {
+      const response = await fetch("/api/binance/api-keys", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
