@@ -220,9 +220,9 @@ export class PaperTradingBridge {
    * Close Position
    * סוגר פוזיציה קיימת במערכת ה-Paper Trading
    * @param positionId ID של הפוזיציה לסגירה
-   * @param exitPrice מחיר היציאה/סגירה
+   * @param exitPriceOrMetadata מחיר היציאה/סגירה או אובייקט מטא-דאטה
    */
-  public async closePosition(positionId: number, exitPrice: number): Promise<TradeResult> {
+  public async closePosition(positionId: number, exitPriceOrMetadata: number | { reason?: string, [key: string]: any }): Promise<TradeResult> {
     if (!this.isInitialized || this.accountId === null) {
       await this.initialize();
       
@@ -256,7 +256,38 @@ export class PaperTradingBridge {
         };
       }
       
-      // Close the position
+      // Get current price if not provided
+      let exitPrice: number;
+      let metadata: any = {};
+      
+      if (typeof exitPriceOrMetadata === 'number') {
+        exitPrice = exitPriceOrMetadata;
+      } else {
+        // Get current price from market
+        try {
+          // Use internal fetch to get price
+          const response = await fetch(`/api/binance/market/price?symbol=${position.symbol}`);
+          const data = await response.json();
+          exitPrice = parseFloat(data.price);
+          metadata = exitPriceOrMetadata; // Store metadata
+        } catch (error) {
+          console.error(`Failed to get current price for ${position.symbol}:`, error);
+          // Use entry price as fallback to avoid blocking the operation
+          exitPrice = parseFloat(position.entryPrice);
+        }
+      }
+      
+      // Close the position with the determined price
+      // First update position with metadata if provided
+      if (metadata && Object.keys(metadata).length > 0) {
+        const position = await storage.getPaperTradingPosition(positionId);
+        if (position) {
+          await storage.updatePaperTradingPosition(positionId, { 
+            metadata: metadata as any 
+          });
+        }
+      }
+      
       const closedTrade = await storage.closePaperTradingPosition(positionId, exitPrice);
       
       if (!closedTrade) {

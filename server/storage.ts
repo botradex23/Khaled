@@ -82,6 +82,14 @@ export interface IStorage {
     profitLossPercent?: string;
     totalTrades?: number;
   }): Promise<Bot | undefined>;
+  getActiveBots(): Promise<Bot[]>;
+  
+  // Bot trade related methods
+  createBotTrade(trade: InsertBotTrade): Promise<number>;
+  getBotTrades(botId: number): Promise<BotTrade[]>;
+  getBotTrade(id: number): Promise<BotTrade | undefined>;
+  getUserBotTrades(userId: number): Promise<BotTrade[]>;
+  updateBotTrade(id: number, updates: Partial<BotTrade>): Promise<BotTrade | undefined>;
   
   // Pricing plan related methods
   getAllPricingPlans(): Promise<PricingPlan[]>;
@@ -1171,6 +1179,111 @@ export class MemStorage implements IStorage {
     
     this.bots.set(id, updatedBot);
     return updatedBot;
+  }
+  
+  // Additional bot methods for our new trading bot system
+  
+  /**
+   * Get active bots (bots that are enabled)
+   */
+  async getActiveBots(): Promise<Bot[]> {
+    return Array.from(this.bots.values()).filter(bot => bot.isRunning);
+  }
+  
+  /**
+   * Trading bot trades
+   */
+  private botTradeId: number = 1;
+  private botTrades: Map<number, BotTrade> = new Map();
+  
+  /**
+   * Create a bot trade record
+   */
+  async createBotTrade(trade: InsertBotTrade): Promise<number> {
+    const id = this.botTradeId++;
+    
+    const newTrade: BotTrade = {
+      id,
+      botId: trade.botId,
+      userId: trade.userId,
+      symbol: trade.symbol,
+      side: trade.side,
+      type: trade.type,
+      price: trade.price,
+      amount: trade.amount,
+      status: trade.status,
+      orderId: trade.orderId || null,
+      fee: trade.fee || null,
+      feeCurrency: trade.feeCurrency || null,
+      isTest: trade.isTest || false,
+      metadata: trade.metadata || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    // Update bot's total trades count
+    const bot = this.bots.get(trade.botId);
+    if (bot) {
+      const updatedBot: Bot = {
+        ...bot,
+        totalTrades: bot.totalTrades + 1
+      };
+      this.bots.set(trade.botId, updatedBot);
+    }
+    
+    this.botTrades.set(id, newTrade);
+    return id;
+  }
+  
+  /**
+   * Get all trades for a bot
+   */
+  async getBotTrades(botId: number): Promise<BotTrade[]> {
+    return Array.from(this.botTrades.values())
+      .filter(trade => trade.botId === botId)
+      .sort((a, b) => {
+        // Sort by createdAt (newest first)
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
+  }
+  
+  /**
+   * Get a specific trade
+   */
+  async getBotTrade(id: number): Promise<BotTrade | undefined> {
+    return this.botTrades.get(id);
+  }
+  
+  /**
+   * Get all trades for a user
+   */
+  async getUserBotTrades(userId: number): Promise<BotTrade[]> {
+    return Array.from(this.botTrades.values())
+      .filter(trade => trade.userId === userId)
+      .sort((a, b) => {
+        // Sort by createdAt (newest first)
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
+  }
+  
+  /**
+   * Update a trade
+   */
+  async updateBotTrade(id: number, updates: Partial<BotTrade>): Promise<BotTrade | undefined> {
+    const existingTrade = this.botTrades.get(id);
+    
+    if (!existingTrade) {
+      return undefined;
+    }
+    
+    const updatedTrade: BotTrade = {
+      ...existingTrade,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.botTrades.set(id, updatedTrade);
+    return updatedTrade;
   }
   
   // Pricing plan related methods
