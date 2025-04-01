@@ -8,6 +8,8 @@ from flask import Blueprint, jsonify, request, current_app
 import logging
 import sys
 import os
+import json
+import requests
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,6 +19,29 @@ from predict import make_prediction, get_sample_data
 
 # Create blueprint
 ml_bp = Blueprint('ml', __name__, url_prefix='/api/ml')
+
+def get_current_crypto_prices():
+    """Fetch current cryptocurrency prices from OKX public API"""
+    try:
+        # Use OKX public API to get BTC and ETH prices
+        response = requests.get('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT,ETH-USDT', 
+                              timeout=2)
+        data = response.json()
+        
+        if data and data.get('code') == '0' and data.get('data'):
+            result = {}
+            for ticker in data['data']:
+                symbol = ticker['instId'].split('-')[0]  # Extract BTC or ETH
+                price = float(ticker['last'])
+                result[symbol] = price
+            return result
+        else:
+            # Default fallback values if API call fails
+            return {'BTC': 69000, 'ETH': 3600}
+    except Exception as e:
+        logging.error(f"Error fetching crypto prices: {e}")
+        # Default fallback values if API call fails
+        return {'BTC': 69000, 'ETH': 3600}
 
 @ml_bp.route('/status', methods=['GET'])
 def status():
@@ -74,10 +99,15 @@ def predict(symbol):
                 import random
                 from datetime import datetime
                 
-                if symbol.startswith('BTC'):
-                    price = random.uniform(80000, 90000)
-                elif symbol.startswith('ETH'):
-                    price = random.uniform(3000, 4000)
+                # Get current prices from OKX API (more accurate than hardcoded ranges)
+                prices = get_current_crypto_prices()
+                
+                if symbol.upper().startswith('BTC'):
+                    # Use current BTC price with small random variation
+                    price = prices['BTC'] * random.uniform(0.98, 1.02)
+                elif symbol.upper().startswith('ETH'):
+                    # Use current ETH price with small random variation
+                    price = prices['ETH'] * random.uniform(0.98, 1.02)
                 else:
                     price = random.uniform(50, 500)
                     
@@ -112,10 +142,13 @@ def predict(symbol):
             import random
             from datetime import datetime
             
-            if symbol.startswith('BTC'):
-                price = random.uniform(80000, 90000)
-            elif symbol.startswith('ETH'):
-                price = random.uniform(3000, 4000)
+            # Get current prices from OKX API
+            prices = get_current_crypto_prices()
+            
+            if symbol.upper().startswith('BTC'):
+                price = prices['BTC'] * random.uniform(0.98, 1.02)
+            elif symbol.upper().startswith('ETH'):
+                price = prices['ETH'] * random.uniform(0.98, 1.02)
             else:
                 price = random.uniform(50, 500)
                 
@@ -153,10 +186,13 @@ def predict(symbol):
         import random
         from datetime import datetime
         
-        if symbol.startswith('BTC'):
-            price = random.uniform(80000, 90000)
-        elif symbol.startswith('ETH'):
-            price = random.uniform(3000, 4000)
+        # Get current prices from OKX API
+        prices = get_current_crypto_prices()
+        
+        if symbol.upper().startswith('BTC'):
+            price = prices['BTC'] * random.uniform(0.98, 1.02)
+        elif symbol.upper().startswith('ETH'):
+            price = prices['ETH'] * random.uniform(0.98, 1.02)
         else:
             price = random.uniform(50, 500)
             
@@ -206,6 +242,9 @@ def batch_predictions():
             use_sample = data.get('sample', False)
             interval = data.get('interval', '4h')
         
+        # Get current prices from OKX API
+        prices = get_current_crypto_prices()
+        
         # Get predictions for each symbol
         results = {}
         for symbol in symbols:
@@ -223,9 +262,9 @@ def batch_predictions():
                 from datetime import datetime
                 
                 if symbol.startswith('BTC'):
-                    price = random.uniform(80000, 90000)
+                    price = prices['BTC'] * random.uniform(0.98, 1.02)
                 elif symbol.startswith('ETH'):
-                    price = random.uniform(3000, 4000)
+                    price = prices['ETH'] * random.uniform(0.98, 1.02)
                 else:
                     price = random.uniform(50, 500)
                     
@@ -264,14 +303,17 @@ def batch_predictions():
         import random
         from datetime import datetime
         
+        # Get current prices from OKX API
+        prices = get_current_crypto_prices()
+        
         default_symbols = ['BTCUSDT', 'ETHUSDT']
         results = {}
         
         for symbol in default_symbols:
             if symbol.startswith('BTC'):
-                price = random.uniform(80000, 90000)
+                price = prices['BTC'] * random.uniform(0.98, 1.02)
             elif symbol.startswith('ETH'):
-                price = random.uniform(3000, 4000)
+                price = prices['ETH'] * random.uniform(0.98, 1.02)
             else:
                 price = random.uniform(50, 500)
                 
