@@ -6,38 +6,38 @@ import https from 'https';
 const BINANCE_BASE_URL = 'https://api.binance.com';
 const BINANCE_TEST_URL = 'https://testnet.binance.vision';
 
-// Proxy configuration for bypassing geo-restrictions - using the proxy that works with WebSocket
+// Proxy configuration for bypassing geo-restrictions 
 const USE_PROXY = true; // Enable proxy to overcome geographical restrictions
 const PROXY_USERNAME = "ahjqspco";
 const PROXY_PASSWORD = "dzx3r1prpz9k";
 const PROXY_IP = process.env.PROXY_IP || '185.199.228.220'; // Working proxy IP from tests
 const PROXY_PORT = process.env.PROXY_PORT || '7300';       // Working proxy port
 
-// Create axios instance with proxy if needed
+/**
+ * Enhanced Axios instance creator for reliable Binance API access
+ * Creates a properly configured instance with proxy support when needed
+ */
 const createAxiosInstance = () => {
   if (USE_PROXY) {
     try {
-      // This requires HttpsProxyAgent to be properly installed
-      // Note: using dynamic import to avoid requiring the module if not used
-      // Use an alternative approach with proxy config passed to axios
-      
-      // Configure a proxy URL for axios
+      // Configure a standard HTTP proxy URL
       const proxyUrl = `http://${PROXY_USERNAME}:${PROXY_PASSWORD}@${PROXY_IP}:${PROXY_PORT}`;
       console.log(`Using proxy connection to Binance API via ${PROXY_IP}:${PROXY_PORT}`);
       
-      // Using a special environment variable to inform Node.js about the proxy
-      // This is an alternative way to configure a proxy without using an agent
+      // Set environment variables for global proxy configuration
       process.env.HTTP_PROXY = proxyUrl;
       process.env.HTTPS_PROXY = proxyUrl;
       
-      // Create and return a new axios instance with proxy-friendly configuration
+      // Return a properly configured axios instance with proxy settings
       return axios.create({
-        timeout: 10000, // 10 second timeout
+        timeout: 15000, // 15 second timeout for slower proxy connections
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept-Language': 'en-US,en;q=0.9',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'X-MBX-APIKEY': process.env.BINANCE_API_KEY || '' // Add API key if available
         },
+        // Direct proxy configuration
         proxy: {
           host: PROXY_IP,
           port: parseInt(PROXY_PORT, 10),
@@ -46,6 +46,10 @@ const createAxiosInstance = () => {
             password: PROXY_PASSWORD
           },
           protocol: 'http'
+        },
+        // Enhanced error handling
+        validateStatus: (status) => {
+          return (status >= 200 && status < 300) || status === 429; // Handle rate limiting
         }
       });
     } catch (error) {
@@ -55,7 +59,12 @@ const createAxiosInstance = () => {
     }
   } else {
     console.log('Using direct connection to Binance API (proxy disabled)');
-    return axios;
+    return axios.create({
+      timeout: 10000,
+      headers: {
+        'X-MBX-APIKEY': process.env.BINANCE_API_KEY || ''
+      }
+    });
   }
 };
 

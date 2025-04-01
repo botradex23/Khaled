@@ -284,6 +284,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register Binance markets routes:', err);
   });
   
+  // Register Python-based Binance markets routes
+  import('./routes/markets-binance-python').then(pythonBinanceMarketsRouter => {
+    app.use('', pythonBinanceMarketsRouter.default);
+    console.log('Python-based Binance markets routes registered');
+  }).catch(err => {
+    console.error('Failed to register Python-based Binance markets routes:', err);
+  });
+  
   // OKX API routes
   app.use("/api/okx", okxRouter);
   
