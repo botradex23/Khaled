@@ -7,7 +7,10 @@ This script provides a simple CLI interface for testing the Python-based Binance
 import argparse
 import json
 import time
-from binance_market_service import binance_market_service
+from binance_market_service import BinanceMarketPriceService
+
+# Create an instance of the service
+binance_market_service = BinanceMarketPriceService()
 
 def main():
     """Main function for the CLI tool"""

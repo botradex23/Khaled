@@ -18,8 +18,8 @@ import { BinanceTickerPrice, Binance24hrTicker, LivePriceUpdate } from './market
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Path to the Python script
-const PYTHON_SCRIPT_PATH = path.join(__dirname, 'binance_market_service.py');
+// Path to the Python module directory
+const PYTHON_MODULE_PATH = path.join(__dirname);
 
 /**
  * Executes the Python script with the given arguments and returns the result
@@ -30,8 +30,13 @@ const PYTHON_SCRIPT_PATH = path.join(__dirname, 'binance_market_service.py');
  */
 async function executePythonScript(action: string, args: Record<string, any> = {}): Promise<any> {
   return new Promise((resolve, reject) => {
-    // Build the command line arguments
-    const cmdArgs = ['--action', action];
+    // Call the script directly as we don't have Python packages properly set up
+    // In ESM we have __dirname from the imported fileURLToPath
+    const PYTHON_SCRIPT_PATH = path.join(__dirname, 'binance_market_service.py');
+    console.log(`Using direct Python script path: ${PYTHON_SCRIPT_PATH}`);
+    
+    // Build the command line arguments directly to the script
+    const cmdArgs = [PYTHON_SCRIPT_PATH, '--action', action];
     
     // Add any additional arguments
     Object.entries(args).forEach(([key, value]) => {
@@ -40,14 +45,17 @@ async function executePythonScript(action: string, args: Record<string, any> = {
       }
     });
     
-    console.log(`Executing Python script: python ${PYTHON_SCRIPT_PATH} ${cmdArgs.join(' ')}`);
+    console.log(`Executing Python module: python ${cmdArgs.join(' ')}`);
     
     // Set a timeout for the Python process (30 seconds)
     const timeoutMs = 30000;
     let timeoutId: NodeJS.Timeout | null = null;
     
+    // Set the current working directory to the Python module directory
+    const options = { cwd: PYTHON_MODULE_PATH };
+    
     // Spawn the Python process
-    const process = spawn('python', [PYTHON_SCRIPT_PATH, ...cmdArgs]);
+    const process = spawn('python', cmdArgs, options);
     
     // Collect output
     let stdout = '';
@@ -209,9 +217,21 @@ export class PythonBinanceMarketPriceService extends EventEmitter {
    * 
    * @returns Record of simulated prices
    */
-  public getSimulatedPrices(): Record<string, number> {
-    // This function delegates to the Python script
-    return this.livePrices;
+  public async getSimulatedPrices(): Promise<Record<string, number>> {
+    try {
+      // Call the Python script to get simulated prices
+      const result = await executePythonScript('simulated-prices');
+      
+      // Store in local cache too
+      this.livePrices = {...this.livePrices, ...result};
+      
+      return result;
+    } catch (error) {
+      console.error('Error fetching simulated prices from Python service:', error);
+      
+      // Fallback to the cached prices
+      return this.livePrices;
+    }
   }
   
   /**

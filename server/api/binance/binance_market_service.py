@@ -638,7 +638,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Binance Market Price Service')
     parser.add_argument('--action', type=str, required=True, 
-                        choices=['all-prices', 'symbol-price', '24hr-stats'],
+                        choices=['all-prices', 'symbol-price', '24hr-stats', 'simulated-prices'],
                         help='Action to perform')
     parser.add_argument('--symbol', type=str, help='Symbol for symbol-specific actions')
     
@@ -659,6 +659,10 @@ if __name__ == "__main__":
         
         elif args.action == '24hr-stats':
             result = binance_market_service.get_24hr_stats(args.symbol)
+            print(json.dumps(result, indent=2))
+            
+        elif args.action == 'simulated-prices':
+            result = binance_market_service.get_simulated_prices()
             print(json.dumps(result, indent=2))
     
     except Exception as e:

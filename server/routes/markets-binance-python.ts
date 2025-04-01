@@ -154,7 +154,8 @@ router.get('/latest-prices', async (req: Request, res: Response) => {
  */
 router.get('/simulated-prices', async (req: Request, res: Response) => {
   try {
-    const prices = pythonBinanceMarketService.getSimulatedPrices();
+    // Get simulated prices from Python
+    const prices = await pythonBinanceMarketService.getSimulatedPrices();
     
     return res.json({
       success: true,
