@@ -10,6 +10,7 @@ import Home from "@/pages/home";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import DashboardOverview from "@/pages/dashboard-overview";
+import EnhancedDashboard from "@/pages/enhanced-dashboard";
 import Bots from "@/pages/bots-new";
 import BotsDashboard from "@/pages/bots-dashboard";
 import Markets from "@/pages/markets";
@@ -49,6 +50,7 @@ function Router() {
       <Route path="/home" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/dashboard-overview" component={DashboardOverview} />
+      <Route path="/enhanced" component={EnhancedDashboard} />
       <Route path="/bots" component={BotsDashboard} />
       <Route path="/bots-legacy" component={Bots} />
       <Route path="/markets" component={Markets} />
