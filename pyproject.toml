@@ -1,7 +1,11 @@
 [project]
-name = "repl-nix-workspace"
-version = "0.1.0"
-description = "Add your description here"
+name = "crypto-trade"
+version = "1.0.0"
+description = "CryptoTrade: Advanced Cryptocurrency Trading Platform with AI-powered trading strategies"
+authors = [
+    {name = "CryptoTrade Team", email = "support@example.com"}
+]
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "binance-connector>=3.12.0",
