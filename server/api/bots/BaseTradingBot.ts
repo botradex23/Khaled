@@ -28,6 +28,9 @@ export interface BaseBotParameters {
   takeProfitPercentage?: number;
   maxPositionSize?: number;
   riskLevel?: number; // 1-10 scale for risk management
+  initialInvestment?: number;
+  totalInvestment?: number;
+  // Additional strategy-specific parameters will be added by extending interfaces
 }
 
 // Base class for all trading bots
@@ -38,6 +41,12 @@ export abstract class BaseTradingBot {
   protected parameters: BaseBotParameters;
   protected paperTradingBridge: PaperTradingBridge;
   protected intervalId: NodeJS.Timeout | null = null;
+  
+  // Properties for state persistence
+  protected trades: Array<any> = [];
+  protected positions: Array<any> = [];
+  protected gridLines: Array<any> = []; // For grid bots
+  protected lastExecutionTime: Date | null = null;
   
   constructor(botId: number, userId: number, parameters: BaseBotParameters) {
     this.botId = botId;
@@ -310,13 +319,74 @@ export abstract class BaseTradingBot {
    */
   protected async saveState(): Promise<void> {
     try {
+      // Capture current trading data and metrics
+      const totalTrades = this.trades.length;
+      const profitLossData = this.calculateProfitLoss();
+      
+      // Prepare bot state for persistence
+      const botState = {
+        trades: this.trades,
+        lastExecutionTime: new Date().toISOString(),
+        gridLines: this.gridLines || [],
+        metrics: {
+          positions: this.positions || [],
+          totalTrades,
+          profitLoss: profitLossData.profitLoss,
+          profitLossPercent: profitLossData.profitLossPercent
+        }
+      };
+
       await storage.updateBot(this.botId, {
-        isActive: this.status === BotStatus.RUNNING,
+        isActive: this.status === BotStatus.RUNNING || this.status === BotStatus.PAUSED,
         isRunning: this.status === BotStatus.RUNNING,
-        parameters: this.parameters
+        parameters: this.parameters,
+        enableStopLoss: this.parameters.enableStopLoss || false,
+        stopLossPercentage: this.parameters.stopLossPercentage || null,
+        enableTakeProfit: this.parameters.enableTakeProfit || false,
+        takeProfitPercentage: this.parameters.takeProfitPercentage || null,
+        profitLoss: profitLossData.profitLoss.toString(),
+        profitLossPercent: profitLossData.profitLossPercent.toString(),
+        totalTrades,
+        lastExecutionTime: new Date(),
+        botState
       });
+      
+      console.log(`Bot ${this.botId} state saved successfully. Total trades: ${totalTrades}, PnL: ${profitLossData.profitLoss.toFixed(2)} (${profitLossData.profitLossPercent.toFixed(2)}%)`);
     } catch (error) {
       console.error(`Error saving state for bot ${this.botId}:`, error);
+    }
+  }
+  
+  /**
+   * Calculates current profit/loss for the bot
+   */
+  protected calculateProfitLoss(): { profitLoss: number, profitLossPercent: number } {
+    try {
+      // Default values
+      let profitLoss = 0;
+      let profitLossPercent = 0;
+      
+      // Calculate from trades if available
+      if (this.trades && this.trades.length > 0) {
+        profitLoss = this.trades.reduce((total: number, trade: any) => {
+          if (trade.status === 'CLOSED' && trade.profitLoss !== undefined) {
+            return total + parseFloat(trade.profitLoss.toString());
+          }
+          return total;
+        }, 0);
+        
+        // Calculate percentage if we know the initial investment
+        if (this.parameters.initialInvestment || this.parameters.totalInvestment) {
+          // Use nullish coalescing to handle undefined values
+          const initialInvestment = (this.parameters.initialInvestment ?? this.parameters.totalInvestment ?? 1);
+          profitLossPercent = (profitLoss / parseFloat(String(initialInvestment))) * 100;
+        }
+      }
+      
+      return { profitLoss, profitLossPercent };
+    } catch (error) {
+      console.error(`Error calculating profit/loss for bot ${this.botId}:`, error);
+      return { profitLoss: 0, profitLossPercent: 0 };
     }
   }
   
@@ -325,15 +395,77 @@ export abstract class BaseTradingBot {
    */
   protected async loadState(): Promise<void> {
     try {
+      console.log(`Loading state for bot ${this.botId}...`);
       const bot = await storage.getBotById(this.botId);
+      
       if (bot) {
+        // Set bot status
         this.status = bot.isRunning ? BotStatus.RUNNING : (bot.isActive ? BotStatus.PAUSED : BotStatus.STOPPED);
+        
+        // Restore parameters
         if (bot.parameters) {
           this.parameters = {
             ...this.parameters,
             ...bot.parameters
           };
+          
+          // Load stop loss and take profit settings from parameters if not explicitly set
+          if (!this.parameters.hasOwnProperty('enableStopLoss') && bot.enableStopLoss !== undefined) {
+            this.parameters.enableStopLoss = bot.enableStopLoss;
+          }
+          
+          if (!this.parameters.hasOwnProperty('stopLossPercentage') && bot.stopLossPercentage !== undefined) {
+            this.parameters.stopLossPercentage = parseFloat(bot.stopLossPercentage.toString());
+          }
+          
+          if (!this.parameters.hasOwnProperty('enableTakeProfit') && bot.enableTakeProfit !== undefined) {
+            this.parameters.enableTakeProfit = bot.enableTakeProfit;
+          }
+          
+          if (!this.parameters.hasOwnProperty('takeProfitPercentage') && bot.takeProfitPercentage !== undefined) {
+            this.parameters.takeProfitPercentage = parseFloat(bot.takeProfitPercentage.toString());
+          }
         }
+        
+        // Restore persisted bot state
+        if (bot.botState) {
+          // Restore trades
+          if (bot.botState.trades) {
+            this.trades = bot.botState.trades;
+          }
+          
+          // Restore grid lines for grid bots
+          if (bot.botState.gridLines) {
+            this.gridLines = bot.botState.gridLines;
+          }
+          
+          // Restore positions
+          if (bot.botState.metrics?.positions) {
+            this.positions = bot.botState.metrics.positions;
+          }
+          
+          // Log successful state restoration
+          console.log(`Bot ${this.botId} state restored successfully.`);
+          if (this.trades) {
+            console.log(`  - Loaded ${this.trades.length} historical trades`);
+          }
+          if (this.gridLines) {
+            console.log(`  - Loaded ${this.gridLines.length} grid lines`);
+          }
+          if (this.positions) {
+            console.log(`  - Loaded ${this.positions.length} positions`);
+          }
+          
+          // Additional metrics
+          if (bot.totalTrades) {
+            console.log(`  - Total trades: ${bot.totalTrades}`);
+          }
+          if (bot.profitLoss) {
+            console.log(`  - Profit/Loss: ${bot.profitLoss} (${bot.profitLossPercent}%)`);
+          }
+        }
+      } else {
+        console.warn(`No saved state found for bot ${this.botId}`);
       }
     } catch (error) {
       console.error(`Error loading state for bot ${this.botId}:`, error);

@@ -47,10 +47,19 @@ export const tradingBots = pgTable('trading_bots', {
   description: text('description'),
   symbol: text('symbol').notNull(), // Trading pair like "BTCUSDT"
   broker: text('broker').notNull().default('binance'), // Always "binance" (removed support for other brokers)
-  strategyType: text('strategy_type').notNull(), // "grid", "ai", "martingale", etc.
+  strategyType: text('strategy_type').notNull(), // "grid", "dca", "macd", "ai_grid", etc.
   parameters: json('parameters'), // Strategy-specific parameters as JSON
+  botState: json('bot_state'), // Current bot state for persistence
   isActive: boolean('is_active').default(false),
   isRunning: boolean('is_running').default(false),
+  enableStopLoss: boolean('enable_stop_loss').default(false),
+  stopLossPercentage: decimal('stop_loss_percentage', { precision: 10, scale: 2 }),
+  enableTakeProfit: boolean('enable_take_profit').default(false),
+  takeProfitPercentage: decimal('take_profit_percentage', { precision: 10, scale: 2 }),
+  profitLoss: text('profit_loss').default('0'),
+  profitLossPercent: text('profit_loss_percent').default('0'),
+  totalTrades: integer('total_trades').default(0),
+  lastExecutionTime: timestamp('last_execution_time'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

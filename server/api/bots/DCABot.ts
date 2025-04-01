@@ -22,7 +22,8 @@ export interface DCABotParameters extends BaseBotParameters {
 // DCA bot implementation
 export class DCABot extends BaseTradingBot {
   protected parameters: DCABotParameters;
-  private lastExecutionTime: number = 0;
+  // Use protected lastExecutionTime from BaseTradingBot and track lastExecutionTimestamp for timestamp usage
+  private lastExecutionTimestamp: number = 0;
   private totalPurchases: number = 0;
   private averageEntryPrice: number = 0;
   private totalInvested: number = 0;
@@ -93,7 +94,9 @@ export class DCABot extends BaseTradingBot {
         
         // Find the last execution time
         if (this.purchaseHistory.length > 0) {
-          this.lastExecutionTime = Math.max(...this.purchaseHistory.map(p => p.timestamp));
+          this.lastExecutionTimestamp = Math.max(...this.purchaseHistory.map(p => p.timestamp));
+          this.lastExecutionTime = new Date(this.lastExecutionTimestamp);
+          console.log(`DCA Bot ${this.botId} last execution time: ${this.lastExecutionTime}`);
         }
         
         console.log(`DCA Bot ${this.botId} loaded ${this.totalPurchases} purchases, avg price: ${this.averageEntryPrice.toFixed(2)}`);
@@ -163,13 +166,15 @@ export class DCABot extends BaseTradingBot {
       
       // Check if it's time to execute a purchase
       const now = Date.now();
-      const timeSinceLastExecution = now - this.lastExecutionTime;
+      // Use the timestamp for calculations
+      const lastExecTime = this.lastExecutionTimestamp || 0;
+      const timeSinceLastExecution = now - lastExecTime;
       const intervalMs = this.parameters.intervalHours * 60 * 60 * 1000;
       
       if (timeSinceLastExecution >= intervalMs) {
         await this.executePurchase();
       } else {
-        const nextExecutionTime = this.lastExecutionTime + intervalMs;
+        const nextExecutionTime = lastExecTime + intervalMs;
         const timeUntilNextExecution = nextExecutionTime - now;
         const hoursUntilNext = timeUntilNextExecution / (60 * 60 * 1000);
         
@@ -213,7 +218,8 @@ export class DCABot extends BaseTradingBot {
       }
       
       // Update the last execution time
-      this.lastExecutionTime = Date.now();
+      this.lastExecutionTimestamp = Date.now();
+      this.lastExecutionTime = new Date(this.lastExecutionTimestamp);
       
     } catch (error) {
       console.error(`Error executing DCA purchase for Bot ${this.botId}:`, error);
@@ -366,7 +372,7 @@ export class DCABot extends BaseTradingBot {
       totalInvested: this.totalInvested,
       totalBudget: this.parameters.totalBudget,
       averageEntryPrice: this.averageEntryPrice,
-      lastPurchaseTime: this.lastExecutionTime ? new Date(this.lastExecutionTime).toISOString() : null,
+      lastPurchaseTime: this.lastExecutionTime ? this.lastExecutionTime.toISOString() : null,
       purchaseHistory: this.purchaseHistory.slice(-10) // Return last 10 purchases
     };
   }

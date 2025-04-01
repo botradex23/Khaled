@@ -112,21 +112,58 @@ export class BotManager {
    * Save state for all bots
    */
   private async saveAllBotStates(): Promise<void> {
-    for (const [botId, bot] of this.bots.entries()) {
+    const activeBotCount = this.bots.size;
+    console.log(`Saving state for ${activeBotCount} active bots...`);
+    
+    // Get an array of entries for safer iteration
+    const botEntries: [number, BaseTradingBot][] = [];
+    
+    // Fill the array with entries from the map
+    this.bots.forEach((bot, botId) => {
+      botEntries.push([botId, bot]);
+    });
+    
+    for (let i = 0; i < botEntries.length; i++) {
+      const [botId, bot] = botEntries[i];
       try {
         // Get bot info
         const botInfo = bot.getInfo();
+        const botStatus = bot['status'];
+        const isRunning = botStatus === BotStatus.RUNNING;
+        const isActive = isRunning || botStatus === BotStatus.PAUSED;
         
-        // Update bot in the database
+        // Extract stop loss/take profit settings
+        const enableStopLoss = botInfo.parameters.enableStopLoss || false;
+        const stopLossPercentage = botInfo.parameters.stopLossPercentage || null;
+        const enableTakeProfit = botInfo.parameters.enableTakeProfit || false;
+        const takeProfitPercentage = botInfo.parameters.takeProfitPercentage || null;
+        
+        // Get metrics
+        const profitLoss = botInfo.profitLoss || '0';
+        const profitLossPercent = botInfo.profitLossPercent || '0';
+        const totalTrades = botInfo.totalTrades || 0;
+        
+        // Update bot in the database with complete state
         await storage.updateBot(botId, {
-          isActive: bot['status'] === BotStatus.RUNNING,
-          isRunning: bot['status'] === BotStatus.RUNNING,
-          parameters: botInfo.parameters
+          isActive,
+          isRunning,
+          parameters: botInfo.parameters,
+          enableStopLoss,
+          stopLossPercentage,
+          enableTakeProfit, 
+          takeProfitPercentage,
+          profitLoss,
+          profitLossPercent,
+          totalTrades,
+          lastExecutionTime: new Date(),
+          botState: botInfo.state || {}
         });
       } catch (error) {
         console.error(`Error saving state for bot ${botId}:`, error);
       }
     }
+    
+    console.log(`Saved state for ${activeBotCount} active bots`);
   }
   
   /**
@@ -140,7 +177,13 @@ export class BotManager {
     description?: string
   ): Promise<number> {
     try {
-      // Create bot in database first
+      // Extract stop loss and take profit settings from parameters
+      const enableStopLoss = parameters.enableStopLoss || false;
+      const stopLossPercentage = parameters.stopLossPercentage || null;
+      const enableTakeProfit = parameters.enableTakeProfit || false;
+      const takeProfitPercentage = parameters.takeProfitPercentage || null;
+
+      // Create bot in database first with full parameters
       const botId = await storage.createBot({
         userId,
         name,
@@ -150,7 +193,24 @@ export class BotManager {
         strategyType,
         parameters,
         isActive: false,
-        isRunning: false
+        isRunning: false,
+        enableStopLoss,
+        stopLossPercentage,
+        enableTakeProfit,
+        takeProfitPercentage,
+        profitLoss: '0',
+        profitLossPercent: '0',
+        totalTrades: 0,
+        botState: {
+          trades: [],
+          gridLines: [],
+          metrics: {
+            positions: [],
+            totalTrades: 0,
+            profitLoss: 0,
+            profitLossPercent: 0
+          }
+        }
       });
       
       // Create bot instance
@@ -164,6 +224,7 @@ export class BotManager {
       // Add to bots map
       if (botInstance) {
         this.bots.set(botId, botInstance);
+        console.log(`Created new ${strategyType} bot with ID ${botId} for user ${userId}`);
       }
       
       return botId;
@@ -326,9 +387,28 @@ export class BotManager {
     try {
       const bot = this.bots.get(botId);
       
-      // Update database first
-      await storage.updateBot(botId, {
-        parameters
+      // Extract stop loss and take profit settings from parameters
+      const enableStopLoss = parameters.enableStopLoss !== undefined ? parameters.enableStopLoss : undefined;
+      const stopLossPercentage = parameters.stopLossPercentage !== undefined ? parameters.stopLossPercentage : undefined;
+      const enableTakeProfit = parameters.enableTakeProfit !== undefined ? parameters.enableTakeProfit : undefined;
+      const takeProfitPercentage = parameters.takeProfitPercentage !== undefined ? parameters.takeProfitPercentage : undefined;
+      
+      // Update database with explicit stop loss and take profit settings if provided
+      const updates: any = { parameters };
+      
+      if (enableStopLoss !== undefined) updates.enableStopLoss = enableStopLoss;
+      if (stopLossPercentage !== undefined) updates.stopLossPercentage = stopLossPercentage;
+      if (enableTakeProfit !== undefined) updates.enableTakeProfit = enableTakeProfit;
+      if (takeProfitPercentage !== undefined) updates.takeProfitPercentage = takeProfitPercentage;
+      
+      await storage.updateBot(botId, updates);
+      
+      // Log the updated parameters
+      console.log(`Updated parameters for bot ${botId}:`, {
+        enableStopLoss,
+        stopLossPercentage,
+        enableTakeProfit,
+        takeProfitPercentage
       });
       
       // Update the bot instance if it exists
