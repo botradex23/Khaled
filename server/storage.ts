@@ -1563,13 +1563,57 @@ export class MemStorage implements IStorage {
       }
     }
     
+    // Special handling for metadata to ensure it's properly updated
+    let updatedMetadata = position.metadata;
+    if (updates.metadata !== undefined) {
+      if (typeof updates.metadata === 'string') {
+        try {
+          // If it's a string, try to parse it as JSON
+          const metadataObj = JSON.parse(updates.metadata);
+          
+          // If original metadata was also JSON, merge them
+          if (position.metadata && typeof position.metadata === 'string') {
+            try {
+              const originalMetadata = JSON.parse(position.metadata);
+              updatedMetadata = JSON.stringify({
+                ...originalMetadata,
+                ...metadataObj
+              });
+            } catch (e) {
+              // If the original metadata wasn't valid JSON, just use the new one
+              updatedMetadata = updates.metadata;
+            }
+          } else {
+            // If the original metadata wasn't a string, use the new one
+            updatedMetadata = updates.metadata;
+          }
+        } catch (e) {
+          // If parsing fails, just use the string as is
+          updatedMetadata = updates.metadata;
+        }
+      } else {
+        // If the new metadata isn't a string, convert it to JSON
+        updatedMetadata = typeof updates.metadata === 'object' ? 
+          JSON.stringify(updates.metadata) : 
+          updates.metadata;
+      }
+    }
+    
     const updatedPosition: PaperTradingPosition = {
       ...position,
       ...updates,
+      metadata: updatedMetadata,
       currentProfitLoss,
       currentProfitLossPercent,
       updatedAt: new Date()
     };
+    
+    // Log update details for debugging
+    console.log(`Updating position ${id}:`, {
+      originalMetadata: position.metadata,
+      updatesMetadata: updates.metadata,
+      finalMetadata: updatedPosition.metadata
+    });
     
     this.paperTradingPositions.set(id, updatedPosition);
     return updatedPosition;

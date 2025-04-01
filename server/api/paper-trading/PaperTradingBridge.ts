@@ -167,13 +167,34 @@ export class PaperTradingBridge {
       // Format symbol for consistency
       const formattedSymbol = tradeSignal.symbol.replace('-', '');
       
-      // Create position
+      // Create position with metadata including stop-loss and take-profit if provided
+      const positionMetadata: any = {};
+      
+      // Process risk management parameters from the metadata
+      if (tradeSignal.metadata) {
+        // Extract stopLossPercent and takeProfitPercent
+        if (tradeSignal.metadata.stopLossPercent !== undefined) {
+          positionMetadata.stopLossPercent = tradeSignal.metadata.stopLossPercent;
+        }
+        
+        if (tradeSignal.metadata.takeProfitPercent !== undefined) {
+          positionMetadata.takeProfitPercent = tradeSignal.metadata.takeProfitPercent;
+        }
+        
+        // Log the risk parameters for debugging
+        console.log(`Trade signal includes risk parameters:`, {
+          stopLossPercent: positionMetadata.stopLossPercent,
+          takeProfitPercent: positionMetadata.takeProfitPercent
+        });
+      }
+      
       const position: InsertPaperTradingPosition = {
         accountId: this.accountId,
         symbol: formattedSymbol,
         entryPrice: tradeSignal.entryPrice.toString(),
         quantity: tradeSignal.quantity.toString(),
-        direction: tradeSignal.direction
+        direction: tradeSignal.direction,
+        metadata: Object.keys(positionMetadata).length > 0 ? JSON.stringify(positionMetadata) : null
       };
       
       const createdPosition = await storage.createPaperTradingPosition(position);
@@ -264,17 +285,20 @@ export class PaperTradingBridge {
       if (typeof exitPriceOrMetadata === 'number') {
         exitPrice = exitPriceOrMetadata;
       } else {
-        // Get current price from market
+        // Store metadata
+        metadata = exitPriceOrMetadata;
+        
+        // Use direct API call to get the current price
         try {
-          // Use internal fetch to get price
-          const response = await fetch(`/api/binance/market/price?symbol=${position.symbol}`);
-          const data = await response.json();
-          exitPrice = parseFloat(data.price);
-          metadata = exitPriceOrMetadata; // Store metadata
+          // Get current price from PaperTradingApi
+          exitPrice = await paperTradingApi.getCurrentPrice(position.symbol);
+          console.log(`Got current price for ${position.symbol}: ${exitPrice} from PaperTradingApi`);
         } catch (error) {
-          console.error(`Failed to get current price for ${position.symbol}:`, error);
+          console.error(`Failed to get current price for ${position.symbol} from PaperTradingApi:`, error);
+          
           // Use entry price as fallback to avoid blocking the operation
           exitPrice = parseFloat(position.entryPrice);
+          console.log(`Using fallback entry price: ${exitPrice}`);
         }
       }
       
