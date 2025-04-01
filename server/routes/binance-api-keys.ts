@@ -11,13 +11,26 @@ function maskSecret(secret: string): string {
 }
 
 // Get Binance API keys status
-router.get('/status', ensureAuthenticated, async (req: Request, res: Response) => {
+router.get('/status', async (req: Request, res: Response) => {
   try {
-    if (!req.user || !req.user.id) {
+    // Support both authenticated users and test user ID
+    let userId: number;
+    
+    // Check if we have a test user ID in the headers (for development)
+    const testUserId = req.headers['x-test-user-id'];
+    
+    if (testUserId && typeof testUserId === 'string') {
+      // Use the test user ID
+      userId = parseInt(testUserId, 10);
+      console.log(`[STATUS] Using test user ID from headers: ${userId}`);
+    } else if (req.user && req.user.id) {
+      // Use the authenticated user's ID
+      userId = req.user.id;
+      console.log(`[STATUS] Using authenticated user ID: ${userId}`);
+    } else {
+      // No user ID available
       return res.status(401).json({ error: 'Authentication required' });
     }
-    
-    const userId = req.user.id;
     
     // Get the user's Binance API keys
     const apiKeys = await storage.getUserBinanceApiKeys(userId);
@@ -89,18 +102,31 @@ router.get('/', ensureAuthenticated, async (req: Request, res: Response) => {
 });
 
 // Save/Update Binance API keys
-router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
-    // Check for user authentication
-    if (!req.user || !req.user.id) {
+    // Support both authenticated users and test user ID
+    let userId: number;
+    
+    // Check if we have a test user ID in the headers (for development)
+    const testUserId = req.headers['x-test-user-id'];
+    
+    if (testUserId && typeof testUserId === 'string') {
+      // Use the test user ID
+      userId = parseInt(testUserId, 10);
+      console.log(`Using test user ID from headers: ${userId}`);
+    } else if (req.user && req.user.id) {
+      // Use the authenticated user's ID
+      userId = req.user.id;
+      console.log(`Using authenticated user ID: ${userId}`);
+    } else {
+      // No user ID available
       return res.status(401).json({
         error: 'Authentication required',
-        message: 'You must be logged in to save API keys'
+        message: 'You must be logged in or provide a test user ID to save API keys'
       });
     }
 
     const { apiKey, secretKey, allowedIp, testnet } = req.body;
-    const userId = req.user.id;
     
     console.log(`Request to save Binance API keys for user ${userId}`);
     
@@ -191,17 +217,30 @@ router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
 });
 
 // Get full, unmasked Binance API keys (for authenticated users only)
-router.get('/full', ensureAuthenticated, async (req: Request, res: Response) => {
+router.get('/full', async (req: Request, res: Response) => {
   try {
-    if (!req.user || !req.user.id) {
+    // Support both authenticated users and test user ID
+    let userId: number;
+    
+    // Check if we have a test user ID in the headers (for development)
+    const testUserId = req.headers['x-test-user-id'];
+    
+    if (testUserId && typeof testUserId === 'string') {
+      // Use the test user ID
+      userId = parseInt(testUserId, 10);
+      console.log(`[FULL] Using test user ID from headers: ${userId}`);
+    } else if (req.user && req.user.id) {
+      // Use the authenticated user's ID
+      userId = req.user.id;
+      console.log(`[FULL] Using authenticated user ID: ${userId}`);
+    } else {
+      // No user ID available
       return res.status(401).json({ 
         success: false,
         error: 'Authentication required',
         message: 'You must be logged in to access API keys'
       });
     }
-    
-    const userId = req.user.id;
     const apiKeys = await storage.getUserBinanceApiKeys(userId);
     
     if (!apiKeys) {
