@@ -1,0 +1,100 @@
+"""
+CryptoTrade Flask Application
+
+This is the main entry point for the Flask application.
+It initializes the app, registers blueprints for API routes, and handles CORS.
+"""
+
+import os
+import logging
+from flask import Flask, jsonify, render_template, request
+from flask_cors import CORS
+
+from config import active_config
+from routes.binance_routes import binance_bp
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+def create_app(config=None):
+    """
+    Application factory pattern for Flask
+    
+    Args:
+        config: Configuration object to use (defaults to active_config from config.py)
+        
+    Returns:
+        Configured Flask application
+    """
+    # Create the Flask application
+    app = Flask(__name__, 
+                template_folder='templates',
+                static_folder='static')
+    
+    # Load configuration
+    if config is None:
+        app.config.from_object(active_config)
+    else:
+        app.config.from_object(config)
+    
+    # Enable CORS
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    
+    # Register blueprints
+    app.register_blueprint(binance_bp)
+    
+    # Register error handlers
+    @app.errorhandler(404)
+    def not_found(error):
+        """Handle 404 errors"""
+        if request.path.startswith('/api/'):
+            return jsonify({
+                'success': False,
+                'message': 'API endpoint not found'
+            }), 404
+        return render_template('errors/404.html'), 404
+    
+    @app.errorhandler(500)
+    def server_error(error):
+        """Handle 500 errors"""
+        logging.error(f"Server error: {error}")
+        if request.path.startswith('/api/'):
+            return jsonify({
+                'success': False,
+                'message': 'Internal server error'
+            }), 500
+        return render_template('errors/500.html'), 500
+    
+    # Add root route
+    @app.route('/')
+    def index():
+        """Root route"""
+        return render_template('index.html')
+    
+    # Add system status route
+    @app.route('/api/status')
+    def status():
+        """System status endpoint"""
+        return jsonify({
+            'success': True,
+            'version': '1.0.0',
+            'environment': os.environ.get('FLASK_ENV', 'development'),
+            'services': {
+                'binance': True
+            }
+        })
+    
+    return app
+
+app = create_app()
+
+if __name__ == '__main__':
+    # Run the application (development)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=active_config.DEBUG)
+    
+# Fix missing import in error handlers
+from flask import request

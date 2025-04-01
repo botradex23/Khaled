@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CryptoTrade API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2980b9;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #3498db;
+            margin-top: 30px;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 10px;
+            overflow: auto;
+        }
+        code {
+            font-family: Consolas, Monaco, monospace;
+            background-color: #f8f8f8;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .endpoint {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        .method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .get { background-color: #27ae60; }
+        .post { background-color: #f39c12; }
+    </style>
+</head>
+<body>
+    <h1>CryptoTrade Python API</h1>
+    <p>Welcome to the CryptoTrade API service. This API provides access to cryptocurrency market data and trading functionality.</p>
+    
+    <h2>Status</h2>
+    <div class="endpoint">
+        <p><span class="method get">GET</span> <code>/api/status</code></p>
+        <p>Check the status of the API service.</p>
+        <p>Example response:</p>
+        <pre>{
+  "success": true,
+  "version": "1.0.0",
+  "environment": "development",
+  "services": {
+    "binance": true
+  }
+}</pre>
+    </div>
+
+    <h2>Binance API Endpoints</h2>
+    
+    <div class="endpoint">
+        <p><span class="method get">GET</span> <code>/api/binance/ping</code></p>
+        <p>Check if the Binance API service is available.</p>
+    </div>
+    
+    <div class="endpoint">
+        <p><span class="method get">GET</span> <code>/api/binance/prices</code></p>
+        <p>Get current prices for all trading pairs.</p>
+    </div>
+    
+    <div class="endpoint">
+        <p><span class="method get">GET</span> <code>/api/binance/price/&lt;symbol&gt;</code></p>
+        <p>Get the current price for a specific trading pair.</p>
+        <p>Example: <code>/api/binance/price/BTCUSDT</code></p>
+    </div>
+    
+    <div class="endpoint">
+        <p><span class="method get">GET</span> <code>/api/binance/ticker/24hr</code></p>
+        <p>Get 24-hour ticker statistics for trading pairs.</p>
+        <p>Query parameters:</p>
+        <ul>
+            <li><code>symbol</code> (optional): Specific trading pair (e.g., BTCUSDT)</li>
+        </ul>
+    </div>
+    
+    <p>All API responses are in JSON format.</p>
+    <p>For any issues or questions, please contact the development team.</p>
+</body>
+</html>

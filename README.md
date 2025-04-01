@@ -20,6 +20,7 @@ A cutting-edge cryptocurrency investment platform leveraging advanced AI and mul
 
 - React.js (TypeScript) frontend
 - Node.js backend
+- Python Flask microservice for Binance API integration
 - Tailwind CSS for styling
 - PostgreSQL database
 - Binance & OKX API integrations
@@ -31,8 +32,10 @@ A cutting-edge cryptocurrency investment platform leveraging advanced AI and mul
 
 1. Clone the repository
 2. Install dependencies with `npm install`
-3. Start the development server with `npm run dev`
-4. Navigate to the provided URL in your browser
+3. Install Python dependencies with `pip install flask flask-cors binance-connector requests`
+4. Start the development server with `npm run dev`
+5. In a separate terminal, start the Python Binance service with `node start_python_service.js`
+6. Navigate to the provided URL in your browser
 
 ## Paper Trading
 
@@ -50,6 +53,7 @@ The platform provides comprehensive market data for over 500 cryptocurrencies, w
 - `server/api/`: API endpoints and services
 - `server/api/ai/`: AI trading algorithms
 - `server/api/paper-trading/`: Paper trading implementation
+- `python_app/`: Python Flask service for Binance API integration
 
 ## License
 
