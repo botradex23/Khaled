@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
+import DashboardOverview from "@/pages/dashboard-overview";
 import Bots from "@/pages/bots-new";
 import BotsDashboard from "@/pages/bots-dashboard";
 import Markets from "@/pages/markets";
@@ -47,6 +48,7 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/home" component={Home} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/dashboard-overview" component={DashboardOverview} />
       <Route path="/bots" component={BotsDashboard} />
       <Route path="/bots-legacy" component={Bots} />
       <Route path="/markets" component={Markets} />

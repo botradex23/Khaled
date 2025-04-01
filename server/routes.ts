@@ -15,6 +15,7 @@ import marketsRouter from './routes/markets';
 import marketsV2Router from './routes/markets.test';
 import marketsV3Router from './routes/markets-v3';
 import marketApiRouter from './routes/market-api';
+import portfolioRouter from './routes/portfolio';
 import { setupAuth, ensureAuthenticated } from "./auth";
 import { createOkxServiceWithCustomCredentials, okxService } from "./api/okx/okxService";
 import updateApiKeysRouter from "./routes/update-api-keys";
@@ -327,6 +328,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Database status routes are already registered above via dynamic import
+  
+  // Portfolio routes for dashboard data visualization
+  app.use("/api/portfolio", portfolioRouter);
   
   // Direct API Key validation endpoint - No authentication required for validating API keys
   app.post("/api/validate-api-keys", async (req, res) => {
