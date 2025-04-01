@@ -57,15 +57,22 @@ export default function MarketsFullPage() {
     try {
       setIsLoading(true);
       
-      // Fetch all Binance markets
-      const response = await fetch('/api/binance/all-markets');
+      // Try the Python-based Binance API first (more reliable for geo-restricted regions)
+      let response = await fetch('/api/markets/python/all-markets');
       
+      // If Python API fails, fall back to the standard API
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch market data');
+        console.log('Python Binance API failed, falling back to standard API');
+        response = await fetch('/api/binance/all-markets');
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch market data from both APIs');
+        }
       }
       
       const data = await response.json();
+      console.log('Market data source:', data.source || 'unknown');
       
       // Make sure we're setting the actual array of market data
       if (data.success && Array.isArray(data.data)) {

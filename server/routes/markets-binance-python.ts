@@ -13,20 +13,74 @@ const router = Router();
 /**
  * Get all market prices from Binance via Python bridge
  * 
- * @route GET /api/binance-python/all-markets
+ * @route GET /api/markets/python/all-markets
  * @returns {Object} success - Whether the request was successful
  * @returns {Array} data - Array of market data
  */
 router.get('/all-markets', async (req: Request, res: Response) => {
   try {
     console.log('[api] Fetching all Binance market pairs via Python bridge');
-    const prices = await pythonBinanceMarketService.getAllPrices();
+    const allPrices = await pythonBinanceMarketService.getAllPrices();
     
+    if (!allPrices || allPrices.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No price data available from Binance via Python bridge'
+      });
+    }
+    
+    // Get 24hr statistics for extra market data like price change, volume, etc.
+    let stats24hr: any[] = [];
+    try {
+      stats24hr = await pythonBinanceMarketService.get24hrStats() as any[];
+    } catch (statsError) {
+      console.warn('Failed to fetch 24hr stats, continuing with price data only:', statsError);
+    }
+    
+    // Process the prices to add additional data
+    const processedPrices = allPrices.map(ticker => {
+      // Extract base and quote from symbol (e.g., BTCUSDT -> BTC and USDT)
+      let baseSymbol = ticker.symbol;
+      let quoteSymbol = '';
+      
+      // Check for common quote currencies
+      const quotes = ['USDT', 'BUSD', 'USDC', 'BTC', 'ETH', 'BNB'];
+      for (const quote of quotes) {
+        if (ticker.symbol.endsWith(quote)) {
+          baseSymbol = ticker.symbol.slice(0, -quote.length);
+          quoteSymbol = quote;
+          break;
+        }
+      }
+      
+      // Find matching 24hr stats if available
+      const stats = Array.isArray(stats24hr) 
+        ? stats24hr.find(stat => stat.symbol === ticker.symbol) 
+        : null;
+      
+      return {
+        symbol: ticker.symbol,
+        baseSymbol,
+        quoteSymbol,
+        price: typeof ticker.price === 'string' ? parseFloat(ticker.price) : ticker.price,
+        formattedPrice: formatPrice(typeof ticker.price === 'string' ? parseFloat(ticker.price) : ticker.price),
+        // Add 24hr statistics if available
+        priceChangePercent: stats ? parseFloat(stats.priceChangePercent) : 0,
+        volume: stats ? parseFloat(stats.volume) : 0,
+        quoteVolume: stats ? parseFloat(stats.quoteVolume) : 0,
+        high24h: stats ? parseFloat(stats.highPrice) : 0,
+        low24h: stats ? parseFloat(stats.lowPrice) : 0,
+        source: 'binance-python'
+      };
+    });
+    
+    // Return all processed prices
     return res.json({
       success: true,
       source: 'binance-python',
       timestamp: new Date().toISOString(),
-      data: prices
+      count: processedPrices.length,
+      data: processedPrices
     });
   } catch (error: any) {
     console.error(`Error fetching Binance markets data via Python bridge: ${error}`);
@@ -37,6 +91,21 @@ router.get('/all-markets', async (req: Request, res: Response) => {
     });
   }
 });
+
+/**
+ * Format price to appropriate precision based on value
+ */
+function formatPrice(price: number): string {
+  if (price >= 1000) {
+    return price.toFixed(2);
+  } else if (price >= 1) {
+    return price.toFixed(4);
+  } else if (price >= 0.0001) {
+    return price.toFixed(6);
+  } else {
+    return price.toFixed(8);
+  }
+}
 
 /**
  * Get price for a specific symbol
