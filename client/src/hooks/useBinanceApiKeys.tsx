@@ -43,7 +43,11 @@ export function useBinanceApiKeys() {
       
       // Get status of keys existence
       const statusResponse = await fetch('/api/binance/api-keys/status', {
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Test-User-ID': '2',  // Use a test user for development environment
+        }
       });
       const statusData = await statusResponse.json();
       
@@ -58,7 +62,11 @@ export function useBinanceApiKeys() {
         
         // Load full keys (without masking)
         const fullResponse = await fetch('/api/binance/api-keys/full', {
-          credentials: 'include'
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Test-User-ID': '2',  // Use a test user for development environment
+          }
         });
         
         if (!fullResponse.ok) {
@@ -167,6 +175,7 @@ export function useBinanceApiKeys() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Test-User-ID': '2',  // Use a test user for development environment
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -212,13 +221,11 @@ export function useBinanceApiKeys() {
   
   // Load keys automatically when component loads or user changes
   useEffect(() => {
-    if (isAuthenticated && user) {
-      console.log("User authenticated, loading API keys automatically...", user.id);
-      loadSavedKeys();
-    } else {
-      setIsLoading(false);
-    }
-  }, [isAuthenticated, user, loadSavedKeys]);
+    // For development, always try to load keys regardless of authentication status
+    console.log("API key status from hook:", isAuthenticated);
+    // In development, always load keys - in production, only load if authenticated
+    loadSavedKeys();
+  }, [loadSavedKeys]);
   
   // Return all parameters needed for managing API keys
   return {

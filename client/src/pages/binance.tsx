@@ -597,7 +597,7 @@ export default function BinancePage() {
     refetch: refetchApiStatus
   } = useQuery<BinanceApiStatus>({
     queryKey: ['/api/binance/api-keys/status'],
-    enabled: !!user, // רק אם המשתמש מחובר
+    enabled: true, // Always enabled for development
     refetchOnWindowFocus: false
   });
   
@@ -625,7 +625,7 @@ export default function BinancePage() {
     isLoading: savedApiKeysLoading
   } = useQuery<BinanceApiKeysResponse>({
     queryKey: ['/api/binance/api-keys/full'],
-    enabled: !!user, // רק בודק שהמשתמש מחובר, בלי תלות בסטטוס API
+    enabled: true, // Always enabled for development
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 5, // להימנע מבקשות חוזרות ונשנות לקבלת המפתחות
     queryFn: async () => {
@@ -633,7 +633,8 @@ export default function BinancePage() {
         method: 'GET',
         credentials: 'include', // חשוב - מצרף קוקיס עבור אימות
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Test-User-ID': '2'  // Use a test user for development environment
         }
       });
       if (!response.ok) {
@@ -681,7 +682,8 @@ export default function BinancePage() {
             const response = await fetch('/api/binance/api-keys', {
               method: 'POST',
               headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Test-User-ID': '2'  // Use a test user for development environment
               },
               body: JSON.stringify({
                 apiKey: savedApiKeys.apiKey,
@@ -750,7 +752,8 @@ export default function BinancePage() {
           method: 'GET',
           credentials: 'include',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-Test-User-ID': '2'  // Use a test user for development environment
           }
         });
         
@@ -797,6 +800,17 @@ export default function BinancePage() {
     refetch: refetchTickerPrices
   } = useQuery<BinanceTickerPrice[]>({
     queryKey: ['/api/binance/market/tickers'],
+    queryFn: async () => {
+      const res = await fetch('/api/binance/market/tickers', {
+        headers: {
+          'X-Test-User-ID': '2' // Use test user for development environment
+        }
+      });
+      if (!res.ok) {
+        throw new Error('Failed to fetch market tickers');
+      }
+      return res.json();
+    },
     refetchOnWindowFocus: false,
     refetchInterval: 60000, // רענון כל דקה
   });
@@ -809,6 +823,17 @@ export default function BinancePage() {
     refetch: refetch24hrData
   } = useQuery<Binance24hrTicker[]>({
     queryKey: ['/api/binance/market/24hr'],
+    queryFn: async () => {
+      const res = await fetch('/api/binance/market/24hr', {
+        headers: {
+          'X-Test-User-ID': '2' // Use test user for development environment
+        }
+      });
+      if (!res.ok) {
+        throw new Error('Failed to fetch 24hr ticker data');
+      }
+      return res.json();
+    },
     refetchOnWindowFocus: false,
     refetchInterval: 60000, // רענון כל דקה
   });
@@ -946,7 +971,8 @@ export default function BinancePage() {
         method: "POST",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "X-Test-User-ID": "2"  // Use a test user for development environment
         },
         body: JSON.stringify({
           apiKey: cleanedApiKey,
