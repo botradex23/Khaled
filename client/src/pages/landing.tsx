@@ -44,46 +44,46 @@ export default function Landing() {
   // Features section data
   const features = [
     {
-      title: "מסחר מבוסס בינה מלאכותית",
+      title: "AI-Powered Trading",
       description:
-        "אלגוריתמים מתקדמים מנתחים דפוסי שוק ומבצעים מסחר בזמנים אופטימליים.",
+        "Advanced algorithms analyze market patterns and execute trades at optimal times.",
       icon: <Brain className="h-12 w-12 text-primary" />,
-      tooltip: "המערכת משתמשת במודלים של למידת מכונה שנלמדו על מיליוני עסקאות היסטוריות"
+      tooltip: "Our system uses machine learning models trained on millions of historical transactions"
     },
     {
-      title: "נתוני שוק בזמן אמת",
+      title: "Real-Time Market Data",
       description:
-        "גישה למידע עדכני מבורסות קריפטו מובילות עם עדכון מידי.",
+        "Access up-to-date information from leading crypto exchanges with instant updates.",
       icon: <TrendingUp className="h-12 w-12 text-primary" />,
-      tooltip: "מקבל נתונים ממקורות רבים כולל Binance ו-OKX עם זמן תגובה של מילישניות"
+      tooltip: "Receives data from multiple sources including Binance and OKX with millisecond response time"
     },
     {
-      title: "מסחר גריד אוטומטי",
+      title: "Automated Grid Trading",
       description:
-        "הגדרת בוטים לרכישה במחיר נמוך ומכירה במחיר גבוה לאורך טווח מחירים.",
+        "Set up bots to buy low and sell high across a range of price points.",
       icon: <Bot className="h-12 w-12 text-primary" />,
-      tooltip: "טכניקת מסחר פופולרית שפועלת היטב בשווקים תנודתיים. המערכת מייצרת רשת קניות ומכירות אוטומטית"
+      tooltip: "A popular trading technique that works well in volatile markets. The system creates an automatic grid of buys and sells"
     },
     {
-      title: "ניתוח מתקדם",
+      title: "Advanced Analytics",
       description:
-        "מעקב אחר הביצועים שלך עם ניתוח מפורט ודוחות ויזואליים.",
+        "Track your performance with detailed analysis and visual reports.",
       icon: <BarChart3 className="h-12 w-12 text-primary" />,
-      tooltip: "הצגת דוחות מפורטים הכוללים ROI, סיכון מותאם, ביצועים לאורך זמן ועוד"
+      tooltip: "Displays detailed reports including ROI, risk-adjusted returns, performance over time, and more"
     },
     {
-      title: "אבטחה מובנית",
+      title: "Built-in Security",
       description:
-        "מפתחות ה-API והנתונים שלך מוצפנים ולעולם לא משותפים עם צד שלישי.",
+        "Your API keys and data are encrypted and never shared with third parties.",
       icon: <Shield className="h-12 w-12 text-primary" />,
-      tooltip: "אנו משתמשים בהצפנה ברמה צבאית ובפרוטוקולי אבטחה מתקדמים להגנה על המידע שלך"
+      tooltip: "We use military-grade encryption and advanced security protocols to protect your information"
     },
     {
-      title: "תמיכה במספר בורסות",
+      title: "Multi-Exchange Support",
       description:
-        "התחברות לבורסות קריפטו פופולריות דרך אינטגרציות API מאובטחות.",
+        "Connect to popular crypto exchanges through secure API integrations.",
       icon: <Globe className="h-12 w-12 text-primary" />,
-      tooltip: "המערכת תומכת ב-Binance, OKX ובקרוב גם בבורסות נוספות"
+      tooltip: "The system supports Binance, OKX and will soon support additional exchanges"
     },
   ];
 
@@ -168,16 +168,16 @@ export default function Landing() {
               className="text-muted-foreground hover:text-foreground flex items-center"
             >
               <HelpCircle className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">סיור מודרך</span>
+              <span className="hidden sm:inline">Guided Tour</span>
             </Button>
             <Button
               variant="ghost"
               onClick={() => navigate("/login")}
               className="text-muted-foreground hover:text-foreground"
             >
-              כניסה למערכת
+              Login
             </Button>
-            <Button onClick={() => navigate("/register")}>הרשמה</Button>
+            <Button onClick={() => navigate("/register")}>Register</Button>
           </div>
         </div>
       </header>
@@ -188,11 +188,11 @@ export default function Landing() {
           <div className="flex flex-col md:flex-row items-center">
             <div className="flex-1 space-y-6 mb-10 md:mb-0 md:pr-10">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight">
-                מסחר קריפטו אוטומטי מבוסס AI
+                AI-Powered Crypto Trading
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl">
-                נצל את כוח הבינה המלאכותית כדי לסחור במטבעות קריפטו בדיוק וביעילות.
-                הפלטפורמה שלנו מביאה אלגוריתמים ברמה מוסדית לסוחרים קמעונאיים.
+                Harness the power of artificial intelligence to trade cryptocurrencies with precision and efficiency.
+                Our platform brings institutional-grade algorithms to retail traders.
               </p>
               <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 pt-4">
                 <Button
@@ -200,7 +200,7 @@ export default function Landing() {
                   onClick={() => navigate("/register")}
                   className="text-lg h-12"
                 >
-                  התחל עכשיו <ChevronRight className="ml-1 h-5 w-5" />
+                  Get Started <ChevronRight className="ml-1 h-5 w-5" />
                 </Button>
                 <Button
                   size="lg"
@@ -208,7 +208,7 @@ export default function Landing() {
                   onClick={() => navigate("/learn")}
                   className="text-lg h-12 bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
                 >
-                  למד עוד על המערכת
+                  Learn More
                 </Button>
               </div>
             </div>
@@ -218,7 +218,7 @@ export default function Landing() {
                   <div className="w-3 h-3 rounded-full bg-red-500" />
                   <div className="w-3 h-3 rounded-full bg-yellow-500" />
                   <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <div className="ml-2 text-sm text-muted-foreground">לוח בקרת בוט גריד AI</div>
+                  <div className="ml-2 text-sm text-muted-foreground">AI Grid Bot Dashboard</div>
                 </div>
                 <div className="p-6">
                   <div className="space-y-4">
@@ -257,11 +257,11 @@ export default function Landing() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-muted/30 p-3 rounded-md">
-                        <div className="text-xs text-muted-foreground">רווח כולל</div>
+                        <div className="text-xs text-muted-foreground">Total Profit</div>
                         <div className="text-lg font-semibold text-green-500">$1,245.32</div>
                       </div>
                       <div className="bg-muted/30 p-3 rounded-md">
-                        <div className="text-xs text-muted-foreground">בוטים פעילים</div>
+                        <div className="text-xs text-muted-foreground">Active Bots</div>
                         <div className="text-lg font-semibold">3</div>
                       </div>
                     </div>
@@ -280,11 +280,11 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight mb-4">
-              תכונות חזקות לסוחרי קריפטו
+              Powerful Features for Crypto Traders
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              הפלטפורמה שלנו משלבת טכנולוגיית AI מתקדמת עם כלים ידידותיים למשתמש
-              כדי לעזור לך למקסם את רווחי המסחר בקריפטו שלך.
+              Our platform combines advanced AI technology with user-friendly tools
+              to help you maximize your crypto trading profits.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -314,28 +314,28 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-bold tracking-tight mb-4">
-              כל מה שצריך לדעת
+              Everything You Need to Know
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              מידע חשוב עבור משתמשים חדשים וותיקים כאחד
+              Important information for both new and experienced users
             </p>
           </div>
           
           <Tabs defaultValue="what-is" value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="flex justify-center mb-6">
               <TabsList className="grid grid-cols-3 w-full max-w-xl">
-                <TabsTrigger value="what-is" className="text-sm">מה זה בכלל?</TabsTrigger>
-                <TabsTrigger value="bot-types" className="text-sm">סוגי בוטים</TabsTrigger>
-                <TabsTrigger value="quick-tips" className="text-sm">טיפים מהירים</TabsTrigger>
+                <TabsTrigger value="what-is" className="text-sm">What Is It?</TabsTrigger>
+                <TabsTrigger value="bot-types" className="text-sm">Bot Types</TabsTrigger>
+                <TabsTrigger value="quick-tips" className="text-sm">Quick Tips</TabsTrigger>
               </TabsList>
             </div>
             
             <Card className="border-border/60">
               <TabsContent value="what-is" className="m-0">
                 <CardHeader>
-                  <CardTitle>כיצד המערכת עובדת?</CardTitle>
+                  <CardTitle>How the System Works</CardTitle>
                   <CardDescription>
-                    הסבר קצר על הטכנולוגיה והיתרונות שמאחורי המערכת
+                    A brief explanation of the technology and benefits behind the system
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -344,30 +344,30 @@ export default function Landing() {
                       <div className="bg-muted/50 p-5 rounded-lg border border-border/60">
                         <h3 className="font-semibold text-lg mb-2 flex items-center">
                           <Brain className="w-5 h-5 mr-2 text-primary" />
-                          בינה מלאכותית במסחר
+                          AI in Trading
                         </h3>
                         <p className="text-muted-foreground mb-4">
-                          המערכת מנתחת עשרות אלפי נקודות מידע בכל רגע נתון, כולל מחירים היסטוריים, נפחי מסחר,
-                          סנטימנט שוק, וסמנים טכניים, כדי לזהות דפוסים ולנבא תנועות מחירים.
+                          The system analyzes tens of thousands of data points at any given moment, including historical prices,
+                          trading volumes, market sentiment, and technical indicators to identify patterns and predict price movements.
                         </p>
                         <div className="flex items-center text-sm text-primary">
                           <BadgeCheck className="h-4 w-4 mr-1.5" />
-                          <span>דיוק של 76% בזיהוי מגמות משמעותיות</span>
+                          <span>76% accuracy in identifying significant trends</span>
                         </div>
                       </div>
                       
                       <div className="bg-muted/50 p-5 rounded-lg border border-border/60">
                         <h3 className="font-semibold text-lg mb-2 flex items-center">
                           <Shield className="w-5 h-5 mr-2 text-primary" />
-                          ניהול סיכונים חכם
+                          Smart Risk Management
                         </h3>
                         <p className="text-muted-foreground mb-4">
-                          הבוטים כוללים מנגנוני הגנה מובנים כגון הגדרות Stop Loss אוטומטיות,
-                          פיזור השקעות, והגבלות סיכון מותאמות אישית לכל אסטרטגיה.
+                          Bots include built-in protection mechanisms such as automatic Stop Loss settings,
+                          investment diversification, and customized risk limits for each strategy.
                         </p>
                         <div className="flex items-center text-sm text-primary">
                           <BadgeCheck className="h-4 w-4 mr-1.5" />
-                          <span>צמצום תנודתיות תיק ההשקעות ב-35%</span>
+                          <span>35% reduction in portfolio volatility</span>
                         </div>
                       </div>
                     </div>
@@ -376,30 +376,30 @@ export default function Landing() {
                       <div className="bg-muted/50 p-5 rounded-lg border border-border/60">
                         <h3 className="font-semibold text-lg mb-2 flex items-center">
                           <SiBinance className="w-5 h-5 mr-2 text-primary" />
-                          חיבור לבורסות
+                          Exchange Connectivity
                         </h3>
                         <p className="text-muted-foreground mb-4">
-                          המערכת מתחברת ישירות לחשבון הבורסה שלך (באמצעות API) ומבצעת פעולות באופן אוטומטי.
-                          המפתחות נשמרים בצורה מאובטחת ולעולם אינם חשופים.
+                          The system connects directly to your exchange account (via API) and executes trades automatically.
+                          The keys are stored securely and are never exposed.
                         </p>
                         <div className="flex items-center text-sm text-primary">
                           <BadgeCheck className="h-4 w-4 mr-1.5" />
-                          <span>תמיכה בבורסות המובילות</span>
+                          <span>Support for leading exchanges</span>
                         </div>
                       </div>
                       
                       <div className="bg-muted/50 p-5 rounded-lg border border-border/60">
                         <h3 className="font-semibold text-lg mb-2 flex items-center">
                           <Bot className="w-5 h-5 mr-2 text-primary" />
-                          בוטים אוטונומיים
+                          Autonomous Bots
                         </h3>
                         <p className="text-muted-foreground mb-4">
-                          הבוטים פועלים 24/7 ללא צורך בהתערבות אנושית. הם סורקים את השוק,
-                          מזהים הזדמנויות, ומבצעים פעולות בהתאם לאסטרטגיה שהוגדרה מראש.
+                          The bots operate 24/7 without the need for human intervention. They scan the market,
+                          identify opportunities, and take actions according to predefined strategies.
                         </p>
                         <div className="flex items-center text-sm text-primary">
                           <BadgeCheck className="h-4 w-4 mr-1.5" />
-                          <span>פועלים ללא הפסקה גם כשאתה ישן</span>
+                          <span>Working non-stop even while you sleep</span>
                         </div>
                       </div>
                     </div>
@@ -407,7 +407,7 @@ export default function Landing() {
                   
                   <div className="flex justify-center pt-6">
                     <Button onClick={() => setActiveTab("bot-types")} className="flex items-center">
-                      סוגי בוטים זמינים
+                      Available Bot Types
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
@@ -416,9 +416,9 @@ export default function Landing() {
               
               <TabsContent value="bot-types" className="m-0">
                 <CardHeader>
-                  <CardTitle>סוגי בוטים במערכת</CardTitle>
+                  <CardTitle>Bot Types in the System</CardTitle>
                   <CardDescription>
-                    הכר את הבוטים השונים ואת אסטרטגיות המסחר שלהם
+                    Get to know the different bots and their trading strategies
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -458,7 +458,7 @@ export default function Landing() {
                   
                   <div className="flex justify-center pt-6">
                     <Button onClick={() => setActiveTab("quick-tips")} className="flex items-center">
-                      טיפים מהירים
+                      Quick Tips
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
@@ -467,9 +467,9 @@ export default function Landing() {
               
               <TabsContent value="quick-tips" className="m-0">
                 <CardHeader>
-                  <CardTitle>טיפים מהירים להתחלה</CardTitle>
+                  <CardTitle>Quick Start Tips</CardTitle>
                   <CardDescription>
-                    עצות שימושיות למשתמשים חדשים במערכת
+                    Useful advice for new users of the system
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -495,7 +495,7 @@ export default function Landing() {
                       <Info className="h-5 w-5 text-primary mr-4" />
                       <div>
                         <p className="text-sm">
-                          כדי לקבל הסברים מפורטים יותר, <Link href="/learn" className="text-primary font-medium underline underline-offset-4">בקר בעמוד המדריכים</Link> או התחל <Button variant="link" className="h-auto p-0 text-primary underline underline-offset-4" onClick={() => setShowTour(true)}>סיור מודרך</Button>.
+                          For more detailed explanations, <Link href="/learn" className="text-primary font-medium underline underline-offset-4">visit our guides page</Link> or start a <Button variant="link" className="h-auto p-0 text-primary underline underline-offset-4" onClick={() => setShowTour(true)}>guided tour</Button>.
                         </p>
                       </div>
                     </div>
@@ -503,7 +503,7 @@ export default function Landing() {
                   
                   <div className="flex justify-center pt-8">
                     <Button onClick={() => setActiveTab("what-is")} className="flex items-center">
-                      חזרה להסבר המערכת
+                      Back to System Explanation
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
@@ -520,48 +520,48 @@ export default function Landing() {
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="md:w-1/2">
               <h2 className="text-3xl font-bold tracking-tight mb-4">
-                חדש במערכת? למד כיצד היא עובדת
+                New to the System? Learn How It Works
               </h2>
               <p className="text-xl text-muted-foreground mb-6">
-                לפני שאתה צולל פנימה, גלה את המדריך המקיף שלנו כדי להבין כיצד מערכת המסחר
-                שלנו יכולה לעזור למקסם את השקעות הקריפטו שלך.
+                Before diving in, explore our comprehensive guide to understand how our trading system
+                can help maximize your cryptocurrency investments.
               </p>
               <Button
                 size="lg"
                 onClick={() => navigate("/learn")}
                 className="text-lg h-12 bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
               >
-                גלה את תכונות המערכת
+                Discover System Features
               </Button>
             </div>
             <div className="md:w-1/2">
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white/10 p-4 rounded-lg border border-blue-200/20">
                   <Bot className="h-8 w-8 text-blue-500 mb-2" />
-                  <h3 className="font-semibold mb-1">בוט גריד AI</h3>
+                  <h3 className="font-semibold mb-1">AI Grid Bot</h3>
                   <p className="text-sm text-muted-foreground">
-                    מסחר אוטומטי לאורך טווחי מחירים המותאם על ידי בינה מלאכותית.
+                    Automated trading across price ranges optimized by artificial intelligence.
                   </p>
                 </div>
                 <div className="bg-white/10 p-4 rounded-lg border border-blue-200/20">
                   <TrendingUp className="h-8 w-8 text-blue-500 mb-2" />
-                  <h3 className="font-semibold mb-1">ניתוח שוק</h3>
+                  <h3 className="font-semibold mb-1">Market Analysis</h3>
                   <p className="text-sm text-muted-foreground">
-                    נתונים בזמן אמת ממספר בורסות עם פילטרים מתקדמים.
+                    Real-time data from multiple exchanges with advanced filtering capabilities.
                   </p>
                 </div>
                 <div className="bg-white/10 p-4 rounded-lg border border-blue-200/20">
                   <Brain className="h-8 w-8 text-blue-500 mb-2" />
-                  <h3 className="font-semibold mb-1">אסטרטגיות חכמות</h3>
+                  <h3 className="font-semibold mb-1">Smart Strategies</h3>
                   <p className="text-sm text-muted-foreground">
-                    אסטרטגיות מסחר מוגדרות מראש המבוססות על תנאי שוק.
+                    Predefined trading strategies based on market conditions.
                   </p>
                 </div>
                 <div className="bg-white/10 p-4 rounded-lg border border-blue-200/20">
                   <Shield className="h-8 w-8 text-blue-500 mb-2" />
-                  <h3 className="font-semibold mb-1">ניהול סיכונים</h3>
+                  <h3 className="font-semibold mb-1">Risk Management</h3>
                   <p className="text-sm text-muted-foreground">
-                    הגנות מובנות עם הגדרות עצירת הפסד הניתנות להתאמה.
+                    Built-in protections with customizable stop loss settings.
                   </p>
                 </div>
               </div>
@@ -574,11 +574,11 @@ export default function Landing() {
       <section className="py-20 px-6 bg-primary/5">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold tracking-tight mb-4">
-            מוכן לאוטומציה של המסחר בקריפטו?
+            Ready to Automate Your Crypto Trading?
           </h2>
           <p className="text-xl text-muted-foreground mb-8">
-            הצטרף לאלפי סוחרים המשתמשים בפלטפורמה שלנו כדי למטב את
-            השקעות הקריפטו שלהם באמצעות אוטומציה מבוססת בינה מלאכותית.
+            Join thousands of traders using our platform to optimize their
+            cryptocurrency investments through AI-powered automation.
           </p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
             <Button
@@ -586,7 +586,7 @@ export default function Landing() {
               onClick={() => navigate("/register")}
               className="text-lg h-12"
             >
-              צור חשבון חינם
+              Create Free Account
             </Button>
             <Button
               size="lg"
@@ -594,7 +594,7 @@ export default function Landing() {
               onClick={() => navigate("/login")}
               className="text-lg h-12"
             >
-              התחבר
+              Login
             </Button>
             <Button
               size="lg"
@@ -602,7 +602,7 @@ export default function Landing() {
               onClick={() => setShowTour(true)}
               className="text-lg h-12 bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
             >
-              התחל סיור מודרך
+              Start Guided Tour
             </Button>
           </div>
         </div>
@@ -618,8 +618,8 @@ export default function Landing() {
                 <span className="text-xl font-bold">CryptoTrade AI</span>
               </div>
               <p className="text-muted-foreground max-w-md mb-6">
-                המשימה שלנו היא להנגיש אלגוריתמי מסחר מתוחכמים ולהפוך את המסחר
-                מבוסס הבינה המלאכותית לזמין לכולם.
+                Our mission is to democratize access to sophisticated trading
+                algorithms and make AI-powered trading accessible to everyone.
               </p>
               <div className="flex space-x-4">
                 <a href="#" className="text-muted-foreground hover:text-primary">
@@ -651,16 +651,16 @@ export default function Landing() {
               </div>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-foreground mb-4">פלטפורמה</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-4">Platform</h3>
               <ul className="space-y-3">
                 <li>
                   <a href="#" className="text-muted-foreground hover:text-primary">
-                    תכונות
+                    Features
                   </a>
                 </li>
                 <li>
                   <a href="#" className="text-muted-foreground hover:text-primary">
-                    תמחור
+                    Pricing
                   </a>
                 </li>
                 <li>
@@ -669,37 +669,37 @@ export default function Landing() {
                     onClick={() => navigate("/learn")}
                     className="text-muted-foreground hover:text-primary"
                   >
-                    למידה
+                    Learn
                   </a>
                 </li>
                 <li>
                   <a href="#" className="text-muted-foreground hover:text-primary">
-                    תיעוד API
+                    API Documentation
                   </a>
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-foreground mb-4">חברה</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-4">Company</h3>
               <ul className="space-y-3">
                 <li>
                   <a href="#" className="text-muted-foreground hover:text-primary">
-                    אודותינו
+                    About Us
                   </a>
                 </li>
                 <li>
                   <a href="#" className="text-muted-foreground hover:text-primary">
-                    בלוג
+                    Blog
                   </a>
                 </li>
                 <li>
                   <a href="#" className="text-muted-foreground hover:text-primary">
-                    דרושים
+                    Careers
                   </a>
                 </li>
                 <li>
                   <a href="#" className="text-muted-foreground hover:text-primary">
-                    צור קשר
+                    Contact
                   </a>
                 </li>
               </ul>
@@ -707,7 +707,7 @@ export default function Landing() {
           </div>
           <div className="mt-12 pt-8 border-t border-border">
             <p className="text-sm text-muted-foreground text-center">
-              &copy; {new Date().getFullYear()} CryptoTrade AI. כל הזכויות שמורות.
+              &copy; {new Date().getFullYear()} CryptoTrade AI. All rights reserved.
             </p>
           </div>
         </div>
