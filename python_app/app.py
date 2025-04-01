@@ -13,6 +13,7 @@ from flask_cors import CORS
 
 from config import active_config
 from routes.binance_routes import binance_bp
+from routes.ml_routes import ml_bp
 
 # Configure logging
 logging.basicConfig(
@@ -49,6 +50,7 @@ def create_app(config=None):
     
     # Register blueprints
     app.register_blueprint(binance_bp)
+    app.register_blueprint(ml_bp)
     
     # Register error handlers
     @app.errorhandler(404)
@@ -83,6 +85,12 @@ def create_app(config=None):
     def dashboard():
         """Dashboard page showing market data"""
         return render_template('dashboard.html')
+        
+    # ML Predictions route
+    @app.route('/ml-predictions')
+    def ml_predictions():
+        """ML predictions page showing trading signals"""
+        return render_template('ml_predictions.html')
     
     # Test flash messages route
     @app.route('/test-flash')
@@ -111,7 +119,8 @@ def create_app(config=None):
             'version': '1.0.0',
             'environment': os.environ.get('FLASK_ENV', 'development'),
             'services': {
-                'binance': True
+                'binance': True,
+                'ml': True
             }
         })
     

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoTrade ML Predictions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .prediction-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .prediction-card {
+            flex: 1;
+            min-width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .prediction-card h2 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .signal {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .signal-buy {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .signal-sell {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .signal-hold {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .details {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .details div {
+            margin-bottom: 5px;
+        }
+        .progress-container {
+            width: 100%;
+            height: 20px;
+            background-color: #f5f5f5;
+            border-radius: 10px;
+            margin: 5px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            font-size: 12px;
+            line-height: 20px;
+            color: white;
+            text-align: center;
+        }
+        .warning-banner {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ffeeba;
+            border-radius: 5px;
+        }
+        .indicators {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .indicator {
+            flex: 1;
+            min-width: 100px;
+            padding: 5px;
+            border: 1px solid #eee;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .indicator .value {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .form-container {
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .status-message {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .loading {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CryptoTrade ML Predictions</h1>
+        
+        <div class="warning-banner">
+            <strong>Note:</strong> The predictions shown here are for demonstration purposes only and should not be used for real trading decisions.
+        </div>
+        
+        <div class="form-container">
+            <div class="form-group">
+                <label for="symbol-select">Select Trading Pair:</label>
+                <select id="symbol-select">
+                    <option value="BTCUSDT">BTCUSDT</option>
+                    <option value="ETHUSDT">ETHUSDT</option>
+                    <!-- Add more symbols as needed -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="use-sample" checked>
+                    Use sample data (for demonstration only)
+                </label>
+            </div>
+            <button id="fetch-prediction">Get Prediction</button>
+        </div>
+        
+        <div id="status-message" class="status-message loading" style="display: none;">
+            Loading prediction...
+        </div>
+        
+        <div id="prediction-container" class="prediction-cards"></div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fetchButton = document.getElementById('fetch-prediction');
+            const symbolSelect = document.getElementById('symbol-select');
+            const useSampleCheckbox = document.getElementById('use-sample');
+            const statusMessage = document.getElementById('status-message');
+            const predictionContainer = document.getElementById('prediction-container');
+            
+            fetchButton.addEventListener('click', fetchPrediction);
+            
+            // Fetch prediction on page load
+            fetchPrediction();
+            
+            function fetchPrediction() {
+                // Show loading message
+                statusMessage.textContent = 'Loading prediction...';
+                statusMessage.className = 'status-message loading';
+                statusMessage.style.display = 'block';
+                
+                // Clear previous predictions
+                predictionContainer.innerHTML = '';
+                
+                // Get selected symbol and sample flag
+                const symbol = symbolSelect.value;
+                const useSample = useSampleCheckbox.checked;
+                
+                // Build API URL
+                const apiUrl = `/api/ml/predict/${symbol}?sample=${useSample}`;
+                
+                // Fetch prediction from API
+                fetch(apiUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Hide loading message
+                        statusMessage.style.display = 'none';
+                        
+                        if (data.success) {
+                            // Render prediction card
+                            renderPredictionCard(data);
+                        } else {
+                            // Show error message
+                            statusMessage.textContent = `Error: ${data.error}`;
+                            statusMessage.className = 'status-message error';
+                            statusMessage.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        // Show error message
+                        statusMessage.textContent = `Error fetching prediction: ${error}`;
+                        statusMessage.className = 'status-message error';
+                        statusMessage.style.display = 'block';
+                    });
+            }
+            
+            function renderPredictionCard(data) {
+                // Create prediction card element
+                const card = document.createElement('div');
+                card.className = 'prediction-card';
+                
+                // Get signal class
+                const signalClass = `signal-${data.signal.toLowerCase()}`;
+                
+                // Convert timestamp to readable format
+                const timestamp = new Date(data.timestamp).toLocaleString();
+                
+                // Format price with 2 decimal places
+                const price = parseFloat(data.current_price).toFixed(2);
+                
+                // Build HTML content
+                let html = `
+                    <h2>${data.symbol}</h2>
+                    <div class="signal ${signalClass}">${data.signal}</div>
+                    <div class="details">
+                        <div><strong>Confidence:</strong> ${(data.confidence * 100).toFixed(2)}%</div>
+                        <div><strong>Current Price:</strong> $${price}</div>
+                        <div><strong>Timestamp:</strong> ${timestamp}</div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <strong>Signal Probabilities:</strong>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: ${data.probabilities.BUY * 100}%; background-color: #28a745;">
+                                BUY ${(data.probabilities.BUY * 100).toFixed(0)}%
+                            </div>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: ${data.probabilities.HOLD * 100}%; background-color: #ffc107;">
+                                HOLD ${(data.probabilities.HOLD * 100).toFixed(0)}%
+                            </div>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: ${data.probabilities.SELL * 100}%; background-color: #dc3545;">
+                                SELL ${(data.probabilities.SELL * 100).toFixed(0)}%
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <strong>Key Indicators:</strong>
+                        <div class="indicators">
+                `;
+                
+                // Add indicators
+                for (const [name, value] of Object.entries(data.indicators)) {
+                    html += `
+                        <div class="indicator">
+                            <div class="name">${name}</div>
+                            <div class="value">${value.toFixed(2)}</div>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+                
+                // Add sample data warning if applicable
+                if (data.is_sample_data) {
+                    html += `
+                        <div style="margin-top: 15px; font-size: 12px; color: #856404; background-color: #fff3cd; padding: 5px; border-radius: 3px;">
+                            <strong>Note:</strong> Using sample data for demonstration purposes.
+                        </div>
+                    `;
+                }
+                
+                // Set HTML content
+                card.innerHTML = html;
+                
+                // Add card to container
+                predictionContainer.appendChild(card);
+            }
+        });
+    </script>
+</body>
+</html>

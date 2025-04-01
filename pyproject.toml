@@ -19,4 +19,5 @@ dependencies = [
     "scikit-learn>=1.6.1",
     "tensorflow>=2.14.0",
     "websocket-client>=1.8.0",
+    "xgboost>=3.0.0",
 ]
