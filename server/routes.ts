@@ -353,6 +353,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register Python service status routes:', err);
   });
   
+  // Register ML routes
+  import('./routes/ml-routes').then(mlRoutesRouter => {
+    app.use('/api/ml', mlRoutesRouter.default);
+    console.log('ML routes registered to /api/ml');
+  }).catch(err => {
+    console.error('Failed to register ML routes:', err);
+  });
+  
   // Portfolio routes for dashboard data visualization
   app.use("/api/portfolio", portfolioRouter);
   
