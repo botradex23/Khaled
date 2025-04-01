@@ -5,6 +5,8 @@ import { setupVite, serveStatic, log } from "./vite";
 import './override-console.js';
 // Import risk manager to start monitoring positions for SL/TP
 import './api/risk-management/RiskManager.js';
+// Import Python service manager to start the ML predictions Flask service
+import { pythonServiceManager } from './services/python-service-manager';
 
 const app = express();
 app.use(express.json());
@@ -73,7 +75,20 @@ app.use((req, res, next) => {
     port: 5000,
     host: "0.0.0.0",
     reusePort: true,
-  }, () => {
+  }, async () => {
     log(`serving on port ${port}`);
+    
+    // Start the Python Flask service for ML predictions
+    try {
+      log('Starting Python Flask service for ML predictions...');
+      const serviceStarted = await pythonServiceManager.startService();
+      if (serviceStarted) {
+        log('Python Flask service started successfully');
+      } else {
+        log('Failed to start Python Flask service. ML predictions may not be available.');
+      }
+    } catch (error) {
+      log(`Error starting Python Flask service: ${error}`);
+    }
   });
 })();

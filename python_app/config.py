@@ -19,6 +19,7 @@ class Config:
     BINANCE_TEST_URL = 'https://testnet.binancefuture.com'
     BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY', '')
     BINANCE_SECRET_KEY = os.environ.get('BINANCE_SECRET_KEY', '')
+    USE_BINANCE_TESTNET = os.environ.get('USE_BINANCE_TESTNET', 'False').lower() in ('true', '1', 't')
     
     # Proxy configuration for bypassing geo-restrictions
     USE_PROXY = os.environ.get('USE_PROXY', 'True').lower() in ('true', '1', 't')

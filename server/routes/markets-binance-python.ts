@@ -8,8 +8,10 @@
 import { Router, Request, Response } from 'express';
 import { pythonBinanceBridge } from '../api/binance/python-binance-bridge';
 import { logger } from '../logger';
+import axios from 'axios';
 
 const router = Router();
+const pythonServiceUrl = 'http://localhost:5001';
 
 /**
  * GET /api/markets/python-binance/ping
@@ -112,6 +114,114 @@ router.get('/ticker/24hr', async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch 24hr statistics from Python Binance service',
+      error: String(error)
+    });
+  }
+});
+
+/**
+ * GET /api/markets/python-binance/predict/:symbol
+ * Get ML predictions for a specific symbol
+ */
+router.get('/predict/:symbol', async (req: Request, res: Response) => {
+  const { symbol } = req.params;
+  const interval = req.query.interval as string || '4h';
+  const sample = req.query.sample === 'true';
+  
+  try {
+    const url = `${pythonServiceUrl}/api/ml/predict/${symbol}?interval=${interval}&sample=${sample}`;
+    logger.info(`Fetching ML prediction from: ${url}`);
+    
+    const response = await axios.get(url, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    logger.info(`Successfully received prediction data for ${symbol}`);
+    
+    res.setHeader('Content-Type', 'application/json');
+    return res.json(response.data);
+  } catch (error: any) {
+    logger.error(`Error getting ML prediction: ${error.message}`);
+    
+    return res.status(500).json({
+      success: false,
+      message: `Failed to get ML prediction: ${error.message}`,
+      error: String(error)
+    });
+  }
+});
+
+/**
+ * POST /api/markets/python-binance/predictions
+ * Get ML predictions for multiple symbols
+ */
+router.post('/predictions', async (req: Request, res: Response) => {
+  const { symbols, interval, sample } = req.body;
+  
+  if (!symbols || !Array.isArray(symbols)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Missing or invalid symbols array in request body'
+    });
+  }
+  
+  try {
+    logger.info(`Fetching batch ML predictions for symbols: ${symbols.join(', ')}`);
+    
+    const response = await axios.post(`${pythonServiceUrl}/api/ml/predictions`, {
+      symbols,
+      interval: interval || '4h',
+      sample: sample || false
+    }, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    logger.info(`Successfully received batch prediction data for ${symbols.length} symbols`);
+    
+    res.setHeader('Content-Type', 'application/json');
+    return res.json(response.data);
+  } catch (error: any) {
+    logger.error(`Error getting batch predictions from ML service: ${error.message}`);
+    
+    return res.status(500).json({
+      success: false,
+      message: `Failed to get batch predictions from ML service: ${error.message}`,
+      error: String(error)
+    });
+  }
+});
+
+/**
+ * GET /api/markets/python-binance/ml/status
+ * Get ML service status
+ */
+router.get('/ml/status', async (req: Request, res: Response) => {
+  try {
+    logger.info(`Fetching ML service status from: ${pythonServiceUrl}/api/ml/status`);
+    
+    const response = await axios.get(`${pythonServiceUrl}/api/ml/status`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    logger.info(`Successfully received ML service status`);
+    
+    res.setHeader('Content-Type', 'application/json');
+    return res.json(response.data);
+  } catch (error: any) {
+    logger.error(`Error getting ML service status: ${error.message}`);
+    
+    return res.status(500).json({
+      success: false,
+      message: `Failed to get ML service status: ${error.message}`,
       error: String(error)
     });
   }

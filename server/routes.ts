@@ -345,6 +345,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Database status routes are already registered above via dynamic import
   
+  // Python service status routes
+  import('./routes/python-service-status').then(pythonServiceStatusRouter => {
+    app.use('', pythonServiceStatusRouter.default);
+    console.log('Python service status routes registered');
+  }).catch(err => {
+    console.error('Failed to register Python service status routes:', err);
+  });
+  
   // Portfolio routes for dashboard data visualization
   app.use("/api/portfolio", portfolioRouter);
   
