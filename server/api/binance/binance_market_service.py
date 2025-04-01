@@ -15,28 +15,27 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Union, Any, Tuple
 
-# Using ccxt for Binance access (already installed)
+# Using the official Binance connector SDK
 try:
-    import ccxt
+    from binance.spot import Spot
+    from binance.error import ClientError, ServerError
+    from binance.lib.utils import config_logging
+    config_logging(logging, logging.INFO)
 except ImportError:
-    logging.error("CCXT library not found. Please install it using 'pip install ccxt'")
-    # Create a stub for CCXT to avoid runtime errors when the library is not available
-    class ccxt:
-        class binance:
-            def __init__(self, params=None):
-                pass
+    logging.error("Binance connector SDK not found. Please install it using 'pip install binance-connector'")
+    # Create a stub for Binance connector to avoid runtime errors when the library is not available
+    class Spot:
+        def __init__(self, base_url=None, api_key=None, api_secret=None, **kwargs):
+            pass
             
-            def fetch_tickers(self):
-                return {}
+        def ticker_price(self, symbol=None):
+            return [{"symbol": "BTCUSDT", "price": "0.0"}]
             
-            def fetch_ticker(self, symbol):
-                return {"last": 0}
-        
-        # Define exception classes we use
-        class RateLimitExceeded(Exception): pass
-        class DDoSProtection(Exception): pass
-        class ExchangeNotAvailable(Exception): pass
-        class BaseError(Exception): pass
+        def ticker_24hr(self, symbol=None):
+            return [{"symbol": "BTCUSDT", "priceChangePercent": "0.0", "lastPrice": "0.0"}]
+    
+    class ClientError(Exception): pass
+    class ServerError(Exception): pass
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -151,18 +150,18 @@ class BinanceMarketPriceService:
         
         logging.info(f"Binance Market Price Service initialized with base URL: {self.base_url}")
     
-    def _create_client(self) -> ccxt.binance:
+    def _create_client(self) -> Spot:
         """
-        Create a Binance API client with appropriate configuration
+        Create a Binance API client using the official binance-connector SDK
         
         Returns:
-            Configured CCXT Binance client
+            Configured Binance Spot client
         """
         api_key = os.environ.get('BINANCE_API_KEY', '')
         api_secret = os.environ.get('BINANCE_SECRET_KEY', '')
         
         # Setup proxy configuration if enabled
-        proxies = None
+        proxies = {}
         if USE_PROXY:
             proxy_url = f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@{PROXY_IP}:{PROXY_PORT}"
             proxies = {
@@ -172,35 +171,36 @@ class BinanceMarketPriceService:
             logging.info(f"Using proxy connection to Binance API via {PROXY_IP}:{PROXY_PORT}")
         
         try:
-            # Create client with appropriate configuration
-            options = {
-                'defaultType': 'spot',
-                'adjustForTimeDifference': True,
-                'testnet': self.use_testnet
+            # Use the official base URL
+            base_url = self.base_url
+            
+            # Create params dictionary
+            kwargs = {
+                "timeout": 30,  # seconds
+                "proxies": proxies if USE_PROXY else None
             }
             
+            # Create client based on auth
             if api_key and api_secret:
-                client = ccxt.binance({
-                    'apiKey': api_key,
-                    'secret': api_secret,
-                    'enableRateLimit': True,
-                    'options': options,
-                    'proxies': proxies
-                })
+                client = Spot(
+                    base_url=base_url,
+                    api_key=api_key,
+                    api_secret=api_secret,
+                    **kwargs
+                )
                 logging.info("Connected to Binance API with credentials")
             else:
-                client = ccxt.binance({
-                    'enableRateLimit': True,
-                    'options': options,
-                    'proxies': proxies
-                })
+                client = Spot(
+                    base_url=base_url,
+                    **kwargs
+                )
                 logging.info("Connected to Binance API without credentials (public access only)")
             
             return client
         except Exception as e:
             logging.error(f"Failed to create Binance client: {e}")
             # Return a basic client that might work with direct connections
-            return ccxt.binance({'enableRateLimit': True, 'options': {'testnet': self.use_testnet}})
+            return Spot(base_url=self.base_url)
     
     def update_price(self, symbol: str, price: float, source: str = 'binance-websocket') -> None:
         """
@@ -272,27 +272,34 @@ class BinanceMarketPriceService:
             List of symbol/price pairs
         """
         try:
-            response = self.client.fetch_tickers()
+            # Use the official Binance API for ticker_price which gets all symbols at once
+            response = self.client.ticker_price()
             logging.info(f"Successfully fetched {len(response)} prices from Binance")
             
             # Update the price cache
             results = []
-            for symbol, ticker in response.items():
-                price = ticker['last']
+            for ticker in response:
+                symbol = ticker.get('symbol', '')
+                price = ticker.get('price', '')
                 if price:
-                    self.update_price(symbol.replace('/', ''), price, 'binance')
-                    results.append(BinanceTickerPrice(symbol.replace('/', ''), str(price)).to_dict())
+                    self.update_price(symbol, float(price), 'binance')
+                    results.append(BinanceTickerPrice(symbol, price).to_dict())
             
             return results
-        except ccxt.RateLimitExceeded as e:
-            logging.error(f"API rate limit exceeded: {e}")
-            raise ValueError("Binance API rate limit exceeded. Please try again later.")
-        except ccxt.DDoSProtection as e:
-            logging.error(f"Binance API access restricted (DDoS protection): {e}")
-            raise ValueError("Binance API access restricted. Please try again later.")
-        except ccxt.ExchangeNotAvailable as e:
-            logging.error(f"Binance API not available: {e}")
-            raise ValueError("Binance API not available. Please try again later.")
+        except ClientError as e:
+            error_code = str(e).split(': ')[0] if ': ' in str(e) else 'unknown'
+            if '-1003' in error_code:  # Rate limit code
+                logging.error(f"API rate limit exceeded: {e}")
+                raise ValueError("Binance API rate limit exceeded. Please try again later.")
+            elif '-1022' in error_code:  # IP restricted
+                logging.error(f"Binance API access restricted: {e}")
+                raise ValueError("Binance API access restricted. Please try again later.")
+            else:
+                logging.error(f"Binance client error: {e}")
+                raise ValueError(f"Binance API client error: {e}")
+        except ServerError as e:
+            logging.error(f"Binance server error: {e}")
+            raise ValueError("Binance API server error. Please try again later.")
         except Exception as e:
             logging.error(f"Error fetching all prices from Binance: {e}")
             raise ValueError(f"Failed to fetch market data from Binance: {e}")
@@ -318,24 +325,25 @@ class BinanceMarketPriceService:
         
         # Otherwise, fetch from API
         try:
-            # Convert format to CCXT standard (BTC/USDT)
-            ccxt_symbol = symbol
-            if 'USDT' in symbol:
-                base = symbol.replace('USDT', '')
-                ccxt_symbol = f"{base}/USDT"
+            logging.info(f"Fetching price for {symbol} from Binance API")
+            response = self.client.ticker_price(symbol=symbol)
             
-            logging.info(f"Fetching price for {ccxt_symbol} from Binance API")
-            ticker = self.client.fetch_ticker(ccxt_symbol)
-            
-            if ticker and ticker['last']:
-                # Cache the price
-                self.update_price(symbol, float(ticker['last']), 'binance')
+            # Handle response which could be a list or single dict
+            if isinstance(response, list):
+                ticker = next((t for t in response if t.get('symbol') == symbol), None)
+            else:
+                ticker = response
                 
-                return BinanceTickerPrice(symbol, str(ticker['last'])).to_dict()
+            if ticker and ticker.get('price'):
+                price = str(ticker.get('price', '0'))  # Ensure price is a string
+                # Cache the price
+                self.update_price(symbol, float(price), 'binance')
+                
+                return BinanceTickerPrice(symbol, price).to_dict()
             else:
                 logging.warning(f"No price data returned for {symbol}")
                 return None
-        except ccxt.BaseError as e:
+        except ClientError as e:
             logging.error(f"Binance API error for {symbol}: {e}")
             return None
         except Exception as e:
@@ -354,83 +362,39 @@ class BinanceMarketPriceService:
         """
         try:
             if symbol:
-                # Format symbol for CCXT (BTC/USDT)
+                # Format symbol
                 formatted_symbol = symbol.replace('-', '').upper()
-                ccxt_symbol = formatted_symbol
-                if 'USDT' in formatted_symbol:
-                    base = formatted_symbol.replace('USDT', '')
-                    ccxt_symbol = f"{base}/USDT"
                 
-                logging.info(f"Fetching 24hr stats for {ccxt_symbol} from Binance API")
-                ticker = self.client.fetch_ticker(ccxt_symbol)
+                logging.info(f"Fetching 24hr stats for {formatted_symbol} from Binance API")
+                response = self.client.ticker_24hr(symbol=formatted_symbol)
                 
-                # Convert CCXT ticker format to Binance's 24hr ticker format
-                response = {
-                    'symbol': formatted_symbol,
-                    'priceChange': str(ticker.get('change', 0)),
-                    'priceChangePercent': str(ticker.get('percentage', 0)),
-                    'weightedAvgPrice': str(ticker.get('vwap', 0)),
-                    'prevClosePrice': str(ticker.get('previousClose', ticker.get('open', 0))),
-                    'lastPrice': str(ticker.get('last', 0)),
-                    'lastQty': str(ticker.get('lastVolume', 0)),
-                    'bidPrice': str(ticker.get('bid', 0)),
-                    'bidQty': str(ticker.get('bidVolume', 0)),
-                    'askPrice': str(ticker.get('ask', 0)),
-                    'askQty': str(ticker.get('askVolume', 0)),
-                    'openPrice': str(ticker.get('open', 0)),
-                    'highPrice': str(ticker.get('high', 0)),
-                    'lowPrice': str(ticker.get('low', 0)),
-                    'volume': str(ticker.get('baseVolume', 0)),
-                    'quoteVolume': str(ticker.get('quoteVolume', 0)),
-                    'openTime': ticker.get('timestamp', 0) - 86400000,  # 24 hours ago
-                    'closeTime': ticker.get('timestamp', 0),
-                    'firstId': 0,
-                    'lastId': 0, 
-                    'count': 0
-                }
+                # For single symbol queries, the response might be a dict instead of list
+                if isinstance(response, list):
+                    ticker = next((t for t in response if t.get('symbol') == formatted_symbol), None)
+                    if not ticker:
+                        logging.warning(f"No ticker found for {formatted_symbol}")
+                        return None
+                else:
+                    ticker = response
                 
-                return Binance24hrTicker(response).to_dict()
+                # The response from Binance is already in the correct format
+                return Binance24hrTicker(ticker).to_dict()
             else:
                 logging.info("Fetching 24hr stats for all symbols from Binance API")
-                tickers = self.client.fetch_tickers()
+                response = self.client.ticker_24hr()
                 
                 results = []
-                for symbol, ticker in tickers.items():
-                    # Convert symbol from BTC/USDT to BTCUSDT
-                    binance_symbol = symbol.replace('/', '') if isinstance(symbol, str) else symbol
-                    
-                    # Convert CCXT ticker to Binance format
-                    response = {
-                        'symbol': binance_symbol,
-                        'priceChange': str(ticker.get('change', 0)),
-                        'priceChangePercent': str(ticker.get('percentage', 0)),
-                        'weightedAvgPrice': str(ticker.get('vwap', 0)),
-                        'prevClosePrice': str(ticker.get('previousClose', ticker.get('open', 0))),
-                        'lastPrice': str(ticker.get('last', 0)),
-                        'lastQty': str(ticker.get('lastVolume', 0)),
-                        'bidPrice': str(ticker.get('bid', 0)),
-                        'bidQty': str(ticker.get('bidVolume', 0)),
-                        'askPrice': str(ticker.get('ask', 0)),
-                        'askQty': str(ticker.get('askVolume', 0)),
-                        'openPrice': str(ticker.get('open', 0)),
-                        'highPrice': str(ticker.get('high', 0)),
-                        'lowPrice': str(ticker.get('low', 0)),
-                        'volume': str(ticker.get('baseVolume', 0)),
-                        'quoteVolume': str(ticker.get('quoteVolume', 0)),
-                        'openTime': ticker.get('timestamp', 0) - 86400000,  # 24 hours ago
-                        'closeTime': ticker.get('timestamp', 0),
-                        'firstId': 0,
-                        'lastId': 0, 
-                        'count': 0
-                    }
-                    
-                    results.append(Binance24hrTicker(response).to_dict())
+                for ticker in response:
+                    results.append(Binance24hrTicker(ticker).to_dict())
                 
                 return results
                 
-        except ccxt.BaseError as e:
+        except ClientError as e:
             logging.error(f"Binance API error: {e}")
             raise ValueError(f"Binance API error: {e}")
+        except ServerError as e:
+            logging.error(f"Binance server error: {e}")
+            raise ValueError("Binance API server error. Please try again later.")
         except Exception as e:
             logging.error(f"Error fetching 24hr stats from Binance: {e}")
             raise ValueError(f"Failed to fetch 24hr market statistics from Binance: {e}")
