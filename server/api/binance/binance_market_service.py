@@ -16,7 +16,27 @@ from datetime import datetime
 from typing import Dict, List, Optional, Union, Any, Tuple
 
 # Using ccxt for Binance access (already installed)
-import ccxt
+try:
+    import ccxt
+except ImportError:
+    logging.error("CCXT library not found. Please install it using 'pip install ccxt'")
+    # Create a stub for CCXT to avoid runtime errors when the library is not available
+    class ccxt:
+        class binance:
+            def __init__(self, params=None):
+                pass
+            
+            def fetch_tickers(self):
+                return {}
+            
+            def fetch_ticker(self, symbol):
+                return {"last": 0}
+        
+        # Define exception classes we use
+        class RateLimitExceeded(Exception): pass
+        class DDoSProtection(Exception): pass
+        class ExchangeNotAvailable(Exception): pass
+        class BaseError(Exception): pass
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

@@ -1,101 +1,174 @@
 /**
- * Routes for fetching market price data using the Python Binance Bridge
- * This provides the same interface as the original markets-binance.ts but uses
- * the Python implementation under the hood
+ * Binance Market API Routes using Python Bridge
+ * 
+ * These routes provide access to Binance market data via the Python implementation
+ * which uses the ccxt library for improved stability and proxy support.
  */
 
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { pythonBinanceMarketService } from '../api/binance/python-binance-bridge';
 
 const router = Router();
 
 /**
- * Get all ticker prices (all cryptocurrencies)
+ * Get all market prices from Binance via Python bridge
+ * 
+ * @route GET /api/binance-python/all-markets
+ * @returns {Object} success - Whether the request was successful
+ * @returns {Array} data - Array of market data
  */
-router.get('/api/markets/py-binance/prices', async (req, res) => {
+router.get('/all-markets', async (req: Request, res: Response) => {
   try {
-    const data = await pythonBinanceMarketService.getAllPrices();
-    res.json(data);
+    console.log('[api] Fetching all Binance market pairs via Python bridge');
+    const prices = await pythonBinanceMarketService.getAllPrices();
+    
+    return res.json({
+      success: true,
+      source: 'binance-python',
+      timestamp: new Date().toISOString(),
+      data: prices
+    });
   } catch (error: any) {
-    console.error('Error fetching prices from Python Binance Bridge:', error);
-    res.status(500).json({ error: 'Failed to fetch prices', details: error.message });
+    console.error(`Error fetching Binance markets data via Python bridge: ${error}`);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch market data',
+      message: error.message || String(error)
+    });
   }
 });
 
 /**
  * Get price for a specific symbol
+ * 
+ * @route GET /api/binance-python/price/:symbol
+ * @param {string} symbol - The trading pair symbol (e.g., BTCUSDT)
+ * @returns {Object} success - Whether the request was successful
+ * @returns {Object} data - Price data for the requested symbol
  */
-router.get('/api/markets/py-binance/price/:symbol', async (req, res) => {
+router.get('/price/:symbol', async (req: Request, res: Response) => {
   try {
     const { symbol } = req.params;
-    const data = await pythonBinanceMarketService.getSymbolPrice(symbol);
+    if (!symbol) {
+      return res.status(400).json({
+        success: false,
+        error: 'Symbol parameter is required'
+      });
+    }
+
+    const priceData = await pythonBinanceMarketService.getSymbolPrice(symbol);
     
-    if (!data) {
-      return res.status(404).json({ error: `Price for ${symbol} not found` });
+    if (!priceData) {
+      return res.status(404).json({
+        success: false,
+        error: `Price data not found for symbol: ${symbol}`
+      });
     }
     
-    res.json(data);
+    return res.json({
+      success: true,
+      source: 'binance-python',
+      timestamp: new Date().toISOString(),
+      data: priceData
+    });
   } catch (error: any) {
-    console.error(`Error fetching price for ${req.params.symbol} from Python Binance Bridge:`, error);
-    res.status(500).json({ error: 'Failed to fetch price', details: error.message });
+    console.error(`Error fetching price for ${req.params.symbol}: ${error}`);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch price data',
+      message: error.message || String(error)
+    });
   }
 });
 
 /**
- * Get 24hr ticker statistics (all cryptocurrencies)
+ * Get 24hr statistics for a symbol or all symbols
+ * 
+ * @route GET /api/binance-python/24hr-stats/:symbol?
+ * @param {string} symbol - Optional trading pair symbol
+ * @returns {Object} success - Whether the request was successful
+ * @returns {Object|Array} data - 24hr statistics for the requested symbol(s)
  */
-router.get('/api/markets/py-binance/24hr', async (req, res) => {
-  try {
-    const data = await pythonBinanceMarketService.get24hrStats();
-    res.json(data);
-  } catch (error: any) {
-    console.error('Error fetching 24hr statistics from Python Binance Bridge:', error);
-    res.status(500).json({ error: 'Failed to fetch 24hr statistics', details: error.message });
-  }
-});
-
-/**
- * Get 24hr ticker statistics for a specific symbol
- */
-router.get('/api/markets/py-binance/24hr/:symbol', async (req, res) => {
+router.get('/24hr-stats/:symbol?', async (req: Request, res: Response) => {
   try {
     const { symbol } = req.params;
-    const data = await pythonBinanceMarketService.get24hrStats(symbol);
     
-    if (!data) {
-      return res.status(404).json({ error: `24hr statistics for ${symbol} not found` });
+    const stats = await pythonBinanceMarketService.get24hrStats(symbol);
+    
+    if (!stats) {
+      return res.status(404).json({
+        success: false,
+        error: `24hr statistics not found${symbol ? ` for symbol: ${symbol}` : ''}`
+      });
     }
     
-    res.json(data);
+    return res.json({
+      success: true,
+      source: 'binance-python',
+      timestamp: new Date().toISOString(),
+      data: stats
+    });
   } catch (error: any) {
-    console.error(`Error fetching 24hr statistics for ${req.params.symbol} from Python Binance Bridge:`, error);
-    res.status(500).json({ error: 'Failed to fetch 24hr statistics', details: error.message });
+    console.error(`Error fetching 24hr stats${req.params.symbol ? ` for ${req.params.symbol}` : ''}: ${error}`);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch 24hr statistics',
+      message: error.message || String(error)
+    });
   }
 });
 
 /**
- * Get latest cached prices
+ * Get cached latest prices
+ * 
+ * @route GET /api/binance-python/latest-prices
+ * @returns {Object} success - Whether the request was successful
+ * @returns {Array} data - Array of latest prices
  */
-router.get('/api/markets/py-binance/latest-prices', (req, res) => {
+router.get('/latest-prices', async (req: Request, res: Response) => {
   try {
-    const data = pythonBinanceMarketService.getAllLatestPrices();
-    res.json(data);
+    const prices = pythonBinanceMarketService.getAllLatestPrices();
+    
+    return res.json({
+      success: true,
+      source: 'binance-python',
+      timestamp: new Date().toISOString(),
+      data: prices
+    });
   } catch (error: any) {
-    console.error('Error fetching latest prices from Python Binance Bridge:', error);
-    res.status(500).json({ error: 'Failed to fetch latest prices', details: error.message });
+    console.error(`Error fetching latest prices: ${error}`);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch latest prices',
+      message: error.message || String(error)
+    });
   }
 });
 
 /**
- * Get simulated prices
+ * Get simulated prices (for testing and fallback)
+ * 
+ * @route GET /api/binance-python/simulated-prices
+ * @returns {Object} success - Whether the request was successful
+ * @returns {Object} data - Object of simulated prices
  */
-router.get('/api/markets/py-binance/simulated-prices', (req, res) => {
+router.get('/simulated-prices', async (req: Request, res: Response) => {
   try {
-    const data = pythonBinanceMarketService.getSimulatedPrices();
-    res.json(data);
+    const prices = pythonBinanceMarketService.getSimulatedPrices();
+    
+    return res.json({
+      success: true,
+      source: 'binance-python-simulated',
+      timestamp: new Date().toISOString(),
+      data: prices
+    });
   } catch (error: any) {
-    console.error('Error fetching simulated prices from Python Binance Bridge:', error);
-    res.status(500).json({ error: 'Failed to fetch simulated prices', details: error.message });
+    console.error(`Error fetching simulated prices: ${error}`);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch simulated prices',
+      message: error.message || String(error)
+    });
   }
 });
 

@@ -40,6 +40,12 @@ async function executePythonScript(action: string, args: Record<string, any> = {
       }
     });
     
+    console.log(`Executing Python script: python ${PYTHON_SCRIPT_PATH} ${cmdArgs.join(' ')}`);
+    
+    // Set a timeout for the Python process (30 seconds)
+    const timeoutMs = 30000;
+    let timeoutId: NodeJS.Timeout | null = null;
+    
     // Spawn the Python process
     const process = spawn('python', [PYTHON_SCRIPT_PATH, ...cmdArgs]);
     
@@ -49,33 +55,77 @@ async function executePythonScript(action: string, args: Record<string, any> = {
     
     process.stdout.on('data', (data) => {
       stdout += data.toString();
+      
+      // Log for debugging
+      const lines = data.toString().trim().split('\n');
+      if (lines.length > 0 && lines[0]) {
+        console.log(`Python output: ${lines[0]}${lines.length > 1 ? ` (+${lines.length - 1} more lines)` : ''}`);
+      }
     });
     
     process.stderr.on('data', (data) => {
       stderr += data.toString();
+      console.error(`Python error: ${data.toString().trim()}`);
     });
+    
+    // Set timeout to kill process if it takes too long
+    timeoutId = setTimeout(() => {
+      console.error(`Python process timed out after ${timeoutMs}ms`);
+      process.kill();
+      reject(new Error(`Python script execution timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
     
     // Handle process completion
     process.on('close', (code) => {
+      // Clear the timeout
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
       if (code === 0) {
         try {
-          const result = JSON.parse(stdout);
-          resolve(result);
+          // Try to parse the output as JSON
+          if (stdout.trim()) {
+            const result = JSON.parse(stdout);
+            resolve(result);
+          } else {
+            console.warn('Python script returned empty output');
+            resolve(null);
+          }
         } catch (e) {
           console.error('Error parsing Python script output:', e);
-          reject(new Error(`Failed to parse output: ${stdout}`));
+          console.error('Raw output:', stdout);
+          
+          // If parsing fails but we have output, check if it's a known error pattern
+          if (stdout.includes('Authentication required') || stdout.includes('API key required')) {
+            reject(new Error('Binance API authentication required'));
+          } else if (stdout.includes('Rate limit')) {
+            reject(new Error('Binance API rate limit exceeded'));
+          } else {
+            reject(new Error(`Failed to parse output: ${stdout.substring(0, 200)}...`));
+          }
         }
       } else {
         console.error(`Python script exited with code ${code}`);
         console.error(`Stderr: ${stderr}`);
-        reject(new Error(`Python script failed with code ${code}: ${stderr}`));
+        
+        // Try to extract a meaningful error message
+        const errorMatch = stderr.match(/Error: (.+?)$/m);
+        const errorMessage = errorMatch ? errorMatch[1] : stderr;
+        
+        reject(new Error(`Python script failed: ${errorMessage}`));
       }
     });
     
     // Handle process errors
     process.on('error', (err) => {
+      // Clear the timeout
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
       console.error('Failed to start Python process:', err);
-      reject(err);
+      reject(new Error(`Failed to start Python process: ${err.message}`));
     });
   });
 }
