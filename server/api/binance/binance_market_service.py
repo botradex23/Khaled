@@ -254,52 +254,15 @@ class BinanceMarketPriceService:
     
     def get_simulated_prices(self) -> Dict[str, float]:
         """
-        Get simulated prices when real data is unavailable
+        This method no longer provides simulated prices but throws an error instead
         
         Returns:
-            Dictionary of symbol -> price mappings
+            Never returns normally
+            
+        Raises:
+            ValueError: Always raises an error indicating that real data is required
         """
-        # If we have simulated prices cached, use them
-        if self._last_simulated_prices:
-            return {
-                symbol: float(price) if isinstance(price, str) else price
-                for symbol, price in self._last_simulated_prices.items()
-            }
-        
-        # If we have live prices, use them
-        if self.live_prices:
-            return dict(self.live_prices)
-        
-        # Otherwise, generate default prices
-        default_prices = {
-            'BTCUSDT': 69250.25,
-            'ETHUSDT': 3475.50,
-            'BNBUSDT': 608.75,
-            'SOLUSDT': 188.15,
-            'XRPUSDT': 0.6125,
-            'ADAUSDT': 0.45,
-            'DOGEUSDT': 0.16,
-            'DOTUSDT': 8.25,
-            'MATICUSDT': 0.78,
-            'LINKUSDT': 15.85,
-            'AVAXUSDT': 41.28,
-            'UNIUSDT': 12.35,
-            'SHIBUSDT': 0.00002654,
-            'LTCUSDT': 93.21,
-            'ATOMUSDT': 11.23,
-            'NEARUSDT': 7.15,
-            'BCHUSDT': 523.75,
-            'FILUSDT': 8.93,
-            'TRXUSDT': 0.1426,
-            'XLMUSDT': 0.1392
-        }
-        
-        # Add slight randomness to prices (±1%)
-        import random
-        return {
-            symbol: price * (1 + (random.random() * 0.02 - 0.01))
-            for symbol, price in default_prices.items()
-        }
+        raise ValueError("Market data unavailable. Real API data is required. Please check your API keys and connection.")
     
     def get_all_prices(self) -> List[Dict[str, str]]:
         """
@@ -322,17 +285,17 @@ class BinanceMarketPriceService:
             
             return results
         except ccxt.RateLimitExceeded as e:
-            logging.warning(f"API rate limit exceeded, using cached data: {e}")
-            return self._get_simulated_ticker_prices()
+            logging.error(f"API rate limit exceeded: {e}")
+            raise ValueError("Binance API rate limit exceeded. Please try again later.")
         except ccxt.DDoSProtection as e:
-            logging.warning(f"Binance API access restricted (DDoS protection): {e}")
-            return self._get_simulated_ticker_prices()
+            logging.error(f"Binance API access restricted (DDoS protection): {e}")
+            raise ValueError("Binance API access restricted. Please try again later.")
         except ccxt.ExchangeNotAvailable as e:
-            logging.warning(f"Binance API not available: {e}")
-            return self._get_simulated_ticker_prices()
+            logging.error(f"Binance API not available: {e}")
+            raise ValueError("Binance API not available. Please try again later.")
         except Exception as e:
             logging.error(f"Error fetching all prices from Binance: {e}")
-            return self._get_simulated_ticker_prices()
+            raise ValueError(f"Failed to fetch market data from Binance: {e}")
     
     def get_symbol_price(self, symbol: str) -> Optional[Dict[str, str]]:
         """
@@ -467,14 +430,10 @@ class BinanceMarketPriceService:
                 
         except ccxt.BaseError as e:
             logging.error(f"Binance API error: {e}")
-            if symbol:
-                return self._get_simulated_24hr_stats(symbol)
-            return None
+            raise ValueError(f"Binance API error: {e}")
         except Exception as e:
             logging.error(f"Error fetching 24hr stats from Binance: {e}")
-            if symbol:
-                return self._get_simulated_24hr_stats(symbol)
-            return None
+            raise ValueError(f"Failed to fetch 24hr market statistics from Binance: {e}")
     
     def _get_simulated_ticker_prices(self) -> List[Dict[str, str]]:
         """

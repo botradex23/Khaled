@@ -153,24 +153,13 @@ router.get('/latest-prices', async (req: Request, res: Response) => {
  * @returns {Object} data - Object of simulated prices
  */
 router.get('/simulated-prices', async (req: Request, res: Response) => {
-  try {
-    // Get simulated prices from Python
-    const prices = await pythonBinanceMarketService.getSimulatedPrices();
-    
-    return res.json({
-      success: true,
-      source: 'binance-python-simulated',
-      timestamp: new Date().toISOString(),
-      data: prices
-    });
-  } catch (error: any) {
-    console.error(`Error fetching simulated prices: ${error}`);
-    return res.status(500).json({
-      success: false,
-      error: 'Failed to fetch simulated prices',
-      message: error.message || String(error)
-    });
-  }
+  // Always return an error now - we don't want to use simulated prices
+  return res.status(503).json({
+    success: false,
+    error: 'Market data unavailable',
+    message: 'Real API data is required. Please check your API keys and connection.',
+    requiresAuthentication: true
+  });
 });
 
 export default router;

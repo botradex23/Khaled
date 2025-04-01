@@ -214,24 +214,13 @@ export class PythonBinanceMarketPriceService extends EventEmitter {
   
   /**
    * Get simulated prices when real data is not available
+   * This method now throws an error instead of providing simulated data
    * 
    * @returns Record of simulated prices
+   * @throws Error Always throws an error indicating that real data is required
    */
   public async getSimulatedPrices(): Promise<Record<string, number>> {
-    try {
-      // Call the Python script to get simulated prices
-      const result = await executePythonScript('simulated-prices');
-      
-      // Store in local cache too
-      this.livePrices = {...this.livePrices, ...result};
-      
-      return result;
-    } catch (error) {
-      console.error('Error fetching simulated prices from Python service:', error);
-      
-      // Fallback to the cached prices
-      return this.livePrices;
-    }
+    throw new Error('Market data unavailable. Real API data is required. Please check your API keys and connection.');
   }
   
   /**
@@ -248,6 +237,11 @@ export class PythonBinanceMarketPriceService extends EventEmitter {
       result.forEach((ticker: BinanceTickerPrice) => {
         this.livePrices[ticker.symbol] = parseFloat(ticker.price);
       });
+      
+      // If we got no results, throw an error
+      if (!result || result.length === 0) {
+        throw new Error('No market data available from Binance API');
+      }
       
       return result;
     } catch (error) {
