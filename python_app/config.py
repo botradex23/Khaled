@@ -17,9 +17,12 @@ class Config:
     # Binance API settings
     BINANCE_BASE_URL = 'https://api.binance.com'
     BINANCE_TEST_URL = 'https://testnet.binancefuture.com'
+    # API keys are optional - public endpoints don't require authentication
     BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY', '')
     BINANCE_SECRET_KEY = os.environ.get('BINANCE_SECRET_KEY', '')
     USE_BINANCE_TESTNET = os.environ.get('USE_BINANCE_TESTNET', 'False').lower() in ('true', '1', 't')
+    # Flag to determine if we should use authentication at all (set to False for public-only access)
+    USE_AUTHENTICATION = False  # We're prioritizing public access for better guest experience
     
     # Proxy configuration for bypassing geo-restrictions
     USE_PROXY = os.environ.get('USE_PROXY', 'True').lower() in ('true', '1', 't')

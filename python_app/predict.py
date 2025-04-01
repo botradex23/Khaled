@@ -99,23 +99,16 @@ def fetch_recent_data(symbol: str, interval: str = '4h', limit: int = 100) -> pd
     try:
         logging.info(f"Fetching recent data for {symbol} ({interval} timeframe)")
         
-        # Use SDK-provided credentials or environment variables
-        api_key = BINANCE_API_KEY or os.environ.get('BINANCE_API_KEY')
-        api_secret = BINANCE_SECRET_KEY or os.environ.get('BINANCE_API_SECRET')
-        
-        # Set up client options
+        # Set up client options (always use public endpoints for prediction data)
         client_options = {
             'base_url': BINANCE_BASE_URL,
             'timeout': 30  # Extended timeout for API requests
         }
         
-        # Initialize the Binance Spot client with our configuration
-        if api_key and api_secret:
-            logging.info("Using Binance API keys for authenticated request")
-            client = Spot(key=api_key, secret=api_secret, **client_options)
-        else:
-            logging.info("No API keys found. Using public API endpoints")
-            client = Spot(**client_options)
+        # Always initialize the Binance Spot client for public data access
+        # We don't need authentication for klines/candlestick data
+        logging.info("Using public Binance API endpoints for market data")
+        client = Spot(**client_options)
         
         # Fetch klines (candlestick) data directly through the SDK
         logging.info(f"Requesting data from Binance using official SDK (base URL: {BINANCE_BASE_URL})")
