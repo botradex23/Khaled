@@ -168,6 +168,105 @@ export class BinanceApiService {
     }
     return this.request('/api/v3/ticker/24hr', params, 'GET', 'PUBLIC');
   }
+  
+  /**
+   * Get 24hr ticker for a specific symbol
+   */
+  async get24hrTicker(symbol: string): Promise<any> {
+    return this.get24hrStats(symbol);
+  }
+  
+  /**
+   * Get all 24hr tickers
+   */
+  async getAllTickers24hr(): Promise<any> {
+    return this.get24hrStats();
+  }
+  
+  /**
+   * Get ticker price for a specific symbol
+   */
+  async getSymbolPrice(symbol: string): Promise<any> {
+    return this.getTickerPrice(symbol);
+  }
+  
+  /**
+   * Get all tickers
+   */
+  async getAllTickers(): Promise<any> {
+    return this.getAllTickerPrices();
+  }
+  
+  /**
+   * Test API connectivity and signing (authenticated)
+   */
+  async testConnectivity(): Promise<{ success: boolean, message?: string }> {
+    try {
+      await this.getAccountInfo();
+      return { success: true, message: 'Connected successfully to Binance API' };
+    } catch (error: any) {
+      return { 
+        success: false, 
+        message: error.message 
+      };
+    }
+  }
+  
+  /**
+   * Get account balances with USD conversion
+   */
+  async getAccountBalancesWithUSD(): Promise<any[]> {
+    const accountInfo = await this.getAccountInfo();
+    const tickers = await this.getAllTickerPrices();
+    
+    // Get only non-zero balances
+    const balances = accountInfo.balances.filter(
+      (balance: any) => 
+        parseFloat(balance.free) > 0 || 
+        parseFloat(balance.locked) > 0
+    );
+    
+    // Calculate USD value for each balance
+    return await Promise.all(
+      balances.map(async (balance: any) => {
+        const asset = balance.asset;
+        const free = parseFloat(balance.free);
+        const locked = parseFloat(balance.locked);
+        const total = free + locked;
+        
+        let valueUSD = 0;
+        
+        if (asset === 'USDT' || asset === 'BUSD' || asset === 'USDC' || asset === 'TUSD' || asset === 'DAI') {
+          valueUSD = total;
+        } else {
+          // Try to find the ticker for the asset with USDT
+          const tickerSymbol = `${asset}USDT`;
+          const ticker = tickers.find((t: any) => t.symbol === tickerSymbol);
+          
+          if (ticker) {
+            valueUSD = total * parseFloat(ticker.price);
+          } else {
+            // Try to find BTC pair and convert via BTC
+            const btcTickerSymbol = `${asset}BTC`;
+            const btcTicker = tickers.find((t: any) => t.symbol === btcTickerSymbol);
+            const btcUsdtTicker = tickers.find((t: any) => t.symbol === 'BTCUSDT');
+            
+            if (btcTicker && btcUsdtTicker) {
+              valueUSD = total * parseFloat(btcTicker.price) * parseFloat(btcUsdtTicker.price);
+            }
+          }
+        }
+        
+        return {
+          asset,
+          free: balance.free,
+          locked: balance.locked,
+          total,
+          valueUSD: valueUSD > 0 ? valueUSD : undefined
+        };
+      })
+    );
+  }
 
   /**
    * Get order book

@@ -6,15 +6,11 @@
 import { 
   BinanceApiService, 
   createBinanceServiceWithCustomCredentials, 
-  binanceService,
-  BinanceApiConfig,
-  BinanceAccountInfo
+  binanceService
 } from './binanceService';
 
 export {
-  BinanceApiService,
-  createBinanceServiceWithCustomCredentials,
-  binanceService,
-  BinanceApiConfig,
-  BinanceAccountInfo
+  BinanceApiService, 
+  createBinanceServiceWithCustomCredentials, 
+  binanceService
 };

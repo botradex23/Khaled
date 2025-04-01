@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { createBinanceService } from '../api/binance';
+import { createBinanceServiceWithCustomCredentials as createBinanceService } from '../api/binance';
 import { storage } from '../storage';
-import { ensureAuthenticated } from '../auth';
+import { ensureAuthenticated } from '../middleware/auth';
 import { VPN_CONFIG, testProxyConnection } from '../api/binance/proxy-config';
 import { getBinanceApiKeys, maskSecret } from '../middleware/getBinanceApiKeys';
 
