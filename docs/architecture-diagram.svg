@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Rectangle -->
+  <rect width="800" height="600" fill="#f8f9fa" />
+  
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="22" text-anchor="middle" font-weight="bold">CryptoTrade System Architecture</text>
+  
+  <!-- Frontend Layer -->
+  <rect x="100" y="70" width="600" height="100" rx="10" ry="10" fill="#e6f3ff" stroke="#003366" stroke-width="2" />
+  <text x="400" y="90" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Frontend Layer</text>
+  
+  <rect x="120" y="100" width="160" height="50" rx="8" ry="8" fill="#ffffff" stroke="#0066cc" stroke-width="1" />
+  <text x="200" y="130" font-family="Arial" font-size="14" text-anchor="middle">React UI (TypeScript)</text>
+  
+  <rect x="320" y="100" width="160" height="50" rx="8" ry="8" fill="#ffffff" stroke="#0066cc" stroke-width="1" />
+  <text x="400" y="130" font-family="Arial" font-size="14" text-anchor="middle">Chart.js Visualizations</text>
+  
+  <rect x="520" y="100" width="160" height="50" rx="8" ry="8" fill="#ffffff" stroke="#0066cc" stroke-width="1" />
+  <text x="600" y="130" font-family="Arial" font-size="14" text-anchor="middle">Tailwind CSS</text>
+  
+  <!-- Node.js Backend Layer -->
+  <rect x="100" y="200" width="600" height="100" rx="10" ry="10" fill="#e6ffe6" stroke="#006600" stroke-width="2" />
+  <text x="400" y="220" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Node.js Backend Layer</text>
+  
+  <rect x="120" y="230" width="160" height="50" rx="8" ry="8" fill="#ffffff" stroke="#009900" stroke-width="1" />
+  <text x="200" y="260" font-family="Arial" font-size="14" text-anchor="middle">Express.js Server</text>
+  
+  <rect x="320" y="230" width="160" height="50" rx="8" ry="8" fill="#ffffff" stroke="#009900" stroke-width="1" />
+  <text x="400" y="260" font-family="Arial" font-size="14" text-anchor="middle">API Key Management</text>
+  
+  <rect x="520" y="230" width="160" height="50" rx="8" ry="8" fill="#ffffff" stroke="#009900" stroke-width="1" />
+  <text x="600" y="260" font-family="Arial" font-size="14" text-anchor="middle">Geo IP Proxy Service</text>
+  
+  <!-- Python Backend Layer -->
+  <rect x="100" y="330" width="600" height="100" rx="10" ry="10" fill="#fff0e6" stroke="#994c00" stroke-width="2" />
+  <text x="400" y="350" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Python Backend Layer</text>
+  
+  <rect x="120" y="360" width="160" height="50" rx="8" ry="8" fill="#ffffff" stroke="#cc6600" stroke-width="1" />
+  <text x="200" y="390" font-family="Arial" font-size="14" text-anchor="middle">Flask API Service</text>
+  
+  <rect x="320" y="360" width="160" height="50" rx="8" ry="8" fill="#ffffff" stroke="#cc6600" stroke-width="1" />
+  <text x="400" y="390" font-family="Arial" font-size="14" text-anchor="middle">AI Trading Algorithms</text>
+  
+  <rect x="520" y="360" width="160" height="50" rx="8" ry="8" fill="#ffffff" stroke="#cc6600" stroke-width="1" />
+  <text x="600" y="390" font-family="Arial" font-size="14" text-anchor="middle">Binance Connector SDK</text>
+  
+  <!-- Database Layer -->
+  <rect x="300" y="460" width="200" height="60" rx="10" ry="10" fill="#f2e6ff" stroke="#4d0099" stroke-width="2" />
+  <text x="400" y="480" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Database Layer</text>
+  <circle cx="400" cy="500" r="15" fill="#ffffff" stroke="#6600cc" stroke-width="1" />
+  <text x="400" y="505" font-family="Arial" font-size="14" text-anchor="middle">MongoDB</text>
+  
+  <!-- External Services -->
+  <rect x="100" y="550" width="600" height="30" rx="10" ry="10" fill="#ffe6e6" stroke="#990000" stroke-width="2" />
+  <text x="400" y="570" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">External Exchange APIs (Binance, OKX, Bitget)</text>
+  
+  <!-- Connection Lines -->
+  <!-- Frontend to Node.js -->
+  <line x1="200" y1="150" x2="200" y2="230" stroke="#000000" stroke-width="2" stroke-dasharray="5,5" />
+  <line x1="400" y1="150" x2="400" y2="230" stroke="#000000" stroke-width="2" stroke-dasharray="5,5" />
+  
+  <!-- Node.js to Python -->
+  <line x1="200" y1="280" x2="200" y2="360" stroke="#000000" stroke-width="2" stroke-dasharray="5,5" />
+  <line x1="400" y1="280" x2="400" y2="360" stroke="#000000" stroke-width="2" stroke-dasharray="5,5" />
+  
+  <!-- Node.js & Python to Database -->
+  <line x1="200" y1="410" x2="350" y2="490" stroke="#000000" stroke-width="2" stroke-dasharray="5,5" />
+  <line x1="400" y1="410" x2="400" y2="485" stroke="#000000" stroke-width="2" stroke-dasharray="5,5" />
+  <line x1="600" y1="280" x2="450" y2="490" stroke="#000000" stroke-width="2" stroke-dasharray="5,5" />
+  
+  <!-- All Layers to External APIs -->
+  <line x1="200" y1="410" x2="200" y2="550" stroke="#000000" stroke-width="2" stroke-dasharray="5,5" />
+  <line x1="400" y1="410" x2="400" y2="550" stroke="#000000" stroke-width="2" stroke-dasharray="5,5" />
+  <line x1="600" y1="410" x2="600" y2="550" stroke="#000000" stroke-width="2" stroke-dasharray="5,5" />
+  <line x1="600" y1="280" x2="600" y2="550" stroke="#000000" stroke-width="2" stroke-dasharray="5,5" />
+</svg>

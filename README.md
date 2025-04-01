@@ -178,6 +178,8 @@ For more detailed information, please refer to these documentation files:
 - [Detailed Installation Guide](./INSTALLATION.md) - Step-by-step instructions for various deployment scenarios
 - [Package Documentation](./PACKAGES.md) - Information about dependencies and their purposes
 - [Environment Variables](./.env.example) - Template for required environment variables
+- [API Documentation](./API.md) - Complete API reference with request/response examples
+- [System Architecture](./docs/ARCHITECTURE.md) - High-level architecture diagrams and component details
 
 ## Contributing
 
