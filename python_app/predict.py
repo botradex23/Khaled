@@ -100,9 +100,20 @@ def fetch_recent_data(symbol: str, interval: str = '4h', limit: int = 100) -> pd
         logging.info(f"Fetching recent data for {symbol} ({interval} timeframe)")
         
         # Set up client options (always use public endpoints for prediction data)
+        # Setup proxy configuration if enabled
+        proxies = {}
+        if active_config.USE_PROXY:
+            proxy_url = f"http://{active_config.PROXY_USERNAME}:{active_config.PROXY_PASSWORD}@{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
+            proxies = {
+                "http": proxy_url,
+                "https": proxy_url
+            }
+            logging.info(f"Using proxy connection to Binance API via {active_config.PROXY_IP}:{active_config.PROXY_PORT}")
+        
         client_options = {
             'base_url': BINANCE_BASE_URL,
-            'timeout': 30  # Extended timeout for API requests
+            'timeout': 30,  # Extended timeout for API requests
+            'proxies': proxies if active_config.USE_PROXY else None
         }
         
         # Always initialize the Binance Spot client for public data access

@@ -16,31 +16,46 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import prediction functionality
 from predict import make_prediction, get_sample_data
+from config import active_config
 
 # Create blueprint
 ml_bp = Blueprint('ml', __name__, url_prefix='/api/ml')
 
 def get_current_crypto_prices():
-    """Fetch current cryptocurrency prices from OKX public API"""
+    """Fetch current cryptocurrency prices from Binance API through proxy"""
     try:
-        # Use OKX public API to get BTC and ETH prices
-        response = requests.get('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT,ETH-USDT', 
-                              timeout=2)
-        data = response.json()
+        # Setup proxy configuration for Binance API
+        proxies = {}
+        if active_config.USE_PROXY:
+            proxy_url = f"http://{active_config.PROXY_USERNAME}:{active_config.PROXY_PASSWORD}@{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
+            proxies = {
+                "http": proxy_url,
+                "https": proxy_url
+            }
+            logging.info(f"Using proxy connection to Binance API via {active_config.PROXY_IP}:{active_config.PROXY_PORT}")
         
-        if data and data.get('code') == '0' and data.get('data'):
-            result = {}
-            for ticker in data['data']:
-                symbol = ticker['instId'].split('-')[0]  # Extract BTC or ETH
-                price = float(ticker['last'])
-                result[symbol] = price
-            return result
-        else:
-            # Default fallback values if API call fails
-            return {'BTC': 69000, 'ETH': 3600}
+        # Create Binance client with proxy settings
+        from binance.spot import Spot
+        client_options = {
+            'base_url': active_config.BINANCE_BASE_URL,
+            'timeout': 10,
+            'proxies': proxies if active_config.USE_PROXY else None
+        }
+        
+        client = Spot(**client_options)
+        
+        # Get prices from Binance API
+        logging.info("Fetching current prices from Binance API")
+        btc_ticker = client.ticker_price('BTCUSDT')
+        eth_ticker = client.ticker_price('ETHUSDT')
+        
+        btc_price = float(btc_ticker['price']) if 'price' in btc_ticker else 69000
+        eth_price = float(eth_ticker['price']) if 'price' in eth_ticker else 3600
+        
+        return {'BTC': btc_price, 'ETH': eth_price}
     except Exception as e:
-        logging.error(f"Error fetching crypto prices: {e}")
-        # Default fallback values if API call fails
+        logging.error(f"Error fetching crypto prices from Binance API: {e}")
+        # Default values if Binance API call fails
         return {'BTC': 69000, 'ETH': 3600}
 
 @ml_bp.route('/status', methods=['GET'])
@@ -99,7 +114,7 @@ def predict(symbol):
                 import random
                 from datetime import datetime
                 
-                # Get current prices from OKX API (more accurate than hardcoded ranges)
+                # Get current prices from Binance API (more accurate than hardcoded ranges)
                 prices = get_current_crypto_prices()
                 
                 if symbol.upper().startswith('BTC'):
@@ -142,7 +157,7 @@ def predict(symbol):
             import random
             from datetime import datetime
             
-            # Get current prices from OKX API
+            # Get current prices from Binance API
             prices = get_current_crypto_prices()
             
             if symbol.upper().startswith('BTC'):
@@ -186,7 +201,7 @@ def predict(symbol):
         import random
         from datetime import datetime
         
-        # Get current prices from OKX API
+        # Get current prices from Binance API
         prices = get_current_crypto_prices()
         
         if symbol.upper().startswith('BTC'):
@@ -242,7 +257,7 @@ def batch_predictions():
             use_sample = data.get('sample', False)
             interval = data.get('interval', '4h')
         
-        # Get current prices from OKX API
+        # Get current prices from Binance API
         prices = get_current_crypto_prices()
         
         # Get predictions for each symbol
@@ -303,7 +318,7 @@ def batch_predictions():
         import random
         from datetime import datetime
         
-        # Get current prices from OKX API
+        # Get current prices from Binance API
         prices = get_current_crypto_prices()
         
         default_symbols = ['BTCUSDT', 'ETHUSDT']
