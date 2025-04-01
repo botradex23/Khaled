@@ -32,6 +32,7 @@ import CompleteProfile from "@/pages/complete-profile";
 import Binance from "@/pages/binance";
 import LiveMarket from "@/pages/live-market";
 import RiskManagement from "@/pages/risk-management";
+import MLPredictionsPage from "@/pages/ml-predictions";
 
 function Router() {
   const { isAuthenticated, needsProfileCompletion, isLoading } = useAuth();
@@ -63,6 +64,7 @@ function Router() {
       <Route path="/complete-profile" component={CompleteProfile} />
       <Route path="/bot-demo" component={BotDemo} />
       <Route path="/learn" component={Learn} />
+      <Route path="/ml-predictions" component={MLPredictionsPage} />
       <Route path="/ai-grid-bot" component={AIGridBot} />
       <Route path="/dca-bot" component={DcaBot} />
       <Route path="/macd-bot" component={MacdBot} />
