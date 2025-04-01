@@ -2,11 +2,12 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TrendingUp, TrendingDown, Pause, BarChart3, RefreshCw, BrainCircuit, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, Pause, BarChart3, RefreshCw, BrainCircuit, Clock, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { useMlPrediction, MLPrediction } from '@/hooks/useMlPredictions';
 import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface PredictionCardProps {
   symbol: string;
@@ -163,17 +164,37 @@ export function MLPredictionCard({
           </>
         ) : null}
       </CardContent>
-      <CardFooter className="pt-0 text-xs text-muted-foreground flex items-center gap-1">
-        <Clock className="h-3 w-3" />
-        {isLoading ? (
-          <Skeleton className="h-3 w-24" />
-        ) : (
-          <>
-            Last updated: {lastUpdated}
-            {prediction?.is_sample_data && (
-              <Badge variant="outline" className="ml-2 text-xs">Sample Data</Badge>
-            )}
-          </>
+      <CardFooter className="pt-0 text-xs text-muted-foreground flex flex-col gap-1 w-full">
+        <div className="flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          {isLoading ? (
+            <Skeleton className="h-3 w-24" />
+          ) : (
+            <span>Last updated: {lastUpdated}</span>
+          )}
+        </div>
+        
+        {prediction?.is_sample_data && (
+          <div className="flex items-center justify-between w-full mt-1">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 text-amber-600 dark:text-amber-500">
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>Using sample data</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs max-w-[200px]">
+                    This prediction uses generated sample data because real-time market data 
+                    couldn't be retrieved from Binance. For accurate trading signals, 
+                    check API connectivity.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Badge variant="outline" className="text-xs bg-amber-500/10">Sample Data</Badge>
+          </div>
         )}
       </CardFooter>
     </Card>
