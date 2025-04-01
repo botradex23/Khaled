@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}CryptoTrade Dashboard{% endblock %}
+
+{% block styles %}
+<style>
+    .dashboard-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    @media (min-width: 768px) {
+        .dashboard-container {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .dashboard-container {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    
+    .dashboard-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .dashboard-card h3 {
+        color: #2980b9;
+        margin-top: 0;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    
+    .dashboard-card p {
+        margin-bottom: 5px;
+    }
+    
+    .price-up {
+        color: #27ae60;
+    }
+    
+    .price-down {
+        color: #e74c3c;
+    }
+    
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+    }
+    
+    .action-btn {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.3s ease;
+    }
+    
+    .action-btn:hover {
+        background-color: #2980b9;
+    }
+    
+    .symbol-search {
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .symbol-search input {
+        width: 70%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+    }
+    
+    .symbol-search button {
+        padding: 8px 15px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-left: 10px;
+    }
+    
+    .symbol-search button:hover {
+        background-color: #2980b9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <h1>CryptoTrade Market Dashboard</h1>
+    <p>Welcome to the CryptoTrade dashboard. Here you can monitor cryptocurrency prices and market statistics.</p>
+    
+    <div class="symbol-search">
+        <h3>Search for a specific cryptocurrency</h3>
+        <form action="/api/binance/web/price/" method="GET" id="symbolSearchForm">
+            <input type="text" id="symbolInput" placeholder="Enter symbol (e.g., BTCUSDT)" required>
+            <button type="button" onclick="searchSymbol()">Get Price</button>
+        </form>
+    </div>
+    
+    <h2>Popular Cryptocurrencies</h2>
+    
+    <div class="dashboard-container">
+        <div class="dashboard-card">
+            <h3>Bitcoin (BTCUSDT)</h3>
+            <p><a href="/api/binance/web/price/BTCUSDT">View Current Price</a></p>
+            <p><a href="/api/binance/web/ticker/BTCUSDT">View 24hr Statistics</a></p>
+        </div>
+        
+        <div class="dashboard-card">
+            <h3>Ethereum (ETHUSDT)</h3>
+            <p><a href="/api/binance/web/price/ETHUSDT">View Current Price</a></p>
+            <p><a href="/api/binance/web/ticker/ETHUSDT">View 24hr Statistics</a></p>
+        </div>
+        
+        <div class="dashboard-card">
+            <h3>Binance Coin (BNBUSDT)</h3>
+            <p><a href="/api/binance/web/price/BNBUSDT">View Current Price</a></p>
+            <p><a href="/api/binance/web/ticker/BNBUSDT">View 24hr Statistics</a></p>
+        </div>
+        
+        <div class="dashboard-card">
+            <h3>Solana (SOLUSDT)</h3>
+            <p><a href="/api/binance/web/price/SOLUSDT">View Current Price</a></p>
+            <p><a href="/api/binance/web/ticker/SOLUSDT">View 24hr Statistics</a></p>
+        </div>
+        
+        <div class="dashboard-card">
+            <h3>Ripple (XRPUSDT)</h3>
+            <p><a href="/api/binance/web/price/XRPUSDT">View Current Price</a></p>
+            <p><a href="/api/binance/web/ticker/XRPUSDT">View 24hr Statistics</a></p>
+        </div>
+        
+        <div class="dashboard-card">
+            <h3>Cardano (ADAUSDT)</h3>
+            <p><a href="/api/binance/web/price/ADAUSDT">View Current Price</a></p>
+            <p><a href="/api/binance/web/ticker/ADAUSDT">View 24hr Statistics</a></p>
+        </div>
+    </div>
+    
+    <h2>API Actions</h2>
+    
+    <div class="dashboard-container">
+        <div class="dashboard-card">
+            <h3>Binance API Status</h3>
+            <p>Check if the Binance API service is running</p>
+            <div class="actions">
+                <a href="/api/binance/web/status" class="action-btn">Check Status</a>
+            </div>
+        </div>
+        
+        <div class="dashboard-card">
+            <h3>Cryptocurrency Prices</h3>
+            <p>View all current cryptocurrency prices</p>
+            <div class="actions">
+                <a href="/api/binance/web/prices" class="action-btn">View All Prices</a>
+            </div>
+        </div>
+        
+        <div class="dashboard-card">
+            <h3>Test Flash Messages</h3>
+            <p>Test the different types of flash messages</p>
+            <div class="actions">
+                <a href="/test-flash?type=success&redirect=dashboard" class="action-btn">Success</a>
+                <a href="/test-flash?type=info&redirect=dashboard" class="action-btn">Info</a>
+                <a href="/test-flash?type=warning&redirect=dashboard" class="action-btn">Warning</a>
+                <a href="/test-flash?type=error&redirect=dashboard" class="action-btn">Error</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function searchSymbol() {
+            const symbol = document.getElementById('symbolInput').value.toUpperCase();
+            if (symbol) {
+                window.location.href = `/api/binance/web/price/${symbol}`;
+            }
+        }
+        
+        // Allow form submission with Enter key
+        document.getElementById('symbolInput').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                searchSymbol();
+            }
+        });
+    </script>
+{% endblock %}

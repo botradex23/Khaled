@@ -7,7 +7,8 @@ It initializes the app, registers blueprints for API routes, and handles CORS.
 
 import os
 import logging
-from flask import Flask, jsonify, render_template, request
+from functools import wraps
+from flask import Flask, jsonify, render_template, request, flash, redirect, url_for, session
 from flask_cors import CORS
 
 from config import active_config
@@ -39,6 +40,9 @@ def create_app(config=None):
         app.config.from_object(active_config)
     else:
         app.config.from_object(config)
+        
+    # Set a secret key for session management (required for flash messages)
+    app.secret_key = app.config.get('SECRET_KEY', os.urandom(24))
     
     # Enable CORS
     CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -74,6 +78,30 @@ def create_app(config=None):
         """Root route"""
         return render_template('index.html')
     
+    # Dashboard route
+    @app.route('/dashboard')
+    def dashboard():
+        """Dashboard page showing market data"""
+        return render_template('dashboard.html')
+    
+    # Test flash messages route
+    @app.route('/test-flash')
+    def test_flash():
+        """Test flash message functionality"""
+        flash_type = request.args.get('type', 'info')
+        redirect_to = request.args.get('redirect', 'index')
+        
+        if flash_type == 'success':
+            flash('Success message example - Operation completed successfully!', 'success')
+        elif flash_type == 'error' or flash_type == 'danger':
+            flash('Error message example - Something went wrong!', 'error')
+        elif flash_type == 'warning':
+            flash('Warning message example - Please check your inputs!', 'warning')
+        else:
+            flash('Info message example - This is an informational message.', 'info')
+        
+        return redirect(url_for(redirect_to))
+    
     # Add system status route
     @app.route('/api/status')
     def status():
@@ -88,6 +116,9 @@ def create_app(config=None):
         })
     
     return app
+
+# Import utility functions from utils.py
+from utils import flash_message, handle_api_response
 
 app = create_app()
 
