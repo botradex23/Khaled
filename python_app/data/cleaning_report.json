@@ -1,0 +1,247 @@
+{
+  "cleaning_timestamp": "2025-04-01T22:15:26.749557",
+  "input_directory": "data/validated",
+  "output_directory": "data/cleaned",
+  "files_processed": 3,
+  "files_succeeded": 3,
+  "files_failed": 0,
+  "cleaning_reports": [
+    {
+      "symbol": "BTCUSDT",
+      "input_file": "data/validated/binance_btcusdt_5m_data.csv",
+      "output_file": "data/cleaned/binance_btcusdt_5m_data.csv",
+      "success": true,
+      "cleaning_timestamp": "2025-04-01T22:15:26.616233",
+      "original_rows": 2016,
+      "cleaned_rows": 2016,
+      "rows_removed": 0,
+      "duplicates_removed": 0,
+      "missing_values": {
+        "timestamp": 0,
+        "open": 0,
+        "high": 0,
+        "low": 0,
+        "close": 0,
+        "volume": 0
+      },
+      "timestamps_changed": true,
+      "outliers_detected": {
+        "volume": 164
+      },
+      "original_stats": {
+        "row_count": 2016,
+        "min_values": {
+          "open": 81361.5,
+          "high": 81476.0,
+          "low": 81278.52,
+          "close": 81361.51,
+          "volume": 4.50545
+        },
+        "max_values": {
+          "open": 88235.35,
+          "high": 88275.0,
+          "low": 88192.56,
+          "close": 88235.34,
+          "volume": 557.67832
+        },
+        "mean_values": {
+          "open": 84623.97597718253,
+          "high": 84688.89316468254,
+          "low": 84556.37970238096,
+          "close": 84622.77397321428,
+          "volume": 62.79119443948412
+        },
+        "time_range": [
+          "2025-03-25 22:05:00",
+          "2025-04-01 22:00:00"
+        ]
+      },
+      "cleaned_stats": {
+        "row_count": 2016,
+        "min_values": {
+          "open": 81361.5,
+          "high": 81476.0,
+          "low": 81278.52,
+          "close": 81361.51,
+          "volume": 4.50545
+        },
+        "max_values": {
+          "open": 88235.35,
+          "high": 88275.0,
+          "low": 88192.56,
+          "close": 88235.34,
+          "volume": 140.49687625
+        },
+        "mean_values": {
+          "open": 84623.97597718253,
+          "high": 84688.89316468254,
+          "low": 84556.37970238096,
+          "close": 84622.77397321428,
+          "volume": 55.305618742559524
+        },
+        "time_range": [
+          "2025-03-25T22:05:00+00:00",
+          "2025-04-01T22:00:00+00:00"
+        ]
+      }
+    },
+    {
+      "symbol": "ETHUSDT",
+      "input_file": "data/validated/binance_ethusdt_5m_data.csv",
+      "output_file": "data/cleaned/binance_ethusdt_5m_data.csv",
+      "success": true,
+      "cleaning_timestamp": "2025-04-01T22:15:26.677215",
+      "original_rows": 2016,
+      "cleaned_rows": 2016,
+      "rows_removed": 0,
+      "duplicates_removed": 0,
+      "missing_values": {
+        "timestamp": 0,
+        "open": 0,
+        "high": 0,
+        "low": 0,
+        "close": 0,
+        "volume": 0
+      },
+      "timestamps_changed": true,
+      "outliers_detected": {
+        "volume": 166
+      },
+      "original_stats": {
+        "row_count": 2016,
+        "min_values": {
+          "open": 1775.92,
+          "high": 1783.7,
+          "low": 1767.69,
+          "close": 1775.93,
+          "volume": 192.0507
+        },
+        "max_values": {
+          "open": 2077.08,
+          "high": 2079.21,
+          "low": 2075.81,
+          "close": 2077.07,
+          "volume": 43560.7984
+        },
+        "mean_values": {
+          "open": 1909.121036706349,
+          "high": 1911.3452033730157,
+          "low": 1906.685009920635,
+          "close": 1909.0458779761907,
+          "volume": 1539.555024404762
+        },
+        "time_range": [
+          "2025-03-25 22:05:00",
+          "2025-04-01 22:00:00"
+        ]
+      },
+      "cleaned_stats": {
+        "row_count": 2016,
+        "min_values": {
+          "open": 1775.92,
+          "high": 1783.7,
+          "low": 1767.69,
+          "close": 1775.93,
+          "volume": 192.0507
+        },
+        "max_values": {
+          "open": 2077.08,
+          "high": 2079.21,
+          "low": 2075.81,
+          "close": 2077.07,
+          "volume": 3198.2326000000003
+        },
+        "mean_values": {
+          "open": 1909.121036706349,
+          "high": 1911.3452033730157,
+          "low": 1906.685009920635,
+          "close": 1909.0458779761907,
+          "volume": 1288.8531875992064
+        },
+        "time_range": [
+          "2025-03-25T22:05:00+00:00",
+          "2025-04-01T22:00:00+00:00"
+        ]
+      }
+    },
+    {
+      "symbol": "SOLUSDT",
+      "input_file": "data/validated/binance_solusdt_5m_data.csv",
+      "output_file": "data/cleaned/binance_solusdt_5m_data.csv",
+      "success": true,
+      "cleaning_timestamp": "2025-04-01T22:15:26.748834",
+      "original_rows": 2016,
+      "cleaned_rows": 2016,
+      "rows_removed": 0,
+      "duplicates_removed": 0,
+      "missing_values": {
+        "timestamp": 0,
+        "open": 0,
+        "high": 0,
+        "low": 0,
+        "close": 0,
+        "volume": 0
+      },
+      "timestamps_changed": true,
+      "outliers_detected": {
+        "volume": 171
+      },
+      "original_stats": {
+        "row_count": 2016,
+        "min_values": {
+          "open": 123.09,
+          "high": 123.37,
+          "low": 122.68,
+          "close": 123.08,
+          "volume": 1023.059
+        },
+        "max_values": {
+          "open": 145.43,
+          "high": 145.49,
+          "low": 145.18,
+          "close": 145.44,
+          "volume": 247748.247
+        },
+        "mean_values": {
+          "open": 131.0653025793651,
+          "high": 131.2604712301587,
+          "low": 130.85559523809525,
+          "close": 131.05684523809524,
+          "volume": 10499.585841269842
+        },
+        "time_range": [
+          "2025-03-25 22:05:00",
+          "2025-04-01 22:00:00"
+        ]
+      },
+      "cleaned_stats": {
+        "row_count": 2016,
+        "min_values": {
+          "open": 123.09,
+          "high": 123.37,
+          "low": 122.68,
+          "close": 123.08,
+          "volume": 1023.059
+        },
+        "max_values": {
+          "open": 145.43,
+          "high": 145.49,
+          "low": 145.18,
+          "close": 145.44,
+          "volume": 21545.668249999995
+        },
+        "mean_values": {
+          "open": 131.0653025793651,
+          "high": 131.2604712301587,
+          "low": 130.85559523809525,
+          "close": 131.05684523809524,
+          "volume": 8883.897805431547
+        },
+        "time_range": [
+          "2025-03-25T22:05:00+00:00",
+          "2025-04-01T22:00:00+00:00"
+        ]
+      }
+    }
+  ]
+}
