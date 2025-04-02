@@ -334,15 +334,16 @@ class HistoricalPredictionValidator:
         self.report_df = df
         return df
     
-    def save_report(self, output_path: Optional[str] = None) -> str:
+    def save_report(self, output_path: Optional[str] = None, format_type: str = 'both') -> Dict[str, str]:
         """
-        Save the validation report to a CSV file.
+        Save the validation report to CSV and/or JSON files.
         
         Args:
-            output_path: Custom path for the output file
+            output_path: Custom path for the output file (without extension)
+            format_type: Format type for the report ('csv', 'json', or 'both')
             
         Returns:
-            Path to the saved report file
+            Dictionary containing paths to saved report files
         """
         if self.report_df is None or self.report_df.empty:
             if not self.predictions:
@@ -351,28 +352,208 @@ class HistoricalPredictionValidator:
             
             if self.report_df is None or self.report_df.empty:
                 logging.error("No data available for report")
-                return ""
+                return {"csv": "", "json": ""}
         
         # Create output directory if it doesn't exist
         output_dir = os.path.join(current_dir, 'validation_reports')
         os.makedirs(output_dir, exist_ok=True)
         
-        # Create filename
+        # Generate timestamp for filenames
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        # Prepare file paths
+        paths = {"csv": "", "json": ""}
+        
+        # Create base file name without extension
         if output_path is None:
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"prediction_validation_{self.symbol.lower()}_{self.interval}_{self.model_type}_{timestamp}.csv"
-            output_path = os.path.join(output_dir, filename)
+            base_filename = f"prediction_validation_{self.symbol.lower()}_{self.interval}_{self.model_type}_{timestamp}"
+            standard_base_filename = f"prediction_validation_{self.symbol.lower()}_{self.interval}_{self.model_type}"
+        else:
+            # Remove extension if present
+            base_filename = os.path.splitext(output_path)[0]
+            standard_base_filename = base_filename
         
-        # Save to CSV
-        self.report_df.to_csv(output_path, index=False)
-        logging.info(f"Report saved to {output_path}")
+        # Generate report summary for JSON
+        summary_data = self.generate_summary_data()
         
-        # Create standard filename that will be overwritten with each run
-        standard_filename = f"prediction_validation_{self.symbol.lower()}_{self.interval}_{self.model_type}.csv"
-        standard_path = os.path.join(output_dir, standard_filename)
-        self.report_df.to_csv(standard_path, index=False)
+        # Save in requested format(s)
+        if format_type in ['csv', 'both']:
+            csv_path = os.path.join(output_dir, f"{base_filename}.csv")
+            self.report_df.to_csv(csv_path, index=False)
+            logging.info(f"CSV report saved to {csv_path}")
+            paths["csv"] = csv_path
+            
+            # Create standard CSV filename that will be overwritten with each run
+            standard_csv_path = os.path.join(output_dir, f"{standard_base_filename}.csv")
+            self.report_df.to_csv(standard_csv_path, index=False)
         
-        return output_path
+        if format_type in ['json', 'both']:
+            # Create JSON report with summary data
+            json_path = os.path.join(output_dir, f"{base_filename}.json")
+            
+            # Combine detailed report data with summary metrics
+            json_data = {
+                "metadata": {
+                    "symbol": self.symbol,
+                    "interval": self.interval,
+                    "model_type": self.model_type,
+                    "days_analyzed": self.days,
+                    "confidence_threshold": self.confidence_threshold,
+                    "generated_at": datetime.now().isoformat()
+                },
+                "summary": summary_data,
+                "predictions": self.predictions if len(self.predictions) <= 100 else self.predictions[:100]  # Limit to 100 records for JSON
+            }
+            
+            # Write JSON report
+            with open(json_path, 'w') as f:
+                json.dump(json_data, f, indent=2, default=str)
+            
+            logging.info(f"JSON report saved to {json_path}")
+            paths["json"] = json_path
+            
+            # Create standard JSON filename that will be overwritten with each run
+            standard_json_path = os.path.join(output_dir, f"{standard_base_filename}.json")
+            with open(standard_json_path, 'w') as f:
+                json.dump(json_data, f, indent=2, default=str)
+        
+        logging.info(f"Reports generated in format: {format_type}")
+        return paths
+    
+    def generate_summary_data(self) -> Dict[str, Any]:
+        """
+        Generate a structured summary of the validation results for reporting.
+        
+        Returns:
+            Dictionary containing summary metrics
+        """
+        if self.report_df is None or self.report_df.empty:
+            logging.error("No validation data available for summary generation")
+            return {}
+        
+        # Basic stats
+        total = len(self.report_df)
+        correct = self.report_df['was_correct'].sum()
+        accuracy = (correct / total) * 100 if total > 0 else 0
+        avg_confidence = float(self.report_df['confidence'].mean())
+        
+        # Breakdown by prediction type
+        class_metrics = {}
+        for pred_type in ['BUY', 'HOLD', 'SELL']:
+            type_df = self.report_df[self.report_df['prediction'] == pred_type]
+            count = len(type_df)
+            
+            # Calculate accuracy for this class
+            if count > 0:
+                type_correct = type_df['was_correct'].sum()
+                type_accuracy = (type_correct / count) * 100
+            else:
+                type_correct = 0
+                type_accuracy = 0
+                
+            # Store class metrics
+            class_metrics[pred_type] = {
+                "count": int(count),
+                "correct": int(type_correct),
+                "accuracy": float(type_accuracy)
+            }
+        
+        # Calculate precision, recall, and F1 scores for BUY and SELL predictions
+        # First, prepare classification metrics data
+        buy_predictions = self.report_df[self.report_df['prediction'] == 'BUY']
+        sell_predictions = self.report_df[self.report_df['prediction'] == 'SELL']
+        
+        # Precision: True Positives / (True Positives + False Positives)
+        buy_precision = (buy_predictions['was_correct'].sum() / len(buy_predictions)) if len(buy_predictions) > 0 else 0
+        sell_precision = (sell_predictions['was_correct'].sum() / len(sell_predictions)) if len(sell_predictions) > 0 else 0
+        
+        # Recall calculations require identifying actual positives (when actual_direction matches prediction type)
+        actual_buys = self.report_df[self.report_df['actual_direction'] == 'BUY']
+        actual_sells = self.report_df[self.report_df['actual_direction'] == 'SELL']
+        
+        # True Positives
+        buy_true_positives = self.report_df[(self.report_df['prediction'] == 'BUY') & 
+                                          (self.report_df['was_correct'] == True)].shape[0]
+        sell_true_positives = self.report_df[(self.report_df['prediction'] == 'SELL') & 
+                                           (self.report_df['was_correct'] == True)].shape[0]
+        
+        # Recall: True Positives / (True Positives + False Negatives)
+        buy_recall = buy_true_positives / len(actual_buys) if len(actual_buys) > 0 else 0
+        sell_recall = sell_true_positives / len(actual_sells) if len(actual_sells) > 0 else 0
+        
+        # F1 Score: 2 * (precision * recall) / (precision + recall)
+        buy_f1 = 2 * (buy_precision * buy_recall) / (buy_precision + buy_recall) if (buy_precision + buy_recall) > 0 else 0
+        sell_f1 = 2 * (sell_precision * sell_recall) / (sell_precision + sell_recall) if (sell_precision + sell_recall) > 0 else 0
+        
+        # Profitability analysis (simulated)
+        # For profitable trades, we consider correct BUY and SELL predictions
+        buy_df = self.report_df[(self.report_df['prediction'] == 'BUY') & (self.report_df['was_correct'])]
+        sell_df = self.report_df[(self.report_df['prediction'] == 'SELL') & (self.report_df['was_correct'])]
+        
+        # Average profit percentages
+        avg_buy_profit = float(buy_df['price_change_pct'].mean()) if not buy_df.empty else 0
+        avg_sell_profit = float(-sell_df['price_change_pct'].mean()) if not sell_df.empty else 0
+        
+        # Calculate win ratios
+        buy_win_ratio = (len(buy_df) / len(buy_predictions)) * 100 if len(buy_predictions) > 0 else 0
+        sell_win_ratio = (len(sell_df) / len(sell_predictions)) * 100 if len(sell_predictions) > 0 else 0
+        
+        # Calculate cumulative return (simplified model)
+        profitable_trades = len(buy_df) + len(sell_df)
+        avg_profit_per_trade = ((avg_buy_profit * len(buy_df)) + (avg_sell_profit * len(sell_df))) / profitable_trades if profitable_trades > 0 else 0
+        
+        # Rough estimate of cumulative return if we traded with equal capital on each signal
+        # This is a simplified model and doesn't account for compounding, transaction fees, etc.
+        cumulative_return = 0
+        
+        # For BUY signals, we add the price change
+        if not buy_df.empty:
+            cumulative_return += buy_df['price_change_pct'].sum()
+        
+        # For SELL signals, we add the negative price change (price drop = profit for short)
+        if not sell_df.empty:
+            cumulative_return += -sell_df['price_change_pct'].sum()
+            
+        # Get time range
+        start_time = self.report_df['timestamp'].min() if not self.report_df.empty else None
+        end_time = self.report_df['timestamp'].max() if not self.report_df.empty else None
+            
+        # Compile all metrics into a single dictionary
+        summary = {
+            "total_predictions": int(total),
+            "correct_predictions": int(correct),
+            "overall_accuracy": float(accuracy),
+            "average_confidence": float(avg_confidence),
+            "time_range": {
+                "start": str(start_time),
+                "end": str(end_time)
+            },
+            "class_breakdown": class_metrics,
+            "classification_metrics": {
+                "BUY": {
+                    "precision": float(buy_precision),
+                    "recall": float(buy_recall),
+                    "f1_score": float(buy_f1),
+                    "win_ratio": float(buy_win_ratio)
+                },
+                "SELL": {
+                    "precision": float(sell_precision),
+                    "recall": float(sell_recall),
+                    "f1_score": float(sell_f1),
+                    "win_ratio": float(sell_win_ratio)
+                }
+            },
+            "profitability": {
+                "profitable_trades": int(profitable_trades),
+                "profitable_trades_percentage": float((profitable_trades / total) * 100) if total > 0 else 0,
+                "avg_buy_profit_pct": float(avg_buy_profit),
+                "avg_sell_profit_pct": float(avg_sell_profit),
+                "avg_profit_per_trade": float(avg_profit_per_trade),
+                "cumulative_return_pct": float(cumulative_return)
+            }
+        }
+        
+        return summary
     
     def print_summary(self) -> None:
         """
@@ -382,57 +563,55 @@ class HistoricalPredictionValidator:
             print("No validation data available for summary")
             return
         
+        # Get the summary data
+        summary = self.generate_summary_data()
+        if not summary:
+            print("Failed to generate summary data")
+            return
+            
         print("\n" + "="*80)
         print(f"PREDICTION VALIDATION SUMMARY: {self.symbol} {self.interval} ({self.model_type} model)")
         print("="*80)
         
         # Basic stats
-        total = len(self.report_df)
-        correct = self.report_df['was_correct'].sum()
-        accuracy = (correct / total) * 100 if total > 0 else 0
-        
-        print(f"\nTotal predictions: {total}")
-        print(f"Correct predictions: {correct} ({accuracy:.2f}%)")
-        print(f"Average confidence: {self.report_df['confidence'].mean():.4f}")
+        print(f"\nTotal predictions: {summary['total_predictions']}")
+        print(f"Correct predictions: {summary['correct_predictions']} ({summary['overall_accuracy']:.2f}%)")
+        print(f"Average confidence: {summary['average_confidence']:.4f}")
         
         # Breakdown by prediction type
         print("\nBreakdown by prediction type:")
         for pred_type in ['BUY', 'HOLD', 'SELL']:
-            type_df = self.report_df[self.report_df['prediction'] == pred_type]
-            count = len(type_df)
+            metrics = summary['class_breakdown'][pred_type]
+            count = metrics['count']
             if count > 0:
-                type_correct = type_df['was_correct'].sum()
-                type_accuracy = (type_correct / count) * 100
-                print(f"  {pred_type}: {count} predictions, {type_correct} correct ({type_accuracy:.2f}%)")
+                correct = metrics['correct']
+                accuracy = metrics['accuracy']
+                print(f"  {pred_type}: {count} predictions, {correct} correct ({accuracy:.2f}%)")
             else:
                 print(f"  {pred_type}: 0 predictions")
+                
+        # Print detailed metrics for BUY and SELL
+        print("\nDetailed metrics:")
+        for pred_type in ['BUY', 'SELL']:
+            metrics = summary['classification_metrics'][pred_type]
+            print(f"  {pred_type}:")
+            print(f"    Precision: {metrics['precision']:.4f}")
+            print(f"    Recall: {metrics['recall']:.4f}")
+            print(f"    F1 Score: {metrics['f1_score']:.4f}")
+            print(f"    Win Ratio: {metrics['win_ratio']:.2f}%")
         
-        # Profitability analysis (simulated)
+        # Profitability analysis
+        prof = summary['profitability']
         print("\nSimulated profitability:")
-        # For profitable trades, we consider correct BUY and SELL predictions
-        buy_df = self.report_df[(self.report_df['prediction'] == 'BUY') & (self.report_df['was_correct'])]
-        sell_df = self.report_df[(self.report_df['prediction'] == 'SELL') & (self.report_df['was_correct'])]
-        
-        # Average profit for correct BUY signals (positive price change)
-        avg_buy_profit = buy_df['price_change_pct'].mean() if not buy_df.empty else 0
-        # Average profit for correct SELL signals (negative price change, but profit for short selling)
-        avg_sell_profit = -sell_df['price_change_pct'].mean() if not sell_df.empty else 0
-        
-        print(f"  Avg. profit on correct BUY signals: {avg_buy_profit:.2f}%")
-        print(f"  Avg. profit on correct SELL signals: {avg_sell_profit:.2f}%")
-        
-        # Calculate cumulative return if following all signals (simplified)
-        profitable_trades = len(buy_df) + len(sell_df)
-        avg_profit_per_trade = ((avg_buy_profit * len(buy_df)) + (avg_sell_profit * len(sell_df))) / profitable_trades if profitable_trades > 0 else 0
-        
-        print(f"  Profitable trades: {profitable_trades} ({(profitable_trades / total) * 100:.2f}% of all predictions)")
-        print(f"  Average profit per profitable trade: {avg_profit_per_trade:.2f}%")
+        print(f"  Avg. profit on correct BUY signals: {prof['avg_buy_profit_pct']:.2f}%")
+        print(f"  Avg. profit on correct SELL signals: {prof['avg_sell_profit_pct']:.2f}%")
+        print(f"  Profitable trades: {prof['profitable_trades']} ({prof['profitable_trades_percentage']:.2f}% of all predictions)")
+        print(f"  Average profit per profitable trade: {prof['avg_profit_per_trade']:.2f}%")
+        print(f"  Cumulative return: {prof['cumulative_return_pct']:.2f}%")
         
         # Print time range
-        if not self.report_df.empty:
-            start_time = self.report_df['timestamp'].min()
-            end_time = self.report_df['timestamp'].max()
-            print(f"\nTime range: {start_time} to {end_time}")
+        if 'time_range' in summary and summary['time_range']['start']:
+            print(f"\nTime range: {summary['time_range']['start']} to {summary['time_range']['end']}")
         
         print("="*80 + "\n")
 
@@ -458,6 +637,8 @@ def main():
                         help='Minimum confidence threshold for predictions (0.0-1.0)')
     parser.add_argument('--output', type=str, default=None,
                         help='Custom output filename')
+    parser.add_argument('--format', type=str, choices=['json', 'csv', 'both'], default='both',
+                        help='Output format for the report (json, csv, or both)')
     
     args = parser.parse_args()
     
@@ -467,6 +648,7 @@ def main():
     print(f"Days to analyze: {args.days}")
     print(f"Model type: {args.model}")
     print(f"Confidence threshold: {args.threshold}")
+    print(f"Output format: {args.format}")
     
     # Create necessary directories
     validation_dir = create_validation_dirs()
@@ -491,13 +673,20 @@ def main():
     if output_path and not os.path.isabs(output_path):
         output_path = os.path.join(validation_dir, output_path)
     
-    report_path = validator.save_report(output_path)
+    report_paths = validator.save_report(output_path, args.format)
     
     # Print summary
     validator.print_summary()
     
-    if report_path:
-        print(f"Validation report saved to: {report_path}")
+    # Check if reports were generated
+    if report_paths:
+        if args.format == 'both':
+            print(f"CSV report saved to: {report_paths['csv']}")
+            print(f"JSON report saved to: {report_paths['json']}")
+        elif args.format == 'csv':
+            print(f"CSV report saved to: {report_paths['csv']}")
+        elif args.format == 'json':
+            print(f"JSON report saved to: {report_paths['json']}")
         return 0
     else:
         print("Failed to generate validation report")

@@ -1,0 +1,95 @@
+ML System Logging Demonstration
+===============================
+
+=== STDOUT ===
+Starting ML System Logging Demonstration
+---------------------------------------
+2025-04-02 01:04:36 [INFO] [logging_demo] ML System logging demonstration started
+
+1. Simulating Data Loading...
+2025-04-02 01:04:36 [INFO] [data_loader] Starting data loading process
+2025-04-02 01:04:36 [INFO] [data_loader] Fetching data for BTCUSDT
+2025-04-02 01:04:37 [INFO] [data_loader] Technical indicators calculated
+2025-04-02 01:04:37 [WARNING] [data_loader] Some indicators have NaN values at the beginning of the dataset
+2025-04-02 01:04:37 [INFO] [data_loader] Data loading and processing complete
+
+2. Simulating Model Prediction...
+2025-04-02 01:04:37 [INFO] [prediction_engine] Starting prediction for BTCUSDT
+2025-04-02 01:04:37 [INFO] [model] Loading model: xgboost_btcusdt_balanced
+2025-04-02 01:04:37 [INFO] [prediction_engine] Input features prepared for prediction
+2025-04-02 01:04:38 [INFO] [prediction_engine] Prediction: BUY with 87.00% confidence
+
+3. Simulating Trading Action...
+2025-04-02 01:04:38 [INFO] [trading_bridge] ML prediction received by trading bridge
+2025-04-02 01:04:38 [INFO] [trading_bridge] Applying risk management rules
+2025-04-02 01:04:39 [INFO] [trading_bridge] Trade executed based on ML prediction
+
+4. Simulating Historical Validation...
+2025-04-02 01:04:39 [INFO] [validation] Starting historical prediction validation
+2025-04-02 01:04:39 [INFO] [validation] Validation progress: 25%
+2025-04-02 01:04:39 [INFO] [validation] Validation progress: 50%
+2025-04-02 01:04:40 [INFO] [validation] Validation progress: 75%
+2025-04-02 01:04:40 [INFO] [validation] Validation progress: 100%
+2025-04-02 01:04:41 [INFO] [validation] Validation complete
+
+5. Simulating Binance Service...
+2025-04-02 01:04:41 [INFO] [binance_service] Connecting to Binance API
+2025-04-02 01:04:41 [INFO] [binance_service] Making API request to Binance: klines
+2025-04-02 01:04:41 [INFO] [binance_service] Received response from Binance: klines
+2025-04-02 01:04:41 [INFO] [binance_service] Making API request to Binance: ticker/24hr
+2025-04-02 01:04:42 [INFO] [binance_service] Received response from Binance: ticker/24hr
+2025-04-02 01:04:42 [INFO] [binance_service] Making API request to Binance: depth
+2025-04-02 01:04:42 [INFO] [binance_service] Received response from Binance: depth
+2025-04-02 01:04:42 [WARNING] [binance_service] Approaching Binance API rate limit
+2025-04-02 01:04:42 [INFO] [logging_demo] ML System logging demonstration completed
+
+Logging Demonstration Complete!
+Log files have been created in: /home/runner/workspace/logs
+Check the following log files:
+  - data_loader.log / data_loader.json
+  - prediction_engine.log / prediction_engine.json
+  - model.log / model.json
+  - trading_bridge.log / trading_bridge.json
+  - validation.log / validation.json
+  - binance_service.log / binance_service.json
+  - logging_demo.log / logging_demo.json
+
+
+=== STDERR ===
+
+
+=== LOG FILES CREATED ===
+binance_service.json - 2488 bytes
+binance_service.log - 1326 bytes
+data_cleaning.log - 5484 bytes
+data_loader.json - 1165 bytes
+data_loader.log - 794 bytes
+data_preparation.log - 2547 bytes
+data_validation.log - 2493 bytes
+feature_importance.log - 440 bytes
+historical_prediction_validator.log - 13300 bytes
+live_prediction.log - 6525 bytes
+logging_demo.json - 362 bytes
+logging_demo.log - 332 bytes
+ml_system.json - 0 bytes
+ml_system.log - 0 bytes
+model.json - 257 bytes
+model.log - 150 bytes
+prediction_engine.json - 951 bytes
+prediction_engine.log - 502 bytes
+trading_bridge.json - 1071 bytes
+trading_bridge.log - 484 bytes
+train_test_split.log - 1399 bytes
+validation.json - 1720 bytes
+validation.log - 806 bytes
+xgboost_prediction.log - 1170 bytes
+xgboost_training.log - 4676 bytes
+
+
+=== SAMPLE FROM prediction_engine.log ===
+2025-04-02 01:04:37 [INFO] [prediction_engine] Starting prediction for BTCUSDT
+2025-04-02 01:04:37 [INFO] [prediction_engine] Starting prediction for BTCUSDT
+2025-04-02 01:04:37 [INFO] [prediction_engine] Input features prepared for prediction
+2025-04-02 01:04:37 [INFO] [prediction_engine] Input features prepared for prediction
+2025-04-02 01:04:38 [INFO] [prediction_engine] Prediction: BUY with 87.00% confidence
+2025-04-02 01:04:38 [INFO] [prediction_engine] Prediction: BUY with 87.00% confidence

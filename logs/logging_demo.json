@@ -1,0 +1,2 @@
+{"timestamp": "2025-04-02 01:04:36", "level": "INFO", "module": "logging_demo", "message": "ML System logging demonstration started", "logger": "logging_demo", "stack_info": null}
+{"timestamp": "2025-04-02 01:04:42", "level": "INFO", "module": "logging_demo", "message": "ML System logging demonstration completed", "logger": "logging_demo", "stack_info": null}

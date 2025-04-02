@@ -21,12 +21,24 @@ import numpy as np
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Union, Any, Tuple
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Add parent directory to path to allow imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)  # python_app directory
+if parent_dir not in sys.path:
+    sys.path.append(parent_dir)
+
+# Import logging utilities
+try:
+    from utils.logging_utils import get_data_loader_logger, log_with_data
+    logger = get_data_loader_logger()
+except ImportError:
+    # Fallback to basic logging if utils module is not available
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    logger = logging.getLogger(__name__)
+    logger.warning("Could not import custom logging utilities. Using basic logging configuration.")
 
 # Add parent directory to path to allow imports
 current_dir = os.path.dirname(os.path.abspath(__file__))

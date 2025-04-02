@@ -1,0 +1,1 @@
+{"timestamp": "2025-04-02 01:04:37", "level": "INFO", "module": "model", "message": "Loading model: xgboost_btcusdt_balanced", "logger": "model", "stack_info": null, "extra": {"model_path": "models/xgboost_btcusdt_balanced.model", "model_type": "XGBoost"}}
