@@ -146,6 +146,7 @@ export interface IStorage {
   // Trade Logging methods
   createTradeLog(tradeLog: InsertTradeLog): Promise<TradeLog>;
   getTradeLog(id: number): Promise<TradeLog | undefined>;
+  getAllTradeLogs(limit?: number): Promise<TradeLog[]>;
   getTradeLogsBySymbol(symbol: string, limit?: number): Promise<TradeLog[]>;
   getTradeLogsByUserId(userId: number, limit?: number): Promise<TradeLog[]>;
   getTradeLogsBySource(source: string, limit?: number): Promise<TradeLog[]>;
@@ -1893,6 +1894,14 @@ export class MemStorage implements IStorage {
    */
   async getTradeLog(id: number): Promise<TradeLog | undefined> {
     return this.tradeLogs.get(id);
+  }
+  
+  async getAllTradeLogs(limit: number = 100): Promise<TradeLog[]> {
+    const tradeLogs = Array.from(this.tradeLogs.values());
+    // Sort by created date, most recent first
+    tradeLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    // Apply limit
+    return tradeLogs.slice(0, limit);
   }
   
   /**

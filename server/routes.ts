@@ -377,6 +377,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register trade logs routes:', err);
   });
   
+  // Register Direct API routes for debugging
+  import('./direct-api').then(directApiRouter => {
+    app.use('/direct-api', directApiRouter.default);
+    console.log('Direct API routes registered to /direct-api');
+  }).catch(err => {
+    console.error('Failed to register direct API routes:', err);
+  });
+  
   // Portfolio routes for dashboard data visualization
   app.use("/api/portfolio", portfolioRouter);
   

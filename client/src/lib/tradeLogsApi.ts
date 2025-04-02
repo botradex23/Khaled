@@ -5,9 +5,18 @@
  * with handling for various environments
  */
 
-// Use a simple relative path for API endpoints
-// This works across all environments (development, production) and with Replit's dynamic URLs
-const API_BASE_URL = '/api/trade-logs';
+// Determine which API endpoint to use
+// During development, use the direct API to bypass Vite middleware issues
+// In production, use the regular API endpoint
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' || 
+                       window.location.hostname.includes('replit.dev');
+
+// Fallback to direct API if we're in development mode
+const API_BASE_URL = IS_DEVELOPMENT 
+  ? '/direct-api/trade-logs'  // Using our direct API that bypasses Vite middleware
+  : '/api/trade-logs';        // Regular API path for production
+
+console.log(`Using Trade Logs API endpoint: ${API_BASE_URL} (development mode: ${IS_DEVELOPMENT})`);
 
 /**
  * Helper function to safely convert Date or null to string

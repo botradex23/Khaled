@@ -7,6 +7,33 @@ import { ensureAuthenticated } from '../../auth';
 const router = express.Router();
 
 /**
+ * Get all trade logs
+ * GET /api/trade-logs
+ */
+router.get('/', async (req, res) => {
+  try {
+    console.log('GET /api/trade-logs endpoint hit');
+    console.log('Request Headers:', req.headers);
+    
+    // Force the content type to be JSON
+    res.setHeader('Content-Type', 'application/json');
+    
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 100;
+    const tradeLogs = await storage.getAllTradeLogs(limit);
+    
+    console.log(`Returning ${tradeLogs.length} trade logs`);
+    console.log('Response will be:', JSON.stringify(tradeLogs).substring(0, 100) + '...');
+    
+    return res.json(tradeLogs);
+  } catch (error) {
+    console.error('Error fetching all trade logs:', error);
+    // Force the content type to be JSON
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).json({ error: 'Failed to fetch trade logs' });
+  }
+});
+
+/**
  * Create a new trade log
  * POST /api/trade-logs
  */
