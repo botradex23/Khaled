@@ -34,6 +34,7 @@ import LiveMarket from "@/pages/live-market";
 import RiskManagement from "@/pages/risk-management";
 import MLPredictionsPage from "@/pages/ml-predictions";
 import TradeLogsTestPage from "@/pages/trade-logs-test";
+import TradeLogsPage from "@/pages/trade-logs";
 
 function Router() {
   const { isAuthenticated, needsProfileCompletion, isLoading } = useAuth();
@@ -76,6 +77,7 @@ function Router() {
       <Route path="/binance" component={Binance} />
       <Route path="/risk-management" component={RiskManagement} />
       <Route path="/trade-logs-test" component={TradeLogsTestPage} />
+      <Route path="/trade-logs" component={TradeLogsPage} />
       <Route component={NotFound} />
     </Switch>
   );

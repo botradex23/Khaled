@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { storage } from '../../storage';
 import { insertTradeLogSchema } from '@shared/schema';
 import { ensureAuthenticated } from '../../auth';
+import { getTradeLogsSummary } from './summary';
 
 const router = express.Router();
 
@@ -107,6 +108,12 @@ router.get('/user', ensureAuthenticated, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch trade logs' });
   }
 });
+
+/**
+ * Get trade logs summary statistics
+ * GET /api/trade-logs/summary
+ */
+router.get('/summary', getTradeLogsSummary);
 
 /**
  * Search trade logs with filtering

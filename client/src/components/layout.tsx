@@ -18,7 +18,8 @@ import {
   BookOpen,
   Wallet,
   DollarSign,
-  ShieldAlert
+  ShieldAlert,
+  ClipboardList
 } from "lucide-react";
 
 // Import the API Keys Banner
@@ -53,6 +54,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: "All Binance Markets", href: "/markets-full", icon: BarChart, isNew: true },
     { name: "Live Market", href: "/live-market", icon: LineChart },
     { name: "Bots", href: "/bots", icon: FlaskConical, auth: true },
+    { name: "Trade Logs", href: "/trade-logs", icon: ClipboardList, auth: true, isNew: true },
     { name: "Risk Management", href: "/risk-management", icon: ShieldAlert, auth: true },
     { name: "API Keys", href: "/api-keys", icon: Key, auth: true },
     { name: "Learn", href: "/learn", icon: BookOpen },
@@ -61,6 +63,7 @@ export default function Layout({ children }: LayoutProps) {
   const profileItems = [
     { name: "API Keys", href: "/api-keys", icon: Key },
     { name: "API Status", href: "/api-status", icon: LineChart },
+    { name: "Trade Logs", href: "/trade-logs", icon: ClipboardList, isNew: true },
     { name: "Risk Management", href: "/risk-management", icon: ShieldAlert },
   ];
 
@@ -129,7 +132,7 @@ export default function Layout({ children }: LayoutProps) {
                         {item.name}
                         {item.isNew && (
                           <span className="ml-2 text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-md">
-                            חדש
+                            New
                           </span>
                         )}
                       </Button>
@@ -150,7 +153,7 @@ export default function Layout({ children }: LayoutProps) {
                   className="bg-primary/10 border-primary text-primary hover:bg-primary/20 hidden md:flex"
                 >
                   <Key className="h-4 w-4 mr-1" />
-                  הגדר מפתחות API
+                  Setup API Keys
                 </Button>
               </Link>
             )}
@@ -191,6 +194,11 @@ export default function Layout({ children }: LayoutProps) {
                       <DropdownMenuItem className="cursor-pointer">
                         <item.icon className="h-4 w-4 mr-2" />
                         {item.name}
+                        {item.isNew && (
+                          <span className="ml-2 text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-md">
+                            New
+                          </span>
+                        )}
                       </DropdownMenuItem>
                     </Link>
                   ))}
@@ -247,7 +255,7 @@ export default function Layout({ children }: LayoutProps) {
                       <span className="text-xs mt-1">{item.name}</span>
                       {item.isNew && (
                         <span className="ml-1 text-[0.6rem] bg-primary text-primary-foreground px-1 py-0 rounded-md">
-                          חדש
+                          New
                         </span>
                       )}
                     </div>
