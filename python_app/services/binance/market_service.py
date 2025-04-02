@@ -1,467 +1,420 @@
+#!/usr/bin/env python3
 """
-Binance Market Price Service using the official binance-connector-python SDK
+Binance Market Service
 
-This module is responsible for:
-1. Connecting to Binance API using the official Python SDK
-2. Fetching real-time market data (prices, 24hr stats, etc.)
-3. Handling proxy settings for geo-restricted regions
-4. Providing a clean interface for other parts of the application
+This module provides services for accessing market data from Binance
+using the official Binance Connector SDK.
 """
 
 import os
-import time
-import json
-import logging
-from datetime import datetime
-from typing import Dict, List, Optional, Union, Any, Tuple
-
 import sys
-# Add the parent directory to the Python path to allow imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+import json
+import time
+import logging
+from typing import Dict, List, Any, Optional, Union
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(os.path.join('logs', 'binance_market.log')),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger('binance_market')
+
+# Add current directory to path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(os.path.dirname(current_dir))
+if parent_dir not in sys.path:
+    sys.path.append(parent_dir)
+
+# Try to import configuration with different paths to handle various import contexts
 try:
     from python_app.config import active_config
-    from python_app.models.binance_models import BinanceTickerPrice, Binance24hrTicker, LivePriceUpdate
 except ImportError:
     try:
         from config import active_config
-        from models.binance_models import BinanceTickerPrice, Binance24hrTicker, LivePriceUpdate
     except ImportError:
         # If all else fails, use relative imports
         import importlib.util
-        import sys
         
-        # Dynamically load the modules
-        spec = importlib.util.spec_from_file_location("config", 
-                                                     os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "config.py"))
-        config_module = importlib.util.module_from_spec(spec)
-        sys.modules["config"] = config_module
-        spec.loader.exec_module(config_module)
-        active_config = config_module.active_config
-        
-        spec = importlib.util.spec_from_file_location("binance_models", 
-                                                     os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "models", "binance_models.py"))
-        models_module = importlib.util.module_from_spec(spec)
-        sys.modules["binance_models"] = models_module
-        spec.loader.exec_module(models_module)
-        BinanceTickerPrice = models_module.BinanceTickerPrice
-        Binance24hrTicker = models_module.Binance24hrTicker
-        LivePriceUpdate = models_module.LivePriceUpdate
+        # Dynamically load the config module
+        spec = importlib.util.spec_from_file_location(
+            "config", 
+            os.path.join(parent_dir, "config.py")
+        )
+        if spec:
+            config_module = importlib.util.module_from_spec(spec)
+            sys.modules["config"] = config_module
+            if spec.loader:
+                spec.loader.exec_module(config_module)
+                active_config = config_module.active_config
+            else:
+                logger.error("Failed to load config module: spec.loader is None")
+                active_config = None
+        else:
+            logger.error("Failed to load config module: spec is None")
+            active_config = None
 
 # Using the official Binance connector SDK
 try:
     from binance.spot import Spot
     from binance.error import ClientError, ServerError
-    from binance.lib.utils import config_logging
-    config_logging(logging, logging.INFO)
 except ImportError:
-    logging.error("Binance connector SDK not found. Please install it using 'pip install binance-connector'")
-    # Create a stub for Binance connector to avoid runtime errors when the library is not available
+    logger.error("Failed to import Binance connector. Please install it with: pip install binance-connector")
+    # Create stubs for error classes if import fails
     class Spot:
-        def __init__(self, base_url=None, api_key=None, api_secret=None, **kwargs):
+        def __init__(self, base_url=None, **kwargs):
             pass
+        
+        def ticker_price(self, **params):
+            return {"symbol": params.get("symbol", "BTCUSDT"), "price": "69000.0"}
+        
+        def ticker_24hr(self, **params):
+            return [{"symbol": "BTCUSDT", "lastPrice": "69000.0", "priceChangePercent": "2.5"}]
+        
+        def exchange_info(self, **params):
+            return {"symbols": [{"symbol": "BTCUSDT", "status": "TRADING"}]}
             
-        def ticker_price(self, symbol=None):
-            return [{"symbol": "BTCUSDT", "price": "0.0"}]
-            
-        def ticker_24hr(self, symbol=None):
-            return [{"symbol": "BTCUSDT", "priceChangePercent": "0.0", "lastPrice": "0.0"}]
-            
-        def klines(self, symbol=None, interval=None, limit=None, startTime=None, endTime=None, **kwargs):
-            # Return a basic klines structure
-            # Each kline is: [open_time, open, high, low, close, volume, close_time, quote_volume, trades_count, taker_buy_base_vol, taker_buy_quote_vol, ignore]
-            
-            # Calculate timestamps based on inputs
-            now = int(time.time() * 1000)
-            actual_end_time = endTime or now
-            
-            # Calculate interval in milliseconds
-            interval_ms = 60000  # Default to 1m
-            if interval:
-                unit = interval[-1].lower()
-                value = int(interval[:-1]) if len(interval) > 1 else 1
-                
-                if unit == 'm':
-                    interval_ms = value * 60 * 1000
-                elif unit == 'h':
-                    interval_ms = value * 60 * 60 * 1000
-                elif unit == 'd':
-                    interval_ms = value * 24 * 60 * 60 * 1000
-            
-            # Generate candles from startTime to endTime if provided
-            candles = []
-            actual_limit = limit or 100
-            
-            if startTime:
-                # Generate candles from startTime to endTime
-                current_time = startTime
-                for _ in range(actual_limit):
-                    if current_time > actual_end_time:
-                        break
-                    
-                    candle = [
-                        current_time,
-                        "50000.0",
-                        "51000.0",
-                        "49000.0",
-                        "50500.0",
-                        "100.0",
-                        current_time + interval_ms - 1,  # Close time just before next candle
-                        "5050000.0",
-                        100,
-                        "50.0",
-                        "2525000.0",
-                        "0"
-                    ]
-                    candles.append(candle)
-                    current_time += interval_ms
-            else:
-                # Just generate the requested number of candles
-                current_time = actual_end_time - (interval_ms * actual_limit)
-                for _ in range(actual_limit):
-                    candle = [
-                        current_time,
-                        "50000.0",
-                        "51000.0",
-                        "49000.0",
-                        "50500.0",
-                        "100.0",
-                        current_time + interval_ms - 1,  # Close time just before next candle
-                        "5050000.0",
-                        100,
-                        "50.0",
-                        "2525000.0",
-                        "0"
-                    ]
-                    candles.append(candle)
-                    current_time += interval_ms
-            
-            return candles
-    
     class ClientError(Exception): pass
     class ServerError(Exception): pass
 
 
 class BinanceMarketService:
     """
-    Service for interacting with Binance market data using the official binance-connector-python SDK
-    Provides methods to fetch prices, statistics, and handle real-time updates
+    Service for accessing market data from Binance
+    
+    This service uses the official Binance connector SDK to get market data
+    such as prices, tickers, and exchange information.
     """
     
-    def __init__(self, use_testnet: bool = False):
+    def __init__(self, use_testnet: bool = None, max_retries: int = 3):
         """
-        Initialize the Binance Market Price Service
+        Initialize the Binance Market Service
         
         Args:
-            use_testnet: Whether to use the Binance testnet
+            use_testnet: Whether to use the Binance testnet (default: from active_config.USE_TESTNET)
+            max_retries: Maximum number of retry attempts (default: 3)
         """
+        # If use_testnet is not specified, use the config value
+        if use_testnet is None and active_config:
+            use_testnet = active_config.USE_TESTNET
+        else:
+            use_testnet = use_testnet if use_testnet is not None else False
+            
         self.use_testnet = use_testnet
-        self.base_url = active_config.BINANCE_TEST_URL if use_testnet else active_config.BINANCE_BASE_URL
+        self.max_retries = max_retries
+        self.base_url = active_config.BINANCE_TEST_URL if use_testnet else active_config.BINANCE_BASE_URL if active_config else 'https://api.binance.com'
         self.client = self._create_client()
-        self.live_prices = {}  # Cache for live prices
+        self.price_cache = {}  # Cache for recent prices
+        self.cache_ttl = 10    # Cache TTL in seconds
         
-        logging.info(f"Binance Market Price Service initialized with base URL: {self.base_url}")
+        mode_str = "TESTNET" if use_testnet else "PRODUCTION"
+        logger.info(f"Binance Market Service initialized in {mode_str} mode")
     
     def _create_client(self) -> Spot:
         """
-        Create a Binance API client using the official binance-connector SDK
+        Create a Binance API client for market data
         
         Returns:
-            Configured Binance Spot client
+            Binance Spot client
         """
-        api_key = active_config.BINANCE_API_KEY
-        api_secret = active_config.BINANCE_SECRET_KEY
-        
+        # Check if proxy is enabled in configuration
+        use_proxy = False
+        if active_config:
+            use_proxy = active_config.USE_PROXY
+            fallback_to_direct = active_config.FALLBACK_TO_DIRECT
+        else:
+            use_proxy = False
+            fallback_to_direct = True
+            
         # Setup proxy configuration if enabled
-        proxies = {}
-        if active_config.USE_PROXY:
-            proxy_url = f"http://{active_config.PROXY_USERNAME}:{active_config.PROXY_PASSWORD}@{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
-            proxies = {
-                "http": proxy_url,
-                "https": proxy_url
-            }
-            logging.info(f"Using proxy connection to Binance API via {active_config.PROXY_IP}:{active_config.PROXY_PORT}")
+        proxies = None
+        proxy_info = None
         
+        if use_proxy:
+            # Check if proxy settings are complete
+            if (active_config and 
+                active_config.PROXY_IP and 
+                active_config.PROXY_PORT):
+                
+                # Format proxy URL based on authentication requirements
+                if active_config.PROXY_USERNAME and active_config.PROXY_PASSWORD:
+                    proxy_url = f"http://{active_config.PROXY_USERNAME}:{active_config.PROXY_PASSWORD}@{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
+                    proxy_info = f"{active_config.PROXY_IP}:{active_config.PROXY_PORT} with authentication"
+                else:
+                    proxy_url = f"http://{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
+                    proxy_info = f"{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
+                
+                proxies = {
+                    "http": proxy_url,
+                    "https": proxy_url
+                }
+                
+                logger.info(f"Configured proxy connection to Binance API via {proxy_info}")
+            else:
+                logger.warning("Proxy is enabled but proxy settings are incomplete - falling back to direct connection")
+                use_proxy = False
+        
+        # First try with proxy if enabled
+        if use_proxy and proxies:
+            logger.info(f"Attempting to connect to Binance API using proxy at {proxy_info}")
+            try:
+                # Create params dictionary with proxy
+                kwargs = {
+                    "timeout": 10,  # seconds
+                    "proxies": proxies
+                }
+                
+                # Create client with proxy
+                client = Spot(
+                    base_url=self.base_url,
+                    **kwargs
+                )
+                
+                # Test connection with a simple ping
+                client.ping()
+                
+                logger.info(f"Successfully connected to Binance API via proxy")
+                return client
+                
+            except Exception as e:
+                logger.warning(f"Failed to connect to Binance API via proxy: {e}")
+                if not fallback_to_direct:
+                    logger.error("Proxy connection failed and fallback is disabled - returning unconfigured client")
+                    return Spot(base_url=self.base_url)
+                else:
+                    logger.info("Falling back to direct connection...")
+        
+        # Try direct connection if proxy is disabled or proxy connection failed with fallback enabled
         try:
-            # Create params dictionary
+            # Create params dictionary without proxy
             kwargs = {
-                "timeout": 30,  # seconds
-                "proxies": proxies if active_config.USE_PROXY else None
+                "timeout": 10,  # seconds
             }
             
-            # Create client based on auth
-            if api_key and api_secret:
-                client = Spot(
-                    base_url=self.base_url,
-                    api_key=api_key,
-                    api_secret=api_secret,
-                    **kwargs
-                )
-                logging.info("Connected to Binance API with credentials")
-            else:
-                client = Spot(
-                    base_url=self.base_url,
-                    **kwargs
-                )
-                logging.info("Connected to Binance API without credentials (public access only)")
+            # Create client without proxy
+            client = Spot(
+                base_url=self.base_url,
+                **kwargs
+            )
+            
+            # Test connection
+            try:
+                client.ping()
+                logger.info(f"Successfully connected to Binance API directly")
+            except Exception as e:
+                # Connection test failed, but we'll still return the client
+                logger.warning(f"Direct connection test failed: {e}")
+                logger.warning("Returning unconfigured client anyway - operations may fail")
             
             return client
+            
         except Exception as e:
-            logging.error(f"Failed to create Binance client: {e}")
-            # Return a basic client that might work with direct connections
+            logger.error(f"Failed to create Binance client: {e}")
+            # Return a basic client that might work later if connectivity issues resolve
             return Spot(base_url=self.base_url)
     
-    def update_price(self, symbol: str, price: float, source: str = 'binance-websocket') -> None:
+    def get_symbol_price(self, symbol: str, force_refresh: bool = False) -> Dict[str, Any]:
         """
-        Update the cached price for a symbol
+        Get current price for a symbol
         
         Args:
-            symbol: The trading pair symbol (e.g., BTCUSDT)
-            price: The new price
-            source: The source of the price update
-        """
-        symbol = symbol.upper()
-        old_price = self.live_prices.get(symbol)
-        self.live_prices[symbol] = price
-        
-        # Create a price update event object
-        update = LivePriceUpdate(symbol, price, source)
-        
-        # Log significant price changes
-        if old_price and abs(price - old_price) / old_price > 0.01:
-            logging.info(f"Significant price change for {symbol}: {old_price} -> {price} ({((price - old_price) / old_price) * 100:.2f}%)")
-    
-    def get_latest_price(self, symbol: str) -> Optional[float]:
-        """
-        Get the latest cached price for a symbol
-        
-        Args:
-            symbol: The trading pair symbol (e.g., BTCUSDT)
+            symbol: Trading pair symbol (e.g., BTCUSDT)
+            force_refresh: Whether to force refresh the price
             
         Returns:
-            The latest price or None if not found
-        """
-        symbol = symbol.upper()
-        return self.live_prices.get(symbol)
-    
-    def get_all_latest_prices(self) -> List[Dict[str, Any]]:
-        """
-        Get all cached latest prices
-        
-        Returns:
-            List of price updates
-        """
-        now = int(time.time() * 1000)
-        return [
-            LivePriceUpdate(symbol, price, 'binance-websocket').to_dict()
-            for symbol, price in self.live_prices.items()
-        ]
-    
-    def get_all_prices(self) -> List[Dict[str, str]]:
-        """
-        Get current prices for all symbols from Binance API
-        
-        Returns:
-            List of symbol/price pairs
-        """
-        try:
-            # Use the official Binance API for ticker_price which gets all symbols at once
-            response = self.client.ticker_price()
-            logging.info(f"Successfully fetched {len(response)} prices from Binance")
-            
-            # Update the price cache
-            results = []
-            for ticker in response:
-                symbol = ticker.get('symbol', '')
-                price = ticker.get('price', '')
-                if price:
-                    self.update_price(symbol, float(price), 'binance')
-                    results.append(BinanceTickerPrice(symbol, price).to_dict())
-            
-            return results
-        except ClientError as e:
-            error_code = str(e).split(': ')[0] if ': ' in str(e) else 'unknown'
-            if '-1003' in error_code:  # Rate limit code
-                logging.error(f"API rate limit exceeded: {e}")
-                raise ValueError("Binance API rate limit exceeded. Please try again later.")
-            elif '-1022' in error_code:  # IP restricted
-                logging.error(f"Binance API access restricted: {e}")
-                raise ValueError("Binance API access restricted. Please try again later.")
-            else:
-                logging.error(f"Binance client error: {e}")
-                raise ValueError(f"Binance API client error: {e}")
-        except ServerError as e:
-            logging.error(f"Binance server error: {e}")
-            raise ValueError("Binance API server error. Please try again later.")
-        except Exception as e:
-            logging.error(f"Error fetching all prices from Binance: {e}")
-            raise ValueError(f"Failed to fetch market data from Binance: {e}")
-    
-    def get_symbol_price(self, symbol: str) -> Optional[Dict[str, str]]:
-        """
-        Get current price for a specific symbol
-        
-        Args:
-            symbol: The trading pair symbol (e.g., BTCUSDT)
-            
-        Returns:
-            Symbol/price pair or None if not found
+            Price data
         """
         # Format symbol
-        symbol = symbol.replace('-', '').upper()
+        symbol = symbol.upper().replace('-', '')
         
-        # Check if we have this in the live prices cache first
-        cached_price = self.get_latest_price(symbol)
-        if cached_price:
-            logging.info(f"Using cached price for {symbol}: {cached_price}")
-            return BinanceTickerPrice(symbol, str(cached_price)).to_dict()
-        
-        # Otherwise, fetch from API
-        try:
-            logging.info(f"Fetching price for {symbol} from Binance API")
-            response = self.client.ticker_price(symbol=symbol)
+        # Check cache first if not forcing refresh
+        if not force_refresh and symbol in self.price_cache:
+            cached_price = self.price_cache[symbol]
+            cached_time = cached_price.get('cache_time', 0)
             
-            # Handle response which could be a list or single dict
-            if isinstance(response, list):
-                ticker = next((t for t in response if t.get('symbol') == symbol), None)
-            else:
-                ticker = response
+            # Use cached price if it's still fresh
+            if time.time() - cached_time < self.cache_ttl:
+                return cached_price
+        
+        # Get price from Binance API
+        for attempt in range(self.max_retries):
+            try:
+                price_data = self.client.ticker_price(symbol=symbol)
                 
-            if ticker and ticker.get('price'):
-                price = str(ticker.get('price', '0'))  # Ensure price is a string
-                # Cache the price
-                self.update_price(symbol, float(price), 'binance')
+                # Add cache time
+                price_data['cache_time'] = time.time()
                 
-                return BinanceTickerPrice(symbol, price).to_dict()
-            else:
-                logging.warning(f"No price data returned for {symbol}")
-                return None
-        except ClientError as e:
-            logging.error(f"Binance API error for {symbol}: {e}")
-            return None
-        except Exception as e:
-            logging.error(f"Error fetching price for {symbol} from Binance: {e}")
-            return None
+                # Cache the result
+                self.price_cache[symbol] = price_data
+                
+                return price_data
+                
+            except ClientError as e:
+                logger.warning(f"Attempt {attempt+1}/{self.max_retries}: Binance client error: {e}")
+                if attempt == self.max_retries - 1:
+                    return {
+                        'success': False,
+                        'error': f"Binance client error: {e}",
+                        'symbol': symbol
+                    }
+                time.sleep(2 ** attempt)  # Exponential backoff
+                
+            except ServerError as e:
+                logger.warning(f"Attempt {attempt+1}/{self.max_retries}: Binance server error: {e}")
+                if attempt == self.max_retries - 1:
+                    return {
+                        'success': False,
+                        'error': f"Binance server error: {e}",
+                        'symbol': symbol
+                    }
+                time.sleep(2 ** attempt)  # Exponential backoff
+                
+            except Exception as e:
+                logger.warning(f"Attempt {attempt+1}/{self.max_retries}: Unexpected error: {e}")
+                if attempt == self.max_retries - 1:
+                    return {
+                        'success': False,
+                        'error': f"Unexpected error: {e}",
+                        'symbol': symbol
+                    }
+                time.sleep(2 ** attempt)  # Exponential backoff
     
-    def get_klines(self, 
-                   symbol: str, 
-                   interval: str = '5m', 
-                   limit: int = 100,
-                   startTime: Optional[int] = None,
-                   endTime: Optional[int] = None) -> List[List[Any]]:
+    def get_24hr_ticker(self, symbol: Optional[str] = None) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         """
-        Get klines/candlestick data for a symbol
+        Get 24-hour ticker for one or all symbols
         
         Args:
-            symbol: The trading pair symbol (e.g., BTCUSDT)
-            interval: Kline interval (1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M)
-            limit: Number of klines to retrieve (default: 100, max: 1000)
-            startTime: Start time in milliseconds (optional)
-            endTime: End time in milliseconds (optional)
+            symbol: Trading pair symbol (e.g., BTCUSDT) or None for all symbols
             
         Returns:
-            List of klines where each kline is a list of values:
-            [open_time, open, high, low, close, volume, close_time, quote_volume, 
-             trades_count, taker_buy_base_vol, taker_buy_quote_vol, ignore]
+            24-hour ticker data
         """
-        # Format symbol
-        formatted_symbol = symbol.replace('-', '').upper()
+        # Format symbol if provided
+        formatted_symbol = symbol.upper().replace('-', '') if symbol else None
         
-        try:
-            # Prepare parameters
-            params = {
-                'symbol': formatted_symbol,
-                'interval': interval,
-                'limit': limit
-            }
-            
-            # Add optional parameters if provided
-            if startTime is not None:
-                params['startTime'] = startTime
-            if endTime is not None:
-                params['endTime'] = endTime
-                
-            log_msg = f"Fetching {limit} {interval} klines for {formatted_symbol}"
-            if startTime:
-                log_msg += f" from {datetime.fromtimestamp(startTime/1000)}"
-            if endTime:
-                log_msg += f" to {datetime.fromtimestamp(endTime/1000)}"
-            logging.info(log_msg)
-            
-            # Call the Binance API to get klines
-            response = self.client.klines(**params)
-            
-            logging.info(f"Successfully retrieved {len(response)} {interval} klines for {formatted_symbol}")
-            return response
-            
-        except ClientError as e:
-            # Handle specific error codes
-            error_code = str(e).split(': ')[0] if ': ' in str(e) else 'unknown'
-            if '-1003' in error_code:  # Rate limit code
-                logging.error(f"API rate limit exceeded while fetching klines: {e}")
-                raise ValueError("Binance API rate limit exceeded. Please try again later.")
-            elif '-1022' in error_code:  # IP restricted
-                logging.error(f"Binance API access restricted while fetching klines: {e}")
-                raise ValueError("Binance API access restricted. Please try again later.")
-            else:
-                logging.error(f"Binance client error while fetching klines: {e}")
-                raise ValueError(f"Binance API client error: {e}")
-        except ServerError as e:
-            logging.error(f"Binance server error while fetching klines: {e}")
-            raise ValueError("Binance API server error. Please try again later.")
-        except Exception as e:
-            logging.error(f"Error fetching klines for {formatted_symbol} from Binance: {e}")
-            raise ValueError(f"Failed to fetch klines data from Binance: {e}")
-    
-    def get_24hr_stats(self, symbol: Optional[str] = None) -> Union[List[Dict[str, Any]], Dict[str, Any], None]:
-        """
-        Get 24hr ticker statistics for one or all symbols
-        
-        Args:
-            symbol: The trading pair symbol (optional)
-            
-        Returns:
-            24hr statistics for the requested symbol(s)
-        """
-        try:
-            if symbol:
-                # Format symbol
-                formatted_symbol = symbol.replace('-', '').upper()
-                
-                logging.info(f"Fetching 24hr stats for {formatted_symbol} from Binance API")
-                response = self.client.ticker_24hr(symbol=formatted_symbol)
-                
-                # For single symbol queries, the response might be a dict instead of list
-                if isinstance(response, list):
-                    ticker = next((t for t in response if t.get('symbol') == formatted_symbol), None)
-                    if not ticker:
-                        logging.warning(f"No ticker found for {formatted_symbol}")
-                        return None
+        # Get ticker from Binance API
+        for attempt in range(self.max_retries):
+            try:
+                if formatted_symbol:
+                    ticker_data = self.client.ticker_24hr(symbol=formatted_symbol)
                 else:
-                    ticker = response
+                    ticker_data = self.client.ticker_24hr()
                 
-                # The response from Binance is already in the correct format
-                return Binance24hrTicker(ticker).to_dict()
-            else:
-                logging.info("Fetching 24hr stats for all symbols from Binance API")
-                response = self.client.ticker_24hr()
+                return ticker_data
                 
-                results = []
-                for ticker in response:
-                    results.append(Binance24hrTicker(ticker).to_dict())
+            except (ClientError, ServerError) as e:
+                logger.warning(f"Attempt {attempt+1}/{self.max_retries}: Binance API error: {e}")
+                if attempt == self.max_retries - 1:
+                    return [] if not formatted_symbol else {
+                        'success': False,
+                        'error': f"Binance API error: {e}",
+                        'symbol': formatted_symbol
+                    }
+                time.sleep(2 ** attempt)  # Exponential backoff
                 
-                return results
+            except Exception as e:
+                logger.warning(f"Attempt {attempt+1}/{self.max_retries}: Unexpected error: {e}")
+                if attempt == self.max_retries - 1:
+                    return [] if not formatted_symbol else {
+                        'success': False,
+                        'error': f"Unexpected error: {e}",
+                        'symbol': formatted_symbol
+                    }
+                time.sleep(2 ** attempt)  # Exponential backoff
+    
+    def get_exchange_info(self, symbol: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get exchange information
+        
+        Args:
+            symbol: Trading pair symbol (e.g., BTCUSDT) or None for all symbols
+            
+        Returns:
+            Exchange information
+        """
+        # Format symbol if provided
+        formatted_symbol = symbol.upper().replace('-', '') if symbol else None
+        
+        # Get exchange info from Binance API
+        for attempt in range(self.max_retries):
+            try:
+                if formatted_symbol:
+                    exchange_info = self.client.exchange_info(symbol=formatted_symbol)
+                else:
+                    exchange_info = self.client.exchange_info()
                 
-        except ClientError as e:
-            logging.error(f"Binance API error: {e}")
-            raise ValueError(f"Binance API error: {e}")
-        except ServerError as e:
-            logging.error(f"Binance server error: {e}")
-            raise ValueError("Binance API server error. Please try again later.")
-        except Exception as e:
-            logging.error(f"Error fetching 24hr stats from Binance: {e}")
-            raise ValueError(f"Failed to fetch 24hr market statistics from Binance: {e}")
+                return exchange_info
+                
+            except (ClientError, ServerError) as e:
+                logger.warning(f"Attempt {attempt+1}/{self.max_retries}: Binance API error: {e}")
+                if attempt == self.max_retries - 1:
+                    return {
+                        'success': False,
+                        'error': f"Binance API error: {e}",
+                        'symbol': formatted_symbol
+                    }
+                time.sleep(2 ** attempt)  # Exponential backoff
+                
+            except Exception as e:
+                logger.warning(f"Attempt {attempt+1}/{self.max_retries}: Unexpected error: {e}")
+                if attempt == self.max_retries - 1:
+                    return {
+                        'success': False,
+                        'error': f"Unexpected error: {e}",
+                        'symbol': formatted_symbol
+                    }
+                time.sleep(2 ** attempt)  # Exponential backoff
 
 
-# Create a singleton instance for reuse
-binance_market_service = BinanceMarketService(False)
+# Create a singleton instance
+_binance_market_service = None
+
+def get_binance_market_service(use_testnet: bool = False) -> BinanceMarketService:
+    """
+    Get or create the BinanceMarketService singleton instance
+    
+    Args:
+        use_testnet: Whether to use the Binance testnet
+        
+    Returns:
+        The BinanceMarketService instance
+    """
+    global _binance_market_service
+    if _binance_market_service is None:
+        _binance_market_service = BinanceMarketService(
+            use_testnet=use_testnet
+        )
+    return _binance_market_service
+
+
+# Create a default instance for easy importing
+binance_market_service = get_binance_market_service()
+
+
+# Simple test function
+if __name__ == "__main__":
+    print("\n=== Testing Binance Market Service ===\n")
+    
+    # Create the service
+    service = get_binance_market_service()
+    
+    # Test getting price
+    print("Testing price retrieval...")
+    price = service.get_symbol_price("BTCUSDT")
+    print(f"BTCUSDT price: {price}")
+    
+    # Test getting 24-hour ticker
+    print("\nTesting 24-hour ticker retrieval...")
+    ticker = service.get_24hr_ticker("BTCUSDT")
+    print(f"BTCUSDT 24hr ticker: {ticker}")
+    
+    # Test getting exchange info
+    print("\nTesting exchange info retrieval...")
+    exchange_info = service.get_exchange_info("BTCUSDT")
+    print(f"BTCUSDT exchange info available: {'symbols' in exchange_info}")
+    
+    print("\nTest completed!")

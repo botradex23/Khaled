@@ -12,6 +12,7 @@ This document provides detailed instructions for setting up the CryptoTrade plat
 3. [Troubleshooting](#troubleshooting)
 4. [Database Setup](#database-setup)
 5. [API Keys](#api-keys)
+6. [Proxy Configuration](#proxy-configuration)
 
 ## Local Development Environment
 
@@ -214,7 +215,7 @@ If you experience MongoDB connection problems:
 
 1. Ensure ENCRYPTION_KEY has not changed after API keys were saved
 2. Verify that API keys are properly formatted and active
-3. Check if your region requires a proxy to access Binance API
+3. **Important**: Binance restricts API access from certain geographic regions (including the US, Canada, and many other countries). If you're in a restricted region, you must configure a proxy to access Binance services. See the [Proxy Configuration](#proxy-configuration) section below.
 
 ## Database Setup
 
@@ -253,6 +254,8 @@ db.createUser({
    - Enable Spot & Margin Trading (if using real trading)
 5. Save the API key and Secret key securely
 
+**Note**: Binance API is not accessible from many countries due to regulatory restrictions. If you're in a restricted region (including the US and Canada), you'll need to set up a proxy as described in the [Proxy Configuration](#proxy-configuration) section below.
+
 ### Obtaining OKX API Keys
 
 1. Login to your OKX account
@@ -262,3 +265,46 @@ db.createUser({
 5. Save the API key, Secret key, and Passphrase securely
 
 Remember that this application encrypts API keys in the database using the ENCRYPTION_KEY environment variable. Changing this key after API keys are stored will make them unrecoverable!
+
+## Proxy Configuration
+
+If you're in a geographical region where Binance API access is restricted, you'll need to configure a proxy to access Binance services.
+
+### Setting Up Proxy Environment Variables
+
+Add these variables to your `.env` file:
+
+```
+# Proxy Settings
+USE_PROXY=true
+PROXY_IP=your_proxy_ip_or_hostname
+PROXY_PORT=your_proxy_port
+PROXY_USERNAME=your_proxy_username
+PROXY_PASSWORD=your_proxy_password
+FALLBACK_TO_DIRECT=false
+```
+
+### Obtaining a Suitable Proxy
+
+For reliable access to Binance API, you should use a UK-based proxy as Binance is fully accessible from the UK. Options include:
+
+1. **DataCenter Proxies**: Services like SmartProxy, Bright Data, or Oxylabs offer UK-based datacenter proxies
+2. **Residential Proxies**: For higher reliability (but more expensive)
+3. **VPN Services**: Some VPN services offer API-accessible proxy endpoints
+
+### Testing Your Proxy Connection
+
+After configuring your proxy, test the connection with:
+
+```bash
+python test_binance_proxy_simple.py
+```
+
+A successful test will show:
+```
+=== Test Results ===
+Proxy connection:  SUCCESS
+Direct connection: FAILED
+```
+
+For detailed instructions and troubleshooting, refer to the complete [Proxy Setup Guide](docs/PROXY_SETUP.md).

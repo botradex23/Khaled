@@ -1,3 +1,3 @@
 """
-Utilities for the ML Prediction System
+Utility modules for the ML Trading System
 """

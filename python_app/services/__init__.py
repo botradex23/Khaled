@@ -1,5 +1,3 @@
 """
-Services package
-
-This package contains all services used in the application.
+Services package for the ML Trading System
 """
