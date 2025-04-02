@@ -5,18 +5,14 @@
  * with handling for various environments
  */
 
-// Determine which API endpoint to use
-// During development, use the direct API to bypass Vite middleware issues
-// In production, use the regular API endpoint
-const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' || 
-                       window.location.hostname.includes('replit.dev');
+// Always use the direct API to bypass Vite middleware issues
+// This ensures consistent behavior across all environments
+const API_BASE_URL = '/direct-api/trade-logs';
 
-// Fallback to direct API if we're in development mode
-const API_BASE_URL = IS_DEVELOPMENT 
-  ? '/direct-api/trade-logs'  // Using our direct API that bypasses Vite middleware
-  : '/api/trade-logs';        // Regular API path for production
+console.log(`Using Trade Logs API endpoint: ${API_BASE_URL} (direct API mode)`);
 
-console.log(`Using Trade Logs API endpoint: ${API_BASE_URL} (development mode: ${IS_DEVELOPMENT})`);
+// Note: We're using the direct API endpoint for all environments to avoid Vite proxy issues
+// The direct-api routes directly handle the requests without being intercepted by Vite
 
 /**
  * Helper function to safely convert Date or null to string
