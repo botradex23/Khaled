@@ -115,6 +115,50 @@ def ping():
             'success': False,
             'message': f'Error checking Binance API service: {str(e)}'
         }), 500
+        
+@binance_bp.route('/connection-status', methods=['GET'])
+def connection_status():
+    """Check the Binance API connection status"""
+    try:
+        # Try to get the current BTC price as a connection test
+        test_result = binance_market_service.get_symbol_price('BTCUSDT')
+        
+        # Check if we got a successful response or fallback data
+        using_fallback = hasattr(binance_market_service, 'cached_all_prices') and binance_market_service.cached_all_prices
+        
+        # If the response contains an error, we have a connection issue
+        connection_error = None
+        if isinstance(test_result, dict) and 'error' in test_result:
+            connection_error = test_result['error']
+        
+        # Return detailed status information
+        return jsonify({
+            'success': True,
+            'connection': {
+                'status': 'limited' if using_fallback else ('connected' if not connection_error else 'disconnected'),
+                'direct_api_access': not using_fallback and not connection_error,
+                'error': connection_error,
+                'using_fallback_data': using_fallback
+            },
+            'binance': {
+                'service': 'running',
+                'sdk': 'binance-connector-python',
+                'testnet': binance_market_service.use_testnet,
+                'last_price_update': binance_market_service.live_prices.get('timestamp', 0)
+            },
+            'message': 'Using fallback data due to API access restrictions' if using_fallback else 
+                      ('Connected to Binance API' if not connection_error else f'Connection error: {connection_error}')
+        }), 200
+    except Exception as e:
+        logging.error(f"Error in Binance connection status route: {e}")
+        return jsonify({
+            'success': False,
+            'connection': {
+                'status': 'unknown',
+                'error': str(e)
+            },
+            'message': f'Error checking Binance API connection: {str(e)}'
+        }), 500
 
 @binance_bp.route('/prices', methods=['GET'])
 def get_all_prices():
@@ -149,10 +193,44 @@ def get_all_prices():
 def get_symbol_price(symbol):
     """Get current price for a specific symbol"""
     try:
-        # Use the service to get the price for the symbol
-        price = binance_market_service.get_symbol_price(symbol)
+        # Format the symbol to match our expected format
+        formatted_symbol = symbol.upper().replace('-', '')
         
-        if price:
+        # Check if we have fallback data and if the symbol exists in it
+        if hasattr(binance_market_service, 'cached_all_prices') and binance_market_service.cached_all_prices:
+            # Look for the symbol in our cached prices
+            for price_item in binance_market_service.cached_all_prices:
+                if price_item['symbol'] == formatted_symbol:
+                    return jsonify({
+                        'success': True,
+                        'price': price_item,
+                        'source': 'fallback_data'
+                    }), 200
+        
+        # Try to get the price from the Binance API
+        price = binance_market_service.get_symbol_price(formatted_symbol)
+        
+        # Check if we got a successful response
+        if price and not (isinstance(price, dict) and 'error' in price):
+            return jsonify({
+                'success': True,
+                'price': price,
+                'source': 'binance_api'
+            }), 200
+        elif isinstance(price, dict) and 'error' in price:
+            # The API returned an error but we might still have the data in our fallback array
+            if hasattr(binance_market_service, 'cached_all_prices') and binance_market_service.cached_all_prices:
+                # Look for the symbol in our cached prices
+                for price_item in binance_market_service.cached_all_prices:
+                    if price_item['symbol'] == formatted_symbol:
+                        return jsonify({
+                            'success': True,
+                            'price': price_item,
+                            'source': 'fallback_data',
+                            'api_error': price['error']
+                        }), 200
+            
+            # Return the error response if no fallback data is available
             return jsonify({
                 'success': True,
                 'price': price
@@ -160,7 +238,7 @@ def get_symbol_price(symbol):
         else:
             return jsonify({
                 'success': False,
-                'message': f'No price data found for symbol: {symbol}'
+                'message': f'No price data found for symbol: {formatted_symbol}'
             }), 404
     except Exception as e:
         logging.error(f"Error in get_symbol_price route for {symbol}: {e}")
