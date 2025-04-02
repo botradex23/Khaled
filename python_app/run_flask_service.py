@@ -9,8 +9,13 @@ It is called by the Node.js application to start the ML Flask service.
 import os
 import sys
 import logging
-from app import create_app
-from config import active_config
+
+# Add parent directory to path to make local imports work
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Local imports
+from python_app.app import create_app
+from python_app.config import active_config
 
 # Configure logging
 logging.basicConfig(

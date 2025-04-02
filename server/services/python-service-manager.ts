@@ -29,8 +29,8 @@ export class PythonServiceManager {
   // Configuration for the Python Flask service
   private PYTHON_SERVICE_PORT = 5001;
   private PYTHON_SERVICE_URL = `http://localhost:${this.PYTHON_SERVICE_PORT}`;
-  private PYTHON_APP_DIR = path.join(process.cwd(), 'python_app');
-  private PYTHON_SERVICE_SCRIPT = path.join(this.PYTHON_APP_DIR, 'run_flask_service.py');
+  private PYTHON_APP_DIR = process.cwd();
+  private PYTHON_SERVICE_SCRIPT = path.join(this.PYTHON_APP_DIR, 'run_flask_app.py');
   private STARTUP_TIMEOUT = 10000; // 10 seconds
 
   private constructor() {

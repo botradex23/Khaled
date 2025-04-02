@@ -11,8 +11,8 @@ const fs = require('fs');
 const http = require('http');
 
 // Configuration
-const PYTHON_APP_DIR = path.join(process.cwd(), 'python_app');
-const PYTHON_SERVICE_SCRIPT = path.join(PYTHON_APP_DIR, 'run_flask_service.py');
+const PYTHON_APP_DIR = process.cwd();
+const PYTHON_SERVICE_SCRIPT = path.join(PYTHON_APP_DIR, 'run_flask_app.py');
 const PORT = 5001;
 const SERVICE_URL = `http://localhost:${PORT}`;
 
