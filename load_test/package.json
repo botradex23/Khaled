@@ -1,0 +1,19 @@
+{
+  "name": "crypto-trading-platform-load-test",
+  "version": "1.0.0",
+  "description": "Load testing suite for cryptocurrency trading platform",
+  "main": "run_load_tests.js",
+  "scripts": {
+    "test": "node run_load_tests.js",
+    "test:api": "node load_tester.js",
+    "test:queue": "node queue_stress_test.js",
+    "test:ml": "node ml_prediction_test.js",
+    "adapt": "node replit_adapter.js",
+    "charts": "node generate_charts.js",
+    "check": "node system_check.js",
+    "pretest": "node system_check.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}

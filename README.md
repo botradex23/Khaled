@@ -180,6 +180,41 @@ For more detailed information, please refer to these documentation files:
 - [Environment Variables](./.env.example) - Template for required environment variables
 - [API Documentation](./API.md) - Complete API reference with request/response examples
 - [System Architecture](./docs/ARCHITECTURE.md) - High-level architecture diagrams and component details
+- [Load Test Report Template](./load_test/LOAD_TEST_REPORT_TEMPLATE.md) - Template for creating load test reports
+
+## Load Testing
+
+The platform includes a comprehensive load testing suite to evaluate system performance, reliability, and scalability under various load conditions. The load testing tools are located in the `load_test` directory.
+
+### Running Load Tests
+
+You can run the load tests using the provided shell script:
+
+```bash
+./run_load_tests.sh
+```
+
+This will present a menu with different testing options:
+
+1. General API Load Test
+2. Trade Execution Queue Stress Test
+3. ML Prediction Load Test
+4. Run All Tests
+5. Generate Charts
+
+### Test Components
+
+- **General API Load Test**: Tests various API endpoints under concurrent user load
+- **Trade Execution Queue Test**: Stress tests the trade execution queue with high volumes of concurrent trades
+- **ML Prediction Test**: Tests ML prediction services under high request load
+
+### Test Results
+
+Test results are stored in the `load_test/results` directory, including:
+
+- Raw test data for each scenario and load level
+- Consolidated reports with findings and recommendations
+- Performance charts visualizing system behavior under load
 
 ## Contributing
 
