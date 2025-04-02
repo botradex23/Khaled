@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-04-02 16:15:01",
+  "action": "TEST_RETRIEVAL",
+  "symbol": "ETHUSDT",
+  "side": "BUY",
+  "quantity": "0.1",
+  "price": null,
+  "trade_id": null,
+  "details": {},
+  "notification_type": "trade"
+}

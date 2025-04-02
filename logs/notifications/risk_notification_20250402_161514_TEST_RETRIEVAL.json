@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-04-02 16:15:14",
+  "symbol": "BTCUSDT",
+  "rule": "TEST_RETRIEVAL",
+  "reason": "Testing notification retrieval",
+  "details": {},
+  "trade_id": null,
+  "notification_type": "risk_management"
+}

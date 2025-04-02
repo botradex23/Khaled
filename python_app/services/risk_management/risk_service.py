@@ -27,11 +27,92 @@ logging.basicConfig(
 )
 logger = logging.getLogger('risk_management')
 
-# Add current directory to path to ensure imports work correctly
+# Add parent directory to the path for imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(os.path.dirname(current_dir))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
+
+# Try to import Telegram notifier and fallback notifier
+TELEGRAM_AVAILABLE = False
+FALLBACK_AVAILABLE = False
+
+try:
+    from python_app.utils.telegram_notifier import notify_risk_management
+    TELEGRAM_AVAILABLE = True
+except ImportError:
+    try:
+        from utils.telegram_notifier import notify_risk_management
+        TELEGRAM_AVAILABLE = True
+    except ImportError:
+        logger.warning("Telegram notifier not available - will use fallback notification system")
+
+# Try to import fallback notifier
+try:
+    from python_app.utils.fallback_notifier import log_risk_notification
+    FALLBACK_AVAILABLE = True
+except ImportError:
+    try:
+        from utils.fallback_notifier import log_risk_notification
+        FALLBACK_AVAILABLE = True
+    except ImportError:
+        logger.warning("Fallback notifier not available - some notifications may be lost")
+
+def send_risk_notification(symbol, rule, reason, details=None, trade_id=None):
+    """
+    Send a risk management notification via Telegram if available,
+    otherwise log to the fallback notification system
+    
+    Args:
+        symbol: Trading pair symbol
+        rule: Risk rule that was triggered
+        reason: Reason for the rejection
+        details: Additional details about the event
+        trade_id: Trade ID (if available)
+        
+    Returns:
+        bool: True if notification was sent or logged, False otherwise
+    """
+    telegram_result = False
+    fallback_result = False
+    
+    # Try Telegram first if available
+    if TELEGRAM_AVAILABLE:
+        try:
+            telegram_result = notify_risk_management(
+                symbol=symbol,
+                rule=rule,
+                reason=reason,
+                trade_id=trade_id,
+                details=details
+            )
+            if telegram_result:
+                logger.info(f"Risk notification sent via Telegram: {symbol} - {rule}")
+        except Exception as e:
+            logger.error(f"Failed to send risk notification via Telegram: {e}")
+    
+    # Use fallback if Telegram failed or is unavailable
+    if not telegram_result and FALLBACK_AVAILABLE:
+        try:
+            fallback_result = log_risk_notification(
+                symbol=symbol,
+                rule=rule,
+                reason=reason,
+                details=details,
+                trade_id=trade_id
+            )
+            if fallback_result:
+                logger.info(f"Risk notification logged to fallback system: {symbol} - {rule}")
+        except Exception as e:
+            logger.error(f"Failed to log risk notification to fallback system: {e}")
+    
+    # Log if both methods failed
+    if not telegram_result and not fallback_result:
+        logger.warning(f"Risk notification failed to send and log: {symbol} - {rule} - {reason}")
+    
+    return telegram_result or fallback_result
+
+# This section is intentionally left empty as these configurations are already set up above
 
 # Import config if available
 try:
@@ -104,6 +185,19 @@ def check_risk_limits(
                 
                 if not allowed:
                     logger.warning(f"Trade rejected by risk API: {reason}")
+                    
+                    # Send risk notification
+                    send_risk_notification(
+                        symbol=symbol,
+                        rule="API_RISK_CHECK",
+                        reason=reason,
+                        details={
+                            "user_id": user_id,
+                            "side": side,
+                            "quantity": quantity,
+                            "price": price
+                        }
+                    )
                 
                 return allowed
             else:
@@ -117,7 +211,23 @@ def check_risk_limits(
         # Perform basic risk checks locally as a fallback
         # 1. Check maximum order size
         if quantity > max_order_size:
-            logger.warning(f"Trade rejected: Order size {quantity} exceeds limit {max_order_size}")
+            reason = f"Order size {quantity} exceeds limit {max_order_size}"
+            logger.warning(f"Trade rejected: {reason}")
+            
+            # Send risk notification
+            send_risk_notification(
+                symbol=symbol,
+                rule="MAX_ORDER_SIZE",
+                reason=reason,
+                details={
+                    "user_id": user_id,
+                    "side": side,
+                    "quantity": quantity,
+                    "max_allowed": max_order_size,
+                    "price": price
+                }
+            )
+            
             return False
         
         # All checks passed

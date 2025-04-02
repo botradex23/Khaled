@@ -1,0 +1,8 @@
+{
+  "timestamp": "2025-04-02 16:15:01",
+  "error_type": "TEST_RETRIEVAL",
+  "message": "Testing notification retrieval",
+  "service": null,
+  "details": {},
+  "notification_type": "error"
+}

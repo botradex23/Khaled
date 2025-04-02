@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-04-02 16:15:14",
+  "symbol": "BTCUSDT",
+  "rule": "MAX_ORDER_SIZE",
+  "reason": "Order size exceeds maximum allowed",
+  "details": {
+    "user_id": 1,
+    "requested_size": 2.5,
+    "maximum_allowed": 1.0
+  },
+  "trade_id": "test-risk-123",
+  "notification_type": "risk_management"
+}

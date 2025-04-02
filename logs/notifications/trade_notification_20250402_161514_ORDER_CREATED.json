@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-04-02 16:15:14",
+  "action": "ORDER_CREATED",
+  "symbol": "ETHUSDT",
+  "side": "BUY",
+  "quantity": "0.5",
+  "price": "3000.0",
+  "trade_id": "test-trade-456",
+  "details": {
+    "user_id": 1,
+    "order_type": "LIMIT",
+    "time_in_force": "GTC"
+  },
+  "notification_type": "trade"
+}
