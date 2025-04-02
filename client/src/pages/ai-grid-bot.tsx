@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
+import { useMixpanel, MIXPANEL_EVENTS } from "@/components/MixpanelProvider";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import BotExplanationGuide from "@/components/bots/bot-explanation-guide";
@@ -112,6 +113,7 @@ export default function AIGridBot() {
   const [showApiKeyDialog, setShowApiKeyDialog] = useState<boolean>(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { track, trackBotCreation } = useMixpanel();
   
   // Auth state
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
@@ -276,6 +278,15 @@ export default function AIGridBot() {
         description: "Your trading bot is now running",
       });
       
+      // Track bot start event
+      track(MIXPANEL_EVENTS.BOT_ACTION, {
+        action: 'start',
+        botType: 'ai_grid',
+        botId: botId,
+        symbol: form.getValues("symbol"),
+        useAI: form.getValues("useAI")
+      });
+      
       // Refetch bot status
       queryClient.invalidateQueries({ queryKey: ['/api/bots', botId, 'status'] });
     },
@@ -284,6 +295,14 @@ export default function AIGridBot() {
         title: "Failed to Start Bot",
         description: error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
+      });
+      
+      // Track start failure
+      track(MIXPANEL_EVENTS.ERROR, {
+        errorType: 'bot_start_failed',
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        botType: 'ai_grid',
+        botId: botId
       });
     },
   });
@@ -300,6 +319,14 @@ export default function AIGridBot() {
         description: "Your trading bot has been stopped",
       });
       
+      // Track bot stop event
+      track(MIXPANEL_EVENTS.BOT_ACTION, {
+        action: 'stop',
+        botType: 'ai_grid',
+        botId: botId,
+        symbol: form.getValues("symbol")
+      });
+      
       // Refetch bot status
       queryClient.invalidateQueries({ queryKey: ['/api/bots', botId, 'status'] });
     },
@@ -308,6 +335,14 @@ export default function AIGridBot() {
         title: "Failed to Stop Bot",
         description: error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
+      });
+      
+      // Track stop failure
+      track(MIXPANEL_EVENTS.ERROR, {
+        errorType: 'bot_stop_failed',
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        botType: 'ai_grid',
+        botId: botId
       });
     },
   });
@@ -334,6 +369,25 @@ export default function AIGridBot() {
 
   // Handle form submission
   const onSubmit = (data: BotFormValues) => {
+    // Track bot creation event
+    trackBotCreation('ai_grid', {
+      symbol: data.symbol,
+      investment: parseFloat(data.totalInvestment),
+      useAI: data.useAI,
+      stopLossPercentage: data.stopLossPercentage,
+      takeProfitPercentage: data.takeProfitPercentage,
+      emergencyStopEnabled: data.emergencyStopEnabled,
+      useAdaptiveRiskAdjustment: data.useAdaptiveRiskAdjustment
+    });
+    
+    // Log general bot creation action
+    track(MIXPANEL_EVENTS.BOT_CREATED, {
+      botType: 'ai_grid',
+      name: data.name,
+      symbol: data.symbol,
+      investment: parseFloat(data.totalInvestment)
+    });
+    
     createBotMutation.mutate(data);
   };
 

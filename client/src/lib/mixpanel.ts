@@ -27,10 +27,79 @@ class CustomMixpanel {
         localStorage.setItem('mp_distinct_id', this.distinct_id);
       }
       console.log('Mixpanel initialized with token:', this.token);
+      
+      // Process any previously failed events
+      this.processFailedEvents();
+      
+      // Set up online/offline event listeners
+      this.setupConnectionListeners();
+      
       return true;
     } catch (error) {
       console.error('Failed to initialize Mixpanel:', error);
       return false;
+    }
+  }
+  
+  // Process previously failed events
+  private async processFailedEvents(): Promise<void> {
+    try {
+      const failedEvents = JSON.parse(
+        localStorage.getItem('mp_failed_events') || '[]'
+      );
+      
+      if (failedEvents.length === 0) {
+        return;
+      }
+      
+      console.log(`Processing ${failedEvents.length} previously failed events`);
+      
+      // Process events in small batches to prevent overwhelming the server
+      const batchSize = 5;
+      for (let i = 0; i < failedEvents.length; i += batchSize) {
+        const batch = failedEvents.slice(i, i + batchSize);
+        
+        // Process batch sequentially
+        for (const failedEvent of batch) {
+          try {
+            // Don't retry events older than 3 days
+            const ageInMs = Date.now() - failedEvent.timestamp;
+            if (ageInMs > 3 * 24 * 60 * 60 * 1000) {
+              console.log(`Skipping old event: ${failedEvent.event}`);
+              continue;
+            }
+            
+            await this.sendEventWithRetry(failedEvent.event, failedEvent.properties, 1);
+          } catch (error) {
+            console.error(`Failed to process event ${failedEvent.event}:`, error);
+          }
+        }
+        
+        // Short delay between batches
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      // Clear the processed events
+      localStorage.setItem('mp_failed_events', '[]');
+      console.log('Successfully processed failed events');
+    } catch (error) {
+      console.error('Error processing failed events:', error);
+    }
+  }
+  
+  // Set up network status listeners
+  private setupConnectionListeners(): void {
+    if (typeof window !== 'undefined') {
+      // Process failed events when coming back online
+      window.addEventListener('online', () => {
+        console.log('Network connection restored, processing failed events');
+        this.processFailedEvents();
+      });
+      
+      // Log when going offline
+      window.addEventListener('offline', () => {
+        console.log('Network connection lost, events will be stored locally');
+      });
     }
   }
 
@@ -69,22 +138,96 @@ class CustomMixpanel {
         properties: combinedProperties
       });
 
-      // Send to backend API
+      // Send to backend API with retry logic
       if (typeof fetch !== 'undefined') {
-        fetch('/api/analytics/mixpanel/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            event: eventName, 
-            properties: combinedProperties 
-          })
-        }).catch(err => console.error('Error sending event to backend:', err));
+        this.sendEventWithRetry(eventName, combinedProperties);
       }
 
       return true;
     } catch (error) {
       console.error('Error tracking event in Mixpanel:', error);
       return false;
+    }
+  }
+  
+  // Send event with retry logic
+  private async sendEventWithRetry(
+    eventName: string, 
+    properties: Record<string, any>,
+    retries = 3, 
+    backoff = 500
+  ): Promise<void> {
+    try {
+      const response = await fetch('/api/analytics/mixpanel/track', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        body: JSON.stringify({ 
+          event: eventName, 
+          properties 
+        }),
+        // Add credentials to ensure cookies are sent
+        credentials: 'same-origin'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Unknown error from server');
+      }
+      
+      // Success - event was tracked
+      console.debug(`Mixpanel event '${eventName}' sent successfully`);
+    } catch (error) {
+      console.error('Error sending event to backend:', error);
+      
+      // Retry logic
+      if (retries > 0) {
+        console.log(`Retrying event '${eventName}'... (${retries} attempts left)`);
+        
+        // Wait with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, backoff));
+        
+        // Retry with increased backoff
+        return this.sendEventWithRetry(
+          eventName, 
+          properties, 
+          retries - 1, 
+          backoff * 2
+        );
+      } else {
+        // Store failed events in localStorage for later retry
+        this.storeFailedEvent(eventName, properties);
+      }
+    }
+  }
+  
+  // Store failed events for later retry
+  private storeFailedEvent(eventName: string, properties: Record<string, any>): void {
+    try {
+      const failedEvents = JSON.parse(
+        localStorage.getItem('mp_failed_events') || '[]'
+      );
+      
+      failedEvents.push({
+        event: eventName,
+        properties,
+        timestamp: Date.now()
+      });
+      
+      // Limit the number of stored events
+      const limitedEvents = failedEvents.slice(-50);
+      
+      localStorage.setItem('mp_failed_events', JSON.stringify(limitedEvents));
+      console.log(`Stored failed event '${eventName}' for later retry`);
+    } catch (e) {
+      console.error('Failed to store event in localStorage:', e);
     }
   }
 
