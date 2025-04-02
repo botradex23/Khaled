@@ -523,6 +523,55 @@ class BinanceTradingService:
                 # Wait before retrying
                 time.sleep(2 ** attempt)  # Exponential backoff
     
+    def place_market_order(self, symbol: str, side: str, quantity: float, user_id: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Place a market order directly via the Binance SDK
+        
+        This method is intended to be called by the trade queue service
+        
+        Args:
+            symbol: Trading pair symbol (e.g., BTCUSDT)
+            side: Order side (BUY or SELL)
+            quantity: Order quantity
+            user_id: Optional user ID for tracking
+            
+        Returns:
+            Order response data
+        """
+        return self.execute_trade(
+            symbol=symbol,
+            side=side,
+            quantity=quantity,
+            order_type="MARKET",
+            price=None,
+            position_id=None
+        )
+        
+    def place_limit_order(self, symbol: str, side: str, quantity: float, price: float, user_id: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Place a limit order directly via the Binance SDK
+        
+        This method is intended to be called by the trade queue service
+        
+        Args:
+            symbol: Trading pair symbol (e.g., BTCUSDT)
+            side: Order side (BUY or SELL)
+            quantity: Order quantity
+            price: Limit price
+            user_id: Optional user ID for tracking
+            
+        Returns:
+            Order response data
+        """
+        return self.execute_trade(
+            symbol=symbol,
+            side=side,
+            quantity=quantity,
+            order_type="LIMIT",
+            price=price,
+            position_id=None
+        )
+    
     def _execute_paper_trade(self, 
                             symbol: str, 
                             side: str, 

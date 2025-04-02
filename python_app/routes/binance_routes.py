@@ -2,16 +2,24 @@
 Binance API routes
 
 This module defines all routes for interacting with the Binance API.
+It includes trading operations through the trade queue system, market data access,
+and testing endpoints.
 """
 
 import logging
 import os
 import sys
+import json
 # Add the parent directory to the Python path to allow imports
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Blueprint, jsonify, request, redirect, url_for, render_template, flash
 from services.binance import binance_market_service
+from services.binance.binance_service_manager import (
+    get_market_service, get_trading_service, get_trade_queue_service,
+    place_order, get_order_status, cancel_order, check_api_connection,
+    get_symbol_price
+)
 from utils import flash_message, handle_api_response
 
 # Create the Binance blueprint
@@ -280,4 +288,146 @@ def get_24hr_stats():
         return jsonify({
             'success': False,
             'message': f'Error fetching 24hr statistics from Binance: {str(e)}'
+        }), 500
+
+# Trade Queue API Routes
+
+@binance_bp.route('/trading/order', methods=['POST'])
+def place_queue_order():
+    """Place a trade order through the queue system"""
+    try:
+        # Parse request data
+        data = request.json
+        if not data:
+            return jsonify({
+                'success': False,
+                'message': 'No data provided'
+            }), 400
+        
+        # Extract required parameters
+        symbol = data.get('symbol')
+        side = data.get('side')
+        quantity = data.get('quantity')
+        
+        # Validate required fields
+        if not symbol or not side or not quantity:
+            return jsonify({
+                'success': False,
+                'message': 'Missing required parameters: symbol, side, quantity'
+            }), 400
+            
+        # Extract optional parameters
+        order_type = data.get('order_type', 'MARKET')
+        price = data.get('price')
+        user_id = data.get('user_id')
+        position_id = data.get('position_id')
+        strategy_id = data.get('strategy_id')
+        ml_signal = data.get('ml_signal')
+        meta = data.get('meta', {})
+        
+        # Validate price for LIMIT orders
+        if order_type.upper() == 'LIMIT' and not price:
+            return jsonify({
+                'success': False,
+                'message': 'Price is required for LIMIT orders'
+            }), 400
+            
+        # Convert numeric strings to float
+        try:
+            quantity = float(quantity)
+            if price is not None:
+                price = float(price)
+        except ValueError:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid quantity or price format'
+            }), 400
+        
+        # Place the order through the queue
+        result = place_order(
+            symbol=symbol,
+            side=side,
+            quantity=quantity,
+            order_type=order_type,
+            price=price,
+            user_id=user_id,
+            position_id=position_id,
+            strategy_id=strategy_id,
+            ml_signal=ml_signal,
+            meta=meta
+        )
+        
+        # Return the result
+        return jsonify({
+            'success': True,
+            'message': 'Order queued successfully',
+            'data': result
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"Error in place_queue_order route: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error placing order: {str(e)}'
+        }), 500
+
+@binance_bp.route('/trading/order/<trade_id>', methods=['GET'])
+def get_queue_order_status(trade_id):
+    """Get the status of a queued order"""
+    try:
+        # Get order status
+        status = get_order_status(trade_id)
+        
+        # Return the result
+        return jsonify({
+            'success': True,
+            'data': status
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"Error in get_queue_order_status route for {trade_id}: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error getting order status: {str(e)}'
+        }), 500
+
+@binance_bp.route('/trading/order/<trade_id>/cancel', methods=['POST'])
+def cancel_queue_order(trade_id):
+    """Cancel a queued order"""
+    try:
+        # Cancel the order
+        result = cancel_order(trade_id)
+        
+        # Return the result
+        return jsonify({
+            'success': result.get('success', False),
+            'message': result.get('message', 'Order cancellation attempt complete'),
+            'data': result
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"Error in cancel_queue_order route for {trade_id}: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error canceling order: {str(e)}'
+        }), 500
+
+@binance_bp.route('/trading/status', methods=['GET'])
+def check_trading_status():
+    """Check trading API connection status"""
+    try:
+        # Check connection to Binance API
+        result = check_api_connection()
+        
+        # Return the result
+        return jsonify({
+            'success': True,
+            'data': result
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"Error in check_trading_status route: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error checking trading status: {str(e)}'
         }), 500
