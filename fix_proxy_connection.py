@@ -250,9 +250,40 @@ def verify_connection_after_fix():
     logger.info("Verifying connection after fix...")
     return test_proxy_connection(proxy_ip, proxy_port, proxy_username, proxy_password, encoding_method)
 
+def load_proxies_from_file(file_path='attached_assets/Webshare 3 proxies 3.txt'):
+    """
+    Load proxies from a file
+    
+    Args:
+        file_path: Path to the proxy file
+        
+    Returns:
+        list: List of proxy dictionaries with IP, port, username, and password
+    """
+    proxies = []
+    try:
+        with open(file_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                parts = line.split(':')
+                if len(parts) >= 4:
+                    proxies.append({
+                        'ip': parts[0],
+                        'port': parts[1],
+                        'username': parts[2],
+                        'password': parts[3]
+                    })
+        logger.info(f"Loaded {len(proxies)} proxies from {file_path}")
+        return proxies
+    except Exception as e:
+        logger.error(f"Error loading proxies from file: {e}")
+        return []
+
 def fix_proxy_environment():
     """
-    Fix the proxy environment variables in .env
+    Fix the proxy environment variables in .env by trying multiple proxies
     """
     env_vars = load_env_variables()
     
@@ -263,32 +294,62 @@ def fix_proxy_environment():
         logger.warning("Proxy is disabled. No fix needed.")
         return
     
-    # Get proxy settings
-    proxy_ip = env_vars.get('PROXY_IP', '')
-    proxy_port = env_vars.get('PROXY_PORT', '')
-    proxy_username = env_vars.get('PROXY_USERNAME', '')
-    proxy_password = env_vars.get('PROXY_PASSWORD', '')
+    # First try to load proxies from the WebShare file
+    proxy_list = load_proxies_from_file()
+    logger.info(f"Loaded {len(proxy_list)} proxies from WebShare file")
     
-    # Check if proxy settings are complete
-    if not (proxy_ip and proxy_port and proxy_username and proxy_password):
-        logger.warning("Proxy settings are incomplete. Cannot apply fix.")
-        return
-    
-    # Test all encoding methods
-    best_method = test_all_encoding_methods(proxy_ip, proxy_port, proxy_username, proxy_password)
-    
-    if best_method:
-        # Update .env file with the best encoding method
-        update_env_file(proxy_ip, proxy_port, proxy_username, proxy_password, best_method)
+    # If no proxies found in file, try from environment variables
+    if not proxy_list:
+        # Get proxy settings from environment
+        proxy_ip = env_vars.get('PROXY_IP', '')
+        proxy_port = env_vars.get('PROXY_PORT', '')
+        proxy_username = env_vars.get('PROXY_USERNAME', '')
+        proxy_password = env_vars.get('PROXY_PASSWORD', '')
         
-        # Verify connection after fix
-        time.sleep(1)  # Give time for the changes to take effect
-        if verify_connection_after_fix():
-            logger.info("Proxy connection fix successfully applied and verified!")
+        # Check if proxy settings are complete
+        if not (proxy_ip and proxy_port and proxy_username and proxy_password):
+            logger.warning("Proxy settings are incomplete. Cannot apply fix.")
+            return
+            
+        proxy_list = [{
+            'ip': proxy_ip,
+            'port': proxy_port,
+            'username': proxy_username,
+            'password': proxy_password
+        }]
+    
+    # Try each proxy in the list
+    for i, proxy in enumerate(proxy_list):
+        proxy_ip = proxy['ip']
+        proxy_port = proxy['port']
+        proxy_username = proxy['username']
+        proxy_password = proxy['password']
+        
+        logger.info(f"Testing proxy {i+1}/{len(proxy_list)}: {proxy_ip}:{proxy_port}")
+        
+        # Test all encoding methods for this proxy
+        best_method = test_all_encoding_methods(proxy_ip, proxy_port, proxy_username, proxy_password)
+        
+        if best_method:
+            logger.info(f"Found working proxy: {proxy_ip}:{proxy_port} with encoding method: {best_method}")
+            
+            # Update .env file with the working proxy and encoding method
+            update_env_file(proxy_ip, proxy_port, proxy_username, proxy_password, best_method)
+            
+            # Verify connection after fix
+            time.sleep(1)  # Give time for the changes to take effect
+            if verify_connection_after_fix():
+                logger.info("Proxy connection fix successfully applied and verified!")
+                return True
+            else:
+                logger.warning("Proxy connection fix applied but verification failed for this proxy. Trying next one.")
+                # Continue to try the next proxy
         else:
-            logger.warning("Proxy connection fix applied but verification failed.")
-    else:
-        logger.error("Failed to find a working encoding method for proxy credentials.")
+            logger.warning(f"Proxy {proxy_ip}:{proxy_port} did not work with any encoding method.")
+    
+    # If we get here, no proxy worked
+    logger.error("Failed to find a working proxy. All proxies were tested without success.")
+    return False
 
 def add_encoding_method_to_config():
     """Add the PROXY_ENCODING_METHOD to Python config.py if it doesn't exist"""
@@ -459,16 +520,19 @@ def main():
     """Main function"""
     logger.info("=== Proxy Connection Fix ===")
     
-    # Step 1: Try to fix the proxy environment variables in .env
-    fix_proxy_environment()
+    # Step 1: Try to fix the proxy environment variables in .env by testing multiple proxies
+    fix_result = fix_proxy_environment()
     
-    # Step 2: Add PROXY_ENCODING_METHOD to config.py
-    add_encoding_method_to_config()
-    
-    # Step 3: Update the Binance service files to use the encoding method from config
-    update_binance_service_files()
-    
-    logger.info("Proxy connection fix completed.")
+    if fix_result:
+        # Step 2: Add PROXY_ENCODING_METHOD to config.py
+        add_encoding_method_to_config()
+        
+        # Step 3: Update the Binance service files to use the encoding method from config
+        update_binance_service_files()
+        
+        logger.info("Proxy connection fix completed successfully!")
+    else:
+        logger.warning("Proxy connection fix completed with issues. Please check the proxy settings manually.")
 
 if __name__ == "__main__":
     main()

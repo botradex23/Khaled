@@ -45,16 +45,20 @@ from python_app.services.queue.trade_execution_queue import (
     TradeExecutionQueue, TradeRequest, get_trade_execution_queue, TradeStatus
 )
 
-# Import risk management (will be implemented by separate system)
+# Import risk management 
 try:
-    from python_app.services.risk_management import check_risk_limits
+    from python_app.services.risk_management.risk_service import check_risk_limits
 except ImportError:
-    logger.warning("Risk management module not found - using default implementation")
-    
-    def check_risk_limits(user_id, symbol, side, quantity, price=None):
-        """Default risk management implementation that allows all trades"""
-        logger.info(f"Risk check for {user_id} {symbol} {side} {quantity} - ALLOWED (default implementation)")
-        return True
+    try:
+        # Try alternative import path
+        from services.risk_management.risk_service import check_risk_limits
+    except ImportError:
+        logger.warning("Risk management module not found - using default implementation")
+        
+        def check_risk_limits(user_id, symbol, side, quantity, price=None):
+            """Default risk management implementation that allows all trades"""
+            logger.info(f"Risk check for {user_id} {symbol} {side} {quantity} - ALLOWED (default implementation)")
+            return True
 
 
 class BinanceTradeQueueService:
