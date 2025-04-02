@@ -12,24 +12,19 @@
 // For production/deployment, get the base URL from the current window location
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') {
-    // Important: When in development, use port 5000 (Express) directly for API calls
-    // instead of port 3000 (Vite) to bypass the Vite middleware interception
-    if (process.env.NODE_ENV === 'development') {
-      // Replace the port in the origin URL (assuming it's 3000) with 5000
-      const origin = window.location.origin;
-      // Handle both localhost and Replit domain formats
-      if (origin.includes('localhost')) {
-        return origin.replace(':3000', ':5000') + '/api/trade-logs';
-      } else {
-        // For Replit domains, we need to handle differently since they don't use ports in the URL
-        // We'll use a direct storage approach in development in this case
-        return `${origin}/api/trade-logs`;
-      }
-    }
-    return `${window.location.origin}/api/trade-logs`;
+    // In Replit environment, we need to use the /api prefix and let Express handle the routing
+    // The special /api prefix is set up to bypass Vite's middleware in development
+    
+    // Always use the same origin to avoid CORS issues
+    const origin = window.location.origin;
+    
+    // For all environments (dev and prod), use the standard API endpoint
+    // This should work in Replit as the server should be configured to handle these endpoints
+    return `${origin}/api/trade-logs`;
   }
+  
   // Fallback for server-side or testing contexts
-  return 'http://localhost:5000/api/trade-logs';
+  return 'http://localhost:3000/api/trade-logs';
 };
 
 const API_BASE_URL = getBaseUrl();
@@ -221,56 +216,6 @@ export interface TradeLogFilter {
 }
 
 export async function searchTradeLogs(filter: TradeLogFilter): Promise<TradeLog[]> {
-  // For development mode, use direct storage access
-  if (process.env.NODE_ENV === 'development') {
-    try {
-      // Convert filter to storage filter format
-      const storageFilter: {
-        symbol?: string;
-        action?: string;
-        source?: string;
-        status?: string;
-        fromDate?: Date;
-        toDate?: Date;
-        userId?: number;
-      } = {};
-      
-      if (filter.symbol) storageFilter.symbol = filter.symbol;
-      if (filter.action) storageFilter.action = filter.action;
-      if (filter.source) storageFilter.source = filter.source;
-      if (filter.status) storageFilter.status = filter.status;
-      
-      // Convert string dates to Date objects
-      if (filter.fromDate) {
-        storageFilter.fromDate = filter.fromDate instanceof Date 
-          ? filter.fromDate 
-          : new Date(filter.fromDate);
-      }
-      
-      if (filter.toDate) {
-        storageFilter.toDate = filter.toDate instanceof Date 
-          ? filter.toDate 
-          : new Date(filter.toDate);
-      }
-      
-      const limit = filter.limit || 100;
-      
-      const logs = await storage.searchTradeLogs(storageFilter, limit);
-      
-      // Format dates for all logs
-      return logs.map(log => ({
-        ...log,
-        timestamp: formatDate(log.timestamp),
-        created_at: formatDate(log.created_at),
-        updated_at: formatDate(log.updated_at || log.created_at),
-      })) as TradeLog[];
-    } catch (error) {
-      console.error('Error searching trade logs via direct storage:', error);
-      throw new Error(`Failed to search trade logs: ${(error as Error).message}`);
-    }
-  }
-  
-  // For production, use the API endpoint
   try {
     const searchParams = new URLSearchParams();
     
@@ -278,12 +223,44 @@ export async function searchTradeLogs(filter: TradeLogFilter): Promise<TradeLog[
     if (filter.action) searchParams.append('action', filter.action);
     if (filter.source) searchParams.append('source', filter.source);
     if (filter.status) searchParams.append('status', filter.status);
-    if (filter.fromDate) searchParams.append('fromDate', filter.fromDate.toString());
-    if (filter.toDate) searchParams.append('toDate', filter.toDate.toString());
+    
+    // Handle date formatting
+    if (filter.fromDate) {
+      const formattedFromDate = filter.fromDate instanceof Date 
+        ? filter.fromDate.toISOString() 
+        : new Date(filter.fromDate).toISOString();
+      searchParams.append('fromDate', formattedFromDate);
+    }
+    
+    if (filter.toDate) {
+      const formattedToDate = filter.toDate instanceof Date 
+        ? filter.toDate.toISOString() 
+        : new Date(filter.toDate).toISOString();
+      searchParams.append('toDate', formattedToDate);
+    }
+    
     if (filter.onlyMine) searchParams.append('onlyMine', 'true');
     if (filter.limit) searchParams.append('limit', filter.limit.toString());
     
+    console.log(`Using API endpoint to search trade logs: ${API_BASE_URL}/search`);
     const response = await fetch(`${API_BASE_URL}/search?${searchParams.toString()}`);
+    
+    // Check if the response is HTML instead of JSON (indicates Vite middleware interception)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('text/html')) {
+      console.error('Received HTML response instead of JSON. This indicates the Vite middleware intercepted the API request.');
+      
+      // If in development, suggest using port 5000 directly
+      if (process.env.NODE_ENV === 'development') {
+        const directUrl = window.location.hostname === 'localhost' 
+          ? 'http://localhost:5000/api/trade-logs'
+          : `${window.location.protocol}//${window.location.hostname}:5000/api/trade-logs`;
+          
+        throw new Error(`API endpoint returned HTML instead of JSON. Try accessing the API directly at ${directUrl}`);
+      } else {
+        throw new Error('API endpoint returned HTML instead of JSON. This is likely a server configuration issue.');
+      }
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -299,33 +276,29 @@ export async function searchTradeLogs(filter: TradeLogFilter): Promise<TradeLog[
 
 /**
  * Get a specific trade log by ID
- * This uses direct storage access in development and API fetch in production
+ * This uses an API approach that accommodates the Vite middleware in development
  */
 export async function getTradeLog(id: number): Promise<TradeLog> {
-  // For development mode, use direct storage access
-  if (process.env.NODE_ENV === 'development') {
-    try {
-      const log = await storage.getTradeLog(id);
-      
-      if (!log) {
-        throw new Error(`Trade log with ID ${id} not found`);
-      }
-      
-      return {
-        ...log,
-        timestamp: formatDate(log.timestamp),
-        created_at: formatDate(log.created_at),
-        updated_at: formatDate(log.updated_at || log.created_at),
-      };
-    } catch (error) {
-      console.error('Error getting trade log via direct storage:', error);
-      throw new Error(`Failed to get trade log: ${(error as Error).message}`);
-    }
-  }
-  
-  // For production, use the API endpoint
   try {
+    console.log(`Using API endpoint to get trade log by ID: ${API_BASE_URL}/${id}`);
     const response = await fetch(`${API_BASE_URL}/${id}`);
+    
+    // Check if the response is HTML instead of JSON (indicates Vite middleware interception)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('text/html')) {
+      console.error('Received HTML response instead of JSON. This indicates the Vite middleware intercepted the API request.');
+      
+      // If in development, suggest using port 5000 directly
+      if (process.env.NODE_ENV === 'development') {
+        const directUrl = window.location.hostname === 'localhost' 
+          ? 'http://localhost:5000/api/trade-logs'
+          : `${window.location.protocol}//${window.location.hostname}:5000/api/trade-logs`;
+          
+        throw new Error(`API endpoint returned HTML instead of JSON. Try accessing the API directly at ${directUrl}`);
+      } else {
+        throw new Error('API endpoint returned HTML instead of JSON. This is likely a server configuration issue.');
+      }
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -341,32 +314,11 @@ export async function getTradeLog(id: number): Promise<TradeLog> {
 
 /**
  * Update a trade log
- * This uses direct storage access in development and API fetch in production
+ * This uses an API approach that accommodates the Vite middleware in development
  */
 export async function updateTradeLog(id: number, updates: Partial<CreateTradeLogPayload>): Promise<TradeLog> {
-  // For development mode, use direct storage access
-  if (process.env.NODE_ENV === 'development') {
-    try {
-      const updatedLog = await storage.updateTradeLog(id, updates);
-      
-      if (!updatedLog) {
-        throw new Error(`Trade log with ID ${id} not found`);
-      }
-      
-      return {
-        ...updatedLog,
-        timestamp: formatDate(updatedLog.timestamp),
-        created_at: formatDate(updatedLog.created_at),
-        updated_at: formatDate(updatedLog.updated_at || updatedLog.created_at),
-      };
-    } catch (error) {
-      console.error('Error updating trade log via direct storage:', error);
-      throw new Error(`Failed to update trade log: ${(error as Error).message}`);
-    }
-  }
-  
-  // For production, use the API endpoint
   try {
+    console.log(`Using API endpoint to update trade log: ${API_BASE_URL}/${id}`);
     const response = await fetch(`${API_BASE_URL}/${id}`, {
       method: 'PATCH',
       headers: {
@@ -374,6 +326,23 @@ export async function updateTradeLog(id: number, updates: Partial<CreateTradeLog
       },
       body: JSON.stringify(updates),
     });
+    
+    // Check if the response is HTML instead of JSON (indicates Vite middleware interception)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('text/html')) {
+      console.error('Received HTML response instead of JSON. This indicates the Vite middleware intercepted the API request.');
+      
+      // If in development, suggest using port 5000 directly
+      if (process.env.NODE_ENV === 'development') {
+        const directUrl = window.location.hostname === 'localhost' 
+          ? 'http://localhost:5000/api/trade-logs'
+          : `${window.location.protocol}//${window.location.hostname}:5000/api/trade-logs`;
+          
+        throw new Error(`API endpoint returned HTML instead of JSON. Try accessing the API directly at ${directUrl}`);
+      } else {
+        throw new Error('API endpoint returned HTML instead of JSON. This is likely a server configuration issue.');
+      }
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }));
