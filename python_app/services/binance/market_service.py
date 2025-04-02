@@ -142,7 +142,11 @@ class BinanceMarketService:
                 
                 # Format proxy URL based on authentication requirements
                 if active_config.PROXY_USERNAME and active_config.PROXY_PASSWORD:
-                    proxy_url = f"http://{active_config.PROXY_USERNAME}:{active_config.PROXY_PASSWORD}@{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
+                    # Use URL-encoded username and password for special characters
+                    import urllib.parse
+                    username = urllib.parse.quote_plus(active_config.PROXY_USERNAME)
+                    password = urllib.parse.quote_plus(active_config.PROXY_PASSWORD)
+                    proxy_url = f"http://{username}:{password}@{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
                     proxy_info = f"{active_config.PROXY_IP}:{active_config.PROXY_PORT} with authentication"
                 else:
                     proxy_url = f"http://{active_config.PROXY_IP}:{active_config.PROXY_PORT}"

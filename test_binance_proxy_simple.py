@@ -7,6 +7,7 @@ import os
 import sys
 import json
 import logging
+import urllib.parse
 from datetime import datetime
 
 try:
@@ -75,7 +76,10 @@ def create_client(use_proxy=True, use_auth=True):
         
         # Create proxy URL with or without authentication
         if proxy_username and proxy_password:
-            proxy_url = f"{proxy_protocol}://{proxy_username}:{proxy_password}@{proxy_ip}:{proxy_port}"
+            # URL-encode username and password to handle special characters
+            username = urllib.parse.quote_plus(proxy_username)
+            password = urllib.parse.quote_plus(proxy_password)
+            proxy_url = f"{proxy_protocol}://{username}:{password}@{proxy_ip}:{proxy_port}"
             auth_status = "with authentication"
         else:
             proxy_url = f"{proxy_protocol}://{proxy_ip}:{proxy_port}"

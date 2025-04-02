@@ -43,7 +43,7 @@ except ImportError:
     sys.exit(1)
     
 # Binance configuration
-USE_TESTNET = active_config.USE_BINANCE_TESTNET
+USE_TESTNET = active_config.USE_TESTNET  # Use the correct attribute name
 BINANCE_API_KEY = active_config.BINANCE_API_KEY
 BINANCE_SECRET_KEY = active_config.BINANCE_SECRET_KEY
 BINANCE_BASE_URL = active_config.BINANCE_TEST_URL if USE_TESTNET else active_config.BINANCE_BASE_URL

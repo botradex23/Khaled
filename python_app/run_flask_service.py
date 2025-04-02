@@ -43,7 +43,7 @@ def main():
     logger.info(f"Environment: {env}")
     logger.info(f"Debug mode: {debug}")
     logger.info(f"Using direct Binance SDK integration")
-    logger.info(f"Binance test mode: {active_config.USE_BINANCE_TESTNET}")
+    logger.info(f"Binance test mode: {active_config.USE_TESTNET}")
     logger.info(f"API key available: {bool(active_config.BINANCE_API_KEY)}")
     
     # Run the application
