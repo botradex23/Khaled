@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+// Using global fetch since we're in Node.js environment
 
 async function testTradeLogs() {
   console.log('Testing Trade Logs API directly...');

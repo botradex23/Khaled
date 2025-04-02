@@ -1,55 +1,54 @@
 #!/bin/bash
 
-echo "Testing Trade Logs API..."
+# This script tests the trade logs API endpoints
+# It first starts the server if needed, then runs the test script
 
-# Let's try with the Express server's default port
-PORT=3000
+echo "===== Testing Trade Logs API ====="
 
-echo "Testing POST to http://localhost:$PORT/api/trade-logs"
-CREATE_RESPONSE=$(curl -v -X POST http://localhost:$PORT/api/trade-logs \
-  -H "Content-Type: application/json" \
-  -d '{
-    "symbol": "BTCUSDT",
-    "action": "BUY",
-    "entry_price": "50000",
-    "quantity": "0.1",
-    "trade_source": "ML_MODEL",
-    "status": "EXECUTED",
-    "predicted_confidence": "0.85",
-    "reason": null,
-    "user_id": 1
-  }' 2>&1)
+# Check if the server is already running
+SERVER_RUNNING=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api/auth/user || echo "error")
 
-echo "Create response: $CREATE_RESPONSE"
+if [[ "$SERVER_RUNNING" == "error" || "$SERVER_RUNNING" == "000" ]]; then
+  echo "Server is not running. Starting the server..."
+  
+  # Launch the server in the background
+  npm run dev &
+  SERVER_PID=$!
+  
+  # Wait for the server to start (typically takes a few seconds)
+  echo "Waiting for the server to start..."
+  for i in {1..30}; do
+    sleep 1
+    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api/auth/user || echo "error")
+    if [[ "$RESPONSE" != "error" && "$RESPONSE" != "000" ]]; then
+      echo "Server is up and running!"
+      break
+    fi
+    if [[ $i == 30 ]]; then
+      echo "Timed out waiting for server to start. Exiting."
+      kill $SERVER_PID
+      exit 1
+    fi
+  done
+else
+  echo "Server is already running."
+fi
 
-echo "Testing GET to http://localhost:$PORT/api/trade-logs"
-GET_RESPONSE=$(curl -v http://localhost:$PORT/api/trade-logs 2>&1)
+# Run the test script
+echo "Running trade logs API test..."
+node test_trade_logs.js
 
-echo "Get response: $GET_RESPONSE"
+# If we started the server, ask if we should stop it
+if [[ -n "$SERVER_PID" ]]; then
+  echo -n "Tests completed. Stop the server? (y/n): "
+  read -r STOP_SERVER
+  if [[ "$STOP_SERVER" == "y" ]]; then
+    echo "Stopping server..."
+    kill $SERVER_PID
+    echo "Server stopped."
+  else
+    echo "Server left running (PID: $SERVER_PID). Remember to stop it manually when done."
+  fi
+fi
 
-# Now let's try with port 5000
-PORT=5000
-
-echo "Testing POST to http://localhost:$PORT/api/trade-logs"
-CREATE_RESPONSE=$(curl -v -X POST http://localhost:$PORT/api/trade-logs \
-  -H "Content-Type: application/json" \
-  -d '{
-    "symbol": "BTCUSDT",
-    "action": "BUY",
-    "entry_price": "50000",
-    "quantity": "0.1",
-    "trade_source": "ML_MODEL",
-    "status": "EXECUTED",
-    "predicted_confidence": "0.85",
-    "reason": null,
-    "user_id": 1
-  }' 2>&1)
-
-echo "Create response: $CREATE_RESPONSE"
-
-echo "Testing GET to http://localhost:$PORT/api/trade-logs"
-GET_RESPONSE=$(curl -v http://localhost:$PORT/api/trade-logs 2>&1)
-
-echo "Get response: $GET_RESPONSE"
-
-echo "Test complete!"
+echo "===== Test Complete ====="
