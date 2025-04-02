@@ -255,7 +255,47 @@ def create_app(config=None):
 # Import utility functions from utils.py
 from python_app.utils import flash_message, handle_api_response
 
+# Initialize bot synchronization
+try:
+    from python_app.services.coordination import bot_synchronizer
+    logging.info("Bot Synchronizer initialized successfully")
+    
+    # Initialize queue-bot integration
+    try:
+        from python_app.services.queue.queue_bot_integration import is_integrated
+        if is_integrated:
+            logging.info("Trade Queue-Bot Integration initialized successfully")
+        else:
+            logging.warning("Trade Queue-Bot Integration failed to initialize")
+    except ImportError as e:
+        logging.warning(f"Could not import Queue-Bot Integration: {e}")
+except ImportError as e:
+    logging.warning(f"Could not initialize Bot Synchronizer: {e}")
+    bot_synchronizer = None
+
 app = create_app()
+
+# Update status endpoint to include bot synchronization status
+@app.route('/api/bot-sync/status')
+def bot_sync_status():
+    """Bot synchronization status endpoint"""
+    if bot_synchronizer:
+        active_bots = len(bot_synchronizer.bot_states)
+        collisions = len(bot_synchronizer.collision_history)
+        active_trades = sum(len(trades) for trades in bot_synchronizer.active_trades.values())
+        return jsonify({
+            'success': True,
+            'bot_sync_available': True,
+            'active_bots': active_bots,
+            'trade_collisions_prevented': collisions,
+            'active_trades': active_trades
+        })
+    else:
+        return jsonify({
+            'success': True,
+            'bot_sync_available': False,
+            'message': 'Bot synchronization service not available'
+        })
 
 if __name__ == '__main__':
     # Run the application (development)

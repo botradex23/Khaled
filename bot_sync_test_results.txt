@@ -1,0 +1,110 @@
+2025-04-02 21:57:31,167 - INFO - services.database_service - Database service initialized with data directory: ./data
+2025-04-02 21:57:31,167 - INFO - services.ai_signals.signal_receiver - AI Signal Receiver service initialized
+2025-04-02 21:57:31,393 - INFO - binance_market - Configured proxy connection to Binance API via 86.38.234.176:6630 with authentication
+2025-04-02 21:57:31,393 - INFO - binance_market - Attempting to connect to Binance API using proxy at 86.38.234.176:6630 with authentication
+2025-04-02 21:57:31,588 - WARNING - binance_market - Failed to connect to Binance API via proxy: HTTPSConnectionPool(host='api.binance.com', port=443): Max retries exceeded with url: /api/v3/ping (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 407 Proxy Authentication Required')))
+2025-04-02 21:57:31,588 - ERROR - binance_market - Proxy connection failed and fallback is disabled - returning unconfigured client
+2025-04-02 21:57:31,589 - INFO - binance_market - Binance Market Service initialized in PRODUCTION mode
+2025-04-02 21:57:31,590 - INFO - binance_trading - Binance Trading Service initialized in PRODUCTION mode with PAPER TRADING
+2025-04-02 21:57:31,597 - INFO - trade_queue - Trade Execution Queue initialized
+2025-04-02 21:57:31,726 - INFO - binance_service_manager - Initializing Binance services
+2025-04-02 21:57:31,726 - INFO - binance_service_manager - Binance Market Service initialized
+2025-04-02 21:57:31,726 - INFO - binance_service_manager - Binance Trading Service initialized
+2025-04-02 21:57:31,727 - INFO - trade_queue - Trade execution queue callbacks configured
+2025-04-02 21:57:31,729 - INFO - trade_queue - Trade queue processor thread started
+2025-04-02 21:57:31,729 - INFO - trade_queue - Trade execution queue processor started
+2025-04-02 21:57:31,729 - INFO - binance_trade_queue - Binance Trade Queue Service initialized
+2025-04-02 21:57:31,729 - INFO - binance_service_manager - Binance Trade Queue Service initialized and connected to Trading Service
+2025-04-02 21:57:31,996 - INFO - root - Configuring Binance SDK - Base URL: production
+2025-04-02 21:57:31,996 - INFO - root - API Key available: True
+2025-04-02 21:57:31,996 - INFO - root - Direct SDK integration enabled
+2025-04-02 21:57:32,488 - INFO - root - Initializing XGBoost predictor with model directory: /home/runner/workspace/python_app/models
+2025-04-02 21:57:32,489 - INFO - root - Initializing XGBoost predictor with model directory: /home/runner/workspace/python_app/models
+2025-04-02 21:57:32,490 - ERROR - trade_logs_routes - Failed to import trade logger - trade log routes will not function correctly
+2025-04-02 21:57:32,491 - INFO - root - Logging initialized successfully with both console and file handlers
+2025-04-02 21:57:32,492 - INFO - bot_synchronizer - Bot Synchronizer initialized
+2025-04-02 21:57:32,492 - INFO - root - Bot Synchronizer initialized successfully
+2025-04-02 21:57:32,492 - INFO - queue_bot_integration - Successfully integrated trade queue with bot synchronization
+2025-04-02 21:57:32,492 - INFO - root - Trade Queue-Bot Integration initialized successfully
+2025-04-02 21:57:32,505 - INFO - root - Trade Logs blueprint registered successfully
+2025-04-02 21:57:32,506 - INFO - root - AI Signals blueprint registered successfully
+2025-04-02 21:57:32,507 - INFO - python_app.services.api_key_service - Successfully initialized encryption for API key storage with hardcoded key
+2025-04-02 21:57:32,508 - INFO - python_app.services.api_key_service - API Key Service initialized with 0 user keys
+2025-04-02 21:57:32,510 - INFO - root - Trading blueprint registered successfully
+2025-04-02 21:57:32,513 - INFO - root - API Keys blueprint registered successfully
+2025-04-02 21:57:32,519 - INFO - bot_sync_test - Starting Bot Synchronizer tests
+2025-04-02 21:57:32,520 - INFO - bot_sync_test - === Testing Bot Registration ===
+2025-04-02 21:57:32,520 - INFO - bot_synchronizer - Registered GRID bot bot-71a5014e
+2025-04-02 21:57:32,520 - INFO - bot_synchronizer - Registered DCA bot bot-6a9400d5
+2025-04-02 21:57:32,520 - INFO - bot_synchronizer - Registered MACD bot bot-4f4d2723
+2025-04-02 21:57:32,520 - INFO - bot_sync_test - Registered 3 bots
+2025-04-02 21:57:32,520 - INFO - bot_sync_test - Bot bot-71a5014e (GRID): initialized
+2025-04-02 21:57:32,520 - INFO - bot_sync_test -   Trading pairs: ['BTCUSDT', 'ETHUSDT']
+2025-04-02 21:57:32,520 - INFO - bot_sync_test - Bot bot-6a9400d5 (DCA): initialized
+2025-04-02 21:57:32,520 - INFO - bot_sync_test -   Trading pairs: ['BTCUSDT']
+2025-04-02 21:57:32,520 - INFO - bot_sync_test - Bot bot-4f4d2723 (MACD): initialized
+2025-04-02 21:57:32,521 - INFO - bot_sync_test -   Trading pairs: ['ETHUSDT', 'ADAUSDT']
+2025-04-02 21:57:32,521 - INFO - bot_sync_test - === Testing Bot Status Updates ===
+2025-04-02 21:57:32,521 - INFO - bot_synchronizer - Updated bot bot-71a5014e status to running
+2025-04-02 21:57:32,521 - INFO - bot_synchronizer - Updated bot bot-6a9400d5 status to paused
+2025-04-02 21:57:32,521 - INFO - bot_synchronizer - Updated bot bot-4f4d2723 status to error
+2025-04-02 21:57:32,521 - INFO - bot_sync_test - Bot bot-71a5014e status: running
+2025-04-02 21:57:32,521 - INFO - bot_sync_test - Bot bot-6a9400d5 status: paused
+2025-04-02 21:57:32,521 - INFO - bot_sync_test - Bot bot-4f4d2723 status: error
+2025-04-02 21:57:32,521 - INFO - bot_sync_test - === Testing Trade Registration and Conflict Detection ===
+2025-04-02 21:57:32,521 - INFO - bot_sync_test - Registering trade: BTCUSDT BUY from bot bot-71a5014e
+2025-04-02 21:57:32,522 - INFO - bot_synchronizer - Registered BUY trade for BTCUSDT from bot bot-71a5014e
+2025-04-02 21:57:32,522 - INFO - bot_sync_test -   Result: ✅ ACCEPTED
+2025-04-02 21:57:32,522 - INFO - bot_sync_test - Registering trade: BTCUSDT BUY from bot bot-6a9400d5
+2025-04-02 21:57:32,522 - INFO - bot_synchronizer - Registered BUY trade for BTCUSDT from bot bot-6a9400d5
+2025-04-02 21:57:32,522 - INFO - bot_sync_test -   Result: ✅ ACCEPTED
+2025-04-02 21:57:32,522 - INFO - bot_sync_test - Registering trade: BTCUSDT SELL from bot bot-4f4d2723
+2025-04-02 21:57:32,522 - WARNING - bot_synchronizer - Trade conflict detected for BTCUSDT: SELL from bot bot-4f4d2723 conflicts with BUY from bot bot-71a5014e
+2025-04-02 21:57:32,522 - INFO - bot_sync_test -   Result: ❌ REJECTED
+2025-04-02 21:57:32,522 - INFO - bot_sync_test - Registering trade: ETHUSDT SELL from bot bot-71a5014e
+2025-04-02 21:57:32,523 - INFO - bot_synchronizer - Registered SELL trade for ETHUSDT from bot bot-71a5014e
+2025-04-02 21:57:32,523 - INFO - bot_sync_test -   Result: ✅ ACCEPTED
+2025-04-02 21:57:32,523 - INFO - bot_sync_test - Registering trade: ETHUSDT SELL from bot bot-4f4d2723
+2025-04-02 21:57:32,523 - INFO - bot_synchronizer - Registered SELL trade for ETHUSDT from bot bot-4f4d2723
+2025-04-02 21:57:32,523 - INFO - bot_sync_test -   Result: ✅ ACCEPTED
+2025-04-02 21:57:32,523 - INFO - bot_sync_test - Collision history has 1 entries
+2025-04-02 21:57:32,523 - INFO - bot_sync_test - Collision: BTCUSDT - SELL vs BUY
+2025-04-02 21:57:32,523 - INFO - bot_sync_test - === Testing Symbol Locking ===
+2025-04-02 21:57:32,524 - INFO - bot_sync_test - Bot bot-71a5014e attempting to lock BTCUSDT
+2025-04-02 21:57:32,525 - WARNING - bot_synchronizer - Trading not allowed for BTCUSDT None from bot bot-71a5014e: Conflicts with BUY from bot bot-6a9400d5
+2025-04-02 21:57:32,525 - WARNING - bot_synchronizer - Cannot lock BTCUSDT for bot bot-71a5014e: Trading not allowed
+2025-04-02 21:57:32,525 - INFO - bot_sync_test - Bot bot-71a5014e lock attempt for BTCUSDT: ❌ FAILED
+Exception in thread Thread-1 (try_lock_symbol):
+Traceback (most recent call last):
+  File "/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11/threading.py", line 1045, in _bootstrap_inner
+    self.run()
+  File "/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11/threading.py", line 982, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/runner/workspace/test_bot_synchronizer.py", line 233, in try_lock_symbol
+    assert result == expected_result, f"Expected {expected_result} but got {result}"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Expected True but got False
+2025-04-02 21:57:33,024 - INFO - bot_sync_test - Bot bot-6a9400d5 attempting to lock BTCUSDT
+2025-04-02 21:57:33,025 - INFO - bot_sync_test - Bot bot-4f4d2723 attempting to lock ETHUSDT
+2025-04-02 21:57:33,025 - WARNING - bot_synchronizer - Trading not allowed for BTCUSDT None from bot bot-6a9400d5: Conflicts with BUY from bot bot-71a5014e
+2025-04-02 21:57:33,025 - WARNING - bot_synchronizer - Cannot lock BTCUSDT for bot bot-6a9400d5: Trading not allowed
+2025-04-02 21:57:33,025 - WARNING - bot_synchronizer - Trading not allowed for ETHUSDT None from bot bot-4f4d2723: Conflicts with SELL from bot bot-71a5014e
+2025-04-02 21:57:33,025 - WARNING - bot_synchronizer - Cannot lock ETHUSDT for bot bot-4f4d2723: Trading not allowed
+2025-04-02 21:57:33,026 - INFO - bot_sync_test - Bot bot-4f4d2723 lock attempt for ETHUSDT: ❌ FAILED
+Exception in thread Thread-3 (try_lock_symbol):
+Traceback (most recent call last):
+  File "/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11/threading.py", line 1045, in _bootstrap_inner
+2025-04-02 21:57:33,025 - INFO - bot_sync_test - Bot bot-6a9400d5 lock attempt for BTCUSDT: ❌ FAILED
+    self.run()
+  File "/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11/threading.py", line 982, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/runner/workspace/test_bot_synchronizer.py", line 233, in try_lock_symbol
+    assert result == expected_result, f"Expected {expected_result} but got {result}"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Expected True but got False
+2025-04-02 21:57:33,028 - INFO - bot_sync_test - Symbol locking test completed
+2025-04-02 21:57:33,028 - INFO - bot_sync_test - === Test Summary ===
+2025-04-02 21:57:33,028 - INFO - bot_sync_test - Registered bots: 3
+2025-04-02 21:57:33,028 - INFO - bot_sync_test - Trade registration results: 4/5 accepted
+2025-04-02 21:57:33,028 - INFO - bot_sync_test - Collisions detected: 1
+2025-04-02 21:57:33,028 - INFO - bot_sync_test - All tests completed successfully

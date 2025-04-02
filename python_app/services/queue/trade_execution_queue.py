@@ -18,8 +18,10 @@ import time
 import logging
 import threading
 import uuid
+import hashlib
+import json
 from typing import Dict, List, Any, Optional, Union, Tuple, Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 from queue import Queue, Empty
 from enum import Enum, auto
 
@@ -263,6 +265,248 @@ class TradeExecutionQueue:
         
         logger.info(f"Trade request for {trade_request.symbol} {trade_request.side} queued with ID {trade_request.id}")
         return trade_request.id
+        
+    def add_trade_safe(self, trade_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Safely add a trade to the queue with duplicate and concurrency checks
+        
+        Args:
+            trade_data: Dictionary containing trade request data
+            
+        Returns:
+            Dictionary with success status and trade ID or error message
+        """
+        try:
+            # Convert dictionary to TradeRequest object
+            trade_request = self._dict_to_trade_request(trade_data)
+            
+            # Check for duplicate trades
+            if self.is_duplicate_trade(trade_request):
+                return {
+                    "success": False,
+                    "message": f"Duplicate trade detected for {trade_request.symbol} {trade_request.side}",
+                    "trade_id": trade_request.id,
+                    "duplicate_detected": True
+                }
+            
+            # Check for similar orders already in progress
+            if self.is_same_order_in_progress(trade_request):
+                return {
+                    "success": False,
+                    "message": f"Similar trade already in progress for {trade_request.symbol} {trade_request.side}",
+                    "trade_id": trade_request.id,
+                    "concurrent_detected": True
+                }
+            
+            # Add to queue if checks pass
+            self.add_trade(trade_request)
+            
+            return {
+                "success": True,
+                "message": "Trade added to queue",
+                "trade_id": trade_request.id
+            }
+        except Exception as e:
+            logger.error(f"Error adding trade safely: {str(e)}")
+            return {
+                "success": False,
+                "message": f"Error: {str(e)}"
+            }
+    
+    def add_trade_with_batching(self, trade_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Add a trade with batching support for similar in-progress trades
+        
+        Args:
+            trade_data: Dictionary containing trade request data
+            
+        Returns:
+            Dictionary with success status and trade details
+        """
+        try:
+            # Convert dictionary to TradeRequest object
+            trade_request = self._dict_to_trade_request(trade_data)
+            
+            # Get in-progress trades
+            in_progress = self.get_in_progress_trades()
+            
+            # Check for similar trades that could be batched
+            for existing_trade in in_progress:
+                # Only batch trades for the same symbol and side
+                if (existing_trade["symbol"] == trade_request.symbol and
+                    existing_trade["side"] == trade_request.side and
+                    existing_trade["order_type"] == trade_request.order_type):
+                    
+                    # Found a trade we can batch with
+                    batch_id = f"{existing_trade['id']}-batch"
+                    
+                    # Update existing trade's metadata to indicate batching
+                    existing_id = existing_trade["id"]
+                    if existing_id in self.executed_trades:
+                        # Add batching info to metadata
+                        if "batched_trades" not in self.executed_trades[existing_id].meta:
+                            self.executed_trades[existing_id].meta["batched_trades"] = []
+                        
+                        self.executed_trades[existing_id].meta["batched_trades"].append({
+                            "trade_id": trade_request.id,
+                            "symbol": trade_request.symbol,
+                            "side": trade_request.side,
+                            "quantity": trade_request.quantity,
+                            "added_at": datetime.now().isoformat()
+                        })
+                        
+                        # Adjust quantity if needed
+                        if trade_request.order_type == "MARKET":
+                            # For market orders, we can combine quantities
+                            self.executed_trades[existing_id].quantity += trade_request.quantity
+                            
+                            logger.info(
+                                f"Batched trade {trade_request.id} with existing trade {existing_id}, "
+                                f"new quantity: {self.executed_trades[existing_id].quantity}"
+                            )
+                    
+                    return {
+                        "success": True,
+                        "message": "Trade batched with existing order",
+                        "trade_id": trade_request.id,
+                        "batched": True,
+                        "batch_id": batch_id,
+                        "combined_with": existing_id
+                    }
+            
+            # If no matching trade found, add normally
+            self.add_trade(trade_request)
+            
+            return {
+                "success": True,
+                "message": "Trade added to queue",
+                "trade_id": trade_request.id,
+                "batched": False
+            }
+        except Exception as e:
+            logger.error(f"Error adding trade with batching: {str(e)}")
+            return {
+                "success": False,
+                "message": f"Error: {str(e)}"
+            }
+    
+    def add_trade_idempotent(self, trade_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Add a trade with idempotency support
+        
+        Args:
+            trade_data: Dictionary containing trade request data including trade_id
+            
+        Returns:
+            Dictionary with success status and trade details
+        """
+        try:
+            # Check if trade ID is provided
+            if "trade_id" not in trade_data or not trade_data["trade_id"]:
+                return {
+                    "success": False,
+                    "message": "Missing trade_id for idempotent operation"
+                }
+            
+            trade_id = trade_data["trade_id"]
+            
+            # Check if this trade already exists
+            existing_trade = self.get_trade_by_id(trade_id)
+            if existing_trade:
+                # Return the existing trade info
+                return {
+                    "success": True,
+                    "message": "Trade already exists",
+                    "idempotent_match": True,
+                    "trade_id": trade_id,
+                    "status": existing_trade.get("status"),
+                    "order_id": existing_trade.get("order_id")
+                }
+            
+            # Convert dictionary to TradeRequest object with the specified ID
+            trade_request = self._dict_to_trade_request(trade_data)
+            trade_request.id = trade_id
+            
+            # Add to queue
+            self.add_trade(trade_request)
+            
+            return {
+                "success": True,
+                "message": "Trade added to queue",
+                "trade_id": trade_id,
+                "idempotent_match": False
+            }
+        except Exception as e:
+            logger.error(f"Error adding trade idempotently: {str(e)}")
+            return {
+                "success": False,
+                "message": f"Error: {str(e)}"
+            }
+    
+    def get_trade_by_id(self, trade_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get a trade by its ID
+        
+        Args:
+            trade_id: The ID of the trade to retrieve
+            
+        Returns:
+            Trade data as a dictionary, or None if not found
+        """
+        # Check active trades
+        if trade_id in self.executed_trades:
+            return self.executed_trades[trade_id].to_dict()
+        
+        # Check history
+        for trade in self.history:
+            if trade.id == trade_id:
+                return trade.to_dict()
+        
+        return None
+        
+    def _dict_to_trade_request(self, trade_data: Dict[str, Any]) -> TradeRequest:
+        """
+        Convert a dictionary to a TradeRequest object
+        
+        Args:
+            trade_data: Dictionary with trade data
+            
+        Returns:
+            TradeRequest object
+        """
+        # Extract required fields
+        symbol = trade_data["symbol"]
+        side = trade_data["side"]
+        quantity = float(trade_data["quantity"])
+        
+        # Extract optional fields
+        order_type = trade_data.get("type", "MARKET")
+        price = float(trade_data["price"]) if "price" in trade_data and trade_data["price"] is not None else None
+        position_id = int(trade_data["position_id"]) if "position_id" in trade_data and trade_data["position_id"] is not None else None
+        user_id = int(trade_data["user_id"]) if "user_id" in trade_data and trade_data["user_id"] is not None else None
+        strategy_id = trade_data.get("strategy_id")
+        ml_signal = trade_data.get("ml_signal", {})
+        meta = trade_data.get("meta", {})
+        
+        # Create TradeRequest object
+        trade_request = TradeRequest(
+            symbol=symbol,
+            side=side,
+            quantity=quantity,
+            order_type=order_type,
+            price=price,
+            position_id=position_id,
+            user_id=user_id,
+            strategy_id=strategy_id,
+            ml_signal=ml_signal,
+            meta=meta
+        )
+        
+        # Set ID if provided
+        if "trade_id" in trade_data and trade_data["trade_id"]:
+            trade_request.id = trade_data["trade_id"]
+            
+        return trade_request
 
     def get_trade_status(self, trade_id: str) -> Dict[str, Any]:
         """
@@ -344,6 +588,144 @@ class TradeExecutionQueue:
             return False
         
         return True
+        
+    def is_duplicate_trade(self, trade_request: TradeRequest) -> bool:
+        """
+        Check if a trade request is a duplicate of a recently executed trade
+        
+        Args:
+            trade_request: The trade request to check
+            
+        Returns:
+            True if the trade is a duplicate, False otherwise
+        """
+        # Generate a hash of the trade's key properties to check for functional duplicates
+        trade_hash = self._generate_trade_hash(trade_request)
+        
+        # Check executed trades
+        for trade_id, trade in self.executed_trades.items():
+            # Skip if it's the same trade ID
+            if trade_id == trade_request.id:
+                continue
+                
+            # Only check trades from the last hour
+            if (datetime.now() - trade.created_at) > timedelta(hours=1):
+                continue
+                
+            # Check if properties match (same symbol, side, quantity, etc.)
+            if self._generate_trade_hash(trade) == trade_hash:
+                logger.warning(
+                    f"Duplicate trade detected: {trade_request.symbol} {trade_request.side} {trade_request.quantity} - "
+                    f"matches existing trade {trade_id} with status {trade.status.name}"
+                )
+                return True
+                
+        # Check history
+        recent_history = self.history[-50:] if len(self.history) > 50 else self.history
+        for trade in recent_history:
+            # Skip if it's the same trade ID
+            if trade.id == trade_request.id:
+                continue
+                
+            # Only check trades from the last hour
+            if (datetime.now() - trade.created_at) > timedelta(hours=1):
+                continue
+                
+            # Check if properties match
+            if self._generate_trade_hash(trade) == trade_hash:
+                logger.warning(
+                    f"Duplicate trade detected: {trade_request.symbol} {trade_request.side} {trade_request.quantity} - "
+                    f"matches historical trade {trade.id} with status {trade.status.name}"
+                )
+                return True
+                
+        return False
+    
+    def _generate_trade_hash(self, trade: TradeRequest) -> str:
+        """
+        Generate a hash string that represents the functional identity of a trade
+        
+        Args:
+            trade: The trade to generate a hash for
+            
+        Returns:
+            A hash string representing the trade's core properties
+        """
+        # Extract key fields that define a unique trade
+        key_fields = {
+            "symbol": trade.symbol,
+            "side": trade.side,
+            "quantity": str(trade.quantity),  # Convert to string for consistent hashing
+            "order_type": trade.order_type,
+            "price": str(trade.price) if trade.price is not None else "MARKET",
+            "user_id": str(trade.user_id) if trade.user_id is not None else "NONE",
+            "strategy_id": str(trade.strategy_id) if trade.strategy_id is not None else "NONE"
+        }
+        
+        # Create a JSON string to hash
+        json_str = json.dumps(key_fields, sort_keys=True)
+        
+        # Generate hash
+        return hashlib.md5(json_str.encode()).hexdigest()
+    
+    def is_same_order_in_progress(self, trade_request: TradeRequest) -> bool:
+        """
+        Check if an identical order is already being processed
+        
+        Args:
+            trade_request: Trade request to check
+            
+        Returns:
+            True if an identical order is in progress, False otherwise
+        """
+        # Look for in-progress trades with same symbol, side, and similar quantity
+        for trade_id, trade in self.executed_trades.items():
+            # Only check active trades (PENDING, PROCESSING)
+            if trade.status not in [TradeStatus.PENDING, TradeStatus.PROCESSING]:
+                continue
+                
+            # Check if basic properties match
+            if (trade.symbol == trade_request.symbol and 
+                trade.side == trade_request.side and
+                trade.order_type == trade_request.order_type):
+                
+                # For market orders, check if quantities are similar (within 5%)
+                quantity_diff_pct = abs(trade.quantity - trade_request.quantity) / trade.quantity
+                if quantity_diff_pct < 0.05:  # 5% tolerance
+                    logger.warning(
+                        f"Similar trade already in progress: {trade_request.symbol} {trade_request.side} {trade_request.quantity} - "
+                        f"matches in-progress trade {trade_id} with {trade.quantity} units"
+                    )
+                    return True
+                    
+                # For limit orders, check price as well
+                if (trade_request.order_type in ["LIMIT", "STOP_LOSS_LIMIT", "TAKE_PROFIT_LIMIT"] and
+                    trade_request.price is not None and trade.price is not None):
+                    price_diff_pct = abs(trade.price - trade_request.price) / trade.price
+                    if price_diff_pct < 0.01:  # 1% price tolerance
+                        logger.warning(
+                            f"Similar limit order already in progress: {trade_request.symbol} {trade_request.side} "
+                            f"{trade_request.quantity} @ {trade_request.price} - matches in-progress trade {trade_id}"
+                        )
+                        return True
+                        
+        return False
+    
+    def get_in_progress_trades(self) -> List[Dict[str, Any]]:
+        """
+        Get a list of all trades currently in progress (PENDING or PROCESSING)
+        
+        Returns:
+            List of in-progress trades as dictionaries
+        """
+        result = []
+        
+        # Add trades from execution map that are in progress
+        for trade_id, trade in self.executed_trades.items():
+            if trade.status in [TradeStatus.PENDING, TradeStatus.PROCESSING]:
+                result.append(trade.to_dict())
+                
+        return result
 
     def _process_queue(self) -> None:
         """Main queue processing thread function"""
