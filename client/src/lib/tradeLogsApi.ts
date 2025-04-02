@@ -1,25 +1,35 @@
 /**
  * Trade Logs API client
  * 
- * This module provides a direct way to interact with the trade logs API
- * even in development mode where Vite might intercept API requests
+ * This module provides a way to interact with the trade logs API
+ * with special handling for development vs production environments
  */
 
-// Instead of making direct fetch requests to API endpoints,
-// we'll use a special approach to bypass Vite's middleware interception
-import { storage } from '../../../server/storage';
-
-// We'll provide both direct storage access and fetch-based API access
-// Direct access works in development when importing from client code
-// Fetch-based access is for production or when direct import isn't possible
+// We'll use API access with special handling for development vs production environments
+// In development, we need to work around Vite's middleware interception
+// In production, standard API calls work as expected
 
 // For production/deployment, get the base URL from the current window location
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') {
+    // Important: When in development, use port 5000 (Express) directly for API calls
+    // instead of port 3000 (Vite) to bypass the Vite middleware interception
+    if (process.env.NODE_ENV === 'development') {
+      // Replace the port in the origin URL (assuming it's 3000) with 5000
+      const origin = window.location.origin;
+      // Handle both localhost and Replit domain formats
+      if (origin.includes('localhost')) {
+        return origin.replace(':3000', ':5000') + '/api/trade-logs';
+      } else {
+        // For Replit domains, we need to handle differently since they don't use ports in the URL
+        // We'll use a direct storage approach in development in this case
+        return `${origin}/api/trade-logs`;
+      }
+    }
     return `${window.location.origin}/api/trade-logs`;
   }
   // Fallback for server-side or testing contexts
-  return 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/trade-logs';
+  return 'http://localhost:5000/api/trade-logs';
 };
 
 const API_BASE_URL = getBaseUrl();
@@ -72,43 +82,41 @@ export interface TradeLog {
 
 /**
  * Create a new trade log
- * This uses direct storage access in development and API fetch in production
+ * This uses an API approach that accommodates the Vite middleware in development
  */
 export async function createTradeLog(payload: CreateTradeLogPayload): Promise<TradeLog> {
-  // For development mode, use direct storage access
-  if (process.env.NODE_ENV === 'development') {
-    try {
-      // Set default values if not provided
-      const data = {
-        ...payload,
-        status: payload.status || 'EXECUTED',
-      };
-      
-      const result = await storage.createTradeLog(data);
-      
-      // Convert any Date objects to strings for compatibility with TradeLog interface
-      
-      return {
-        ...result,
-        timestamp: formatDate(result.timestamp),
-        created_at: formatDate(result.created_at),
-        updated_at: formatDate(result.updated_at || result.created_at), // Fallback to created_at if updated_at is missing
-      };
-    } catch (error) {
-      console.error('Error creating trade log via direct storage:', error);
-      throw new Error(`Failed to create trade log: ${(error as Error).message}`);
-    }
-  }
-  
-  // For production, use the API endpoint
   try {
+    // Ensure status is set if not provided
+    const dataToSend = {
+      ...payload,
+      status: payload.status || 'EXECUTED',
+    };
+    
+    console.log(`Using API endpoint for trade log creation: ${API_BASE_URL}`);
     const response = await fetch(API_BASE_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(dataToSend),
     });
+
+    // Check if the response is HTML instead of JSON (indicates Vite middleware interception)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('text/html')) {
+      console.error('Received HTML response instead of JSON. This indicates the Vite middleware intercepted the API request.');
+      
+      // If in development, suggest using port 5000 directly
+      if (process.env.NODE_ENV === 'development') {
+        const directUrl = window.location.hostname === 'localhost' 
+          ? 'http://localhost:5000/api/trade-logs'
+          : `${window.location.protocol}//${window.location.hostname}:5000/api/trade-logs`;
+          
+        throw new Error(`API endpoint returned HTML instead of JSON. Try accessing the API directly at ${directUrl}`);
+      } else {
+        throw new Error('API endpoint returned HTML instead of JSON. This is likely a server configuration issue.');
+      }
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -124,30 +132,29 @@ export async function createTradeLog(payload: CreateTradeLogPayload): Promise<Tr
 
 /**
  * Get trade logs by symbol
- * This uses direct storage access in development and API fetch in production
+ * This uses an API approach that accommodates the Vite middleware in development
  */
 export async function getTradeLogsBySymbol(symbol: string, limit = 100): Promise<TradeLog[]> {
-  // For development mode, use direct storage access
-  if (process.env.NODE_ENV === 'development') {
-    try {
-      const logs = await storage.getTradeLogsBySymbol(symbol, limit);
-      
-      // Format dates for all logs
-      return logs.map(log => ({
-        ...log,
-        timestamp: formatDate(log.timestamp),
-        created_at: formatDate(log.created_at),
-        updated_at: formatDate(log.updated_at || log.created_at),
-      })) as TradeLog[];
-    } catch (error) {
-      console.error('Error getting trade logs via direct storage:', error);
-      throw new Error(`Failed to get trade logs: ${(error as Error).message}`);
-    }
-  }
-  
-  // For production, use the API endpoint
   try {
+    console.log(`Using API endpoint to get trade logs by symbol: ${API_BASE_URL}/symbol/${symbol}`);
     const response = await fetch(`${API_BASE_URL}/symbol/${symbol}?limit=${limit}`);
+    
+    // Check if the response is HTML instead of JSON (indicates Vite middleware interception)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('text/html')) {
+      console.error('Received HTML response instead of JSON. This indicates the Vite middleware intercepted the API request.');
+      
+      // If in development, suggest using port 5000 directly
+      if (process.env.NODE_ENV === 'development') {
+        const directUrl = window.location.hostname === 'localhost' 
+          ? 'http://localhost:5000/api/trade-logs'
+          : `${window.location.protocol}//${window.location.hostname}:5000/api/trade-logs`;
+          
+        throw new Error(`API endpoint returned HTML instead of JSON. Try accessing the API directly at ${directUrl}`);
+      } else {
+        throw new Error('API endpoint returned HTML instead of JSON. This is likely a server configuration issue.');
+      }
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -163,30 +170,29 @@ export async function getTradeLogsBySymbol(symbol: string, limit = 100): Promise
 
 /**
  * Get trade logs by source
- * This uses direct storage access in development and API fetch in production
+ * This uses an API approach that accommodates the Vite middleware in development
  */
 export async function getTradeLogsBySource(source: string, limit = 100): Promise<TradeLog[]> {
-  // For development mode, use direct storage access
-  if (process.env.NODE_ENV === 'development') {
-    try {
-      const logs = await storage.getTradeLogsBySource(source, limit);
-      
-      // Format dates for all logs
-      return logs.map(log => ({
-        ...log,
-        timestamp: formatDate(log.timestamp),
-        created_at: formatDate(log.created_at),
-        updated_at: formatDate(log.updated_at || log.created_at),
-      })) as TradeLog[];
-    } catch (error) {
-      console.error('Error getting trade logs via direct storage:', error);
-      throw new Error(`Failed to get trade logs: ${(error as Error).message}`);
-    }
-  }
-  
-  // For production, use the API endpoint
   try {
+    console.log(`Using API endpoint to get trade logs by source: ${API_BASE_URL}/source/${source}`);
     const response = await fetch(`${API_BASE_URL}/source/${source}?limit=${limit}`);
+    
+    // Check if the response is HTML instead of JSON (indicates Vite middleware interception)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('text/html')) {
+      console.error('Received HTML response instead of JSON. This indicates the Vite middleware intercepted the API request.');
+      
+      // If in development, suggest using port 5000 directly
+      if (process.env.NODE_ENV === 'development') {
+        const directUrl = window.location.hostname === 'localhost' 
+          ? 'http://localhost:5000/api/trade-logs'
+          : `${window.location.protocol}//${window.location.hostname}:5000/api/trade-logs`;
+          
+        throw new Error(`API endpoint returned HTML instead of JSON. Try accessing the API directly at ${directUrl}`);
+      } else {
+        throw new Error('API endpoint returned HTML instead of JSON. This is likely a server configuration issue.');
+      }
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }));
