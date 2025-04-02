@@ -30,6 +30,7 @@ class Config:
     
     # Fallback mechanism for when proxy is not available
     FALLBACK_TO_DIRECT = os.environ.get('FALLBACK_TO_DIRECT', 'false').lower() in ('true', '1', 'yes')
+    PROXY_ENCODING_METHOD = os.environ.get('PROXY_ENCODING_METHOD', 'quote_plus')  # URL encoding method for proxy auth
     
     # ML model settings
     DEFAULT_MODEL_TYPE = 'xgboost'

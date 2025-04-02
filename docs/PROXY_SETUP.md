@@ -1,186 +1,168 @@
 # Proxy Setup Guide for Binance API Access
 
-This guide provides detailed instructions for configuring and troubleshooting proxy access to Binance APIs, which is necessary for users in regions where Binance services are restricted.
+This guide provides instructions for setting up and troubleshooting proxy connections to access the Binance API from geo-restricted locations.
 
-## Understanding Geographic Restrictions
+## Table of Contents
 
-Binance restricts API access from many countries due to regulatory requirements, including:
-- United States
-- Canada
-- United Kingdom (certain services)
-- Hong Kong
-- Singapore
-- Many other regions
+1. [Background](#background)
+2. [Proxy Configuration](#proxy-configuration)
+3. [Testing Proxy Connections](#testing-proxy-connections)
+4. [Troubleshooting](#troubleshooting)
+5. [Updating Proxy Settings](#updating-proxy-settings)
+6. [Advanced Configuration](#advanced-configuration)
 
-When accessing Binance from a restricted region, you'll typically receive one of the following errors:
-- HTTP 451 "Unavailable for legal reasons"
-- HTTP 403 "Access Denied"
-- Connection timeout errors
-- "IP address is restricted" messages
+## Background
+
+Binance API access is geo-restricted in certain locations. This system incorporates proxy support to ensure consistent functionality regardless of location. When properly configured, the application will transparently handle API requests through a proxy server.
+
+If Binance is not geo-restricted in your location, you can disable the proxy by setting `USE_PROXY=false` in your `.env` file.
 
 ## Proxy Configuration
 
-### Required Environment Variables
-
-Add the following variables to your `.env` file:
+Proxy settings are configured in the `.env` file at the root of the project. Here are the essential configuration parameters:
 
 ```
 # Proxy Settings
-USE_PROXY=true              # Enable proxy usage
-PROXY_IP=123.45.67.89       # Your proxy server IP/hostname
-PROXY_PORT=8080             # Proxy port number
-PROXY_USERNAME=username     # Optional: proxy authentication username
-PROXY_PASSWORD=password     # Optional: proxy authentication password
-FALLBACK_TO_DIRECT=false    # Whether to try direct connection if proxy fails
+USE_PROXY=true                   # Enable/disable proxy (true/false)
+PROXY_IP=your.proxy.ip           # Proxy server IP address
+PROXY_PORT=port                  # Proxy server port
+PROXY_USERNAME=username          # Proxy authentication username
+PROXY_PASSWORD=password          # Proxy authentication password
+FALLBACK_TO_DIRECT=true          # Whether to fall back to direct connection if proxy fails
+PROXY_PROTOCOL=http              # Protocol (http/https)
+PROXY_ENCODING_METHOD=quote_plus # URL encoding method for credentials
 ```
 
-### Proxy Types and Recommendations
+## Testing Proxy Connections
 
-For reliable Binance API access, we recommend using proxies based in countries with full Binance support, such as:
-- United Kingdom (preferred)
-- Germany
-- Switzerland
-- Japan
-- South Korea
+The system includes several testing scripts to verify your proxy connection:
 
-#### Proxy Options:
-
-1. **Data Center Proxies**
-   - More stable connections
-   - Lower latency
-   - Examples: Bright Data, SmartProxy, Oxylabs
-
-2. **Residential Proxies**
-   - Less likely to be blocked
-   - More expensive
-   - Examples: Luminati/Bright Data, Smartproxy
-
-3. **SSH Tunnels**
-   - If you have your own VPS in a supported country
-   - Example setup:
-     ```bash
-     ssh -D 1080 user@your-server-in-supported-country
-     # Then configure as SOCKS5 proxy with localhost:1080
-     ```
-
-### Testing Your Proxy Connection
-
-After configuring your proxy settings, run the test script:
+### Quick Proxy Test
 
 ```bash
-python test_binance_proxy_simple.py
+python test_proxy_connection.py
 ```
 
-This script will:
-1. Try connecting through your configured proxy
-2. Try connecting directly (as a fallback/comparison)
-3. Report the results
+This script will test your current proxy configuration from `.env` and show if it can connect to Binance API.
 
-Successful output should look like:
+### Testing Multiple Proxies
 
+```bash
+python test_proxy_list.py
 ```
-=== Configuration ===
-Using proxy: 123.45.67.89:8080
-Username: username
-Proxy authentication: Enabled
 
-=== Test Results ===
-Proxy connection:  SUCCESS
-Direct connection: FAILED
-Proxy server time: 2023-04-02 12:34:56
-BTC/USDT price:    $69,420.00
+This utility tests multiple proxies from a list and identifies which ones work best for accessing Binance API. It will update your `.env` with the best working proxy.
+
+### Direct Proxy Update and Test
+
+To update and test a specific proxy configuration:
+
+```bash
+python python_app/update_proxy_settings.py <proxy_ip> <proxy_port> <username> <password>
+```
+
+Example:
+```bash
+python python_app/update_proxy_settings.py 86.38.234.176 6630 ahjqspco dzx3r1prpz9k
 ```
 
 ## Troubleshooting
 
 ### Common Issues and Solutions
 
-| Problem | Possible Solutions |
-|---------|-------------------|
-| "Cannot connect to proxy" | 1. Verify proxy IP and port<br>2. Check if proxy server is online<br>3. Try different proxy provider |
-| "Proxy authentication failed" | 1. Verify username and password<br>2. Check if proxy requires special auth format |
-| Timeouts with proxy | 1. Proxy may be overloaded<br>2. Try a proxy with better performance<br>3. Check your network connection |
-| Working yesterday, failing today | Binance may have blocked the proxy IP - rotate to a new proxy |
-| "SSL certificate verification failed" | Your proxy may be performing SSL interception - use a different proxy |
+#### 407 Proxy Authentication Required
 
-### Verifying Proxy Access Outside the Application
+This error occurs when proxy credentials are not properly formatted or encoded.
 
-You can test your proxy independently using curl:
+**Solution**: Run the fix script to test different URL encoding methods:
 
 ```bash
-# Test with proxy
-curl -x http://username:password@proxyip:port https://api.binance.com/api/v3/ping
+python fix_proxy_connection.py
+```
 
-# Expected successful response:
-{}
+#### 451 Service Unavailable from Restricted Location
+
+This indicates that the proxy IP is also in a geo-restricted region.
+
+**Solution**: Try a different proxy from a non-restricted region.
+
+```bash
+python test_proxy_list.py
+```
+
+#### API Authentication Errors
+
+If you see messages like "Invalid API-key, IP, or permissions for action", your API key may have IP restrictions that don't include the proxy IP.
+
+**Solution**: Update your Binance API key settings to include the proxy IP address or remove IP restrictions.
+
+### Connection Diagnostics
+
+To perform a comprehensive diagnostic check:
+
+```bash
+python test_binance_connection_fixed.py
+```
+
+This will provide detailed information about connection status, API access, and any errors encountered.
+
+## Updating Proxy Settings
+
+### Automatic Update
+
+The `fix_proxy_connection.py` script automatically:
+
+1. Tests different URL encoding methods for proxy credentials
+2. Updates the `.env` file with the most effective method
+3. Applies changes to Python configuration files
+4. Verifies the connection after applying fixes
+
+To run the automatic update:
+
+```bash
+python fix_proxy_connection.py
+```
+
+### Manual Update
+
+1. Edit the `.env` file directly with your new proxy settings
+2. Restart the application to apply changes
+
+```bash
+# Edit .env file
+nano .env
+
+# Restart the application
+npm run dev
 ```
 
 ## Advanced Configuration
 
-### Using a SOCKS5 Proxy
+### URL Encoding Methods
 
-The application supports SOCKS5 proxies. To use a SOCKS5 proxy, set:
+The system supports three URL encoding methods for proxy credentials:
 
-```
-USE_PROXY=true
-PROXY_PROTOCOL=socks5   # Add this line to specify SOCKS5
-PROXY_IP=123.45.67.89
-PROXY_PORT=1080
-```
+- `none`: No encoding (use raw credentials)
+- `quote`: Standard URL encoding (spaces become '%20')
+- `quote_plus`: Enhanced URL encoding (spaces become '+')
 
-### Proxy Fallback Behavior
+Most proxy servers work best with `quote_plus` encoding, but some may require different methods depending on their configuration.
 
-If `FALLBACK_TO_DIRECT=true` and the proxy connection fails, the application will attempt to connect directly to Binance.
+### Fallback Behavior
 
-This is useful for:
-- Development environments
-- Deployment in regions where Binance is sometimes accessible
-- Testing new proxy configurations
+When `FALLBACK_TO_DIRECT=true`, the system will attempt to connect directly to Binance API if the proxy connection fails. This provides better resilience but may expose your actual IP address to Binance.
 
-Set to `false` in production to prevent unexpected behavior.
+To ensure strict proxy usage only, set `FALLBACK_TO_DIRECT=false`.
 
-### Multiple Proxy Configuration
+### WebSocket Configuration
 
-For advanced users, you can set up multiple proxies by creating a `proxies.json` file:
+The WebSocket connection for real-time data also uses a proxy, configured separately in the code. If you're experiencing issues with real-time updates, check the WebSocket proxy settings in `client/src/services/binanceWebSocket.ts`.
 
-```json
-{
-  "proxies": [
-    {
-      "name": "primary",
-      "ip": "123.45.67.89",
-      "port": 8080,
-      "username": "user1",
-      "password": "pass1",
-      "protocol": "http"
-    },
-    {
-      "name": "backup",
-      "ip": "98.76.54.32",
-      "port": 3128,
-      "username": "user2",
-      "password": "pass2",
-      "protocol": "http"
-    }
-  ]
-}
-```
+---
 
-Then set `USE_MULTIPLE_PROXIES=true` in your `.env` file.
+## Additional Resources
 
-## Security Considerations
+For more detailed information about proxy authentication methods and troubleshooting, see:
 
-- Never use free public proxies for trading applications
-- Ensure your proxy connection is encrypted
-- Consider using proxies with dedicated IPs to prevent being blocked
-- Regularly rotate proxy credentials for additional security
-
-## Support and Resources
-
-If you continue to experience issues with proxy connectivity:
-
-1. Check if your proxy provider has specific configuration requirements
-2. Verify that your proxy provider allows connections to Binance API domains
-3. Consider using a VPN service with API capabilities as an alternative
-
-For additional help, please open an issue in the project repository with your connection logs (with sensitive information redacted).
+- [PROXY_AUTHENTICATION.md](./PROXY_AUTHENTICATION.md) - Details on proxy authentication methods and URL encoding
+- [Binance API Documentation](https://binance-docs.github.io/apidocs/spot/en/) - Official Binance API documentation

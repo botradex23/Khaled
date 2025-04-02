@@ -144,8 +144,18 @@ class BinanceMarketService:
                 if active_config.PROXY_USERNAME and active_config.PROXY_PASSWORD:
                     # Use URL-encoded username and password for special characters
                     import urllib.parse
-                    username = urllib.parse.quote_plus(active_config.PROXY_USERNAME)
-                    password = urllib.parse.quote_plus(active_config.PROXY_PASSWORD)
+                    # Get encoding method from config
+                    encoding_method = getattr(active_config, "PROXY_ENCODING_METHOD", "quote_plus") if active_config else "quote_plus"
+                    # Apply URL encoding based on the method
+                    if encoding_method == "none":
+                        username = active_config.PROXY_USERNAME
+                        password = active_config.PROXY_PASSWORD
+                    elif encoding_method == "quote":
+                        username = urllib.parse.quote(active_config.PROXY_USERNAME)
+                        password = urllib.parse.quote(active_config.PROXY_PASSWORD)
+                    else:  # Default to quote_plus
+                        username = urllib.parse.quote_plus(active_config.PROXY_USERNAME)
+                        password = urllib.parse.quote_plus(active_config.PROXY_PASSWORD)
                     proxy_url = f"http://{username}:{password}@{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
                     proxy_info = f"{active_config.PROXY_IP}:{active_config.PROXY_PORT} with authentication"
                 else:
