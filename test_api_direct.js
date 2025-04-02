@@ -19,6 +19,7 @@ async function testTradeLogs() {
     
     console.log('Creating trade log with data:', tradeLogData);
     
+    // Use the local development server URL
     const createResponse = await fetch('http://localhost:3000/api/trade-logs', {
       method: 'POST',
       headers: {

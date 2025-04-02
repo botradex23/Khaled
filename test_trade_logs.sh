@@ -5,11 +5,11 @@
 
 echo "===== Testing Trade Logs API ====="
 
-# Check if the server is already running
-SERVER_RUNNING=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api/auth/user || echo "error")
+# Check if the Replit app is accessible
+SERVER_RUNNING=$(curl -s -o /dev/null -w "%{http_code}" https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/user || echo "error")
 
 if [[ "$SERVER_RUNNING" == "error" || "$SERVER_RUNNING" == "000" ]]; then
-  echo "Server is not running. Starting the server..."
+  echo "Replit app is not running. Starting the server locally..."
   
   # Launch the server in the background
   npm run dev &
@@ -19,9 +19,11 @@ if [[ "$SERVER_RUNNING" == "error" || "$SERVER_RUNNING" == "000" ]]; then
   echo "Waiting for the server to start..."
   for i in {1..30}; do
     sleep 1
-    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api/auth/user || echo "error")
+    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/auth/user || echo "error")
     if [[ "$RESPONSE" != "error" && "$RESPONSE" != "000" ]]; then
-      echo "Server is up and running!"
+      echo "Server is up and running locally!"
+      # Update the test_trade_logs.js temporarily to use localhost
+      sed -i 's|https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev|http://localhost:3000|g' test_trade_logs.js
       break
     fi
     if [[ $i == 30 ]]; then
@@ -31,7 +33,7 @@ if [[ "$SERVER_RUNNING" == "error" || "$SERVER_RUNNING" == "000" ]]; then
     fi
   done
 else
-  echo "Server is already running."
+  echo "Replit app is accessible, using remote URL for testing."
 fi
 
 # Run the test script

@@ -1,87 +1,92 @@
-import express from 'express';
-import { storage } from './server/storage.js';
+/**
+ * Test script for trade logs API via Express API
+ * This works via the Express port directly (5000) rather than the Vite port (3000)
+ */
 
-const app = express();
-const PORT = 4000;
-
-app.use(express.json());
-
-// Create route to add a trade log
-app.post('/api/trade-logs', async (req, res) => {
+async function testTradeLogsViaExpress() {
+  console.log('===== Testing Trade Logs API via Express Server =====');
+  
+  // Use the direct Express port (5000) which is where the actual API runs
+  const API_URL = 'http://localhost:5000/api/trade-logs';
+  
   try {
-    console.log('Received request to create trade log:', req.body);
+    // Create a trade log
+    console.log('Creating a trade log...');
     
     const tradeLogData = {
-      symbol: req.body.symbol,
-      action: req.body.action,
-      entry_price: req.body.entry_price,
-      quantity: req.body.quantity,
-      trade_source: req.body.trade_source,
-      status: req.body.status || 'EXECUTED',
-      predicted_confidence: req.body.predicted_confidence,
-      reason: req.body.reason,
-      user_id: req.body.user_id
-    };
-    
-    console.log('Creating trade log with data:', tradeLogData);
-    const createdTradeLog = await storage.createTradeLog(tradeLogData);
-    console.log('Trade log created:', createdTradeLog);
-    
-    res.status(201).json(createdTradeLog);
-  } catch (error) {
-    console.error('Error creating trade log:', error);
-    res.status(500).json({ error: 'Failed to create trade log' });
-  }
-});
-
-// Get all trade logs
-app.get('/api/trade-logs', async (req, res) => {
-  try {
-    console.log('Fetching all trade logs');
-    
-    // There's no direct method to get all trade logs, so we'll use search with no filters
-    const tradeLogs = await storage.searchTradeLogs({});
-    console.log(`Found ${tradeLogs.length} trade logs`);
-    
-    res.json(tradeLogs);
-  } catch (error) {
-    console.error('Error fetching trade logs:', error);
-    res.status(500).json({ error: 'Failed to fetch trade logs' });
-  }
-});
-
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Test API server running on port ${PORT}`);
-});
-
-// Simple smoke test when the server starts
-setTimeout(async () => {
-  try {
-    console.log('\n--- Running smoke test ---');
-    
-    // Create a test trade log
-    const testData = {
       symbol: 'BTCUSDT',
       action: 'BUY',
       entry_price: '50000',
       quantity: '0.1',
-      trade_source: 'TEST',
+      trade_source: 'VITE_TEST',
       status: 'EXECUTED',
-      predicted_confidence: '0.85'
+      predicted_confidence: '0.85',
+      reason: 'Test via Vite dev server'
     };
     
-    console.log('Creating test trade log...');
-    const createdLog = await storage.createTradeLog(testData);
-    console.log('Test trade log created:', createdLog);
+    const createResponse = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(tradeLogData)
+    });
     
-    // Search for trade logs
-    console.log('Searching for trade logs...');
-    const logs = await storage.searchTradeLogs({});
-    console.log(`Found ${logs.length} trade logs in storage`);
+    console.log('Response status:', createResponse.status);
     
-    console.log('--- Smoke test complete ---\n');
+    // Get the raw response text first to see what's actually being returned
+    const responseText = await createResponse.text();
+    console.log('Raw response body:', responseText);
+    
+    if (!createResponse.ok) {
+      console.error('Error response body:', responseText);
+      throw new Error(`Failed to create trade log: ${createResponse.status} ${createResponse.statusText}`);
+    }
+    
+    // Now we need to parse the text manually since we already consumed the response
+    let createdTradeLog;
+    try {
+      createdTradeLog = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse JSON response:', parseError.message);
+      throw new Error('Server returned a non-JSON response');
+    }
+    console.log('Trade log created successfully:', createdTradeLog);
+    
+    // Get all trade logs
+    console.log('\nGetting all trade logs...');
+    
+    const getResponse = await fetch(API_URL);
+    console.log('GET response status:', getResponse.status);
+    
+    // Get the raw response text first
+    const getResponseText = await getResponse.text();
+    console.log('Raw GET response body:', getResponseText);
+    
+    if (!getResponse.ok) {
+      console.error('Error GET response body:', getResponseText);
+      throw new Error(`Failed to get trade logs: ${getResponse.status} ${getResponse.statusText}`);
+    }
+    
+    // Parse the text manually
+    let tradeLogs;
+    try {
+      tradeLogs = JSON.parse(getResponseText);
+    } catch (parseError) {
+      console.error('Failed to parse GET JSON response:', parseError.message);
+      throw new Error('Server returned a non-JSON response for GET request');
+    }
+    console.log(`Found ${tradeLogs.length} trade logs`);
+    
+    console.log('\n===== Trade Logs API Test Completed Successfully =====');
   } catch (error) {
-    console.error('Smoke test failed:', error);
+    console.error('Error testing Trade Logs API:', error.message);
+    
+    // Additional error handling for network issues
+    if (error.code === 'ECONNREFUSED') {
+      console.error('Could not connect to the server. Make sure the Vite dev server is running on port 3000.');
+    }
   }
-}, 1000);
+}
+
+testTradeLogsViaExpress();

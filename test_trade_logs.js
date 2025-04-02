@@ -6,7 +6,8 @@
 async function testTradeLogsAPI() {
   console.log('===== Testing Trade Logs API =====');
   
-  const API_URL = 'http://localhost:5000/api/trade-logs';
+  // Use the local development server URL
+  const API_URL = 'http://localhost:3000/api/trade-logs';
   
   try {
     // Create a trade log
@@ -124,7 +125,7 @@ async function testTradeLogsAPI() {
     
     // Additional error handling for network issues
     if (error.code === 'ECONNREFUSED') {
-      console.error('Could not connect to the server. Make sure the server is running on port 5000.');
+      console.error('Could not connect to the server. Make sure the application is deployed and running on Replit.');
     }
   }
 }
