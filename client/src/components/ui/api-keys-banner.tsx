@@ -82,11 +82,11 @@ export default function ApiKeysBanner() {
           <AlertTriangle className="h-5 w-5 text-destructive mr-2 mt-0.5" />
           <div>
             <AlertTitle className="text-base font-semibold mb-1">
-              נדרשת הגדרת מפתחות API
+              API Keys Setup Required
             </AlertTitle>
             <AlertDescription className="text-sm">
               <p className="mb-1">
-                כדי להשתמש בכל האפשרויות של המערכת, אנא הגדר את מפתחות ה-API שלך.
+                To use all features of the system, please set up your API keys.
               </p>
             </AlertDescription>
           </div>
@@ -94,7 +94,7 @@ export default function ApiKeysBanner() {
         <Link href="/api-keys">
           <Button size="sm" variant="default" className="bg-primary text-primary-foreground flex items-center">
             <Key className="h-4 w-4 mr-1" />
-            הגדר עכשיו
+            Set Up Now
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </Link>

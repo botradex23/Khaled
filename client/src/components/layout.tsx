@@ -233,11 +233,11 @@ export default function Layout({ children }: LayoutProps) {
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t py-2">
           <div className="container grid grid-cols-5 gap-1">
-            {/* הראשון יהיה תמיד בית, שני הבא יהיה API Keys, והשאר לפי הסדר */}
+            {/* First item is always Home, second is API Keys, followed by the rest in order */}
             {[
               navigationItems[0], // Home
               navigationItems.find(item => item.name === "API Keys"), // API Keys
-              ...navigationItems.filter(item => item.name !== "Home" && item.name !== "API Keys").slice(0, 3) // שלושת הפריטים הבאים
+              ...navigationItems.filter(item => item.name !== "Home" && item.name !== "API Keys").slice(0, 3) // The next three items
             ].map((item) => {
               if (!item || (item.auth && !isAuthenticated)) return null;
               return (
@@ -269,7 +269,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 pb-16">
-        {/* הצגת באנר אזהרה למשתמשים שאין להם מפתחות API */}
+        {/* Display warning banner for users without API keys */}
         <div className="container mt-4">
           <ApiKeysBanner />
         </div>
