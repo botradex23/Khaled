@@ -16,6 +16,12 @@ from python_app.routes.binance_routes import binance_bp
 from python_app.routes.ml_routes import ml_bp
 from python_app.routes.ml_prediction_routes import ml_prediction_bp, register_routes as register_ml_prediction_routes
 from python_app.routes.live_prediction_routes import live_prediction_bp, register_routes as register_live_prediction_routes
+# Import the trade logs blueprint
+try:
+    from python_app.routes.trade_logs_routes import trade_logs_bp
+except ImportError:
+    logging.warning("Could not import Trade Logs blueprint. Trade logging will be limited.")
+    trade_logs_bp = None
 
 # We'll import these later to avoid circular imports
 # from routes.ai_signals_routes import ai_signals_bp
@@ -77,6 +83,11 @@ def create_app(config=None):
     app.register_blueprint(binance_bp)
     app.register_blueprint(ml_bp)
     app.register_blueprint(ml_prediction_bp)
+    
+    # Register trade logs blueprint if available
+    if trade_logs_bp:
+        app.register_blueprint(trade_logs_bp)
+        logging.info("Trade Logs blueprint registered successfully")
     
     # Conditionally import and register AI Signals blueprint
     try:
@@ -184,7 +195,8 @@ def create_app(config=None):
                 'live_prediction': True,
                 'ai_signals': True,
                 'trading': True,
-                'api_keys': True
+                'api_keys': True,
+                'trade_logs': bool(trade_logs_bp)
             }
         })
     

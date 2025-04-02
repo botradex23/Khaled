@@ -32,6 +32,11 @@ class Config:
     FALLBACK_TO_DIRECT = os.environ.get('FALLBACK_TO_DIRECT', 'false').lower() in ('true', '1', 'yes')
     PROXY_ENCODING_METHOD = os.environ.get('PROXY_ENCODING_METHOD', 'quote_plus')  # URL encoding method for proxy auth
     
+    # Telegram notification settings
+    TELEGRAM_ENABLED = os.environ.get('TELEGRAM_BOT_TOKEN', '') != ''
+    TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+    TELEGRAM_ADMIN_CHAT_ID = os.environ.get('TELEGRAM_ADMIN_CHAT_ID', '')
+    
     # ML model settings
     DEFAULT_MODEL_TYPE = 'xgboost'
     CONFIDENCE_THRESHOLD = 0.75

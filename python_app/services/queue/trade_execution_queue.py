@@ -40,28 +40,70 @@ parent_dir = os.path.dirname(os.path.dirname(current_dir))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
-# Import trade logger
+# Import new trade logger
 try:
-    from python_app.utils.ml_trade_logger import (
-        log_trade_execution, log_position_update, log_error
+    from python_app.utils.trade_logger import (
+        log_trade_order, log_trade_execution, log_trade_error,
+        update_trade_status
     )
 except ImportError:
     try:
-        from utils.ml_trade_logger import (
-            log_trade_execution, log_position_update, log_error
+        from utils.trade_logger import (
+            log_trade_order, log_trade_execution, log_trade_error, 
+            update_trade_status
         )
     except ImportError:
-        logger.warning("Could not import ML trade logger - using default logging")
-        
-        # Create stub functions if import fails
-        def log_trade_execution(symbol, action, quantity, price, position_id, trade_id=None, ml_confidence=None):
-            logger.info(f"TRADE: {action} {quantity} {symbol} @ {price} (position: {position_id})")
-        
-        def log_position_update(symbol, position_id, entry_price, current_price, quantity, direction, unrealized_pnl, unrealized_pnl_pct):
-            logger.info(f"POSITION UPDATE: {symbol} {direction} {quantity} @ {entry_price} -> {current_price} (PnL: {unrealized_pnl:.2f}, {unrealized_pnl_pct:.2f}%)")
-        
-        def log_error(error_message, additional_data=None):
-            logger.error(f"ERROR: {error_message} - {additional_data if additional_data else ''}")
+        # Try the legacy logger as fallback
+        try:
+            from python_app.utils.ml_trade_logger import (
+                log_trade_execution as ml_log_execution, 
+                log_position_update, 
+                log_error as ml_log_error
+            )
+            
+            # Create adapter functions to match new logger interface
+            def log_trade_order(symbol, side, quantity, order_type, source, **kwargs):
+                logger.info(f"ORDER: {side} {quantity} {symbol} (legacy logger)")
+                return kwargs.get('trade_id', str(uuid.uuid4()))
+            
+            def log_trade_execution(trade_id, success, **kwargs):
+                symbol = kwargs.get('symbol', 'UNKNOWN')
+                price = kwargs.get('executed_price')
+                quantity = kwargs.get('executed_quantity', 0)
+                position_id = kwargs.get('position_id')
+                ml_log_execution(symbol, kwargs.get('side', 'UNKNOWN'), quantity, price, position_id, trade_id)
+                return True
+            
+            def log_trade_error(trade_id, error_type, error_message, **kwargs):
+                ml_log_error(error_message, kwargs.get('context'))
+                return True
+            
+            def update_trade_status(trade_id, status, **kwargs):
+                logger.info(f"STATUS: {trade_id} -> {status} (legacy logger)")
+                return True
+                
+        except ImportError:
+            logger.warning("Could not import any trade logger - using default logging")
+            
+            # Create stub functions if import fails
+            def log_trade_order(symbol, side, quantity, order_type, source, **kwargs):
+                logger.info(f"ORDER: {side} {quantity} {symbol} @ {kwargs.get('price', 'MARKET')} (source: {source})")
+                return kwargs.get('trade_id', str(uuid.uuid4()))
+            
+            def log_trade_execution(trade_id, success, **kwargs):
+                symbol = kwargs.get('symbol', 'UNKNOWN')
+                price = kwargs.get('executed_price')
+                quantity = kwargs.get('executed_quantity', 0)
+                logger.info(f"EXECUTION: {trade_id} - {'SUCCESS' if success else 'FAILED'} - {quantity} {symbol} @ {price}")
+                return True
+            
+            def log_trade_error(trade_id, error_type, error_message, **kwargs):
+                logger.error(f"ERROR: {trade_id} - {error_type} - {error_message} - {kwargs.get('context', '')}")
+                return True
+            
+            def update_trade_status(trade_id, status, **kwargs):
+                logger.info(f"STATUS: {trade_id} -> {status}")
+                return True
 
 
 # Trade status enum
@@ -359,6 +401,32 @@ class TradeExecutionQueue:
         # Log start of processing
         logger.info(f"Processing trade {trade_request.id}: {trade_request.side} {trade_request.quantity} {trade_request.symbol}")
         
+        # Log order creation in the centralized trade logger
+        try:
+            # Create an order log entry when we start processing
+            source = trade_request.meta.get('source', 'TRADE_QUEUE')
+            if 'source' not in trade_request.meta:
+                trade_request.meta['source'] = source
+            
+            # Log the order with the centralized trade logger
+            log_trade_order(
+                symbol=trade_request.symbol,
+                side=trade_request.side,
+                quantity=trade_request.quantity,
+                order_type=trade_request.order_type,
+                source=source,
+                price=trade_request.price,
+                user_id=str(trade_request.user_id) if trade_request.user_id else None,
+                strategy_id=trade_request.strategy_id,
+                trade_id=trade_request.id,
+                metadata=trade_request.meta
+            )
+            
+            # Update order status to PROCESSING
+            update_trade_status(trade_request.id, "PROCESSING")
+        except Exception as e:
+            logger.warning(f"Failed to log trade order creation: {e}")
+        
         try:
             # Check risk management rules if callback provided
             if self.risk_check_callback:
@@ -367,7 +435,26 @@ class TradeExecutionQueue:
                     trade_request.status = TradeStatus.RISK_REJECTED
                     trade_request.error_message = "Trade rejected by risk management rules"
                     logger.warning(f"Trade {trade_request.id} rejected by risk management")
-                    log_error(f"Trade rejected by risk management: {trade_request.symbol} {trade_request.side}")
+                    
+                    # Log rejection in centralized trade logger
+                    try:
+                        log_trade_error(
+                            trade_id=trade_request.id,
+                            error_type="RISK_REJECTED",
+                            error_message="Trade rejected by risk management rules",
+                            context={
+                                "symbol": trade_request.symbol,
+                                "side": trade_request.side,
+                                "quantity": trade_request.quantity
+                            }
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to log trade error: {e}")
+                    
+                    # Update order status to REJECTED
+                    update_trade_status(trade_request.id, "REJECTED", {
+                        "rejection_reason": "RISK_MANAGEMENT"
+                    })
                     return
             
             # Execute the trade through the trading service
@@ -385,12 +472,42 @@ class TradeExecutionQueue:
                 trade_request.status = TradeStatus.EXECUTED
                 trade_request.result = result
                 logger.info(f"Trade {trade_request.id} executed successfully: {trade_request.symbol} {trade_request.side}")
+                
+                # Get execution details
+                executed_price = result.get('price')
+                executed_quantity = result.get('quantity', trade_request.quantity)
+                is_paper_trade = result.get('is_paper_trade', False)
+                order_id = result.get('order_id')
+                
+                # Log execution in centralized trade logger
+                log_trade_execution(
+                    trade_id=trade_request.id, 
+                    success=True,
+                    executed_price=executed_price,
+                    executed_quantity=executed_quantity,
+                    order_id=order_id,
+                    is_paper_trade=is_paper_trade,
+                    execution_data=result
+                )
+                
+                # Update order status to EXECUTED
+                update_trade_status(trade_request.id, "EXECUTED", {
+                    "execution_time": datetime.now().isoformat(),
+                    "is_paper_trade": is_paper_trade
+                })
             else:
                 if trade_request.retries < trade_request.max_retries and "rate limit" in str(result.get('message', '')).lower():
                     # Rate limit hit, requeue after incrementing retry count
                     trade_request.retries += 1
                     trade_request.status = TradeStatus.PENDING
                     logger.warning(f"Trade {trade_request.id} hit rate limit, requeueing (retry {trade_request.retries}/{trade_request.max_retries})")
+                    
+                    # Update order status to indicate rate limiting
+                    update_trade_status(trade_request.id, "RATE_LIMITED", {
+                        "retry_count": trade_request.retries,
+                        "max_retries": trade_request.max_retries
+                    })
+                    
                     self.queue.put(trade_request)
                     return
                 else:
@@ -399,12 +516,43 @@ class TradeExecutionQueue:
                     trade_request.error_message = result.get('message', 'Unknown error')
                     trade_request.result = result
                     logger.error(f"Trade {trade_request.id} failed: {trade_request.error_message}")
+                    
+                    # Log execution failure in centralized trade logger
+                    log_trade_execution(
+                        trade_id=trade_request.id,
+                        success=False,
+                        error_message=trade_request.error_message,
+                        execution_data=result
+                    )
+                    
+                    # Update order status to FAILED
+                    update_trade_status(trade_request.id, "FAILED", {
+                        "error_message": trade_request.error_message,
+                        "failure_time": datetime.now().isoformat()
+                    })
             
         except Exception as e:
             trade_request.status = TradeStatus.FAILED
             trade_request.error_message = str(e)
             logger.error(f"Error executing trade {trade_request.id}: {str(e)}")
-            log_error(f"Trade execution error: {trade_request.symbol} {trade_request.side}", str(e))
+            
+            # Log error in centralized trade logger
+            log_trade_error(
+                trade_id=trade_request.id,
+                error_type="EXECUTION_ERROR",
+                error_message=str(e),
+                context={
+                    "symbol": trade_request.symbol,
+                    "side": trade_request.side,
+                    "quantity": trade_request.quantity
+                }
+            )
+            
+            # Update order status to FAILED
+            update_trade_status(trade_request.id, "FAILED", {
+                "error_message": str(e),
+                "failure_time": datetime.now().isoformat()
+            })
         
         finally:
             # Move to history if completed
