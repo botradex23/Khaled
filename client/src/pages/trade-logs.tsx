@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import Layout from '@/components/layout';
 import {
   Card,
   CardContent,
@@ -285,25 +286,26 @@ export default function TradeLogsPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Trade Logs Dashboard</h1>
-        <Button 
-          variant="outline" 
-          onClick={() => refetch()} 
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
+    <Layout>
+      <div className="container mx-auto py-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Trade Logs Dashboard</h1>
+          <Button 
+            variant="outline" 
+            onClick={() => refetch()} 
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="recent">Recent Trades</TabsTrigger>
-          <TabsTrigger value="filtered">Filtered View</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="recent">Recent Trades</TabsTrigger>
+            <TabsTrigger value="filtered">Filtered View</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
 
         {/* Recent Trades Tab */}
         <TabsContent value="recent">
@@ -720,8 +722,9 @@ export default function TradeLogsPage() {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </Layout>
   );
 }
