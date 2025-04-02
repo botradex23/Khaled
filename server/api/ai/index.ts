@@ -11,28 +11,12 @@ import { aiTradingBridge, TradingSignal } from './AITradingBridge';
 import { createAIPaperTradingBridge } from './AIPaperTradingBridge';
 import { storage } from '../../storage';
 import { ensureAuthenticated } from '../../auth';
+import paperTradingRoutes from './paper-trading-routes';
 
 const router = Router();
 
-// יצירת גשר למערכת Paper Trading עבור מערכת ה-AI
-const aiPaperTradingBridge = createAIPaperTradingBridge(aiTradingSystem);
-
-// הגדרת המשתמש לגשר (משתמש ברירת מחדל)
-aiPaperTradingBridge.setUser(1)
-  .then(success => {
-    if (success) {
-      console.log('Paper Trading Bridge initialized for default user (ID: 1)');
-      
-      // אתחול הגשר במערכת ה-AI רק לאחר הגדרת משתמש
-      aiTradingSystem.setPaperTradingBridge(aiPaperTradingBridge);
-      console.log('Paper Trading Bridge connected to AI Trading System');
-    } else {
-      console.error('Failed to initialize Paper Trading Bridge for default user');
-    }
-  })
-  .catch(error => {
-    console.error('Error initializing Paper Trading Bridge:', error);
-  });
+// Import the aiPaperTradingBridge from the dedicated module
+import { aiPaperTradingBridge } from './paper-trading-bridge';
 
 /**
  * טיפול בשגיאות API
@@ -778,4 +762,8 @@ router.get('/paper-trading/performance', async (req: Request, res: Response) => 
   }
 });
 
+// Register paper trading routes
+router.use('/paper-trading', paperTradingRoutes);
+
+// Export the router with all routes
 export default router;

@@ -1,259 +1,293 @@
 /**
- * AIPaperTradingBridge.ts
+ * AIPaperTradingBridge - Bridge between AI trading decisions and paper trading
  * 
- * מודול גישור בין מערכת המסחר האוטומטית מבוססת AI לבין מערכת ה-Paper Trading
- * מאפשר למערכת ה-AI להשתמש במערכת ה-Paper Trading לבדיקת אסטרטגיות וחיזוקים חיוביים/שליליים
+ * This module provides a bridge to connect the AI trading system with the paper trading system.
+ * It allows AI trading decisions to be executed in the paper trading environment,
+ * providing a risk-free way to test and validate AI strategies.
  */
 
 import { storage } from '../../storage';
-import { AITradingSystem, TradingDecision, TradingResult } from './AITradingSystem';
-import { InsertPaperTradingPosition, InsertPaperTradingTrade } from '@shared/schema';
+import paperTradingApi from '../paper-trading/PaperTradingApi';
+import { AITradingSystem } from './AITradingSystem';
 
+/**
+ * Interface for trading decisions from AI system
+ */
+export interface TradingDecision {
+  symbol: string;               // Trading pair symbol (e.g., "BTCUSDT")
+  action: string;               // Trading action ("BUY", "SELL", "HOLD")
+  confidence: number;           // Confidence level (0.0 to 1.0)
+  price: number;                // Current price
+  timestamp: string;            // ISO timestamp of the decision
+  strategy: string;             // Strategy used for the decision
+  parameters: Record<string, any>; // Strategy-specific parameters
+  
+  // Optional properties
+  reason?: string;              // Reason for the decision
+  tradingSignals?: Record<string, any>; // Technical indicators and signals
+  marketState?: Record<string, any>;    // Current market state
+  predictions?: Record<string, any>;    // ML predictions data
+}
+
+/**
+ * AI Paper Trading Bridge
+ */
 export class AIPaperTradingBridge {
   private userId: number | null = null;
-  private accountId: number | null = null;
   private aiSystem: AITradingSystem;
 
+  /**
+   * Create a new AI Paper Trading Bridge
+   * 
+   * @param aiSystem AI Trading System instance
+   */
   constructor(aiSystem: AITradingSystem) {
     this.aiSystem = aiSystem;
   }
 
   /**
-   * מגדיר את המשתמש והחשבון שמשמשים את מערכת ה-AI
+   * Set the user for paper trading
    * 
-   * @param userId מזהה המשתמש
-   * @returns הצלחה או כישלון
+   * @param userId User ID
+   * @returns Promise resolving to success status
    */
-  public async setUser(userId: number): Promise<boolean> {
+  async setUser(userId: number): Promise<boolean> {
     try {
-      this.userId = userId;
+      // Get or create paper trading account for the user
+      let account = await storage.getUserPaperTradingAccount(userId);
       
-      // בדיקה האם למשתמש יש חשבון Paper Trading
-      const account = await storage.getUserPaperTradingAccount(userId);
-      
-      if (account) {
-        this.accountId = account.id;
-        console.log(`AI Paper Trading Bridge: Using existing account ID ${this.accountId} for user ${userId}`);
-        return true;
-      } else {
-        // יצירת חשבון חדש למשתמש
-        const initialBalance = 10000; // $10,000 default balance
-        const newAccount = await storage.createPaperTradingAccount({
+      if (!account) {
+        // Create a new account with default balance
+        const initialBalance = '10000';  // Default balance in USDT
+        account = await storage.createPaperTradingAccount({
           userId,
-          initialBalance: initialBalance.toString(),
-          currentBalance: initialBalance.toString(),
-          totalProfitLoss: "0",
-          totalProfitLossPercent: "0",
+          initialBalance,
+          currentBalance: initialBalance,
+          totalProfitLoss: '0',
+          totalProfitLossPercent: '0',
           totalTrades: 0,
           winningTrades: 0,
           losingTrades: 0
         });
-
-        this.accountId = newAccount.id;
-        console.log(`AI Paper Trading Bridge: Created new account ID ${this.accountId} for user ${userId}`);
-        return true;
+        
+        if (!account) {
+          console.error(`Failed to create paper trading account for user ${userId}`);
+          return false;
+        }
+        
+        console.log(`Created paper trading account for user ${userId} with ID ${account.id}`);
       }
+      
+      this.userId = userId;
+      return true;
     } catch (error) {
-      console.error('Error setting user for AI Paper Trading Bridge:', error);
+      console.error('Error setting user for paper trading:', error);
       return false;
     }
   }
 
   /**
-   * מבצע החלטת מסחר שהתקבלה ממערכת ה-AI במערכת ה-Paper Trading
+   * Get current user ID
    * 
-   * @param decision החלטת המסחר מה-AI
-   * @returns תוצאת הביצוע
+   * @returns Current user ID or null if not set
    */
-  public async executeTrading(decision: TradingDecision): Promise<TradingResult> {
-    console.log(`AIPaperTradingBridge: Executing decision: ${JSON.stringify({
-      action: decision.action,
-      symbol: decision.symbol,
-      price: decision.price,
-      confidence: decision.confidence,
-      timestamp: decision.timestamp
-    })}`);
-    
-    console.log(`AIPaperTradingBridge state: userId=${this.userId}, accountId=${this.accountId}`);
-    
-    if (!this.userId || !this.accountId) {
-      console.log(`AIPaperTradingBridge: Cannot execute - Missing user (${this.userId}) or account (${this.accountId})`);
-      return {
-        decision,
-        executed: false,
-        reason: 'No user or account set for paper trading'
-      };
-    }
+  getUserId(): number | null {
+    return this.userId;
+  }
 
-    // אם ההחלטה היא להחזיק, אין צורך לשלוח פקודה
-    if (decision.action === 'HOLD') {
-      console.log(`AIPaperTradingBridge: Skipping HOLD action for ${decision.symbol}`);
-      return {
-        decision,
-        executed: false,
-        reason: 'No action needed (HOLD)'
-      };
-    }
-
+  /**
+   * Execute a trading decision from the AI system
+   * 
+   * @param decision Trading decision
+   * @returns Promise resolving to execution result
+   */
+  async executeTrading(decision: TradingDecision): Promise<any> {
     try {
-      // בדיקת מצב החשבון
-      const account = await storage.getPaperTradingAccount(this.accountId);
-      if (!account) {
+      if (!this.userId) {
+        throw new Error('User not set for paper trading');
+      }
+      
+      const { symbol, action, price, confidence } = decision;
+      
+      // Skip HOLD actions
+      if (action === 'HOLD') {
         return {
-          decision,
+          success: true,
+          message: 'No action taken - HOLD signal',
           executed: false,
-          reason: 'Paper trading account not found'
         };
       }
-
-      // חישוב כמות לעסקה - מגביל ל-5% מהחשבון
-      const currentBalance = parseFloat(account.currentBalance);
-      const maxTradeAmount = currentBalance * 0.05; // 5% risk management
-      const price = decision.price;
       
-      // חישוב כמות המטבע לרכישה/מכירה
-      const quantity = maxTradeAmount / price;
+      // Get user account
+      const account = await storage.getUserPaperTradingAccount(this.userId);
+      if (!account) {
+        throw new Error('Paper trading account not found');
+      }
       
-      // המרת סמל העסקה לפורמט המתאים למערכת הפנימית (BTC-USDT → BTC/USDT)
-      const formattedSymbol = decision.symbol.replace('-', '/');
+      // Calculate quantity based on fixed USD amount (e.g., $100 per trade)
+      const tradeAmount = 100;  // Fixed amount in USD
+      const quantity = (tradeAmount / parseFloat(price.toString())).toFixed(6);
       
-      // יצירת פוזיציה חדשה
-      const positionData: InsertPaperTradingPosition = {
-        accountId: this.accountId,
-        symbol: formattedSymbol,
+      // Create a position
+      const position = await storage.createPaperTradingPosition({
+        accountId: account.id,
+        symbol,
         entryPrice: price.toString(),
-        quantity: quantity.toString(),
-        direction: decision.action === 'BUY' ? 'LONG' : 'SHORT'
-      };
-
-      const position = await storage.createPaperTradingPosition(positionData);
+        quantity,
+        direction: action === 'BUY' ? 'LONG' : 'SHORT',
+      });
       
-      // יצירת עסקה חדשה
-      const tradeData: InsertPaperTradingTrade = {
-        accountId: this.accountId,
+      if (!position) {
+        throw new Error('Failed to create paper trading position');
+      }
+      
+      // Create a trade record
+      const trade = await storage.createPaperTradingTrade({
+        accountId: account.id,
         positionId: position.id,
-        symbol: formattedSymbol,
+        symbol,
         entryPrice: price.toString(),
-        quantity: quantity.toString(),
-        direction: decision.action === 'BUY' ? 'LONG' : 'SHORT',
+        quantity,
+        direction: action === 'BUY' ? 'LONG' : 'SHORT',
         status: 'OPEN',
         type: 'MARKET',
         isAiGenerated: true,
-        aiConfidence: decision.confidence.toString(),
-        metadata: JSON.stringify({
-          strategy: decision.strategy,
-          parameters: decision.parameters,
-          marketState: decision.marketState,
-          predictions: decision.predictions,
-          signals: decision.tradingSignals
-        })
-      };
-
-      const trade = await storage.createPaperTradingTrade(tradeData);
+        aiConfidence: confidence.toString(),
+      });
       
-      console.log(`AIPaperTradingBridge: Executed ${decision.action} trade for ${formattedSymbol}, quantity: ${quantity}, price: ${price}`);
+      if (!trade) {
+        throw new Error('Failed to create paper trading trade record');
+      }
+      
+      // Log the execution
+      console.log(`AI Paper Trading: Executed ${action} order for ${symbol} at price ${price}, quantity ${quantity}`);
       
       return {
-        decision,
+        success: true,
+        message: `Successfully executed ${action} trade for ${symbol}`,
         executed: true,
-        executionPrice: price,
-        executionTime: Date.now()
+        trade,
+        position,
       };
     } catch (error) {
-      console.error('Error executing AI decision in paper trading:', error);
+      console.error('Error executing AI trading decision:', error);
       return {
-        decision,
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error executing trade',
         executed: false,
-        reason: `Error: ${error}`
       };
     }
   }
 
   /**
-   * סוגר פוזיציה קיימת במערכת ה-Paper Trading
+   * Get open positions
    * 
-   * @param positionId מזהה הפוזיציה
-   * @param exitPrice מחיר היציאה
-   * @returns תוצאת הסגירה
+   * @returns Promise resolving to open positions
    */
-  public async closePosition(positionId: number, exitPrice: number): Promise<boolean> {
+  async getOpenPositions(): Promise<any[]> {
     try {
-      const trade = await storage.closePaperTradingPosition(positionId, exitPrice);
-      return !!trade;
-    } catch (error) {
-      console.error('Error closing paper trading position:', error);
-      return false;
-    }
-  }
-
-  /**
-   * מחזיר את כל הפוזיציות הפתוחות שנוצרו על ידי ה-AI
-   * 
-   * @returns רשימת פוזיציות פתוחות
-   */
-  public async getOpenPositions() {
-    if (!this.accountId) return [];
-    
-    try {
-      const positions = await storage.getAccountPaperTradingPositions(this.accountId);
-      return positions;
-    } catch (error) {
-      console.error('Error getting open paper trading positions:', error);
-      return [];
-    }
-  }
-
-  /**
-   * מחזיר את היסטוריית העסקאות שבוצעו על ידי ה-AI
-   * 
-   * @param limit מספר העסקאות המקסימלי להחזרה
-   * @returns רשימת עסקאות
-   */
-  public async getTradeHistory(limit: number = 50) {
-    if (!this.accountId) return [];
-    
-    try {
-      const trades = await storage.getAccountPaperTradingTrades(this.accountId, limit);
-      return trades.filter(trade => trade.isAiGenerated);
-    } catch (error) {
-      console.error('Error getting AI paper trading history:', error);
-      return [];
-    }
-  }
-
-  /**
-   * מחזיר סטטיסטיקות ביצועים של מערכת ה-AI בסימולציה
-   * 
-   * @returns סטטיסטיקות ביצועים
-   */
-  public async getPerformanceStats() {
-    if (!this.accountId) return null;
-    
-    try {
-      const account = await storage.getPaperTradingAccount(this.accountId);
-      const trades = await storage.getAccountPaperTradingTrades(this.accountId);
-      const aiTrades = trades.filter(trade => trade.isAiGenerated);
+      if (!this.userId) {
+        throw new Error('User not set for paper trading');
+      }
       
-      // חישוב סטטיסטיקות ייחודיות למערכת ה-AI
-      const successfulTrades = aiTrades.filter(trade => 
-        trade.status === 'CLOSED' && trade.profitLoss && parseFloat(trade.profitLoss) > 0
-      );
+      const account = await storage.getUserPaperTradingAccount(this.userId);
+      if (!account) {
+        throw new Error('Paper trading account not found');
+      }
+      
+      return storage.getAccountPaperTradingPositions(account.id);
+    } catch (error) {
+      console.error('Error getting open positions:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get trade history
+   * 
+   * @param limit Maximum number of trades to return
+   * @returns Promise resolving to trade history
+   */
+  async getTradeHistory(limit = 50): Promise<any[]> {
+    try {
+      if (!this.userId) {
+        throw new Error('User not set for paper trading');
+      }
+      
+      const account = await storage.getUserPaperTradingAccount(this.userId);
+      if (!account) {
+        throw new Error('Paper trading account not found');
+      }
+      
+      return storage.getAccountPaperTradingTrades(account.id, limit);
+    } catch (error) {
+      console.error('Error getting trade history:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get performance statistics
+   * 
+   * @returns Promise resolving to performance statistics
+   */
+  async getPerformanceStats(): Promise<any | null> {
+    try {
+      if (!this.userId) {
+        throw new Error('User not set for paper trading');
+      }
+      
+      const account = await storage.getUserPaperTradingAccount(this.userId);
+      if (!account) {
+        throw new Error('Paper trading account not found');
+      }
+      
+      // Get all closed trades
+      const trades = await storage.getAccountPaperTradingTrades(account.id, 1000);
+      const closedTrades = trades.filter(trade => trade.status === 'CLOSED');
+      
+      // Calculate performance metrics
+      const totalTrades = closedTrades.length;
+      const winningTrades = closedTrades.filter(trade => parseFloat(trade.profitLoss || '0') > 0).length;
+      const losingTrades = closedTrades.filter(trade => parseFloat(trade.profitLoss || '0') < 0).length;
+      
+      // Calculate profit/loss stats
+      const totalProfitLoss = closedTrades.reduce((sum, trade) => sum + parseFloat(trade.profitLoss || '0'), 0);
+      const averageProfitLoss = totalTrades > 0 ? totalProfitLoss / totalTrades : 0;
+      
+      // Calculate win rate
+      const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
       
       return {
-        account,
-        totalAiTrades: aiTrades.length,
-        successfulAiTrades: successfulTrades.length,
-        successRate: aiTrades.length > 0 ? successfulTrades.length / aiTrades.length : 0,
-        totalProfitLoss: account?.totalProfitLoss || "0",
-        currentBalance: account?.currentBalance || "0"
+        userId: this.userId,
+        accountId: account.id,
+        currentBalance: account.currentBalance,
+        initialBalance: account.initialBalance,
+        totalProfitLoss: account.totalProfitLoss,
+        totalProfitLossPercent: account.totalProfitLossPercent,
+        totalTrades,
+        winningTrades,
+        losingTrades,
+        winRate: winRate.toFixed(2) + '%',
+        averageProfitLoss: averageProfitLoss.toFixed(2),
+        createdAt: account.createdAt,
+        updatedAt: account.updatedAt,
       };
     } catch (error) {
-      console.error('Error getting AI performance stats:', error);
+      console.error('Error getting performance stats:', error);
       return null;
     }
   }
 }
 
-export const createAIPaperTradingBridge = (aiSystem: AITradingSystem) => {
+/**
+ * Create a new AI Paper Trading Bridge
+ * 
+ * @param aiSystem AI Trading System instance
+ * @returns AI Paper Trading Bridge instance
+ */
+export function createAIPaperTradingBridge(aiSystem: AITradingSystem): AIPaperTradingBridge {
   return new AIPaperTradingBridge(aiSystem);
-};
+}
+
+export default AIPaperTradingBridge;
