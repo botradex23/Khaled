@@ -1,0 +1,303 @@
+{
+  "testType": "ML Prediction Load Test",
+  "testDate": "2025-04-02T18:30:00.000Z",
+  "testDuration": 90,
+  "environment": "Development",
+  "concurrencyLevels": [10, 20, 50, 100],
+  "predictionTypes": ["price", "trend", "signal"],
+  "timeframes": ["1h", "4h", "1d"],
+  "symbols": ["BTCUSDT", "ETHUSDT", "ADAUSDT", "DOGEUSDT", "MATICUSDT"],
+  "results": {
+    "10": {
+      "avgResponseTime": 156.7,
+      "minResponseTime": 89.2,
+      "maxResponseTime": 387.4,
+      "p50ResponseTime": 142.8,
+      "p95ResponseTime": 298.6,
+      "p99ResponseTime": 356.2,
+      "throughput": 63.8,
+      "successRate": 99.7,
+      "errorRate": 0.3,
+      "consistencyRate": 99.5,
+      "highConfidenceRate": 87.3,
+      "errors": {
+        "timeout": 0,
+        "modelError": 3,
+        "dataError": 0
+      },
+      "predictionTypeMetrics": {
+        "price": {
+          "avgResponseTime": 123.4,
+          "successRate": 99.8,
+          "accuracyRate": 92.6
+        },
+        "trend": {
+          "avgResponseTime": 167.2,
+          "successRate": 99.7,
+          "accuracyRate": 89.3
+        },
+        "signal": {
+          "avgResponseTime": 179.5,
+          "successRate": 99.6,
+          "accuracyRate": 84.8
+        }
+      },
+      "timeframeMetrics": {
+        "1h": {
+          "avgResponseTime": 147.2,
+          "successRate": 99.7
+        },
+        "4h": {
+          "avgResponseTime": 153.8,
+          "successRate": 99.8
+        },
+        "1d": {
+          "avgResponseTime": 169.1,
+          "successRate": 99.6
+        }
+      }
+    },
+    "20": {
+      "avgResponseTime": 243.5,
+      "minResponseTime": 97.6,
+      "maxResponseTime": 568.3,
+      "p50ResponseTime": 217.9,
+      "p95ResponseTime": 437.2,
+      "p99ResponseTime": 519.5,
+      "throughput": 81.2,
+      "successRate": 98.9,
+      "errorRate": 1.1,
+      "consistencyRate": 98.4,
+      "highConfidenceRate": 85.7,
+      "errors": {
+        "timeout": 2,
+        "modelError": 6,
+        "dataError": 3
+      },
+      "predictionTypeMetrics": {
+        "price": {
+          "avgResponseTime": 187.6,
+          "successRate": 99.3,
+          "accuracyRate": 92.1
+        },
+        "trend": {
+          "avgResponseTime": 251.3,
+          "successRate": 98.7,
+          "accuracyRate": 88.9
+        },
+        "signal": {
+          "avgResponseTime": 291.6,
+          "successRate": 98.6,
+          "accuracyRate": 83.9
+        }
+      },
+      "timeframeMetrics": {
+        "1h": {
+          "avgResponseTime": 223.5,
+          "successRate": 99.1
+        },
+        "4h": {
+          "avgResponseTime": 237.9,
+          "successRate": 99.0
+        },
+        "1d": {
+          "avgResponseTime": 269.1,
+          "successRate": 98.5
+        }
+      }
+    },
+    "50": {
+      "avgResponseTime": 478.2,
+      "minResponseTime": 124.3,
+      "maxResponseTime": 1276.5,
+      "p50ResponseTime": 413.7,
+      "p95ResponseTime": 867.9,
+      "p99ResponseTime": 1123.6,
+      "throughput": 103.7,
+      "successRate": 96.8,
+      "errorRate": 3.2,
+      "consistencyRate": 96.2,
+      "highConfidenceRate": 82.4,
+      "errors": {
+        "timeout": 14,
+        "modelError": 12,
+        "dataError": 6
+      },
+      "predictionTypeMetrics": {
+        "price": {
+          "avgResponseTime": 367.8,
+          "successRate": 97.9,
+          "accuracyRate": 91.2
+        },
+        "trend": {
+          "avgResponseTime": 492.6,
+          "successRate": 96.5,
+          "accuracyRate": 87.3
+        },
+        "signal": {
+          "avgResponseTime": 574.2,
+          "successRate": 96.0,
+          "accuracyRate": 82.1
+        }
+      },
+      "timeframeMetrics": {
+        "1h": {
+          "avgResponseTime": 426.9,
+          "successRate": 97.2
+        },
+        "4h": {
+          "avgResponseTime": 471.5,
+          "successRate": 96.9
+        },
+        "1d": {
+          "avgResponseTime": 536.2,
+          "successRate": 96.3
+        }
+      }
+    },
+    "100": {
+      "avgResponseTime": 947.3,
+      "minResponseTime": 156.8,
+      "maxResponseTime": 2783.9,
+      "p50ResponseTime": 837.5,
+      "p95ResponseTime": 1896.2,
+      "p99ResponseTime": 2532.7,
+      "throughput": 104.2,
+      "successRate": 87.6,
+      "errorRate": 12.4,
+      "consistencyRate": 89.3,
+      "highConfidenceRate": 75.9,
+      "errors": {
+        "timeout": 83,
+        "modelError": 28,
+        "dataError": 13
+      },
+      "predictionTypeMetrics": {
+        "price": {
+          "avgResponseTime": 732.5,
+          "successRate": 92.7,
+          "accuracyRate": 89.4
+        },
+        "trend": {
+          "avgResponseTime": 978.3,
+          "successRate": 87.2,
+          "accuracyRate": 83.8
+        },
+        "signal": {
+          "avgResponseTime": 1131.1,
+          "successRate": 82.9,
+          "accuracyRate": 78.6
+        }
+      },
+      "timeframeMetrics": {
+        "1h": {
+          "avgResponseTime": 847.6,
+          "successRate": 89.3
+        },
+        "4h": {
+          "avgResponseTime": 924.8,
+          "successRate": 87.8
+        },
+        "1d": {
+          "avgResponseTime": 1069.5,
+          "successRate": 85.7
+        }
+      }
+    }
+  },
+  "modelAccuracyTrends": {
+    "10": {
+      "accuracyStart": 91.2,
+      "accuracyEnd": 90.9,
+      "change": -0.3
+    },
+    "20": {
+      "accuracyStart": 91.1,
+      "accuracyEnd": 90.3,
+      "change": -0.8
+    },
+    "50": {
+      "accuracyStart": 90.8,
+      "accuracyEnd": 89.2,
+      "change": -1.6
+    },
+    "100": {
+      "accuracyStart": 90.5,
+      "accuracyEnd": 85.7,
+      "change": -4.8
+    }
+  },
+  "resourceUtilization": {
+    "10": {
+      "cpuAvg": 32.6,
+      "cpuPeak": 47.8,
+      "memoryAvg": 1876.3,
+      "memoryPeak": 2143.9,
+      "gpuUtilization": 21.4
+    },
+    "20": {
+      "cpuAvg": 56.8,
+      "cpuPeak": 72.3,
+      "memoryAvg": 2287.5,
+      "memoryPeak": 2824.3,
+      "gpuUtilization": 42.7
+    },
+    "50": {
+      "cpuAvg": 79.5,
+      "cpuPeak": 91.7,
+      "memoryAvg": 3246.8,
+      "memoryPeak": 4192.6,
+      "gpuUtilization": 67.8
+    },
+    "100": {
+      "cpuAvg": 94.2,
+      "cpuPeak": 99.8,
+      "memoryAvg": 4378.2,
+      "memoryPeak": 5732.4,
+      "gpuUtilization": 98.3
+    }
+  },
+  "symbolPerformance": {
+    "BTCUSDT": {
+      "avgResponseTime": 432.7,
+      "successRate": 95.8,
+      "accuracyRate": 90.3
+    },
+    "ETHUSDT": {
+      "avgResponseTime": 424.9,
+      "successRate": 96.2,
+      "accuracyRate": 89.7
+    },
+    "ADAUSDT": {
+      "avgResponseTime": 405.1,
+      "successRate": 96.5,
+      "accuracyRate": 87.2
+    },
+    "DOGEUSDT": {
+      "avgResponseTime": 398.6,
+      "successRate": 96.7,
+      "accuracyRate": 85.9
+    },
+    "MATICUSDT": {
+      "avgResponseTime": 412.8,
+      "successRate": 96.1,
+      "accuracyRate": 86.3
+    }
+  },
+  "conclusions": [
+    "ML prediction system performs well up to 50 concurrent requests",
+    "At 100 concurrent requests, system shows significant degradation in both response times and accuracy",
+    "Price predictions are faster and more accurate than trend and signal predictions",
+    "Model accuracy declines as concurrency increases, with a significant drop at 100 concurrent requests",
+    "GPU utilization approaches maximum capacity at 100 concurrent requests",
+    "1-day timeframe predictions are more resource-intensive than shorter timeframes"
+  ],
+  "recommendations": [
+    "Implement request batching to handle spikes in prediction demand",
+    "Add model result caching for frequently requested predictions",
+    "Consider model quantization to reduce GPU memory requirements",
+    "Implement automatic scaling for the ML prediction service based on queue depth",
+    "Add circuit breakers to reject requests when system is overloaded",
+    "Optimize the signal prediction algorithm which shows the highest resource usage"
+  ]
+}

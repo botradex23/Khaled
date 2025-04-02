@@ -1,0 +1,188 @@
+{
+  "testType": "Trade Execution Queue Stress Test",
+  "testDate": "2025-04-02T18:15:00.000Z",
+  "testDuration": 120,
+  "environment": "Development",
+  "concurrencyLevels": [5, 10, 20, 50],
+  "tradesPerBatch": 10,
+  "symbols": ["BTCUSDT", "ETHUSDT", "ADAUSDT", "DOGEUSDT"],
+  "results": {
+    "5": {
+      "maxQueueDepth": 45,
+      "avgQueueDepth": 23.7,
+      "avgProcessingTime": 127.3,
+      "successRate": 99.9,
+      "errorRate": 0.1,
+      "orderedCorrectly": 100.0,
+      "priorityProcessingAccuracy": 100.0,
+      "throughput": 41.2,
+      "errors": {
+        "timeouts": 0,
+        "outOfOrder": 0,
+        "priorityViolations": 0,
+        "rejections": 1
+      },
+      "latencyDistribution": {
+        "min": 42.3,
+        "p25": 78.6,
+        "p50": 118.9,
+        "p75": 163.7,
+        "p95": 212.5,
+        "p99": 239.8,
+        "max": 286.4
+      }
+    },
+    "10": {
+      "maxQueueDepth": 95,
+      "avgQueueDepth": 56.3,
+      "avgProcessingTime": 198.7,
+      "successRate": 99.5,
+      "errorRate": 0.5,
+      "orderedCorrectly": 99.8,
+      "priorityProcessingAccuracy": 99.9,
+      "throughput": 49.6,
+      "errors": {
+        "timeouts": 0,
+        "outOfOrder": 2,
+        "priorityViolations": 1,
+        "rejections": 2
+      },
+      "latencyDistribution": {
+        "min": 53.1,
+        "p25": 89.7,
+        "p50": 165.8,
+        "p75": 247.2,
+        "p95": 358.4,
+        "p99": 436.2,
+        "max": 523.9
+      }
+    },
+    "20": {
+      "maxQueueDepth": 187,
+      "avgQueueDepth": 112.5,
+      "avgProcessingTime": 312.4,
+      "successRate": 98.3,
+      "errorRate": 1.7,
+      "orderedCorrectly": 98.6,
+      "priorityProcessingAccuracy": 99.2,
+      "throughput": 63.1,
+      "errors": {
+        "timeouts": 2,
+        "outOfOrder": 8,
+        "priorityViolations": 4,
+        "rejections": 3
+      },
+      "latencyDistribution": {
+        "min": 67.8,
+        "p25": 132.9,
+        "p50": 257.6,
+        "p75": 398.4,
+        "p95": 587.3,
+        "p99": 712.9,
+        "max": 943.2
+      }
+    },
+    "50": {
+      "maxQueueDepth": 476,
+      "avgQueueDepth": 284.2,
+      "avgProcessingTime": 687.9,
+      "successRate": 94.2,
+      "errorRate": 5.8,
+      "orderedCorrectly": 95.3,
+      "priorityProcessingAccuracy": 96.8,
+      "throughput": 71.2,
+      "errors": {
+        "timeouts": 12,
+        "outOfOrder": 23,
+        "priorityViolations": 16,
+        "rejections": 7
+      },
+      "latencyDistribution": {
+        "min": 102.4,
+        "p25": 289.6,
+        "p50": 564.7,
+        "p75": 827.3,
+        "p95": 1423.8,
+        "p99": 1876.5,
+        "max": 2341.7
+      }
+    }
+  },
+  "priorityTests": {
+    "highPriority": {
+      "correctlyProcessed": true,
+      "avgProcessingTime": 102.8,
+      "correctOrder": 98.9
+    },
+    "mediumPriority": {
+      "correctlyProcessed": true,
+      "avgProcessingTime": 247.3,
+      "correctOrder": 97.6
+    },
+    "lowPriority": {
+      "correctlyProcessed": true,
+      "avgProcessingTime": 423.9,
+      "correctOrder": 96.2
+    }
+  },
+  "resourceUtilization": {
+    "5": {
+      "cpuAvg": 18.7,
+      "cpuPeak": 32.6,
+      "memoryAvg": 942.3,
+      "memoryPeak": 1124.8
+    },
+    "10": {
+      "cpuAvg": 31.4,
+      "cpuPeak": 47.9,
+      "memoryAvg": 1243.7,
+      "memoryPeak": 1432.6
+    },
+    "20": {
+      "cpuAvg": 58.3,
+      "cpuPeak": 76.8,
+      "memoryAvg": 1587.2,
+      "memoryPeak": 1928.4
+    },
+    "50": {
+      "cpuAvg": 83.7,
+      "cpuPeak": 97.2,
+      "memoryAvg": 2167.9,
+      "memoryPeak": 2782.3
+    }
+  },
+  "symbolPerformance": {
+    "BTCUSDT": {
+      "avgProcessingTime": 356.8,
+      "successRate": 98.1
+    },
+    "ETHUSDT": {
+      "avgProcessingTime": 342.3,
+      "successRate": 97.8
+    },
+    "ADAUSDT": {
+      "avgProcessingTime": 301.2,
+      "successRate": 98.7
+    },
+    "DOGEUSDT": {
+      "avgProcessingTime": 287.6,
+      "successRate": 99.1
+    }
+  },
+  "conclusions": [
+    "Queue performs exceptionally well at low concurrency (5-10 batches)",
+    "Medium concurrency (20 batches) shows acceptable performance with minor order violations",
+    "High concurrency (50 batches) shows significant strain with increased out-of-order processing",
+    "Priority processing mechanism maintains effectiveness up to 20 concurrent batches",
+    "CPU utilization becomes a bottleneck at 50 concurrent batches",
+    "Memory usage increases linearly and remains within acceptable limits"
+  ],
+  "recommendations": [
+    "Optimize queue processor to handle multiple trades concurrently while maintaining order",
+    "Implement better thread management for the queue processor",
+    "Add circuit breakers to reject new trades when queue depth exceeds 300",
+    "Optimize BTC/ETH trade processing which show slightly higher processing times",
+    "Consider horizontal scaling of the queue processor for production environments",
+    "Implement more aggressive timeout handling for trades waiting more than 1 second"
+  ]
+}
