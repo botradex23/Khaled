@@ -16,8 +16,11 @@ import {
   type InsertPaperTradingTrade,
   type TradeLog,
   type InsertTradeLog,
+  type RiskSettings,
+  type InsertRiskSettings,
   payments,
-  tradeLogs
+  tradeLogs,
+  riskSettings
 } from "@shared/schema";
 import { encrypt, decrypt, isEncrypted } from './utils/encryption';
 
@@ -160,6 +163,12 @@ export interface IStorage {
     toDate?: Date;
     userId?: number;
   }, limit?: number): Promise<TradeLog[]>;
+  
+  // Risk Settings methods
+  getRiskSettings(id: number): Promise<RiskSettings | undefined>;
+  getRiskSettingsByUserId(userId: number): Promise<RiskSettings | undefined>;
+  createRiskSettings(settings: InsertRiskSettings): Promise<RiskSettings>;
+  updateRiskSettings(id: number, updates: Partial<RiskSettings>): Promise<RiskSettings | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -171,6 +180,7 @@ export class MemStorage implements IStorage {
   private paperTradingPositions: Map<number, PaperTradingPosition>;
   private paperTradingTrades: Map<number, PaperTradingTrade>;
   private tradeLogs: Map<number, TradeLog>;
+  private riskSettings: Map<number, RiskSettings>;
   
   currentId: number;
   botId: number;
@@ -178,6 +188,7 @@ export class MemStorage implements IStorage {
   paymentId: number;
   paperAccountId: number;
   paperPositionId: number;
+  riskSettingsId: number;
   paperTradeId: number;
   tradeLogId: number;
 
@@ -190,6 +201,7 @@ export class MemStorage implements IStorage {
     this.paperTradingPositions = new Map();
     this.paperTradingTrades = new Map();
     this.tradeLogs = new Map();
+    this.riskSettings = new Map();
     
     this.currentId = 1;
     this.botId = 1;
@@ -199,6 +211,7 @@ export class MemStorage implements IStorage {
     this.paperPositionId = 1;
     this.paperTradeId = 1;
     this.tradeLogId = 1;
+    this.riskSettingsId = 1;
     
     // Initialize with sample data
     this.initializeData();
@@ -418,6 +431,49 @@ export class MemStorage implements IStorage {
         isPopular: false
       }
     ];
+    
+    // Create default risk settings for users
+    const defaultUserRiskSettings: RiskSettings = {
+      id: this.riskSettingsId++,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 1, // Default user ID
+      
+      // Default user - balanced risk profile
+      globalStopLoss: "0",
+      globalTakeProfit: "0",
+      maxPositionSize: "10", // 10% position size
+      maxPortfolioRisk: "20", // 20% portfolio risk
+      riskMode: "balanced",
+      defaultStopLossPercent: "2.0", // 2% stop loss
+      defaultTakeProfitPercent: "4.0", // 4% take profit
+      autoAdjustRisk: true,
+      riskAdjustmentFactor: "1.0",
+      enableRiskAutoClose: true
+    };
+    
+    const adminUserRiskSettings: RiskSettings = {
+      id: this.riskSettingsId++,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 2, // Admin user ID
+      
+      // Admin user - aggressive risk profile for testing
+      globalStopLoss: "0",
+      globalTakeProfit: "0",
+      maxPositionSize: "15", // 15% position size
+      maxPortfolioRisk: "30", // 30% portfolio risk
+      riskMode: "aggressive",
+      defaultStopLossPercent: "3.0", // 3% stop loss
+      defaultTakeProfitPercent: "9.0", // 9% take profit
+      autoAdjustRisk: true,
+      riskAdjustmentFactor: "1.25", // Higher adjustment factor
+      enableRiskAutoClose: true
+    };
+    
+    // Save risk settings
+    this.riskSettings.set(defaultUserRiskSettings.id, defaultUserRiskSettings);
+    this.riskSettings.set(adminUserRiskSettings.id, adminUserRiskSettings);
     
     // Save to storage
     sampleBots.forEach(bot => this.bots.set(bot.id, bot));
@@ -2005,6 +2061,74 @@ export class MemStorage implements IStorage {
     logs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
     
     return logs.slice(0, limit);
+  }
+  
+  /**
+   * Get risk settings by ID
+   */
+  async getRiskSettings(id: number): Promise<RiskSettings | undefined> {
+    return this.riskSettings.get(id);
+  }
+  
+  /**
+   * Get risk settings by user ID
+   */
+  async getRiskSettingsByUserId(userId: number): Promise<RiskSettings | undefined> {
+    return Array.from(this.riskSettings.values()).find(
+      (settings) => settings.userId === userId,
+    );
+  }
+  
+  /**
+   * Create risk settings for a user
+   */
+  async createRiskSettings(settings: InsertRiskSettings): Promise<RiskSettings> {
+    const id = this.riskSettingsId++;
+    
+    const riskSettings: RiskSettings = {
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: settings.userId,
+      
+      // Set provided values or defaults
+      globalStopLoss: settings.globalStopLoss || "0",
+      globalTakeProfit: settings.globalTakeProfit || "0",
+      maxPositionSize: settings.maxPositionSize || "10", // Default 10%
+      maxPortfolioRisk: settings.maxPortfolioRisk || "20", // Default 20%
+      riskMode: settings.riskMode || "balanced",
+      defaultStopLossPercent: settings.defaultStopLossPercent || "2.0", // Default 2%
+      defaultTakeProfitPercent: settings.defaultTakeProfitPercent || "4.0", // Default 4%
+      autoAdjustRisk: settings.autoAdjustRisk !== undefined ? settings.autoAdjustRisk : true,
+      riskAdjustmentFactor: settings.riskAdjustmentFactor || "1.0", // Default factor of 1.0
+      enableRiskAutoClose: settings.enableRiskAutoClose !== undefined ? settings.enableRiskAutoClose : true,
+    };
+    
+    this.riskSettings.set(id, riskSettings);
+    console.log(`Created risk settings for user ${settings.userId} with ID ${id}`);
+    return riskSettings;
+  }
+  
+  /**
+   * Update risk settings
+   */
+  async updateRiskSettings(id: number, updates: Partial<RiskSettings>): Promise<RiskSettings | undefined> {
+    const existingSettings = this.riskSettings.get(id);
+    
+    if (!existingSettings) {
+      console.log(`Risk settings with ID ${id} not found`);
+      return undefined;
+    }
+    
+    const updatedSettings: RiskSettings = {
+      ...existingSettings,
+      ...updates,
+      updatedAt: new Date(),
+    };
+    
+    this.riskSettings.set(id, updatedSettings);
+    console.log(`Updated risk settings ID ${id} for user ${existingSettings.userId}`);
+    return updatedSettings;
   }
 }
 

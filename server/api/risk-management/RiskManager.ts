@@ -3,6 +3,8 @@
  * 
  * Risk management system that handles stop-loss and take-profit functionality
  * Monitors open positions and automatically closes them when risk thresholds are met
+ * 
+ * Integrated with user-specific risk settings from RiskSettingsService
  */
 
 import { storage } from '../../storage';
@@ -10,6 +12,7 @@ import { getPaperTradingBridge } from '../paper-trading/PaperTradingBridge';
 import paperTradingApi from '../paper-trading/PaperTradingApi';
 import { TradeDirection } from '../paper-trading/PaperTradingBridge';
 import { EventEmitter } from 'events';
+import riskSettingsService from './RiskSettingsService';
 
 class RiskManager extends EventEmitter {
   private static instance: RiskManager;
@@ -146,6 +149,8 @@ class RiskManager extends EventEmitter {
    * values. If the position's current profit/loss percentage exceeds the configured
    * thresholds, the position will be automatically closed.
    * 
+   * The method now also retrieves and applies user-specific risk settings from RiskSettingsService
+   * 
    * @param position The position object to check
    * @param currentPrice The current market price for the position's symbol
    */
@@ -163,6 +168,14 @@ class RiskManager extends EventEmitter {
         return;
       }
       
+      // Get account and user info to load user-specific risk settings
+      const account = await storage.getPaperTradingAccount(position.accountId);
+      if (!account) {
+        console.error(`Cannot check risk levels: Account ${position.accountId} for position ${position.id} not found`);
+        return;
+      }
+      const userId = account.userId;
+      
       // Enhanced metadata handling to ensure we can parse it correctly
       let metadata = null;
       try {
@@ -179,31 +192,46 @@ class RiskManager extends EventEmitter {
         metadata = null;
       }
       
-      // If no metadata or no risk parameters, skip
-      if (!metadata) {
-        return;
-      }
+      // Get user's risk settings (will create default settings if none exist)
+      const userRiskSettings = await riskSettingsService.getUserRiskSettings(userId);
       
       // Check for risk management parameters in metadata
       // They could be at the root level or nested in additionalData
-      let stopLossValue = metadata.stopLossPercent;
-      let takeProfitValue = metadata.takeProfitPercent;
+      let stopLossValue = metadata?.stopLossPercent;
+      let takeProfitValue = metadata?.takeProfitPercent;
       
       // If not found at root level, check in additionalData (from trade signal)
-      if ((!stopLossValue && !takeProfitValue) && metadata.additionalData) {
+      if ((!stopLossValue && !takeProfitValue) && metadata?.additionalData) {
         stopLossValue = metadata.additionalData.stopLossPercent;
         takeProfitValue = metadata.additionalData.takeProfitPercent;
       }
       
-      // If still not found, exit early
-      if (!stopLossValue && !takeProfitValue) {
-        return;
+      // Apply default risk settings from user's global settings if not found in position metadata
+      // and global settings are enabled
+      let stopLossPercent = stopLossValue ? parseFloat(stopLossValue) : null;
+      let takeProfitPercent = takeProfitValue ? parseFloat(takeProfitValue) : null;
+      
+      // Apply global stop loss if enabled and no position-specific setting is found
+      if (!stopLossPercent && userRiskSettings.enableGlobalStopLoss) {
+        stopLossPercent = parseFloat(userRiskSettings.globalStopLoss.toString());
       }
       
-      // Parse the SL/TP values and ensure they're valid
-      const stopLossPercent = parseFloat(stopLossValue) || null;
-      const takeProfitPercent = parseFloat(takeProfitValue) || null;
+      // Apply global take profit if enabled and no position-specific setting is found
+      if (!takeProfitPercent && userRiskSettings.enableGlobalTakeProfit) {
+        takeProfitPercent = parseFloat(userRiskSettings.globalTakeProfit.toString());
+      }
       
+      // If still no SL/TP values, use default ones
+      if (!stopLossPercent && !takeProfitPercent) {
+        if (userRiskSettings.defaultStopLossPercent) {
+          stopLossPercent = parseFloat(userRiskSettings.defaultStopLossPercent.toString());
+        }
+        if (userRiskSettings.defaultTakeProfitPercent) {
+          takeProfitPercent = parseFloat(userRiskSettings.defaultTakeProfitPercent.toString());
+        }
+      }
+      
+      // If still no values, exit early - no risk management to apply
       if (!stopLossPercent && !takeProfitPercent) {
         return;
       }
@@ -221,23 +249,55 @@ class RiskManager extends EventEmitter {
         currentPrice,
         pnlPercent: pnlPercent.toFixed(2) + '%',
         stopLossPercent,
-        takeProfitPercent
+        takeProfitPercent,
+        globalStopLoss: userRiskSettings.enableGlobalStopLoss ? userRiskSettings.globalStopLoss : 'disabled',
+        globalTakeProfit: userRiskSettings.enableGlobalTakeProfit ? userRiskSettings.globalTakeProfit : 'disabled'
       });
+
+      // Emergency stop loss (check for large losses exceeding emergency thresholds)
+      if (userRiskSettings.enableEmergencyStopLoss && 
+          pnlPercent <= -parseFloat(userRiskSettings.emergencyStopLossThreshold.toString())) {
+        console.log(`⛔ EMERGENCY STOP-LOSS triggered for position ${position.id}: PnL ${pnlPercent.toFixed(2)}% exceeds emergency threshold ${userRiskSettings.emergencyStopLossThreshold}%`);
+        
+        try {
+          // Initialize the bridge and make sure we have access to the position
+          const bridge = getPaperTradingBridge(userId);
+          await bridge.initialize();
+          
+          // Close the position with the current price directly
+          const closeResult = await bridge.closePosition(position.id, {
+            exitPrice: currentPrice,
+            reason: 'emergency_stop_loss',
+            automatic: true,
+            stopLossPercent: parseFloat(userRiskSettings.emergencyStopLossThreshold.toString()),
+            actualPnlPercent: pnlPercent
+          });
+          
+          if (closeResult.success) {
+            console.log(`✅ Successfully closed position ${position.id} due to EMERGENCY stop-loss at ${currentPrice}`);
+            this.emit('positionClosed', {
+              positionId: position.id,
+              reason: 'emergency_stop_loss',
+              pnlPercent,
+              closePrice: currentPrice
+            });
+          } else {
+            console.error(`❌ Failed to close position ${position.id} due to emergency stop-loss:`, closeResult.error || closeResult.message);
+          }
+        } catch (closeError) {
+          console.error(`Error closing position ${position.id} for emergency stop-loss:`, closeError);
+        }
+        
+        return;
+      }
 
       // Check stop loss (negative P&L exceeding stop loss)
       if (stopLossPercent !== null && pnlPercent <= -stopLossPercent) {
         console.log(`🛑 Stop-loss triggered for position ${position.id}: PnL ${pnlPercent.toFixed(2)}% exceeds stop-loss ${stopLossPercent}%`);
         
         try {
-          // Get the bridge for the user who owns this position
-          const account = await storage.getPaperTradingAccount(position.accountId);
-          if (!account) {
-            console.error(`Cannot close position ${position.id}: Account ${position.accountId} not found`);
-            return;
-          }
-          
           // Initialize the bridge and make sure we have access to the position
-          const bridge = getPaperTradingBridge(account.userId);
+          const bridge = getPaperTradingBridge(userId);
           await bridge.initialize();
           
           // Close the position with the current price directly
@@ -272,15 +332,8 @@ class RiskManager extends EventEmitter {
         console.log(`🎯 Take-profit triggered for position ${position.id}: PnL ${pnlPercent.toFixed(2)}% exceeds take-profit ${takeProfitPercent}%`);
         
         try {
-          // Get the bridge for the user who owns this position
-          const account = await storage.getPaperTradingAccount(position.accountId);
-          if (!account) {
-            console.error(`Cannot close position ${position.id}: Account ${position.accountId} not found`);
-            return;
-          }
-          
           // Initialize the bridge and make sure we have access to the position
-          const bridge = getPaperTradingBridge(account.userId);
+          const bridge = getPaperTradingBridge(userId);
           await bridge.initialize();
           
           // Close the position with the current price directly
