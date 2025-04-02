@@ -14,7 +14,10 @@ import {
   type InsertPaperTradingPosition,
   type PaperTradingTrade,
   type InsertPaperTradingTrade,
-  payments
+  type TradeLog,
+  type InsertTradeLog,
+  payments,
+  tradeLogs
 } from "@shared/schema";
 import { encrypt, decrypt, isEncrypted } from './utils/encryption';
 
@@ -139,6 +142,23 @@ export interface IStorage {
     averageProfitLoss: string;
     averageProfitLossPercent: string;
   }>;
+  
+  // Trade Logging methods
+  createTradeLog(tradeLog: InsertTradeLog): Promise<TradeLog>;
+  getTradeLog(id: number): Promise<TradeLog | undefined>;
+  getTradeLogsBySymbol(symbol: string, limit?: number): Promise<TradeLog[]>;
+  getTradeLogsByUserId(userId: number, limit?: number): Promise<TradeLog[]>;
+  getTradeLogsBySource(source: string, limit?: number): Promise<TradeLog[]>;
+  updateTradeLog(id: number, updates: Partial<TradeLog>): Promise<TradeLog | undefined>;
+  searchTradeLogs(filter: {
+    symbol?: string;
+    action?: string;
+    source?: string;
+    status?: string;
+    fromDate?: Date;
+    toDate?: Date;
+    userId?: number;
+  }, limit?: number): Promise<TradeLog[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -149,6 +169,7 @@ export class MemStorage implements IStorage {
   private paperTradingAccounts: Map<number, PaperTradingAccount>;
   private paperTradingPositions: Map<number, PaperTradingPosition>;
   private paperTradingTrades: Map<number, PaperTradingTrade>;
+  private tradeLogs: Map<number, TradeLog>;
   
   currentId: number;
   botId: number;
@@ -157,6 +178,7 @@ export class MemStorage implements IStorage {
   paperAccountId: number;
   paperPositionId: number;
   paperTradeId: number;
+  tradeLogId: number;
 
   constructor() {
     this.users = new Map();
@@ -166,6 +188,7 @@ export class MemStorage implements IStorage {
     this.paperTradingAccounts = new Map();
     this.paperTradingPositions = new Map();
     this.paperTradingTrades = new Map();
+    this.tradeLogs = new Map();
     
     this.currentId = 1;
     this.botId = 1;
@@ -174,6 +197,7 @@ export class MemStorage implements IStorage {
     this.paperAccountId = 1;
     this.paperPositionId = 1;
     this.paperTradeId = 1;
+    this.tradeLogId = 1;
     
     // Initialize with sample data
     this.initializeData();
@@ -1823,6 +1847,155 @@ export class MemStorage implements IStorage {
       averageProfitLoss: avgProfitLoss,
       averageProfitLossPercent: avgProfitLossPercent
     };
+  }
+
+  //
+  // Trade Logging methods implementation
+  //
+  
+  /**
+   * Creates a new trade log entry
+   */
+  async createTradeLog(tradeLog: InsertTradeLog): Promise<TradeLog> {
+    const id = this.tradeLogId++;
+    
+    const newTradeLog: TradeLog = {
+      id,
+      timestamp: tradeLog.timestamp || new Date(),
+      symbol: tradeLog.symbol,
+      action: tradeLog.action,
+      entry_price: tradeLog.entry_price,
+      quantity: tradeLog.quantity,
+      predicted_confidence: tradeLog.predicted_confidence || null,
+      trade_source: tradeLog.trade_source,
+      status: tradeLog.status,
+      reason: tradeLog.reason || null,
+      user_id: tradeLog.user_id || null,
+      exit_price: tradeLog.exit_price || null,
+      target_price: tradeLog.target_price || null,
+      stop_loss: tradeLog.stop_loss || null,
+      take_profit: tradeLog.take_profit || null,
+      profit_loss: tradeLog.profit_loss || null,
+      profit_loss_percent: tradeLog.profit_loss_percent || null,
+      execution_time: tradeLog.execution_time || null,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+    
+    // Store the trade log
+    this.tradeLogs.set(id, newTradeLog);
+    
+    return newTradeLog;
+  }
+  
+  /**
+   * Get a specific trade log by ID
+   */
+  async getTradeLog(id: number): Promise<TradeLog | undefined> {
+    return this.tradeLogs.get(id);
+  }
+  
+  /**
+   * Get all trade logs for a specific symbol
+   */
+  async getTradeLogsBySymbol(symbol: string, limit: number = 100): Promise<TradeLog[]> {
+    const logs = Array.from(this.tradeLogs.values())
+      .filter(log => log.symbol === symbol)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()); // Sort by timestamp descending
+    
+    return logs.slice(0, limit);
+  }
+  
+  /**
+   * Get all trade logs for a specific user
+   */
+  async getTradeLogsByUserId(userId: number, limit: number = 100): Promise<TradeLog[]> {
+    const logs = Array.from(this.tradeLogs.values())
+      .filter(log => log.user_id === userId)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()); // Sort by timestamp descending
+    
+    return logs.slice(0, limit);
+  }
+  
+  /**
+   * Get all trade logs from a specific source
+   */
+  async getTradeLogsBySource(source: string, limit: number = 100): Promise<TradeLog[]> {
+    const logs = Array.from(this.tradeLogs.values())
+      .filter(log => log.trade_source === source)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()); // Sort by timestamp descending
+    
+    return logs.slice(0, limit);
+  }
+  
+  /**
+   * Update a trade log
+   */
+  async updateTradeLog(id: number, updates: Partial<TradeLog>): Promise<TradeLog | undefined> {
+    const existingLog = this.tradeLogs.get(id);
+    
+    if (!existingLog) {
+      return undefined;
+    }
+    
+    const updatedLog: TradeLog = {
+      ...existingLog,
+      ...updates,
+      updated_at: new Date() // Always update the timestamp
+    };
+    
+    this.tradeLogs.set(id, updatedLog);
+    
+    return updatedLog;
+  }
+  
+  /**
+   * Search trade logs with filter criteria
+   */
+  async searchTradeLogs(filter: {
+    symbol?: string;
+    action?: string;
+    source?: string;
+    status?: string;
+    fromDate?: Date;
+    toDate?: Date;
+    userId?: number;
+  }, limit: number = 100): Promise<TradeLog[]> {
+    let logs = Array.from(this.tradeLogs.values());
+    
+    // Apply filters
+    if (filter.symbol) {
+      logs = logs.filter(log => log.symbol === filter.symbol);
+    }
+    
+    if (filter.action) {
+      logs = logs.filter(log => log.action === filter.action);
+    }
+    
+    if (filter.source) {
+      logs = logs.filter(log => log.trade_source === filter.source);
+    }
+    
+    if (filter.status) {
+      logs = logs.filter(log => log.status === filter.status);
+    }
+    
+    if (filter.userId) {
+      logs = logs.filter(log => log.user_id === filter.userId);
+    }
+    
+    if (filter.fromDate) {
+      logs = logs.filter(log => log.timestamp >= filter.fromDate);
+    }
+    
+    if (filter.toDate) {
+      logs = logs.filter(log => log.timestamp <= filter.toDate);
+    }
+    
+    // Sort by timestamp descending
+    logs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    
+    return logs.slice(0, limit);
   }
 }
 

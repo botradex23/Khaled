@@ -4,6 +4,34 @@ import { createInsertSchema } from 'drizzle-zod';
 import { relations } from 'drizzle-orm';
 import { z } from 'zod';
 
+// Enum for trade actions
+export const TradeActionEnum = {
+  BUY: 'BUY',
+  SELL: 'SELL',
+  HOLD: 'HOLD',
+} as const;
+
+// Enum for trade sources
+export const TradeSourceEnum = {
+  LIVE_PREDICTION: 'live_prediction',
+  BACKTEST: 'backtest',
+  VALIDATOR: 'validator',
+  MANUAL: 'manual',
+  PAPER_TRADING: 'paper_trading',
+  LIVE_TRADING: 'live_trading',
+  AI_GRID_BOT: 'ai_grid_bot',
+  DCA_BOT: 'dca_bot',
+  MACD_BOT: 'macd_bot',
+} as const;
+
+// Enum for trade status
+export const TradeStatusEnum = {
+  EXECUTED: 'executed',
+  FAILED: 'failed',
+  SKIPPED: 'skipped',
+  PENDING: 'pending',
+} as const;
+
 // Users table
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -169,6 +197,26 @@ export const riskSettings = pgTable('risk_settings', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
+// Trade logs table - for AI trading activity logs
+export const tradeLogs = pgTable('trade_logs', {
+  id: serial('id').primaryKey(),
+  timestamp: timestamp('timestamp').defaultNow(), // UTC timestamp
+  symbol: text('symbol').notNull(), // e.g., "BTCUSDT"
+  action: text('action').notNull(), // BUY/SELL/HOLD
+  entry_price: text('entry_price').notNull(), // Price at trade execution
+  quantity: text('quantity').notNull(), // Trade quantity
+  predicted_confidence: decimal('predicted_confidence', { precision: 10, scale: 4 }), // ML model confidence (0.0-1.0)
+  trade_source: text('trade_source').notNull(), // Source of the trade (live_prediction, backtest, etc.)
+  status: text('status').notNull().default('executed'), // Execution status (executed, failed, skipped)
+  reason: text('reason'), // Optional explanation or notes
+  user_id: integer('user_id').references(() => users.id), // Associated user ID
+  position_id: integer('position_id'), // Associated position ID for paper/live trading
+  trade_id: text('trade_id'), // Associated trade ID for paper/live trading
+  metadata: json('metadata'), // Additional metadata as JSON
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   apiKeys: many(userApiKeys),
@@ -246,6 +294,13 @@ export const riskSettingsRelations = relations(riskSettings, ({ one }) => ({
   }),
 }));
 
+export const tradeLogsRelations = relations(tradeLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [tradeLogs.user_id],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas for validation
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertUserApiKeysSchema = createInsertSchema(userApiKeys).omit({ id: true, createdAt: true, updatedAt: true });
@@ -256,6 +311,7 @@ export const insertPaperTradingPositionSchema = createInsertSchema(paperTradingP
 export const insertPaperTradingTradeSchema = createInsertSchema(paperTradingTrades).omit({ id: true, openedAt: true, closedAt: true });
 export const insertAiTradingDataSchema = createInsertSchema(aiTradingData).omit({ id: true, timestamp: true });
 export const insertRiskSettingsSchema = createInsertSchema(riskSettings).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTradeLogSchema = createInsertSchema(tradeLogs).omit({ id: true, timestamp: true, created_at: true, updated_at: true });
 
 // Type definitions
 export type User = typeof users.$inferSelect;
@@ -284,3 +340,6 @@ export type InsertAiTradingData = z.infer<typeof insertAiTradingDataSchema>;
 
 export type RiskSettings = typeof riskSettings.$inferSelect;
 export type InsertRiskSettings = z.infer<typeof insertRiskSettingsSchema>;
+
+export type TradeLog = typeof tradeLogs.$inferSelect;
+export type InsertTradeLog = z.infer<typeof insertTradeLogSchema>;

@@ -369,6 +369,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register ML CLI routes:', err);
   });
   
+  // Register Trade Logs routes
+  import('./api/trade-logs/trade-logs-routes').then(tradeLogsRouter => {
+    app.use('/api/trade-logs', tradeLogsRouter.default);
+    console.log('Trade logs routes registered to /api/trade-logs');
+  }).catch(err => {
+    console.error('Failed to register trade logs routes:', err);
+  });
+  
   // Portfolio routes for dashboard data visualization
   app.use("/api/portfolio", portfolioRouter);
   
