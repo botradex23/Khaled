@@ -307,6 +307,150 @@ class XGBoostPredictor:
             results.append(result)
         
         return results
+        
+    def predict_live(self, symbol: str, df: pd.DataFrame, model_type: str = "balanced") -> Dict[str, Any]:
+        """
+        Make predictions directly from a DataFrame of live market data with OHLCV and calculate indicators on the fly.
+        
+        Args:
+            symbol: Trading pair symbol (e.g., 'BTCUSDT')
+            df: DataFrame containing OHLCV data
+            model_type: Type of model to use ('standard' or 'balanced')
+            
+        Returns:
+            Dictionary containing prediction result with all needed fields
+        """
+        symbol = symbol.lower()
+        model_suffix = "_balanced" if model_type == "balanced" else ""
+        model_key = f"{symbol}{model_suffix}"
+        
+        result = {
+            'symbol': symbol,
+            'predicted_class': None,
+            'predicted_label': 'HOLD',  # Default to HOLD if we encounter issues
+            'probabilities': None,
+            'confidence': 0.0,
+            'model_type': model_type,
+            'timestamp': pd.Timestamp.now().isoformat(),
+            'current_price': None,
+            'indicators': {}
+        }
+        
+        try:
+            # Check if we have enough data
+            if len(df) < 20:
+                logging.error(f"Not enough data points for {symbol}: {len(df)}")
+                return result
+            
+            # Calculate current price from the latest candle
+            if 'close' in df.columns:
+                result['current_price'] = float(df['close'].iloc[-1])
+            
+            # Create a copy to avoid modifying the original DataFrame
+            data = df.copy()
+            
+            # Calculate technical indicators directly on the DataFrame
+            # These should match the features used during model training
+            try:
+                # Simple Moving Averages
+                data['sma_5'] = data['close'].rolling(window=5).mean()
+                data['sma_10'] = data['close'].rolling(window=10).mean()
+                data['sma_20'] = data['close'].rolling(window=20).mean()
+                data['sma_50'] = data['close'].rolling(window=50).mean()
+                data['sma_100'] = data['close'].rolling(window=100).mean()
+                
+                # Exponential Moving Averages
+                data['ema_5'] = data['close'].ewm(span=5, adjust=False).mean()
+                data['ema_10'] = data['close'].ewm(span=10, adjust=False).mean()
+                data['ema_20'] = data['close'].ewm(span=20, adjust=False).mean()
+                data['ema_50'] = data['close'].ewm(span=50, adjust=False).mean()
+                data['ema_100'] = data['close'].ewm(span=100, adjust=False).mean()
+                
+                # RSI (14 periods)
+                delta = data['close'].diff()
+                gain = delta.where(delta > 0, 0)
+                loss = -delta.where(delta < 0, 0)
+                avg_gain = gain.rolling(window=14).mean()
+                avg_loss = loss.rolling(window=14).mean()
+                rs = avg_gain / avg_loss
+                data['rsi_14'] = 100 - (100 / (1 + rs))
+                
+                # MACD
+                data['ema_12'] = data['close'].ewm(span=12, adjust=False).mean()
+                data['ema_26'] = data['close'].ewm(span=26, adjust=False).mean()
+                data['macd'] = data['ema_12'] - data['ema_26']
+                data['macd_signal'] = data['macd'].ewm(span=9, adjust=False).mean()
+                data['macd_hist'] = data['macd'] - data['macd_signal']
+                
+                # Bollinger Bands
+                data['bb_middle'] = data['close'].rolling(window=20).mean()
+                data['bb_std'] = data['close'].rolling(window=20).std()
+                data['bb_upper'] = data['bb_middle'] + (data['bb_std'] * 2)
+                data['bb_lower'] = data['bb_middle'] - (data['bb_std'] * 2)
+                
+                # ATR (14 periods)
+                high_low = data['high'] - data['low']
+                high_close = (data['high'] - data['close'].shift()).abs()
+                low_close = (data['low'] - data['close'].shift()).abs()
+                ranges = pd.concat([high_low, high_close, low_close], axis=1)
+                true_range = ranges.max(axis=1)
+                data['atr_14'] = true_range.rolling(window=14).mean()
+                
+                # ROC (Rate of Change)
+                data['roc_5'] = data['close'].pct_change(periods=5)
+                data['roc_10'] = data['close'].pct_change(periods=10)
+                data['roc_20'] = data['close'].pct_change(periods=20)
+                
+                # Stochastic Oscillator
+                window = 14
+                data['stoch_k'] = 100 * ((data['close'] - data['low'].rolling(window=window).min()) / 
+                                        (data['high'].rolling(window=window).max() - data['low'].rolling(window=window).min()))
+                data['stoch_d'] = data['stoch_k'].rolling(window=3).mean()
+                
+                # For future price and price change, we'll use placeholders in live mode
+                # In live prediction, we don't have future data
+                data['future_price'] = data['close']
+                data['price_change_pct'] = 0.0
+                
+                # Add the calculated indicators to the result
+                latest_indicators = data.iloc[-1].to_dict()
+                result['indicators'] = {k: float(v) if not pd.isna(v) else 0.0 for k, v in latest_indicators.items() 
+                                       if k not in ['open_time', 'close_time', 'open', 'high', 'low', 'close', 'volume']}
+                
+                # Create a market data dictionary from the last row of processed data
+                market_data = latest_indicators
+                
+                # Check if model is loaded
+                if model_key not in self.models:
+                    if not self.load_model(symbol, model_type):
+                        logging.error(f"Failed to load {model_type} model for {symbol}")
+                        return result
+                
+                # Make prediction using the standard predict method
+                prediction_result = self.predict(market_data, symbol, model_type)
+                
+                # Update our result with the prediction
+                result.update({
+                    'predicted_class': prediction_result.get('predicted_class'),
+                    'predicted_label': prediction_result.get('predicted_label', 'HOLD'),
+                    'probabilities': prediction_result.get('probabilities'),
+                    'confidence': prediction_result.get('confidence', 0.0)
+                })
+                
+                logging.info(f"Live prediction for {symbol} using {model_type} model: "
+                            f"{result['predicted_label']} with {result['confidence']:.4f} confidence")
+                
+                return result
+                
+            except Exception as e:
+                logging.error(f"Error calculating indicators for {symbol}: {str(e)}")
+                result['error'] = f"Error calculating indicators: {str(e)}"
+                return result
+                
+        except Exception as e:
+            logging.error(f"Error in live prediction for {symbol}: {str(e)}")
+            result['error'] = f"Prediction error: {str(e)}"
+            return result
 
 
 def get_available_models(model_dir: str = 'models', categorize: bool = False) -> Union[List[str], Dict[str, List[str]]]:

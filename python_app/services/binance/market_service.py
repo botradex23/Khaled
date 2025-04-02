@@ -66,6 +66,77 @@ except ImportError:
             
         def ticker_24hr(self, symbol=None):
             return [{"symbol": "BTCUSDT", "priceChangePercent": "0.0", "lastPrice": "0.0"}]
+            
+        def klines(self, symbol=None, interval=None, limit=None, startTime=None, endTime=None, **kwargs):
+            # Return a basic klines structure
+            # Each kline is: [open_time, open, high, low, close, volume, close_time, quote_volume, trades_count, taker_buy_base_vol, taker_buy_quote_vol, ignore]
+            
+            # Calculate timestamps based on inputs
+            now = int(time.time() * 1000)
+            actual_end_time = endTime or now
+            
+            # Calculate interval in milliseconds
+            interval_ms = 60000  # Default to 1m
+            if interval:
+                unit = interval[-1].lower()
+                value = int(interval[:-1]) if len(interval) > 1 else 1
+                
+                if unit == 'm':
+                    interval_ms = value * 60 * 1000
+                elif unit == 'h':
+                    interval_ms = value * 60 * 60 * 1000
+                elif unit == 'd':
+                    interval_ms = value * 24 * 60 * 60 * 1000
+            
+            # Generate candles from startTime to endTime if provided
+            candles = []
+            actual_limit = limit or 100
+            
+            if startTime:
+                # Generate candles from startTime to endTime
+                current_time = startTime
+                for _ in range(actual_limit):
+                    if current_time > actual_end_time:
+                        break
+                    
+                    candle = [
+                        current_time,
+                        "50000.0",
+                        "51000.0",
+                        "49000.0",
+                        "50500.0",
+                        "100.0",
+                        current_time + interval_ms - 1,  # Close time just before next candle
+                        "5050000.0",
+                        100,
+                        "50.0",
+                        "2525000.0",
+                        "0"
+                    ]
+                    candles.append(candle)
+                    current_time += interval_ms
+            else:
+                # Just generate the requested number of candles
+                current_time = actual_end_time - (interval_ms * actual_limit)
+                for _ in range(actual_limit):
+                    candle = [
+                        current_time,
+                        "50000.0",
+                        "51000.0",
+                        "49000.0",
+                        "50500.0",
+                        "100.0",
+                        current_time + interval_ms - 1,  # Close time just before next candle
+                        "5050000.0",
+                        100,
+                        "50.0",
+                        "2525000.0",
+                        "0"
+                    ]
+                    candles.append(candle)
+                    current_time += interval_ms
+            
+            return candles
     
     class ClientError(Exception): pass
     class ServerError(Exception): pass
@@ -271,6 +342,76 @@ class BinanceMarketService:
         except Exception as e:
             logging.error(f"Error fetching price for {symbol} from Binance: {e}")
             return None
+    
+    def get_klines(self, 
+                   symbol: str, 
+                   interval: str = '5m', 
+                   limit: int = 100,
+                   startTime: Optional[int] = None,
+                   endTime: Optional[int] = None) -> List[List[Any]]:
+        """
+        Get klines/candlestick data for a symbol
+        
+        Args:
+            symbol: The trading pair symbol (e.g., BTCUSDT)
+            interval: Kline interval (1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M)
+            limit: Number of klines to retrieve (default: 100, max: 1000)
+            startTime: Start time in milliseconds (optional)
+            endTime: End time in milliseconds (optional)
+            
+        Returns:
+            List of klines where each kline is a list of values:
+            [open_time, open, high, low, close, volume, close_time, quote_volume, 
+             trades_count, taker_buy_base_vol, taker_buy_quote_vol, ignore]
+        """
+        # Format symbol
+        formatted_symbol = symbol.replace('-', '').upper()
+        
+        try:
+            # Prepare parameters
+            params = {
+                'symbol': formatted_symbol,
+                'interval': interval,
+                'limit': limit
+            }
+            
+            # Add optional parameters if provided
+            if startTime is not None:
+                params['startTime'] = startTime
+            if endTime is not None:
+                params['endTime'] = endTime
+                
+            log_msg = f"Fetching {limit} {interval} klines for {formatted_symbol}"
+            if startTime:
+                log_msg += f" from {datetime.fromtimestamp(startTime/1000)}"
+            if endTime:
+                log_msg += f" to {datetime.fromtimestamp(endTime/1000)}"
+            logging.info(log_msg)
+            
+            # Call the Binance API to get klines
+            response = self.client.klines(**params)
+            
+            logging.info(f"Successfully retrieved {len(response)} {interval} klines for {formatted_symbol}")
+            return response
+            
+        except ClientError as e:
+            # Handle specific error codes
+            error_code = str(e).split(': ')[0] if ': ' in str(e) else 'unknown'
+            if '-1003' in error_code:  # Rate limit code
+                logging.error(f"API rate limit exceeded while fetching klines: {e}")
+                raise ValueError("Binance API rate limit exceeded. Please try again later.")
+            elif '-1022' in error_code:  # IP restricted
+                logging.error(f"Binance API access restricted while fetching klines: {e}")
+                raise ValueError("Binance API access restricted. Please try again later.")
+            else:
+                logging.error(f"Binance client error while fetching klines: {e}")
+                raise ValueError(f"Binance API client error: {e}")
+        except ServerError as e:
+            logging.error(f"Binance server error while fetching klines: {e}")
+            raise ValueError("Binance API server error. Please try again later.")
+        except Exception as e:
+            logging.error(f"Error fetching klines for {formatted_symbol} from Binance: {e}")
+            raise ValueError(f"Failed to fetch klines data from Binance: {e}")
     
     def get_24hr_stats(self, symbol: Optional[str] = None) -> Union[List[Dict[str, Any]], Dict[str, Any], None]:
         """

@@ -1,0 +1,2 @@
+open_time,open,high,low,close,volume,close_time,quote_asset_volume,number_of_trades,taker_buy_base_asset_volume,taker_buy_quote_asset_volume,ignore
+2025-04-02 00:15:00,85103.78,85237.5,85103.77,85176.68,16.12814,2025-04-02 00:19:59.999,1373627.5973091,4128,13.1268,1117948.9584051,0
