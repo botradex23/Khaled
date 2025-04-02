@@ -276,14 +276,14 @@ class BotSynchronizer:
             if datetime.fromisoformat(trade.get("timestamp", "2020-01-01T00:00:00")) > cutoff_time
         ]
     
-    def check_trading_allowed(self, symbol: str, bot_id: str, side: str) -> bool:
+    def check_trading_allowed(self, symbol: str, bot_id: str, side: Optional[str]) -> bool:
         """
         Check if trading is allowed for a given symbol and bot
         
         Args:
             symbol: Trading pair to check
             bot_id: ID of the bot requesting permission
-            side: Trade side ("BUY" or "SELL")
+            side: Trade side ("BUY" or "SELL"), can be None for lock-only operations
             
         Returns:
             True if trading is allowed, False otherwise
@@ -291,6 +291,10 @@ class BotSynchronizer:
         with self.active_trades_lock:
             # No active trades for this symbol, trading is allowed
             if symbol not in self.active_trades:
+                return True
+            
+            # If no side specified (lock-only operation), allow it
+            if side is None:
                 return True
             
             # Check for conflicts with existing trades

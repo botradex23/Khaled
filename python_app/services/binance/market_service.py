@@ -145,8 +145,10 @@ class BinanceMarketService:
                 if active_config.PROXY_USERNAME and active_config.PROXY_PASSWORD:
                     # Use URL-encoded username and password for special characters
                     import urllib.parse
-                    # Get encoding method from config
+                    # Get encoding method and protocol from config
                     encoding_method = getattr(active_config, "PROXY_ENCODING_METHOD", "quote_plus") if active_config else "quote_plus"
+                    proxy_protocol = getattr(active_config, "PROXY_PROTOCOL", "http") if active_config else "http"
+                    
                     # Apply URL encoding based on the method
                     if encoding_method == "none":
                         username = active_config.PROXY_USERNAME
@@ -157,11 +159,14 @@ class BinanceMarketService:
                     else:  # Default to quote_plus
                         username = urllib.parse.quote_plus(active_config.PROXY_USERNAME)
                         password = urllib.parse.quote_plus(active_config.PROXY_PASSWORD)
-                    proxy_url = f"http://{username}:{password}@{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
-                    proxy_info = f"{active_config.PROXY_IP}:{active_config.PROXY_PORT} with authentication"
+                    
+                    # Create proxy URL with the specified protocol
+                    proxy_url = f"{proxy_protocol}://{username}:{password}@{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
+                    proxy_info = f"{active_config.PROXY_IP}:{active_config.PROXY_PORT} with authentication (protocol: {proxy_protocol})"
                 else:
-                    proxy_url = f"http://{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
-                    proxy_info = f"{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
+                    proxy_protocol = getattr(active_config, "PROXY_PROTOCOL", "http") if active_config else "http"
+                    proxy_url = f"{proxy_protocol}://{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
+                    proxy_info = f"{active_config.PROXY_IP}:{active_config.PROXY_PORT} (protocol: {proxy_protocol})"
                 
                 proxies = {
                     "http": proxy_url,

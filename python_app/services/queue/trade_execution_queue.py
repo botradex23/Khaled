@@ -146,7 +146,7 @@ class TradeRequest:
         self.ml_signal = ml_signal or {}
         self.meta = meta or {}
         self.status = TradeStatus.PENDING
-        self.error_message = None
+        self.error_message: Optional[str] = None
         self.result = None
         self.created_at = datetime.now()
         self.processed_at = None

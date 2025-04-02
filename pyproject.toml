@@ -22,6 +22,7 @@ dependencies = [
     "pytz>=2025.2",
     "requests>=2.32.3",
     "scikit-learn>=1.6.1",
+    "telegram>=0.0.1",
     "tensorflow>=2.14.0",
     "websocket-client>=1.8.0",
     "xgboost>=3.0.0",

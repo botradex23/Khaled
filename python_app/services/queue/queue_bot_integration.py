@@ -82,9 +82,22 @@ def setup_queue_bot_integration():
             trade_request.error_message = "Concurrent identical order rejected"
             return trade_request.id
         
-        # Register trade with bot synchronizer
-        bot_id = str(trade_request.user_id) if trade_request.user_id else trade_request.strategy_id
+        # Determine bot_id from either user_id or strategy_id
+        user_id = trade_request.user_id
+        strategy_id = trade_request.strategy_id
+        bot_id = str(user_id) if user_id is not None else (strategy_id if strategy_id else None)
+        
         if bot_id:
+            # Get ML signal data if any
+            ml_signal_dict = {}
+            if hasattr(trade_request, 'ml_signal') and trade_request.ml_signal:
+                ml_signal_dict = trade_request.ml_signal
+            
+            # Get metadata if any
+            meta_dict = {}
+            if hasattr(trade_request, 'meta') and trade_request.meta:
+                meta_dict = trade_request.meta
+            
             # Convert TradeRequest to dictionary for bot synchronizer
             trade_details = {
                 "symbol": trade_request.symbol,
@@ -93,9 +106,11 @@ def setup_queue_bot_integration():
                 "price": trade_request.price,
                 "order_type": trade_request.order_type,
                 "bot_id": bot_id,
-                "strategy_id": trade_request.strategy_id,
+                "strategy_id": strategy_id,
                 "trade_id": trade_request.id,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "ml_signal": ml_signal_dict,
+                "meta": meta_dict
             }
             
             # Check with bot synchronizer
@@ -118,13 +133,16 @@ def setup_queue_bot_integration():
         Args:
             trade_request: The trade request to execute
         """
-        bot_id = str(trade_request.user_id) if trade_request.user_id else trade_request.strategy_id
+        # Determine bot_id from either user_id or strategy_id
+        user_id = trade_request.user_id
+        strategy_id = trade_request.strategy_id
+        bot_id = str(user_id) if user_id is not None else (strategy_id if strategy_id else None)
         symbol = trade_request.symbol
         
         # Only try to acquire lock if bot_id is provided
         if bot_id and symbol:
             # Try to acquire symbol lock
-            if not bot_synchronizer.acquire_lock(LockType.SYMBOL, symbol):
+            if not bot_synchronizer.lock_symbol_for_trading(symbol, bot_id):
                 logger.warning(
                     f"Failed to acquire lock for {symbol} - execution delayed for trade {trade_request.id}"
                 )
@@ -138,7 +156,7 @@ def setup_queue_bot_integration():
                 original_execute_trade(trade_request)
             finally:
                 # Release lock even if execution fails
-                bot_synchronizer.release_lock(LockType.SYMBOL, symbol)
+                bot_synchronizer.unlock_symbol(symbol, bot_id)
         else:
             # Execute without locking if no bot_id or symbol
             original_execute_trade(trade_request)
