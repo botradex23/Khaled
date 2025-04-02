@@ -11,11 +11,17 @@ from functools import wraps
 from flask import Flask, jsonify, render_template, request, flash, redirect, url_for, session
 from flask_cors import CORS
 
-from config import active_config
-from routes.binance_routes import binance_bp
-from routes.ml_routes import ml_bp
-from routes.ml_prediction_routes import ml_prediction_bp, register_routes as register_ml_prediction_routes
-from routes.live_prediction_routes import live_prediction_bp, register_routes as register_live_prediction_routes
+from python_app.config import active_config
+from python_app.routes.binance_routes import binance_bp
+from python_app.routes.ml_routes import ml_bp
+from python_app.routes.ml_prediction_routes import ml_prediction_bp, register_routes as register_ml_prediction_routes
+from python_app.routes.live_prediction_routes import live_prediction_bp, register_routes as register_live_prediction_routes
+
+# We'll import these later to avoid circular imports
+# from routes.ai_signals_routes import ai_signals_bp
+# from routes.trading_routes import trading_bp
+ai_signals_bp = None  # Will be imported later
+trading_bp = None  # Will be imported later
 
 # Configure logging
 try:
@@ -71,6 +77,36 @@ def create_app(config=None):
     app.register_blueprint(binance_bp)
     app.register_blueprint(ml_bp)
     app.register_blueprint(ml_prediction_bp)
+    
+    # Conditionally import and register AI Signals blueprint
+    try:
+        from python_app.routes.ai_signals_routes import ai_signals_bp
+        if ai_signals_bp:
+            app.register_blueprint(ai_signals_bp)
+            logging.info("AI Signals blueprint registered successfully")
+    except ImportError as e:
+        logging.warning(f"Could not import AI Signals blueprint: {e}")
+        logging.warning("AI Signals functionality will not be available")
+        
+    # Conditionally import and register Trading blueprint
+    try:
+        from python_app.routes.trading_routes import trading_bp
+        if trading_bp:
+            app.register_blueprint(trading_bp)
+            logging.info("Trading blueprint registered successfully")
+    except ImportError as e:
+        logging.warning(f"Could not import Trading blueprint: {e}")
+        logging.warning("Trading functionality will not be available")
+        
+    # Conditionally import and register API Keys blueprint
+    try:
+        from python_app.routes.api_keys_routes import api_keys_bp
+        if api_keys_bp:
+            app.register_blueprint(api_keys_bp)
+            logging.info("API Keys blueprint registered successfully")
+    except ImportError as e:
+        logging.warning(f"Could not import API Keys blueprint: {e}")
+        logging.warning("API Keys management functionality will not be available")
     
     # Register additional routes using custom registration functions
     register_ml_prediction_routes(app)
@@ -145,7 +181,10 @@ def create_app(config=None):
             'services': {
                 'binance': True,
                 'ml': True,
-                'live_prediction': True
+                'live_prediction': True,
+                'ai_signals': True,
+                'trading': True,
+                'api_keys': True
             }
         })
     
@@ -163,7 +202,7 @@ def create_app(config=None):
         
         # Import the direct prediction function
         try:
-            from direct_test import direct_predict
+            from python_app.direct_test import direct_predict
             
             # Get query parameters
             model_type = request.args.get('model_type', 'balanced')
@@ -202,7 +241,7 @@ def create_app(config=None):
     return app
 
 # Import utility functions from utils.py
-from utils import flash_message, handle_api_response
+from python_app.utils import flash_message, handle_api_response
 
 app = create_app()
 

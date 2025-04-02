@@ -122,7 +122,10 @@ class BinanceTradingService:
     def __init__(self, 
                  use_testnet: bool = None,
                  paper_mode: bool = True,  # Paper trading mode by default for safety
-                 max_retries: int = 3):
+                 max_retries: int = 3,
+                 user_id: str = None,      # User ID for API key lookup
+                 api_key: str = None,      # Optional direct API key
+                 secret_key: str = None):  # Optional direct secret key
         """
         Initialize the Binance Trading Service
         
@@ -130,6 +133,9 @@ class BinanceTradingService:
             use_testnet: Whether to use the Binance testnet (default: from active_config.USE_TESTNET)
             paper_mode: Whether to use paper trading mode (default: True)
             max_retries: Maximum number of retry attempts for orders (default: 3)
+            user_id: User ID for API key lookup (default: None)
+            api_key: Optional direct API key, overrides user_id lookup (default: None)
+            secret_key: Optional direct secret key, overrides user_id lookup (default: None)
         """
         # If use_testnet is not specified, use the config value
         if use_testnet is None and active_config:
@@ -140,8 +146,11 @@ class BinanceTradingService:
         self.use_testnet = use_testnet
         self.paper_mode = paper_mode
         self.max_retries = max_retries
+        self.user_id = user_id
+        self.api_key = api_key
+        self.secret_key = secret_key
         self.base_url = active_config.BINANCE_TEST_URL if use_testnet else active_config.BINANCE_BASE_URL
-        self.client = self._create_client()
+        self.client = None  # Will be initialized on first use
         self.open_orders = []  # For tracking paper trade orders
         self.positions = []    # For tracking paper trade positions
         
@@ -156,8 +165,29 @@ class BinanceTradingService:
         Returns:
             Configured Binance Spot client
         """
-        api_key = active_config.BINANCE_API_KEY
-        api_secret = active_config.BINANCE_SECRET_KEY
+        # Try to get user-specific keys first
+        api_key = self.api_key
+        api_secret = self.secret_key
+        
+        # If direct keys aren't provided, try to get them from the user ID
+        if (not api_key or not api_secret) and self.user_id:
+            try:
+                # Import here to avoid circular imports
+                from python_app.services.api_key_service import get_user_api_keys
+                user_api_key, user_secret_key = get_user_api_keys(self.user_id)
+                
+                if user_api_key and user_secret_key:
+                    api_key = user_api_key
+                    api_secret = user_secret_key
+                    logger.info(f"Using API keys for user: {self.user_id}")
+            except ImportError:
+                logger.warning("Could not import API key service - falling back to default keys")
+        
+        # If still no keys, fall back to global configuration
+        if not api_key or not api_secret:
+            api_key = active_config.BINANCE_API_KEY
+            api_secret = active_config.BINANCE_SECRET_KEY
+            logger.info("Using default API keys from configuration")
         
         # Check if proxy is enabled in configuration
         use_proxy = False
@@ -182,6 +212,16 @@ class BinanceTradingService:
                     hasattr(active_config, 'PROXY_PASSWORD') and active_config.PROXY_PASSWORD):
                     # Use URL-encoded username and password for special characters
                     import urllib.parse
+                    # Get encoding method from config
+                    encoding_method = getattr(active_config, "PROXY_ENCODING_METHOD", "quote_plus") if active_config else "quote_plus"
+                    # Apply URL encoding based on the method
+                    if encoding_method == "none":
+                        username = active_config.PROXY_USERNAME
+                        password = active_config.PROXY_PASSWORD
+                    elif encoding_method == "quote":
+                        username = urllib.parse.quote(active_config.PROXY_USERNAME)
+                        password = urllib.parse.quote(active_config.PROXY_PASSWORD)
+                    else:  # Default to quote_plus
                     # Get encoding method from config
                     encoding_method = getattr(active_config, "PROXY_ENCODING_METHOD", "quote_plus") if active_config else "quote_plus"
                     # Apply URL encoding based on the method
@@ -319,6 +359,9 @@ class BinanceTradingService:
         Returns:
             Order response data
         """
+        # Ensure client is initialized
+        if self.client is None:
+            self.client = self._create_client()
         # Standardize inputs
         symbol = symbol.upper().replace('-', '')
         side = side.upper()
@@ -592,6 +635,10 @@ class BinanceTradingService:
         Returns:
             True if a position exists, False otherwise
         """
+        # Ensure client is initialized
+        if self.client is None:
+            self.client = self._create_client()
+            
         # Standardize inputs
         symbol = symbol.upper().replace('-', '')
         side = side.upper()
@@ -654,6 +701,10 @@ class BinanceTradingService:
         Returns:
             Position close result
         """
+        # Ensure client is initialized
+        if self.client is None:
+            self.client = self._create_client()
+            
         # Standardize symbol
         symbol = symbol.upper().replace('-', '')
         
@@ -869,18 +920,39 @@ class BinanceTradingService:
 _binance_trading_service = None
 
 def get_binance_trading_service(use_testnet: bool = None, 
-                              paper_mode: bool = True) -> BinanceTradingService:
+                              paper_mode: bool = True,
+                              user_id: str = None,
+                              api_key: str = None,
+                              secret_key: str = None) -> BinanceTradingService:
     """
-    Get or create the BinanceTradingService singleton instance
+    Get or create the BinanceTradingService instance
+    
+    If user_id is provided, it creates a new instance with user-specific API keys
+    Otherwise, it returns the singleton instance.
     
     Args:
         use_testnet: Whether to use the Binance testnet
         paper_mode: Whether to use paper trading mode
+        user_id: User ID for API key lookup (default: None)
+        api_key: Optional direct API key (default: None)
+        secret_key: Optional direct secret key (default: None)
         
     Returns:
         The BinanceTradingService instance
     """
     global _binance_trading_service
+    
+    # If user_id, api_key or secret_key are provided, create a new instance for this user
+    if user_id or api_key or secret_key:
+        return BinanceTradingService(
+            use_testnet=use_testnet,
+            paper_mode=paper_mode,
+            user_id=user_id,
+            api_key=api_key,
+            secret_key=secret_key
+        )
+    
+    # Otherwise, use or create the singleton instance
     if _binance_trading_service is None:
         _binance_trading_service = BinanceTradingService(
             use_testnet=use_testnet,

@@ -1,0 +1,17 @@
+{
+  "symbol": "BTCUSDT",
+  "action": "BUY",
+  "confidence": 0.75,
+  "timestamp": 1743592321.757858,
+  "timestamp_iso": "2025-04-02T11:12:01.757858",
+  "source": "test_script",
+  "metadata": {
+    "test_run": true,
+    "run_id": "test_1743592321"
+  },
+  "received_at": 1743592321.765135,
+  "received_at_iso": "2025-04-02T11:12:01.765136",
+  "stored_at": 1743592321.765276,
+  "stored_at_iso": "2025-04-02T11:12:01.765278",
+  "_id": "1743592321765_140364135572160"
+}

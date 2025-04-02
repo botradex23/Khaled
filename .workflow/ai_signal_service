@@ -1,0 +1,3 @@
+#!/bin/bash
+cd "$REPL_HOME"
+./start_ai_signal_service.sh
