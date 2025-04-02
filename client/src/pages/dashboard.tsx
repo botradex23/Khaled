@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import AppSidebar from "@/components/AppSidebar";
+import { useMixpanel } from "@/components/MixpanelProvider";
 import { 
   Card, 
   CardContent, 
@@ -73,7 +74,17 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
+  const { track } = useMixpanel();
   
+  // Track page view
+  useEffect(() => {
+    // Track page view when component mounts
+    track('dashboard_view', { 
+      user_id: user?.id || 'anonymous',
+      authenticated: isAuthenticated
+    });
+  }, [track, user, isAuthenticated]);
+
   // Check if user is authenticated
   useEffect(() => {
     const verifyAuth = async () => {
@@ -181,7 +192,13 @@ export default function Dashboard() {
                         variant="outline" 
                         size="sm" 
                         className="text-xs"
-                        onClick={() => window.location.href = '/markets-full'}
+                        onClick={() => {
+                          track('view_all_markets_clicked', { 
+                            source: 'dashboard',
+                            section: 'market_overview'
+                          });
+                          window.location.href = '/markets-full';
+                        }}
                       >
                         View All Markets
                         <ArrowRight className="ml-2 h-3 w-3" />
@@ -216,7 +233,13 @@ export default function Dashboard() {
                 </div>
                 <Button 
                   className="flex items-center" 
-                  onClick={() => window.location.href = "/binance"}
+                  onClick={() => {
+                    track('paper_trading_nav_clicked', { 
+                      source: 'dashboard',
+                      section: 'paper_trading_header'
+                    });
+                    window.location.href = "/binance";
+                  }}
                   variant="outline"
                 >
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -243,7 +266,18 @@ export default function Dashboard() {
                       <div className="text-sm text-muted-foreground">Profit/Loss</div>
                       <div className="font-medium text-green-500">$0.00 (0.00%)</div>
                     </div>
-                    <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => window.location.href = "/binance"}>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full mt-2" 
+                      onClick={() => {
+                        track('open_trading_dashboard_clicked', { 
+                          source: 'dashboard',
+                          section: 'paper_trading_balance'
+                        });
+                        window.location.href = "/binance";
+                      }}
+                    >
                       <span>Open Trading Dashboard</span>
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -259,7 +293,18 @@ export default function Dashboard() {
                       <div className="text-center text-sm text-muted-foreground py-6">
                         No open positions
                       </div>
-                      <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => window.location.href = "/binance"}>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full mt-2" 
+                        onClick={() => {
+                          track('create_new_position_clicked', { 
+                            source: 'dashboard',
+                            section: 'paper_trading_positions'
+                          });
+                          window.location.href = "/binance";
+                        }}
+                      >
                         <span>Create New Position</span>
                         <Plus className="ml-2 h-4 w-4" />
                       </Button>
@@ -275,7 +320,18 @@ export default function Dashboard() {
                     <div className="text-center text-sm text-muted-foreground py-6">
                       No trading history yet
                     </div>
-                    <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => window.location.href = "/binance"}>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full mt-2" 
+                      onClick={() => {
+                        track('view_all_trades_clicked', { 
+                          source: 'dashboard',
+                          section: 'paper_trading_history'
+                        });
+                        window.location.href = "/binance";
+                      }}
+                    >
                       <span>View All Trades</span>
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -293,7 +349,16 @@ export default function Dashboard() {
                   <CardTitle className="text-xl font-medium">Active Bots</CardTitle>
                   <CardDescription>Your automated trading strategies</CardDescription>
                 </div>
-                <Button className="flex items-center" onClick={() => window.location.href = "/bots"}>
+                <Button 
+                  className="flex items-center" 
+                  onClick={() => {
+                    track('create_new_bot_clicked', { 
+                      source: 'dashboard',
+                      section: 'bot_header'
+                    });
+                    window.location.href = "/bots";
+                  }}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   New Bot
                 </Button>
@@ -331,7 +396,20 @@ export default function Dashboard() {
                             ))}
                           </div>
                         </div>
-                        <Button variant="outline" size="sm" className="w-full" onClick={() => window.location.href = `/bots?id=${bot.id}`}>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full" 
+                          onClick={() => {
+                            track('view_bot_details', { 
+                              source: 'dashboard',
+                              bot_id: bot.id,
+                              bot_name: bot.name,
+                              bot_strategy: bot.strategy
+                            });
+                            window.location.href = `/bots?id=${bot.id}`;
+                          }}
+                        >
                           <span>View Details</span>
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
@@ -342,7 +420,15 @@ export default function Dashboard() {
               ) : (
                 <div className="py-10 text-center">
                   <p className="text-muted-foreground mb-4">You don't have any active bots yet</p>
-                  <Button onClick={() => window.location.href = "/bots"}>
+                  <Button 
+                    onClick={() => {
+                      track('create_first_bot_clicked', { 
+                        source: 'dashboard',
+                        section: 'empty_bots_state'
+                      });
+                      window.location.href = "/bots";
+                    }}
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     Create Your First Bot
                   </Button>
@@ -374,7 +460,13 @@ export default function Dashboard() {
                   <Button 
                     variant="default" 
                     className="w-full justify-start bg-primary text-white hover:bg-primary/90" 
-                    onClick={() => window.location.href = "/api-keys"}
+                    onClick={() => {
+                      track('api_keys_setup_clicked', { 
+                        source: 'dashboard',
+                        section: 'quick_actions'
+                      });
+                      window.location.href = "/api-keys";
+                    }}
                   >
                     <KeyRound className="mr-2 h-4 w-4" />
                     הגדר מפתחות API
@@ -383,7 +475,13 @@ export default function Dashboard() {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start"
-                    onClick={() => window.location.href = "/binance"}
+                    onClick={() => {
+                      track('binance_trading_clicked', { 
+                        source: 'dashboard',
+                        section: 'quick_actions'
+                      });
+                      window.location.href = "/binance";
+                    }}
                   >
                     <BarChart4 className="mr-2 h-4 w-4" />
                     Binance Trading
@@ -392,7 +490,13 @@ export default function Dashboard() {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start" 
-                    onClick={() => window.location.href = "/markets-full"}
+                    onClick={() => {
+                      track('all_markets_clicked', { 
+                        source: 'dashboard',
+                        section: 'quick_actions'
+                      });
+                      window.location.href = "/markets-full";
+                    }}
                   >
                     <TrendingUp className="mr-2 h-4 w-4" />
                     All Binance Markets
@@ -401,7 +505,13 @@ export default function Dashboard() {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start" 
-                    onClick={() => window.location.href = "/bots"}
+                    onClick={() => {
+                      track('auto_trading_bots_clicked', { 
+                        source: 'dashboard',
+                        section: 'quick_actions'
+                      });
+                      window.location.href = "/bots";
+                    }}
                   >
                     <BotIcon className="mr-2 h-4 w-4" />
                     Auto Trading Bots
@@ -484,13 +594,29 @@ export default function Dashboard() {
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowApiKeyDialog(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                track('api_keys_later_clicked', { 
+                  source: 'dashboard',
+                  section: 'api_key_dialog'
+                });
+                setShowApiKeyDialog(false);
+              }}
+            >
               אחר כך
             </Button>
-            <Button onClick={() => {
-              setShowApiKeyDialog(false);
-              setLocation("/api-keys");
-            }} className="gap-2 bg-primary hover:bg-primary/90">
+            <Button 
+              onClick={() => {
+                track('api_keys_setup_now_clicked', { 
+                  source: 'dashboard',
+                  section: 'api_key_dialog'
+                });
+                setShowApiKeyDialog(false);
+                setLocation("/api-keys");
+              }} 
+              className="gap-2 bg-primary hover:bg-primary/90"
+            >
               הגדר מפתחות API עכשיו
               <ArrowRight className="h-4 w-4" />
             </Button>

@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { PortfolioProvider } from "@/hooks/use-portfolio-value";
+import MixpanelProvider from "./components/MixpanelProvider";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Landing from "@/pages/landing";
@@ -86,12 +87,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <PortfolioProvider>
-          <Router />
-          <Toaster />
-        </PortfolioProvider>
-      </AuthProvider>
+      <MixpanelProvider>
+        <AuthProvider>
+          <PortfolioProvider>
+            <Router />
+            <Toaster />
+          </PortfolioProvider>
+        </AuthProvider>
+      </MixpanelProvider>
     </QueryClientProvider>
   );
 }

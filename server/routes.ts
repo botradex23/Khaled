@@ -25,6 +25,7 @@ import paperTradingRouter from "./routes/paper-trading";
 import databaseStatusRoutes from "./routes/database-status";
 import riskSettingsRouter from "./api/risk-settings";
 import { binanceWebSocketService } from "./api/binance/websocketService";
+import mixpanelRouter from "./api/analytics/mixpanel-routes";
 
 // Helper function to mask sensitive data (like API keys)
 function maskSecret(secret: string): string {
@@ -384,6 +385,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }).catch(err => {
     console.error('Failed to register direct API routes:', err);
   });
+  
+  // Register Mixpanel Analytics routes
+  app.use("/api/analytics/mixpanel", mixpanelRouter);
+  console.log('Mixpanel analytics routes registered to /api/analytics/mixpanel');
   
   // Portfolio routes for dashboard data visualization
   app.use("/api/portfolio", portfolioRouter);
