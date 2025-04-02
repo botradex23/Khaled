@@ -54,10 +54,15 @@ directRouter.post('/trade-logs', async (req, res) => {
 });
 
 // Search trade logs with filtering - must come before the /:id route to not be captured by it
-directRouter.get('/trade-logs/search', async (req, res) => {
+// Support both GET and POST requests for filtering trade logs
+const searchTradeLogsHandler = async (req, res) => {
   try {
-    console.log('DIRECT API: GET /direct-api/trade-logs/search endpoint hit');
-    console.log('Search query parameters:', req.query);
+    const isPost = req.method === 'POST';
+    console.log(`DIRECT API: ${req.method} /direct-api/trade-logs/search endpoint hit`);
+    
+    // Get parameters from either query string (GET) or request body (POST)
+    const params = isPost ? req.body : req.query;
+    console.log('Search parameters:', params);
     
     // Force the content type to be JSON
     res.setHeader('Content-Type', 'application/json');
@@ -72,39 +77,39 @@ directRouter.get('/trade-logs/search', async (req, res) => {
       userId?: number;
     } = {};
     
-    // Extract and validate query parameters
-    if (req.query.symbol) filter.symbol = req.query.symbol as string;
-    if (req.query.action) filter.action = req.query.action as string;
-    if (req.query.source) filter.source = req.query.source as string;
-    if (req.query.status) filter.status = req.query.status as string;
+    // Extract and validate parameters
+    if (params.symbol) filter.symbol = params.symbol as string;
+    if (params.action && params.action !== 'ALL') filter.action = params.action as string;
+    if (params.source) filter.source = params.source as string;
+    if (params.status && params.status !== 'ALL') filter.status = params.status as string;
     
     // Handle date filtering
-    if (req.query.fromDate) {
+    if (params.fromDate) {
       try {
-        filter.fromDate = new Date(req.query.fromDate as string);
+        filter.fromDate = new Date(params.fromDate as string);
       } catch (error) {
-        console.warn('Invalid fromDate format:', req.query.fromDate);
+        console.warn('Invalid fromDate format:', params.fromDate);
       }
     }
     
-    if (req.query.toDate) {
+    if (params.toDate) {
       try {
-        filter.toDate = new Date(req.query.toDate as string);
+        filter.toDate = new Date(params.toDate as string);
       } catch (error) {
-        console.warn('Invalid toDate format:', req.query.toDate);
+        console.warn('Invalid toDate format:', params.toDate);
       }
     }
     
     // Handle user ID filtering
-    if (req.query.userId) {
-      const userId = parseInt(req.query.userId as string, 10);
+    if (params.userId) {
+      const userId = parseInt(params.userId as string, 10);
       if (!isNaN(userId)) {
         filter.userId = userId;
       }
     }
     
     // Get limit parameter
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 100;
+    const limit = params.limit ? parseInt(params.limit as string, 10) : 100;
     
     // Search trade logs with filter
     const tradeLogs = await storage.searchTradeLogs(filter, limit);
@@ -118,7 +123,11 @@ directRouter.get('/trade-logs/search', async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     return res.status(500).json({ error: 'Failed to search trade logs', details: String(error) });
   }
-});
+};
+
+// Register both GET and POST handlers for the search endpoint
+directRouter.get('/trade-logs/search', searchTradeLogsHandler);
+directRouter.post('/trade-logs/search', searchTradeLogsHandler);
 
 // Get trade logs by symbol - must come before the /:id route
 directRouter.get('/trade-logs/symbol/:symbol', async (req, res) => {

@@ -157,9 +157,9 @@ export default function TradeLogsPage() {
     const params = new URLSearchParams();
     
     if (filters.symbol) params.append('symbol', filters.symbol);
-    if (filters.action) params.append('action', filters.action);
+    if (filters.action && filters.action !== 'ALL') params.append('action', filters.action);
     if (filters.source) params.append('source', filters.source);
-    if (filters.status) params.append('status', filters.status);
+    if (filters.status && filters.status !== 'ALL') params.append('status', filters.status);
     if (filters.userId) params.append('userId', filters.userId);
     
     if (filters.fromDate) {
@@ -175,31 +175,51 @@ export default function TradeLogsPage() {
 
   // Fetch trade logs data from API
   const { data: tradeLogs, isLoading, error, refetch } = useQuery({
-    queryKey: ['/api/trade-logs/search', buildQueryParams()],
+    queryKey: ['/direct-api/trade-logs/search', buildQueryParams()],
     queryFn: async () => {
       const queryParams = buildQueryParams();
-      const response = await fetch(`/api/trade-logs/search?${queryParams}`);
+      console.log(`Fetching trade logs with params: ${queryParams}`);
+      const response = await fetch(`/direct-api/trade-logs/search?${queryParams}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch trade logs');
       }
       
       const data = await response.json();
-      return data?.trades || [];
+      console.log('Trade logs response:', data);
+      // The API returns an array directly
+      return Array.isArray(data) ? data : [];
     },
   });
 
   // Stats query for dashboard
   const { data: tradeStats, isLoading: isStatsLoading } = useQuery({
-    queryKey: ['/api/trade-logs/summary'],
+    queryKey: ['/direct-api/trade-logs'],
     queryFn: async () => {
-      const response = await fetch('/api/trade-logs/summary');
+      const response = await fetch('/direct-api/trade-logs');
       
       if (!response.ok) {
         throw new Error('Failed to fetch trade stats');
       }
       
-      return await response.json();
+      const logs = await response.json();
+      
+      // Calculate summary statistics from logs
+      const executedTrades = logs.filter((log: TradeLog) => log.status === 'EXECUTED').length;
+      const totalTrades = logs.length;
+      
+      const summary = {
+        totalTrades,
+        executedTrades,
+        failedTrades: logs.filter((log: TradeLog) => ['FAILED', 'REJECTED'].includes(log.status)).length,
+        buyTrades: logs.filter((log: TradeLog) => log.action === 'BUY').length,
+        sellTrades: logs.filter((log: TradeLog) => log.action === 'SELL').length,
+        uniqueSymbols: new Set(logs.map((log: TradeLog) => log.symbol)).size,
+        tradeSources: new Set(logs.map((log: TradeLog) => log.trade_source)).size,
+        successRate: totalTrades ? (executedTrades / totalTrades) * 100 : 0
+      };
+      
+      return summary;
     },
   });
 
@@ -396,7 +416,7 @@ export default function TradeLogsPage() {
                       <SelectValue placeholder="Select action" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All</SelectItem>
+                      <SelectItem value="ALL">All</SelectItem>
                       <SelectItem value="BUY">BUY</SelectItem>
                       <SelectItem value="SELL">SELL</SelectItem>
                     </SelectContent>
@@ -421,7 +441,7 @@ export default function TradeLogsPage() {
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All</SelectItem>
+                      <SelectItem value="ALL">All</SelectItem>
                       <SelectItem value="EXECUTED">EXECUTED</SelectItem>
                       <SelectItem value="FAILED">FAILED</SelectItem>
                       <SelectItem value="QUEUED">QUEUED</SelectItem>
