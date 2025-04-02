@@ -1,56 +1,25 @@
 #!/bin/bash
 
-# This script tests the trade logs API endpoints
-# It first starts the server if needed, then runs the test script
+# Test script for checking API directly
+echo "Testing Trade Logs API directly"
 
-echo "===== Testing Trade Logs API ====="
+# Get the current Replit URL
+REPLIT_URL=$(echo "$REPLIT_URL" || echo "https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev")
 
-# Check if the Replit app is accessible
-SERVER_RUNNING=$(curl -s -o /dev/null -w "%{http_code}" https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/user || echo "error")
+# Test the GET endpoint
+echo -e "\n-- Testing GET /api/trade-logs --"
+curl -s "${REPLIT_URL}/api/trade-logs" | head -n 20
+echo ""
 
-if [[ "$SERVER_RUNNING" == "error" || "$SERVER_RUNNING" == "000" ]]; then
-  echo "Replit app is not running. Starting the server locally..."
-  
-  # Launch the server in the background
-  npm run dev &
-  SERVER_PID=$!
-  
-  # Wait for the server to start (typically takes a few seconds)
-  echo "Waiting for the server to start..."
-  for i in {1..30}; do
-    sleep 1
-    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/auth/user || echo "error")
-    if [[ "$RESPONSE" != "error" && "$RESPONSE" != "000" ]]; then
-      echo "Server is up and running locally!"
-      # Update the test_trade_logs.js temporarily to use localhost
-      sed -i 's|https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev|http://localhost:3000|g' test_trade_logs.js
-      break
-    fi
-    if [[ $i == 30 ]]; then
-      echo "Timed out waiting for server to start. Exiting."
-      kill $SERVER_PID
-      exit 1
-    fi
-  done
-else
-  echo "Replit app is accessible, using remote URL for testing."
-fi
+# Test creating a trade log
+echo -e "\n-- Testing POST /api/trade-logs --"
+curl -s -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"symbol":"BTC-USDT","action":"BUY","entry_price":"69000","quantity":"0.1","trade_source":"TEST"}' \
+  "${REPLIT_URL}/api/trade-logs"
+echo -e "\n"
 
-# Run the test script
-echo "Running trade logs API test..."
-node test_trade_logs.js
-
-# If we started the server, ask if we should stop it
-if [[ -n "$SERVER_PID" ]]; then
-  echo -n "Tests completed. Stop the server? (y/n): "
-  read -r STOP_SERVER
-  if [[ "$STOP_SERVER" == "y" ]]; then
-    echo "Stopping server..."
-    kill $SERVER_PID
-    echo "Server stopped."
-  else
-    echo "Server left running (PID: $SERVER_PID). Remember to stop it manually when done."
-  fi
-fi
-
-echo "===== Test Complete ====="
+# Now fetch logs again to see the new entry
+echo -e "\n-- Testing GET /api/trade-logs again --"
+curl -s "${REPLIT_URL}/api/trade-logs" | head -n 20
+echo -e "\n-- Done --"
