@@ -1,41 +1,35 @@
-/**
- * Database Status API
- * 
- * Provides information about the status of connected databases (MongoDB, PostgreSQL, etc.)
- */
-import express, { Request, Response } from 'express';
-import { testMongoDBConnection } from '../storage/mongodb';
+import { Router } from 'express';
+import { storage } from '../storage';
 
-const router = express.Router();
+const router = Router();
 
 /**
- * GET /api/database-status
- * 
- * Returns the status of all database connections
+ * @route GET /api/database-status
+ * @desc Check MongoDB connection status
+ * @access Public
  */
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req, res) => {
   try {
-    // Test MongoDB connection
-    const mongoStatus = await testMongoDBConnection();
+    console.log('Database status endpoint called');
     
-    // Get MongoDB connection info
-    const mongoInfo = {
-      connected: mongoStatus.connected,
-      description: mongoStatus.description,
-      error: mongoStatus.error
-    };
+    // Check MongoDB connection
+    const mongodbStatus = await storage.checkDatabaseStatus();
     
-    // Return overall status
-    return res.json({
-      status: 'success',
-      mongodb: mongoInfo
+    // Return status information
+    res.json({
+      mongodb: mongodbStatus,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development'
     });
   } catch (error) {
     console.error('Error checking database status:', error);
-    return res.status(500).json({
-      status: 'error',
-      message: 'Failed to check database status',
-      error: error instanceof Error ? error.message : 'Unknown error'
+    res.status(500).json({
+      mongodb: {
+        connected: false,
+        error: error.message,
+        description: 'An error occurred while checking MongoDB connection status'
+      },
+      timestamp: new Date().toISOString()
     });
   }
 });

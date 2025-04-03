@@ -17,6 +17,7 @@ dependencies = [
     "matplotlib>=3.10.1",
     "numpy>=2.2.4",
     "pandas>=2.2.3",
+    "pymongo>=4.11.3",
     "python-dotenv>=1.1.0",
     "python-telegram-bot>=22.0",
     "pytz>=2025.2",

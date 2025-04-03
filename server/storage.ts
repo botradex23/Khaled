@@ -28,6 +28,15 @@ import { encrypt, decrypt, isEncrypted } from './utils/encryption';
 // you might need
 
 export interface IStorage {
+  // Database status check
+  checkDatabaseStatus(): Promise<{
+    connected: boolean;
+    isSimulated?: boolean;
+    description?: string;
+    error?: string | null;
+  }>;
+  
+  // User related methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -191,6 +200,9 @@ export class MemStorage implements IStorage {
   riskSettingsId: number;
   paperTradeId: number;
   tradeLogId: number;
+  
+  // Database status flag (always true for memory storage)
+  private isConnected: boolean = true;
 
   constructor() {
     this.users = new Map();
@@ -215,6 +227,24 @@ export class MemStorage implements IStorage {
     
     // Initialize with sample data
     this.initializeData();
+  }
+
+  /**
+   * Check database status
+   * For memory storage, this always returns connected as true
+   */
+  async checkDatabaseStatus(): Promise<{
+    connected: boolean;
+    isSimulated?: boolean;
+    description?: string;
+    error?: string | null;
+  }> {
+    return {
+      connected: this.isConnected,
+      isSimulated: true,
+      description: 'Using in-memory storage (simulation mode)',
+      error: null
+    };
   }
 
   private initializeData() {

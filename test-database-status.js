@@ -9,11 +9,8 @@ async function checkDatabaseStatus() {
     console.log('Checking database status through API endpoint...');
     
     // Make request to the database status endpoint
-    // Get the public URL from hostname
-    const hostname = process.env.REPL_SLUG || 'localhost:5173';
-    const isReplit = process.env.REPL_SLUG !== undefined;
-    const protocol = isReplit ? 'https' : 'http';
-    const baseUrl = isReplit ? `${protocol}://${hostname}.replit.app` : `${protocol}://${hostname}`;
+    // Use localhost since we're running in the same environment
+    const baseUrl = 'http://localhost:3000';
     console.log(`Using base URL: ${baseUrl}`);
     
     const response = await fetch(`${baseUrl}/api/database-status`);
