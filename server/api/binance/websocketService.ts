@@ -228,7 +228,7 @@ class BinanceWebSocketService extends EventEmitter {
    * Start simulation mode for price updates
    * This mode is used when real connection to Binance is not available
    */
-  private startSimulation(): void {
+  public startSimulation(): void {
     // If simulation is already active, don't start again
     if (this.simulationMode && this.simulationInterval) {
       return;
@@ -505,5 +505,8 @@ class BinanceWebSocketService extends EventEmitter {
 // יצירת אינסטנס יחיד של השירות
 export const binanceWebSocketService = new BinanceWebSocketService();
 
-// התחל את החיבור כבר בייבוא המודול
-// binanceWebSocketService.connect(); // לא להפעיל כאן, נפעיל בזמן אתחול השרת
+// Start the service in simulation mode immediately
+setTimeout(() => {
+  console.log('Starting WebSocket service in simulation mode...');
+  binanceWebSocketService.startSimulation();
+}, 1000);

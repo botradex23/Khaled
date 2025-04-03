@@ -6,6 +6,34 @@ import { binanceMarketService } from '../api/binance/marketPriceService';
 const router = Router();
 
 /**
+ * Force simulation mode for Binance WebSocket service 
+ * Used for development and testing when real Binance connection is not available
+ * 
+ * @returns {Object} Status message
+ */
+router.post('/api/binance/force-simulation-mode', (req: Request, res: Response) => {
+  try {
+    // Start simulation mode
+    binanceWebSocketService.startSimulation();
+    
+    // Return success message
+    res.json({
+      success: true,
+      message: 'Binance WebSocket service is now in simulation mode',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error starting simulation mode:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to start simulation mode',
+      error: error instanceof Error ? error.message : String(error),
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
  * Get Binance connection status
  * Checks and reports the current connection state for Binance API services
  * 

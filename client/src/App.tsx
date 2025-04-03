@@ -36,6 +36,7 @@ import RiskManagement from "@/pages/risk-management";
 import MLPredictionsPage from "@/pages/ml-predictions";
 import TradeLogsTestPage from "@/pages/trade-logs-test";
 import TradeLogsPage from "@/pages/trade-logs";
+import DirectPricesPage from "@/pages/DirectPricesPage";
 
 function Router() {
   const { isAuthenticated, needsProfileCompletion, isLoading } = useAuth();
@@ -79,6 +80,7 @@ function Router() {
       <Route path="/risk-management" component={RiskManagement} />
       <Route path="/trade-logs-test" component={TradeLogsTestPage} />
       <Route path="/trade-logs" component={TradeLogsPage} />
+      <Route path="/direct-prices" component={DirectPricesPage} />
       <Route component={NotFound} />
     </Switch>
   );

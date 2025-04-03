@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle, Server, Wifi, WifiOff, Clock, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle, Server, Wifi, WifiOff, Clock, RefreshCw, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { apiRequest } from '@/lib/queryClient';
 import { Link } from 'wouter';
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * Component for displaying Binance connection status with detailed information
@@ -195,14 +196,14 @@ const BinanceStatusAlert: React.FC = () => {
             </div>
             <div>
               <AlertTitle className="text-amber-800 font-semibold text-lg flex items-center gap-2">
-                <span>Simulation Mode</span>
-                <div className="px-2 py-0.5 text-xs bg-amber-200 text-amber-800 rounded-full font-medium">
-                  Development Only
+                <span>Simulation Mode Active</span>
+                <div className="px-2 py-0.5 text-xs bg-amber-200 text-amber-800 rounded-full font-medium animate-pulse">
+                  Using Simulated Data
                 </div>
               </AlertTitle>
               <AlertDescription className="text-gray-700 mt-2">
                 <p className="mb-2 font-medium">
-                  You are viewing simulated cryptocurrency price data. This is not real market data.
+                  The application is currently running with simulated cryptocurrency price data. This is not real market data.
                 </p>
                 <div className="flex flex-col gap-1.5 mt-3 text-sm">
                   <div className="flex items-center gap-2">

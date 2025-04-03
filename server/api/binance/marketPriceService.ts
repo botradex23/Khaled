@@ -7,9 +7,9 @@ const BINANCE_BASE_URL = 'https://api.binance.com';
 const BINANCE_TEST_URL = 'https://testnet.binance.vision';
 
 // Proxy configuration for bypassing geo-restrictions 
-const USE_PROXY = true; // Enable proxy to overcome geographical restrictions
-const PROXY_USERNAME = "ahjqspco";
-const PROXY_PASSWORD = "dzx3r1prpz9k";
+const USE_PROXY = false; // Disable proxy since we're in simulation mode
+const PROXY_USERNAME = process.env.PROXY_USERNAME || "ahjqspco";
+const PROXY_PASSWORD = process.env.PROXY_PASSWORD || "dzx3r1prpz9k";
 const PROXY_IP = process.env.PROXY_IP || '86.38.234.176'; // Updated proxy IP from Webshare list
 const PROXY_PORT = process.env.PROXY_PORT || '6630';      // Updated proxy port
 

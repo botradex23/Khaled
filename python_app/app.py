@@ -16,6 +16,8 @@ from python_app.routes.binance_routes import binance_bp
 from python_app.routes.ml_routes import ml_bp
 from python_app.routes.ml_prediction_routes import ml_prediction_bp, register_routes as register_ml_prediction_routes
 from python_app.routes.live_prediction_routes import live_prediction_bp, register_routes as register_live_prediction_routes
+# Import our new direct binance prices blueprint
+from python_app.routes.direct_binance_prices import direct_binance_prices_bp
 # Import the trade logs blueprint
 try:
     from python_app.routes.trade_logs_routes import trade_logs_bp
@@ -83,6 +85,8 @@ def create_app(config=None):
     app.register_blueprint(binance_bp)
     app.register_blueprint(ml_bp)
     app.register_blueprint(ml_prediction_bp)
+    app.register_blueprint(direct_binance_prices_bp)
+    logging.info("Direct Binance Prices blueprint registered successfully")
     
     # Register trade logs blueprint if available
     if trade_logs_bp:
