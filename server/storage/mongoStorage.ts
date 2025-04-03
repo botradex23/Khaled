@@ -202,10 +202,11 @@ export class MongoDBStorage implements IStorage {
         updatedAt: new Date()
       };
       
-      await this.usersCollection.insertOne(fullUser);
+      const result = await this.usersCollection.insertOne(fullUser);
+      console.log(`✅ Saved new user to MongoDB: ${user.email} (ID: ${fullUser.id}, MongoDB ID: ${result.insertedId})`);
       return fullUser;
     } catch (error) {
-      console.error('Error creating user:', error);
+      console.error('❌ Error creating user:', error);
       throw error;
     }
   }
@@ -220,9 +221,10 @@ export class MongoDBStorage implements IStorage {
         { $set: { ...updates, updatedAt: new Date() } },
         { returnDocument: 'after' }
       );
+      console.log(`✅ Updated user in MongoDB: ID ${id}`);
       return result || undefined;
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('❌ Error updating user:', error);
       return undefined;
     }
   }
@@ -234,12 +236,14 @@ export class MongoDBStorage implements IStorage {
    */
   async updateUserApiKeys(userId: number, apiKeys: any): Promise<User | undefined> {
     try {
-      return this.updateUser(userId, {
+      const result = await this.updateUser(userId, {
         defaultBroker: apiKeys.defaultBroker,
         useTestnet: apiKeys.useTestnet
       });
+      console.log(`✅ Updated API keys for user: ${userId}`);
+      return result;
     } catch (error) {
-      console.error('Error updating user API keys:', error);
+      console.error('❌ Error updating user API keys:', error);
       return undefined;
     }
   }
@@ -252,12 +256,14 @@ export class MongoDBStorage implements IStorage {
       const user = await this.getUser(userId);
       if (!user) return undefined;
       
-      return {
+      const result = {
         defaultBroker: user.defaultBroker,
         useTestnet: user.useTestnet
       };
+      console.log(`✅ Retrieved API keys for user: ${userId}`);
+      return result;
     } catch (error) {
-      console.error('Error getting user API keys:', error);
+      console.error('❌ Error getting user API keys:', error);
       return undefined;
     }
   }
@@ -267,12 +273,20 @@ export class MongoDBStorage implements IStorage {
    */
   async updateUserBinanceApiKeys(userId: number, apiKeys: any): Promise<User | undefined> {
     try {
-      return this.updateUser(userId, {
+      // Validate the API keys before updating
+      if (!apiKeys.binanceApiKey || !apiKeys.binanceSecretKey) {
+        console.error('❌ Invalid Binance API keys provided for user', userId);
+        return undefined;
+      }
+      
+      const result = await this.updateUser(userId, {
         binanceApiKey: apiKeys.binanceApiKey,
         binanceSecretKey: apiKeys.binanceSecretKey
       });
+      console.log(`✅ Updated Binance API keys for user: ${userId}`);
+      return result;
     } catch (error) {
-      console.error('Error updating Binance API keys:', error);
+      console.error('❌ Error updating Binance API keys:', error);
       return undefined;
     }
   }
@@ -285,12 +299,14 @@ export class MongoDBStorage implements IStorage {
       const user = await this.getUser(userId);
       if (!user) return undefined;
       
-      return {
+      const result = {
         binanceApiKey: user.binanceApiKey,
         binanceSecretKey: user.binanceSecretKey
       };
+      console.log(`✅ Retrieved Binance API keys for user: ${userId}`);
+      return result;
     } catch (error) {
-      console.error('Error getting Binance API keys:', error);
+      console.error('❌ Error getting Binance API keys:', error);
       return undefined;
     }
   }
@@ -300,13 +316,21 @@ export class MongoDBStorage implements IStorage {
    */
   async clearUserApiKeys(userId: number): Promise<boolean> {
     try {
+      // Verify the user exists before attempting to clear keys
+      const user = await this.getUser(userId);
+      if (!user) {
+        console.error(`❌ Cannot clear API keys for non-existent user: ${userId}`);
+        return false;
+      }
+      
       const updated = await this.updateUser(userId, {
         binanceApiKey: null,
         binanceSecretKey: null
       });
+      console.log(`✅ Cleared API keys for user: ${userId}`);
       return !!updated;
     } catch (error) {
-      console.error('Error clearing API keys:', error);
+      console.error('❌ Error clearing API keys:', error);
       return false;
     }
   }
@@ -348,17 +372,33 @@ export class MongoDBStorage implements IStorage {
    */
   async createBot(bot: any): Promise<any> {
     try {
+      // Validate the required bot properties
+      if (!bot.userId) {
+        console.error('❌ Cannot create bot: Missing userId');
+        return { error: 'Missing required field: userId' };
+      }
+      
+      if (!bot.botType) {
+        console.error('❌ Cannot create bot: Missing botType');
+        return { error: 'Missing required field: botType' };
+      }
+      
+      // Set default values for missing properties
       const fullBot = { 
         id: Date.now(), // Add numeric ID for compatibility
         ...bot,
         userId: Number(bot.userId),
+        name: bot.name || `${bot.botType} Bot ${new Date().toISOString().slice(0, 10)}`,
+        isRunning: false,
         createdAt: new Date(),
         updatedAt: new Date()
       };
+      
       const result = await this.botsCollection.insertOne(fullBot);
+      console.log(`✅ Saved new bot to MongoDB: ${fullBot.name} (ID: ${fullBot.id}, MongoDB ID: ${result.insertedId}, Type: ${fullBot.botType})`);
       return { _id: result.insertedId, ...fullBot };
     } catch (error) {
-      console.error('Error creating bot:', error);
+      console.error('❌ Error creating bot:', error);
       return { error: 'Failed to create bot' };
     }
   }
@@ -491,9 +531,10 @@ export class MongoDBStorage implements IStorage {
         timestamp: new Date()
       };
       const result = await this.tradesCollection.insertOne(fullLog);
+      console.log(`✅ Saved new trade log to MongoDB: ${tradeLog.symbol} ${tradeLog.action} (ID: ${result.insertedId}, Source: ${tradeLog.trade_source || 'Unknown'})`);
       return { _id: result.insertedId, ...fullLog };
     } catch (error) {
-      console.error('Error creating trade log:', error);
+      console.error('❌ Error creating trade log:', error);
       return { error: 'Failed to create trade log' };
     }
   }
@@ -578,6 +619,24 @@ export class MongoDBStorage implements IStorage {
    */
   async createRiskSettings(settings: InsertRiskSettings): Promise<RiskSettings> {
     try {
+      // Validate user ID is provided
+      if (!settings.userId) {
+        console.error('❌ Cannot create risk settings: Missing userId');
+        throw new Error('Missing required field: userId');
+      }
+      
+      // Check if settings already exist for this user to avoid duplicates
+      const existingSettings = await this.getRiskSettings(settings.userId);
+      if (existingSettings) {
+        console.log(`⚠️ Risk settings already exist for user ${settings.userId}, updating instead of creating`);
+        const updated = await this.updateRiskSettings(settings.userId, settings);
+        if (!updated) {
+          throw new Error('Failed to update existing risk settings');
+        }
+        return updated;
+      }
+      
+      // Create new settings with proper defaults
       const fullSettings: RiskSettings = {
         id: Date.now(),
         userId: settings.userId,
@@ -597,10 +656,12 @@ export class MongoDBStorage implements IStorage {
         createdAt: new Date(),
         updatedAt: new Date()
       };
-      await this.riskSettingsCollection.insertOne(fullSettings);
+      
+      const result = await this.riskSettingsCollection.insertOne(fullSettings);
+      console.log(`✅ Saved new risk settings to MongoDB: User ID ${settings.userId} (MongoDB ID: ${result.insertedId})`);
       return fullSettings;
     } catch (error) {
-      console.error('Error creating risk settings:', error);
+      console.error('❌ Error creating risk settings:', error);
       throw error;
     }
   }
@@ -615,9 +676,10 @@ export class MongoDBStorage implements IStorage {
         { $set: { ...updates, updatedAt: new Date() } },
         { returnDocument: 'after' }
       );
+      console.log(`✅ Updated risk settings in MongoDB: User ID ${userId}`);
       return result || undefined;
     } catch (error) {
-      console.error('Error updating risk settings:', error);
+      console.error('❌ Error updating risk settings:', error);
       return undefined;
     }
   }
