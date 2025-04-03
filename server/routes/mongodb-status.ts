@@ -16,7 +16,32 @@ router.get('/', async (req, res) => {
     // Set content type to application/json
     res.setHeader('Content-Type', 'application/json');
     
-    // Check MongoDB connection status
+    // First check the global connection flag for immediate status
+    const isGloballyConnected = global.hasOwnProperty('mongodbConnected') && (global as any).mongodbConnected === true;
+    
+    if (!isGloballyConnected) {
+      console.error('CRITICAL DATABASE ERROR: MongoDB Atlas is not connected (global flag)');
+      console.error('The application requires MongoDB Atlas to function properly');
+      console.error('Please check your MongoDB connection configuration in .env');
+      
+      // Return status 503 Service Unavailable if MongoDB is not connected based on global flag
+      return res.status(503).json({
+        mongodb: {
+          connected: false,
+          engine: 'MongoDB Atlas',
+          type: 'Document Database',
+          isRequired: true,
+          notes: 'CRITICAL ERROR: MongoDB Atlas connection failed - global connection flag shows disconnected',
+          description: 'MongoDB connection is not established according to global tracker'
+        },
+        globalFlagStatus: false,
+        timestamp: new Date().toISOString(),
+        critical: true,
+        message: 'MongoDB Atlas connection failed - application cannot function'
+      });
+    }
+    
+    // If global flag is good, check MongoDB connection status using storage
     const mongodbStatus = await storage.checkDatabaseStatus();
     
     // Add MongoDB-specific information to the response
@@ -39,6 +64,7 @@ router.get('/', async (req, res) => {
       // Return status 503 Service Unavailable if MongoDB is not connected
       return res.status(503).json({
         mongodb: detailedStatus,
+        globalFlagStatus: true, // Global flag is true but the database check failed
         timestamp: new Date().toISOString(),
         critical: true,
         message: 'MongoDB Atlas connection failed - application cannot function'
@@ -48,6 +74,7 @@ router.get('/', async (req, res) => {
     // Return full status information for a healthy connection
     res.json({
       mongodb: detailedStatus,
+      globalFlagStatus: true,
       timestamp: new Date().toISOString(),
       critical: false,
       message: 'MongoDB Atlas connection is healthy'
@@ -69,6 +96,7 @@ router.get('/', async (req, res) => {
         isRequired: true,
         notes: 'CRITICAL ERROR: Unable to verify MongoDB connection status'
       },
+      globalFlagStatus: false,
       timestamp: new Date().toISOString(),
       critical: true,
       message: 'Failed to check MongoDB connection status - application cannot function properly'

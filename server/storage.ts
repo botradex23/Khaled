@@ -2193,6 +2193,10 @@ const mongoStorage = new MongoDBStorage();
 // This is the storage that will be used throughout the application
 const selectedStorage: IStorage = mongoStorage;
 
+// Initialize global flag for MongoDB connection state
+// This will be used by API endpoints to check connection status
+(global as any).mongodbConnected = false;
+
 // Initialize MongoDB connection - the only storage option
 (async () => {
   try {
@@ -2210,6 +2214,9 @@ const selectedStorage: IStorage = mongoStorage;
         description: 'Connected to MongoDB Atlas',
         error: null
       };
+      
+      // Set global flag to indicate MongoDB is connected - used by status endpoints
+      (global as any).mongodbConnected = true;
     } else {
       // Application cannot function without MongoDB connection
       console.error('❌ CRITICAL ERROR: Failed to connect to MongoDB Atlas');
@@ -2221,6 +2228,9 @@ const selectedStorage: IStorage = mongoStorage;
         description: 'Failed to connect to MongoDB Atlas - application cannot function',
         error: 'Connection failed - check your MongoDB URI'
       };
+      
+      // Set global flag to indicate MongoDB is NOT connected
+      (global as any).mongodbConnected = false;
     }
   } catch (error) {
     // Application cannot function without MongoDB connection
@@ -2233,6 +2243,9 @@ const selectedStorage: IStorage = mongoStorage;
       description: 'Error initializing MongoDB connection - application cannot function',
       error: error instanceof Error ? error.message : String(error)
     };
+    
+    // Set global flag to indicate MongoDB is NOT connected
+    (global as any).mongodbConnected = false;
   }
 })();
 

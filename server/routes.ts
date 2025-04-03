@@ -112,6 +112,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register MongoDB dedicated status check route:', err);
   });
   
+  // Register direct MongoDB status check with unique URL to avoid Vite middleware interception
+  import('./routes/mongodb-direct-status').then(mongodbDirectStatusRouter => {
+    app.use('', mongodbDirectStatusRouter.default);
+    console.log('MongoDB direct status check route registered to /api/mongodb-status-direct-check.json');
+  }).catch(err => {
+    console.error('Failed to register MongoDB direct status check route:', err);
+  });
+  
   // Register Binance connection status route
   import('./routes/binance-connection-status').then(binanceConnectionStatusRouter => {
     app.use('', binanceConnectionStatusRouter.default);
@@ -455,10 +463,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register MongoDB detailed status routes:', err);
   });
   
-  // Register direct MongoDB status endpoint (CommonJS module)
-  const directMongodbStatusRouter = require('./direct-mongodb-status');
-  app.use('/api/mongodb-status-direct', directMongodbStatusRouter);
-  console.log('Direct MongoDB status route registered to /api/mongodb-status-direct');
+  // Register direct MongoDB status endpoint
+  import('./routes/mongodb-direct-status').then(directMongodbStatusRouter => {
+    app.use('/api/mongodb-status-direct', directMongodbStatusRouter.default);
+    console.log('Direct MongoDB status route registered to /api/mongodb-status-direct');
+  }).catch(err => {
+    console.error('Failed to register direct MongoDB status route:', err);
+  });
   
   // Portfolio routes for dashboard data visualization
   app.use("/api/portfolio", portfolioRouter);
