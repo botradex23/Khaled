@@ -93,22 +93,44 @@ python -m pip install binance-connector flask flask-cors matplotlib numpy pandas
 ```
 
 ### 4. Start the Application
+### 4. Start the Application
 
-#### Development Mode
+#### On Replit
+
+The application has a configured workflow that starts both the Node.js and Python servers:
+
+1. Click the **Run** button in the Replit interface
+2. The workflow will automatically start both servers
+3. Access the application via the Webview
+
+If you need to start the servers manually on Replit:
 
 ```bash
 # Start the full application (Node.js + Python services)
-npm run dev
+./run_app.sh
 ```
 
-#### Start Services Individually
+#### For Local Development
 
 ```bash
+# Start the full application (Node.js + Python services)
+node start.cjs
+
 # Start Node.js server only
-npm run server
+node minimal_server.cjs
 
 # Start Python Flask service only
-npm run python
+python binance_api_server.py
+```
+```bash
+# Start the full application (Node.js + Python services)
+node start.cjs
+
+# Start Node.js server only
+node minimal_server.cjs
+
+# Start Python Flask service only
+python binance_api_server.py
 ```
 
 ## Architecture Overview

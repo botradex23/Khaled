@@ -1,12 +1,38 @@
-// Simple script to run the server directly with Node.js
-// This avoids the need for tsx using CommonJS
+/**
+ * Start script for Cryptocurrency Trading Platform
+ * 
+ * This script starts the minimal server that handles both Node.js and Python components.
+ */
 
-const { execSync } = require('child_process');
+// Import required modules
+const { spawn } = require('child_process');
 
-try {
-  console.log('Starting minimal server...');
-  execSync('node minimal_server.cjs', { stdio: 'inherit' });
-} catch (error) {
-  console.error('Error:', error.message);
+// Start the application
+console.log('Starting Cryptocurrency Trading Platform...');
+
+// Execute the run-app.cjs script
+const appProcess = spawn('node', ['run-app.cjs'], { 
+  stdio: 'inherit',
+  shell: true
+});
+
+// Handle errors
+appProcess.on('error', (err) => {
+  console.error('Failed to start application:', err);
   process.exit(1);
-}
+});
+
+// Handle process exit
+appProcess.on('exit', (code, signal) => {
+  if (code !== 0) {
+    console.error(`Application process exited with code ${code} and signal ${signal}`);
+    process.exit(code);
+  }
+});
+
+// Handle clean shutdown
+process.on('SIGINT', () => {
+  console.log('Shutting down application...');
+  appProcess.kill('SIGINT');
+  process.exit(0);
+});

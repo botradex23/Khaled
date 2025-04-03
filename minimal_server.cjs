@@ -102,6 +102,28 @@ const server = http.createServer((req, res) => {
     return;
   }
   
+  // Ticker endpoint
+  if (req.url.startsWith('/api/ticker/')) {
+    const symbol = req.url.replace('/api/ticker/', '');
+    if (symbol) {
+      // Proxy to Python server's ticker endpoint
+      req.url = `/api/binance/ticker/${symbol}`;
+      proxyToPythonServer(req, res);
+      return;
+    }
+  }
+  
+  // ML prediction endpoint
+  if (req.url.startsWith('/api/ml/predict/')) {
+    const symbol = req.url.replace('/api/ml/predict/', '');
+    if (symbol) {
+      // Proxy to Python server's ML prediction endpoint
+      req.url = `/api/ml/predict/${symbol}`;
+      proxyToPythonServer(req, res);
+      return;
+    }
+  }
+  
   // Serve index.html for the root path
   if (req.url === '/' || req.url === '/index.html') {
     // Create a simple HTML page
@@ -160,9 +182,10 @@ const server = http.createServer((req, res) => {
         <h2>Available APIs</h2>
         <ul>
           <li><a href="/api/status">System Status</a></li>
-          <li><a href="/api/python/ping">Binance API Ping</a></li>
-          <li><a href="/api/python/status">Binance API Status</a></li>
-          <li><a href="/api/python/ticker/BTCUSDT">Bitcoin Price</a></li>
+          <li><a href="/api/binance/ping">Binance API Ping</a></li>
+          <li><a href="/api/binance/status">Binance API Status</a></li>
+          <li><a href="/api/ticker/BTCUSDT">Bitcoin Price</a></li>
+          <li><a href="/api/ml/predict/BTCUSDT">Bitcoin ML Prediction</a></li>
         </ul>
       </div>
     </body>

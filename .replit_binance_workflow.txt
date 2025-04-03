@@ -1,11 +1,2 @@
-[[workflows.workflow]]
-name = "Start Binance API"
-author = "agent"
-
-[workflows.workflow.metadata]
-agentRequireRestartOnSave = false
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "./run_app.sh"
-waitForPort = 5000
+name = "Start Binance Trading Platform"
+command = "node run-app.cjs"
