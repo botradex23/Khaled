@@ -123,6 +123,18 @@ function serveStaticContent(req, res) {
     case '.jpeg':
       contentType = 'image/jpeg';
       break;
+    case '.svg':
+      contentType = 'image/svg+xml';
+      break;
+    case '.ico':
+      contentType = 'image/x-icon';
+      break;
+    case '.woff':
+      contentType = 'font/woff';
+      break;
+    case '.woff2':
+      contentType = 'font/woff2';
+      break;
   }
   
   // Read the file

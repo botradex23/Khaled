@@ -1,1 +1,325 @@
-<!DOCTYPE html><html><head><title>Crypto Trading Platform</title></head><body><h1>Crypto Trading Platform</h1><p>Welcome to the Crypto Trading Platform!</p></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Trading Platform</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="container">
+      <nav class="navbar">
+        <a href="/" class="logo">
+          <i class="bi bi-currency-bitcoin logo-icon"></i>
+          <span>CryptoTrade AI</span>
+        </a>
+        
+        <div class="nav-menu">
+          <a href="/" class="nav-link active">Home</a>
+          <a href="#trading-bots" class="nav-link">Trading Bots</a>
+          <a href="#predictions" class="nav-link">ML Predictions</a>
+          <a href="#dashboard" class="nav-link">Dashboard</a>
+          <button class="btn">Sign In</button>
+        </div>
+        
+        <button class="mobile-menu-button">
+          <i class="bi bi-list"></i>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <h1>AI-Powered Cryptocurrency Trading</h1>
+      <p>
+        Our advanced trading platform combines machine learning algorithms with strategic trading bots to maximize your crypto investment returns.
+      </p>
+      <div class="btn-group">
+        <a href="#predictions" class="btn">View ML Predictions</a>
+        <a href="#trading-bots" class="btn btn-light">Explore Trading Bots</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <div class="container">
+      <h2 class="section-title">Platform Features</h2>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <i class="bi bi-robot feature-icon"></i>
+          <h3 class="feature-title">Autonomous Trading Bots</h3>
+          <p class="feature-description">
+            Our AI-powered trading bots operate 24/7, executing trades based on sophisticated algorithms and market analysis.
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <i class="bi bi-graph-up-arrow feature-icon"></i>
+          <h3 class="feature-title">ML Price Predictions</h3>
+          <p class="feature-description">
+            Get accurate price predictions with our machine learning models trained on extensive historical cryptocurrency data.
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <i class="bi bi-shield-lock feature-icon"></i>
+          <h3 class="feature-title">Advanced Risk Management</h3>
+          <p class="feature-description">
+            Configure stop-loss and take-profit levels with dynamic risk profiles to protect your investments.
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <i class="bi bi-grid-1x2 feature-icon"></i>
+          <h3 class="feature-title">AI Grid Trading</h3>
+          <p class="feature-description">
+            Use our advanced grid trading strategy enhanced with AI-optimized grid levels for consistent profits.
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <i class="bi bi-arrow-down-up feature-icon"></i>
+          <h3 class="feature-title">DCA Strategy</h3>
+          <p class="feature-description">
+            Dollar-cost averaging strategy with intelligent timing to accumulate assets during optimal market conditions.
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <i class="bi bi-graph-down-arrow feature-icon"></i>
+          <h3 class="feature-title">MACD Indicators</h3>
+          <p class="feature-description">
+            Technical analysis bots utilizing Moving Average Convergence Divergence with machine learning enhancements.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Market Data Section -->
+  <section class="market-data">
+    <div class="container">
+      <h2 class="section-title">Live Market Data</h2>
+      
+      <div class="search-container">
+        <input type="text" id="symbol-search" class="form-input" placeholder="Search cryptocurrency...">
+      </div>
+      
+      <div class="market-table-container">
+        <table class="market-table">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Price</th>
+              <th>24h Change</th>
+              <th>Market Cap</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Market data will be loaded by JavaScript -->
+            <tr>
+              <td colspan="5" class="text-center">Loading market data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ML Predictions Section -->
+  <section class="ml-predictions" id="predictions">
+    <div class="container">
+      <h2 class="section-title">ML Price Predictions</h2>
+      
+      <div class="prediction-container" id="prediction-btcusdt">
+        <!-- BTC prediction will be loaded by JavaScript -->
+        <div class="loading-indicator">
+          <span class="loading"></span>
+          Loading BTC prediction...
+        </div>
+      </div>
+      
+      <div class="prediction-container" id="prediction-ethusdt">
+        <!-- ETH prediction will be loaded by JavaScript -->
+        <div class="loading-indicator">
+          <span class="loading"></span>
+          Loading ETH prediction...
+        </div>
+      </div>
+      
+      <div class="prediction-container" id="prediction-bnbusdt">
+        <!-- BNB prediction will be loaded by JavaScript -->
+        <div class="loading-indicator">
+          <span class="loading"></span>
+          Loading BNB prediction...
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trading Bots Section -->
+  <section class="trading-bots" id="trading-bots">
+    <div class="container">
+      <h2 class="section-title">Trading Bot Strategies</h2>
+      
+      <div class="bot-card">
+        <div class="bot-header">
+          <h3 class="bot-title">AI Grid Trading Bot</h3>
+          <button class="btn">Configure Bot</button>
+        </div>
+        
+        <p class="bot-description">
+          Grid trading involves placing buy and sell orders at specific intervals above and below the current market price, creating a grid of orders. Our AI-enhanced grid strategy optimizes grid levels based on market volatility and trends.
+        </p>
+        
+        <div class="bot-stats">
+          <div class="stat-item">
+            <div class="stat-label">Average Monthly ROI</div>
+            <div class="stat-value">8.3%</div>
+          </div>
+          
+          <div class="stat-item">
+            <div class="stat-label">Risk Level</div>
+            <div class="stat-value">Medium</div>
+          </div>
+          
+          <div class="stat-item">
+            <div class="stat-label">Best Market Condition</div>
+            <div class="stat-value">Sideways</div>
+          </div>
+          
+          <div class="stat-item">
+            <div class="stat-label">Minimum Investment</div>
+            <div class="stat-value">$100</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bot-card">
+        <div class="bot-header">
+          <h3 class="bot-title">DCA Trading Bot</h3>
+          <button class="btn">Configure Bot</button>
+        </div>
+        
+        <p class="bot-description">
+          Dollar-Cost Averaging (DCA) is an investment strategy where you buy a fixed dollar amount of an asset on a regular schedule, regardless of the price. Our AI-enhanced DCA bot uses market sentiment analysis to slightly adjust purchase timing for optimal entries.
+        </p>
+        
+        <div class="bot-stats">
+          <div class="stat-item">
+            <div class="stat-label">Average Monthly ROI</div>
+            <div class="stat-value">5.7%</div>
+          </div>
+          
+          <div class="stat-item">
+            <div class="stat-label">Risk Level</div>
+            <div class="stat-value">Low</div>
+          </div>
+          
+          <div class="stat-item">
+            <div class="stat-label">Best Market Condition</div>
+            <div class="stat-value">All Markets</div>
+          </div>
+          
+          <div class="stat-item">
+            <div class="stat-label">Minimum Investment</div>
+            <div class="stat-value">$50</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bot-card">
+        <div class="bot-header">
+          <h3 class="bot-title">MACD Trading Bot</h3>
+          <button class="btn">Configure Bot</button>
+        </div>
+        
+        <p class="bot-description">
+          The MACD (Moving Average Convergence Divergence) bot uses this popular momentum indicator to identify potential buy and sell opportunities. Our enhanced MACD strategy incorporates machine learning to filter false signals and improve trade timing.
+        </p>
+        
+        <div class="bot-stats">
+          <div class="stat-item">
+            <div class="stat-label">Average Monthly ROI</div>
+            <div class="stat-value">12.1%</div>
+          </div>
+          
+          <div class="stat-item">
+            <div class="stat-label">Risk Level</div>
+            <div class="stat-value">High</div>
+          </div>
+          
+          <div class="stat-item">
+            <div class="stat-label">Best Market Condition</div>
+            <div class="stat-value">Trending</div>
+          </div>
+          
+          <div class="stat-item">
+            <div class="stat-label">Minimum Investment</div>
+            <div class="stat-value">$200</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-column">
+          <h3>CryptoTrade AI</h3>
+          <p>
+            Advanced cryptocurrency trading platform powered by artificial intelligence and machine learning algorithms.
+          </p>
+        </div>
+        
+        <div class="footer-column">
+          <h3>Quick Links</h3>
+          <ul class="footer-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="#trading-bots">Trading Bots</a></li>
+            <li><a href="#predictions">ML Predictions</a></li>
+            <li><a href="#dashboard">Dashboard</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-column">
+          <h3>Resources</h3>
+          <ul class="footer-links">
+            <li><a href="#">Documentation</a></li>
+            <li><a href="#">API Reference</a></li>
+            <li><a href="#">Trading Guides</a></li>
+            <li><a href="#">FAQ</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-column">
+          <h3>Contact</h3>
+          <ul class="footer-links">
+            <li><a href="#">Support</a></li>
+            <li><a href="#">Feedback</a></li>
+            <li><a href="#">Partnership</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="copyright">
+        &copy; 2025 CryptoTrade AI. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script src="/js/main.js"></script>
+</body>
+</html>
