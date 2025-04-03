@@ -43,9 +43,19 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Check MongoDB environment variable is set
+  if (!process.env.MONGO_URI) {
+    console.error('⚠️ WARNING: MONGO_URI environment variable is not set. MongoDB connection will not be attempted.');
+  } else {
+    console.log('MongoDB Atlas URI is configured:', process.env.MONGO_URI.substring(0, 20) + '...');
+    console.log('MongoDB Atlas cluster:', process.env.MONGO_URI.split('@')[1].split('/')[0]);
+    console.log('MongoDB database name:', process.env.MONGO_URI.split('/').pop()?.split('?')[0]);
+  }
+
   // API routes are defined in routes.ts
-  
+  console.log('Registering API routes and initializing database connections...');
   const server = await registerRoutes(app);
+  console.log('Server routes registered successfully');
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

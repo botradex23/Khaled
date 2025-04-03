@@ -2162,11 +2162,13 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Import MongoDB connection test
+// Import MongoDB connection test and MongoDB Storage
 import { testMongoDBConnection } from './storage/mongodb';
+import { MongoDBStorage } from './storage/mongoStorage';
 
-// Initialize storage with MemStorage
+// Create storage instances
 const memStorage = new MemStorage();
+let mongoStorage: MongoDBStorage | null = null;
 let useMongoDBStorage = false;
 let mongoConnectionStatus = {
   connected: false,
@@ -2175,9 +2177,13 @@ let mongoConnectionStatus = {
   error: null as string | null
 };
 
+// Storage selection logic
+let selectedStorage: IStorage = memStorage;
+
 // Check if MongoDB connection is available
 (async () => {
   try {
+    console.log('Testing MongoDB connection...');
     // Test MongoDB connection
     const mongoStatus = await testMongoDBConnection();
     useMongoDBStorage = mongoStatus.connected;
@@ -2185,7 +2191,15 @@ let mongoConnectionStatus = {
     
     if (mongoStatus.connected) {
       console.log('MongoDB connection successful! MongoDB is available for querying.');
-      console.log('Using in-memory storage for now. Ready to switch to MongoDB when needed.');
+      console.log('Switching to MongoDB storage for data persistence.');
+      
+      // Create MongoDB storage if connected
+      mongoStorage = new MongoDBStorage();
+      
+      // Switch the active storage to MongoDB
+      selectedStorage = mongoStorage;
+      
+      console.log('Successfully switched to MongoDB storage.');
     } else {
       console.log('MongoDB connection failed. Using MemStorage (in-memory storage). Data will be lost on restart.');
       console.log('MongoDB error:', mongoStatus.error);
@@ -2196,27 +2210,11 @@ let mongoConnectionStatus = {
   }
 })();
 
-// Override the checkDatabaseStatus method to report correct status
-const originalCheckDatabaseStatus = memStorage.checkDatabaseStatus;
-memStorage.checkDatabaseStatus = async function() {
-  try {
-    // If MongoDB is connected, return its status
-    if (useMongoDBStorage) {
-      return mongoConnectionStatus;
-    }
-    
-    // Otherwise use the original MemStorage implementation
-    return await originalCheckDatabaseStatus.call(this);
-  } catch (error) {
-    console.error('Error in checkDatabaseStatus:', error);
-    return {
-      connected: true,
-      isSimulated: true,
-      description: 'Using in-memory storage (simulation mode)',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
+// Export the storage instance - will be either MemStorage or MongoDBStorage
+export const storage = new Proxy({} as IStorage, {
+  get: function(target, prop) {
+    // This proxy forwards all method calls to the currently selected storage implementation
+    // @ts-ignore
+    return selectedStorage[prop];
   }
-};
-
-// Export the storage instance
-export const storage = memStorage;
+});
