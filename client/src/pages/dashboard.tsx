@@ -197,7 +197,7 @@ export default function Dashboard() {
                             source: 'dashboard',
                             section: 'market_overview'
                           });
-                          window.location.href = '/binance';
+                          window.location.href = '/binance?tab=market-prices';
                         }}
                       >
                         View All Markets
@@ -495,7 +495,7 @@ export default function Dashboard() {
                         source: 'dashboard',
                         section: 'quick_actions'
                       });
-                      window.location.href = "/binance";
+                      window.location.href = "/binance?tab=market-prices";
                     }}
                   >
                     <TrendingUp className="mr-2 h-4 w-4" />
