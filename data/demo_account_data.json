@@ -1,0 +1,61 @@
+{
+  "account": {
+    "total_balance_usdt": 25000.0,
+    "available_balance_usdt": 15000.0,
+    "pnl_24h_usdt": 345.67,
+    "pnl_24h_percent": 1.35,
+    "margin_used_usdt": 10000.0,
+    "margin_level": 2.5
+  },
+  "balances": [
+    {
+      "asset": "BTC",
+      "free": 0.15,
+      "locked": 0.05,
+      "total_usdt": 13708.62
+    },
+    {
+      "asset": "ETH",
+      "free": 2.5,
+      "locked": 0.0,
+      "total_usdt": 8641.95
+    },
+    {
+      "asset": "USDT",
+      "free": 15000.0,
+      "locked": 0.0,
+      "total_usdt": 15000.0
+    },
+    {
+      "asset": "BNB",
+      "free": 5.0,
+      "locked": 0.0,
+      "total_usdt": 2839.45
+    }
+  ],
+  "positions": [
+    {
+      "symbol": "BTCUSDT",
+      "position_size": 0.05,
+      "entry_price": 67500.0,
+      "mark_price": 68543.12,
+      "pnl_usdt": 52.16,
+      "pnl_percent": 1.54,
+      "leverage": 5,
+      "margin_usdt": 675.0
+    },
+    {
+      "symbol": "ETHUSDT",
+      "position_size": 0.5,
+      "entry_price": 3400.0,
+      "mark_price": 3456.78,
+      "pnl_usdt": 28.39,
+      "pnl_percent": 1.67,
+      "leverage": 10,
+      "margin_usdt": 170.0
+    }
+  ],
+  "last_update": "2025-04-03T18:45:00.000Z",
+  "source": "simulation",
+  "note": "This is simulated data for demonstration purposes"
+}

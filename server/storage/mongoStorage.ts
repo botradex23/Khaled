@@ -1,6 +1,10 @@
-// We'll use dynamic imports for MongoDB to avoid import issues
-// This allows us to use MongoDB without having to install it at the project level
-// @ts-nocheck
+/**
+ * MongoDB Storage Implementation
+ * 
+ * Uses MongoDB Atlas as the exclusive storage solution
+ * with ESM-compatible imports and exports.
+ */
+
 // Import storage interface
 import { IStorage } from '../storage';
 // Import encryption module for API key security
@@ -13,18 +17,11 @@ import {
   RiskSettings,
   InsertRiskSettings
 } from '@shared/schema';
+// Import MongoDB utilities with ESM compatibility
+import { MongoClient, ObjectId, isMongoDBAvailable, connectToMongoDB, checkMongoDBConnection } from '../utils/mongodb-esm';
 
 // MongoDB connection URI environment variable
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/crypto_trading_platform';
-
-// MongoDB ObjectId wrapper class for compatibility
-class MongoDBId {
-  constructor(id: string) {
-    this.id = id;
-  }
-  id: string;
-  toString() { return this.id; }
-}
 
 // Extended User interface for MongoDB that includes the binanceAllowedIp field
 interface User {
@@ -72,33 +69,36 @@ export class MongoDBStorage implements IStorage {
    */
   async connect(): Promise<boolean> {
     try {
-      // Dynamically import MongoDB to avoid import errors
-      try {
-        const mongodb = await import('mongodb');
-        const { MongoClient } = mongodb;
-        
-        const uri = process.env.MONGO_URI || 'mongodb+srv://dbuser:dbpassword@cluster0.mongodb.net/saas';
-        console.log("Using MongoDB URI:", uri.substring(0, 20) + '...');
-        
-        // Create the client instance
-        this.client = new MongoClient(uri);
-        await this.client.connect();
-        
-        console.log("✅ Connected successfully to MongoDB Atlas");
-        this.db = this.client.db("Saas");
-        
-        // Initialize collections
-        this.usersCollection = this.db.collection("users");
-        this.botsCollection = this.db.collection("bots");
-        this.tradesCollection = this.db.collection("trades");
-        this.riskSettingsCollection = this.db.collection("risk_settings");
-        
-        console.log("✅ MongoDB collections initialized");
-        return true;
-      } catch (importError) {
-        console.error("❌ Failed to import MongoDB:", importError);
+      if (!isMongoDBAvailable) {
+        console.error("❌ MongoDB module is not available. Cannot connect to database.");
         return false;
       }
+      
+      const uri = process.env.MONGO_URI || 'mongodb+srv://dbuser:dbpassword@cluster0.mongodb.net/saas';
+      console.log("Using MongoDB URI:", uri.substring(0, 20) + '...');
+      
+      // Use our ESM-compatible utility to connect
+      const { client, isConnected } = await connectToMongoDB(uri);
+      
+      if (!isConnected || !client) {
+        console.error("❌ Failed to connect to MongoDB Atlas");
+        return false;
+      }
+      
+      // Store the client
+      this.client = client;
+      
+      console.log("✅ Connected successfully to MongoDB Atlas");
+      this.db = this.client.db("Saas");
+      
+      // Initialize collections
+      this.usersCollection = this.db.collection("users");
+      this.botsCollection = this.db.collection("bots");
+      this.tradesCollection = this.db.collection("trades");
+      this.riskSettingsCollection = this.db.collection("risk_settings");
+      
+      console.log("✅ MongoDB collections initialized");
+      return true;
     } catch (error) {
       console.error("❌ Failed to connect to MongoDB:", error);
       return false;
@@ -110,13 +110,33 @@ export class MongoDBStorage implements IStorage {
    */
   async checkDatabaseStatus(): Promise<{ connected: boolean; isSimulated?: boolean; description?: string; error?: string | null }> {
     try {
-      await this.client.db().command({ ping: 1 });
-      return {
-        connected: true,
-        isSimulated: false,
-        description: 'Connected to MongoDB Atlas',
-        error: null
-      };
+      if (!this.client) {
+        return {
+          connected: false,
+          isSimulated: false,
+          description: 'MongoDB client not initialized',
+          error: 'Client not connected'
+        };
+      }
+      
+      // Use our checkMongoDBConnection utility
+      const status = await checkMongoDBConnection(this.client);
+      
+      if (status.connected) {
+        return {
+          connected: true,
+          isSimulated: false,
+          description: 'Connected to MongoDB Atlas',
+          error: null
+        };
+      } else {
+        return {
+          connected: false,
+          isSimulated: false,
+          description: status.description || 'Failed to connect to MongoDB',
+          error: status.error ? String(status.error) : null
+        };
+      }
     } catch (err) {
       return {
         connected: false,
@@ -404,9 +424,7 @@ export class MongoDBStorage implements IStorage {
     try {
       // If string and looks like ObjectId, query by _id
       if (typeof id === 'string' && id.length === 24) {
-        // Dynamically import MongoDB to access ObjectId
-        const mongodb = await import('mongodb');
-        const { ObjectId } = mongodb;
+        // Use our ESM-compatible ObjectId
         return await this.botsCollection.findOne({ _id: new ObjectId(id) });
       }
       // Otherwise query by numeric id field

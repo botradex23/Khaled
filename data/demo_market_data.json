@@ -1,0 +1,47 @@
+{
+  "markets": [
+    {
+      "symbol": "BTCUSDT",
+      "price": 68543.12,
+      "change_24h": 2.35,
+      "volume_24h": 12456789.45,
+      "high_24h": 69234.56,
+      "low_24h": 67123.45
+    },
+    {
+      "symbol": "ETHUSDT",
+      "price": 3456.78,
+      "change_24h": 1.23,
+      "volume_24h": 6789123.45,
+      "high_24h": 3567.89,
+      "low_24h": 3345.67
+    },
+    {
+      "symbol": "BNBUSDT",
+      "price": 567.89,
+      "change_24h": -0.75,
+      "volume_24h": 1234567.89,
+      "high_24h": 584.32,
+      "low_24h": 562.34
+    },
+    {
+      "symbol": "SOLUSDT",
+      "price": 145.67,
+      "change_24h": 3.45,
+      "volume_24h": 897654.32,
+      "high_24h": 149.87,
+      "low_24h": 140.21
+    },
+    {
+      "symbol": "ADAUSDT",
+      "price": 0.4567,
+      "change_24h": -1.23,
+      "volume_24h": 7654321.09,
+      "high_24h": 0.4678,
+      "low_24h": 0.4501
+    }
+  ],
+  "last_update": "2025-04-03T18:45:00.000Z",
+  "source": "simulation",
+  "note": "This is simulated data for demonstration purposes"
+}

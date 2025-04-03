@@ -1,0 +1,14 @@
+{
+  "mode": "demo",
+  "reason": "Binance API not accessible - geo-restriction or proxy issues",
+  "timestamp": "2025-04-03T18:45:00.000Z",
+  "features": {
+    "market_data": "simulated",
+    "trading": "simulated",
+    "account": "simulated"
+  },
+  "status": {
+    "direct_connection": "failed - geo-restricted (HTTP 451)",
+    "proxy_connection": "failed - proxy authentication (HTTP 402)"
+  }
+}

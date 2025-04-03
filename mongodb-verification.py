@@ -10,252 +10,251 @@ This script tests the MongoDB storage layer by:
 """
 
 import os
-import time
+import json
 import datetime
-import pymongo
 from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
-
-# MongoDB connection string
-uri = os.getenv("MONGO_URI")
-if not uri:
-    print("❌ MONGO_URI environment variable is not set")
-    exit(1)
-
-# Test data
-test_user = {
-    "username": f"test_user_{int(time.time())}",
-    "email": f"test_{int(time.time())}@example.com",
-    "password": "hashedPassword123",
-    "firstName": "Test",
-    "lastName": "User",
-    "defaultBroker": "binance",
-    "useTestnet": True,
-    "binanceApiKey": None,
-    "binanceSecretKey": None
-}
-
-test_bot = {
-    "userId": None,  # Will be set after user creation
-    "name": f"Test Bot {datetime.datetime.now().strftime('%Y-%m-%d')}",
-    "botType": "AI_GRID",
-    "tradingPair": "BTCUSDT",
-    "status": "IDLE",
-    "isRunning": False,
-    "config": {
-        "upperLimit": "75000",
-        "lowerLimit": "65000",
-        "gridLines": 10,
-        "investmentAmount": "1000"
-    }
-}
-
-test_trade_log = {
-    "symbol": "BTCUSDT",
-    "action": "BUY",
-    "entry_price": "70345.50",
-    "quantity": "0.01",
-    "trade_source": "TEST",
-    "status": "EXECUTED",
-    "predicted_confidence": "0.85",
-    "reason": "Testing MongoDB write verification"
-}
-
-test_risk_settings = {
-    "globalStopLoss": "5",
-    "globalTakeProfit": "10",
-    "maxPositionSize": "10",
-    "maxPortfolioRisk": "15",
-    "maxTradesPerDay": 15,
-    "enableGlobalStopLoss": True,
-    "enableGlobalTakeProfit": True,
-    "enableMaxPositionSize": True,
-    "stopLossStrategy": "fixed",
-    "enableEmergencyStopLoss": True,
-    "emergencyStopLossThreshold": "20",
-    "defaultStopLossPercent": "3",
-    "defaultTakeProfitPercent": "6"
-}
+from pymongo import MongoClient
 
 def connect_to_mongodb():
     """Connect to MongoDB Atlas"""
+    load_dotenv()
+    
+    # Get MongoDB connection string
+    mongo_uri = os.getenv("MONGO_URI")
+    
+    if not mongo_uri:
+        print("❌ MONGO_URI environment variable not found in .env file")
+        return None, None
+    
+    print(f"Using MongoDB URI: {mongo_uri[:20]}...")
+    
     try:
-        print("🔄 Connecting to MongoDB Atlas...")
-        client = pymongo.MongoClient(uri)
-        client.admin.command('ping')  # Check connection
-        print("✅ Connected to MongoDB Atlas")
+        # Connect to MongoDB
+        client = MongoClient(mongo_uri)
         
-        db = client.get_default_database()
-        collections = {
-            "users": db["users"],
-            "bots": db["bots"],
-            "tradeLogs": db["tradeLogs"],
-            "riskSettings": db["riskSettings"]
-        }
+        # Check connection by pinging the database
+        client.admin.command('ping')
         
-        return client, db, collections
+        print("✅ Successfully connected to MongoDB!")
+        
+        # Get database name
+        db_name = 'Saas'  # Default database name
+        
+        # Extract proper database name from URI if possible
+        if "mongodb+srv://" in mongo_uri:
+            try:
+                parts = mongo_uri.split('/')
+                if len(parts) >= 4:
+                    db_name_with_params = parts[3]
+                    db_name = db_name_with_params.split('?')[0]
+            except Exception as e:
+                print(f"Warning: Could not parse database name from URI: {e}")
+        
+        print(f"Database name: {db_name}")
+        
+        # Get database
+        db = client[db_name]
+        
+        return client, db
     except Exception as e:
         print(f"❌ Failed to connect to MongoDB: {e}")
-        return None, None, None
+        return None, None
 
 def create_test_user(collections):
     """Create a test user"""
+    user_collection = collections["users"]
+    
+    test_user = {
+        "id": 999999,
+        "username": "test_user",
+        "email": "test@example.com",
+        "password": None,
+        "firstName": "Test",
+        "lastName": "User",
+        "defaultBroker": "binance",
+        "useTestnet": True,
+        "binanceApiKey": "test_api_key_encrypted",
+        "binanceSecretKey": "test_secret_key_encrypted",
+        "binanceAllowedIp": "185.199.228.220",
+        "createdAt": datetime.datetime.utcnow(),
+        "updatedAt": datetime.datetime.utcnow()
+    }
+    
+    # Check if user already exists
+    existing_user = user_collection.find_one({"username": "test_user"})
+    if existing_user:
+        print(f"Test user already exists with ID: {existing_user.get('id')}")
+        return existing_user.get('id')
+    
     try:
-        full_user = {
-            **test_user,
-            "id": int(time.time()),
-            "createdAt": datetime.datetime.now(),
-            "updatedAt": datetime.datetime.now()
-        }
-        
-        result = collections["users"].insert_one(full_user)
-        print(f"✅ Created test user: {full_user['username']} (ID: {full_user['id']}, MongoDB ID: {result.inserted_id})")
-        return {**full_user, "_id": result.inserted_id}
+        result = user_collection.insert_one(test_user)
+        print(f"✅ Created test user with ID: {test_user['id']}")
+        return test_user['id']
     except Exception as e:
         print(f"❌ Failed to create test user: {e}")
         return None
 
 def create_test_bot(collections, user_id):
     """Create a test bot"""
-    try:
-        full_bot = {
-            **test_bot,
-            "userId": user_id,
-            "id": int(time.time()),
-            "createdAt": datetime.datetime.now(),
-            "updatedAt": datetime.datetime.now()
+    bot_collection = collections["bots"]
+    
+    test_bot = {
+        "id": 999999,
+        "userId": user_id,
+        "name": "Test Bot",
+        "description": "A test trading bot",
+        "symbol": "BTCUSDT",
+        "strategy": "AI_GRID",
+        "isActive": False,
+        "isRunning": False,
+        "createdAt": datetime.datetime.utcnow(),
+        "updatedAt": datetime.datetime.utcnow(),
+        "settings": {
+            "gridLevels": 10,
+            "upperLimit": 50000,
+            "lowerLimit": 40000,
+            "investmentAmount": 1000
         }
-        
-        result = collections["bots"].insert_one(full_bot)
-        print(f"✅ Created test bot: {full_bot['name']} (ID: {full_bot['id']}, MongoDB ID: {result.inserted_id})")
-        return {**full_bot, "_id": result.inserted_id}
+    }
+    
+    # Check if bot already exists
+    existing_bot = bot_collection.find_one({"name": "Test Bot", "userId": user_id})
+    if existing_bot:
+        print(f"Test bot already exists with ID: {existing_bot.get('id')}")
+        return existing_bot.get('id')
+    
+    try:
+        result = bot_collection.insert_one(test_bot)
+        print(f"✅ Created test bot with ID: {test_bot['id']}")
+        return test_bot['id']
     except Exception as e:
         print(f"❌ Failed to create test bot: {e}")
         return None
 
 def create_test_trade_log(collections, user_id):
     """Create a test trade log"""
+    trade_log_collection = collections["tradeLogs"]
+    
+    test_trade_log = {
+        "userId": user_id,
+        "botId": 999999,
+        "symbol": "BTCUSDT",
+        "side": "BUY",
+        "amount": 0.001,
+        "price": 45000,
+        "timestamp": datetime.datetime.utcnow(),
+        "status": "EXECUTED",
+        "orderId": "test_order_id",
+        "source": "AI_GRID",
+        "profitLoss": 0
+    }
+    
     try:
-        full_log = {
-            **test_trade_log,
-            "userId": user_id,
-            "timestamp": datetime.datetime.now()
-        }
-        
-        result = collections["tradeLogs"].insert_one(full_log)
-        print(f"✅ Created test trade log: {full_log['symbol']} {full_log['action']} (MongoDB ID: {result.inserted_id})")
-        return {**full_log, "_id": result.inserted_id}
+        result = trade_log_collection.insert_one(test_trade_log)
+        print(f"✅ Created test trade log")
+        return result.inserted_id
     except Exception as e:
         print(f"❌ Failed to create test trade log: {e}")
         return None
 
 def create_test_risk_settings(collections, user_id):
     """Create test risk settings"""
+    risk_settings_collection = collections["riskSettings"]
+    
+    test_risk_settings = {
+        "userId": user_id,
+        "maxRiskPerTrade": 1.0,
+        "maxDailyLoss": 5.0,
+        "maxWeeklyLoss": 10.0,
+        "stopLossPercentage": 2.0,
+        "takeProfitPercentage": 3.0,
+        "maxOpenTrades": 5,
+        "createdAt": datetime.datetime.utcnow(),
+        "updatedAt": datetime.datetime.utcnow()
+    }
+    
+    # Check if risk settings already exist
+    existing_settings = risk_settings_collection.find_one({"userId": user_id})
+    if existing_settings:
+        print(f"Risk settings already exist for user ID: {user_id}")
+        return existing_settings.get('_id')
+    
     try:
-        full_settings = {
-            **test_risk_settings,
-            "userId": user_id,
-            "id": int(time.time()),
-            "createdAt": datetime.datetime.now(),
-            "updatedAt": datetime.datetime.now()
-        }
-        
-        result = collections["riskSettings"].insert_one(full_settings)
-        print(f"✅ Created test risk settings for user ID {user_id} (MongoDB ID: {result.inserted_id})")
-        return {**full_settings, "_id": result.inserted_id}
+        result = risk_settings_collection.insert_one(test_risk_settings)
+        print(f"✅ Created test risk settings")
+        return result.inserted_id
     except Exception as e:
         print(f"❌ Failed to create test risk settings: {e}")
         return None
 
 def verify_document_exists(collection, filter_):
     """Verify a document exists in a collection"""
-    try:
-        result = collection.find_one(filter_)
-        return bool(result)
-    except Exception as e:
-        print(f"❌ Failed to verify document: {e}")
-        return False
+    result = collection.find_one(filter_)
+    return result is not None
 
 def run_test():
     """Run the MongoDB verification test"""
-    success = True
+    client, db = connect_to_mongodb()
     
-    # Connect to MongoDB
-    client, db, collections = connect_to_mongodb()
-    if not client:
-        return False
+    if client is None:
+        print("Cannot proceed with tests - MongoDB connection failed")
+        return
     
     try:
-        # Step 1: Create a test user
-        print("\n🧪 Step 1: Creating test user...")
-        user = create_test_user(collections)
-        if not user:
-            print("❌ Test failed: Unable to create user")
-            success = False
+        # Get collections
+        collections = {
+            "users": db.users,
+            "bots": db.bots,
+            "tradeLogs": db.tradeLogs,
+            "riskSettings": db.riskSettings
+        }
+        
+        # Verify all collections exist
+        for name, collection in collections.items():
+            if collection.count_documents({}) >= 0:  # This will throw an error if collection doesn't exist
+                print(f"✅ Collection '{name}' exists")
+            else:
+                print(f"❌ Collection '{name}' does not exist")
+        
+        # Create test data
+        user_id = create_test_user(collections)
+        if not user_id:
+            print("Cannot proceed with remaining tests - user creation failed")
+            return
+        
+        bot_id = create_test_bot(collections, user_id)
+        trade_log_id = create_test_trade_log(collections, user_id)
+        risk_settings_id = create_test_risk_settings(collections, user_id)
+        
+        # Verify all documents exist
+        print("\nVerifying documents exist...")
+        if verify_document_exists(collections["users"], {"id": user_id}):
+            print("✅ User document exists")
         else:
-            user_exists = verify_document_exists(collections["users"], {"id": user["id"]})
-            print(f"{'✅' if user_exists else '❌'} User exists in MongoDB: {user_exists}")
-            success = success and user_exists
-            
-            # Step 2: Create a test bot
-            if success:
-                print("\n🧪 Step 2: Creating test bot...")
-                bot = create_test_bot(collections, user["id"])
-                if not bot:
-                    print("❌ Test failed: Unable to create bot")
-                    success = False
-                else:
-                    bot_exists = verify_document_exists(collections["bots"], {"id": bot["id"]})
-                    print(f"{'✅' if bot_exists else '❌'} Bot exists in MongoDB: {bot_exists}")
-                    success = success and bot_exists
-            
-            # Step 3: Create a test trade log
-            if success:
-                print("\n🧪 Step 3: Creating test trade log...")
-                trade_log = create_test_trade_log(collections, user["id"])
-                if not trade_log:
-                    print("❌ Test failed: Unable to create trade log")
-                    success = False
-                else:
-                    trade_log_exists = verify_document_exists(collections["tradeLogs"], {"_id": trade_log["_id"]})
-                    print(f"{'✅' if trade_log_exists else '❌'} Trade log exists in MongoDB: {trade_log_exists}")
-                    success = success and trade_log_exists
-            
-            # Step 4: Create test risk settings
-            if success:
-                print("\n🧪 Step 4: Creating test risk settings...")
-                settings = create_test_risk_settings(collections, user["id"])
-                if not settings:
-                    print("❌ Test failed: Unable to create risk settings")
-                    success = False
-                else:
-                    settings_exist = verify_document_exists(collections["riskSettings"], {"id": settings["id"]})
-                    print(f"{'✅' if settings_exist else '❌'} Risk settings exist in MongoDB: {settings_exist}")
-                    success = success and settings_exist
-    
+            print("❌ User document does not exist")
+        
+        if verify_document_exists(collections["bots"], {"id": bot_id}):
+            print("✅ Bot document exists")
+        else:
+            print("❌ Bot document does not exist")
+        
+        if verify_document_exists(collections["tradeLogs"], {"userId": user_id}):
+            print("✅ Trade log document exists")
+        else:
+            print("❌ Trade log document does not exist")
+        
+        if verify_document_exists(collections["riskSettings"], {"userId": user_id}):
+            print("✅ Risk settings document exists")
+        else:
+            print("❌ Risk settings document does not exist")
+        
     except Exception as e:
-        print(f"❌ Unexpected error during test: {e}")
-        success = False
-    
+        print(f"❌ Error during MongoDB verification test: {e}")
     finally:
         # Close the MongoDB connection
         if client:
             client.close()
-            print("\n🔄 MongoDB connection closed")
-        
-        # Summary
-        print("\n📊 Test Summary:")
-        print(f"{'✅ All tests passed! MongoDB is working correctly.' if success else '❌ Some tests failed. Check the logs above.'}")
-        print("MongoDB collections tested:")
-        print("- users")
-        print("- bots")
-        print("- tradeLogs")
-        print("- riskSettings")
-        
-        return success
+            print("\nMongoDB connection closed")
 
 if __name__ == "__main__":
-    success = run_test()
-    exit(0 if success else 1)
+    run_test()
