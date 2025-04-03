@@ -48,9 +48,8 @@ const Layout: React.FC<{children: React.ReactNode}> = ({ children }) => {
 };
 
 interface ApiKeyFormValues {
-  okxApiKey: string;
-  okxSecretKey: string;
-  okxPassphrase: string;
+  binanceApiKey: string;
+  binanceSecretKey: string;
   defaultBroker: string;
   useTestnet: boolean;
 }
@@ -60,10 +59,9 @@ export default function ApiKeys() {
   const { isAuthenticated, user } = useAuth();
   const [, navigate] = useLocation();
   const [formValues, setFormValues] = useState<ApiKeyFormValues>({
-    okxApiKey: "",
-    okxSecretKey: "",
-    okxPassphrase: "",
-    defaultBroker: "okx",
+    binanceApiKey: "",
+    binanceSecretKey: "",
+    defaultBroker: "binance",
     useTestnet: true
   });
   const [isHindi1000Hindi, setIsHindi1000Hindi] = useState(false);
@@ -89,9 +87,8 @@ export default function ApiKeys() {
   interface ApiKeysResponse {
     message: string;
     apiKeys: {
-      okxApiKey: string | null;
-      okxSecretKey: string | null;
-      okxPassphrase: string | null;
+      binanceApiKey: string | null;
+      binanceSecretKey: string | null;
       defaultBroker: string;
       useTestnet: boolean;
     };
@@ -112,10 +109,9 @@ export default function ApiKeys() {
     
     if (apiKeysData?.apiKeys) {
       const formData = {
-        okxApiKey: apiKeysData.apiKeys.okxApiKey ?? "",
-        okxSecretKey: apiKeysData.apiKeys.okxSecretKey ?? "",
-        okxPassphrase: apiKeysData.apiKeys.okxPassphrase ?? "",
-        defaultBroker: apiKeysData.apiKeys.defaultBroker || "okx",
+        binanceApiKey: apiKeysData.apiKeys.binanceApiKey ?? "",
+        binanceSecretKey: apiKeysData.apiKeys.binanceSecretKey ?? "",
+        defaultBroker: apiKeysData.apiKeys.defaultBroker || "binance",
         useTestnet: apiKeysData.apiKeys.useTestnet !== undefined ? apiKeysData.apiKeys.useTestnet : true
       };
       
@@ -129,9 +125,8 @@ export default function ApiKeys() {
     mutationFn: async (data: ApiKeyFormValues) => {
       try {
         console.log("Sending API key update request with data:", {
-          hasApiKey: !!data.okxApiKey,
-          hasSecretKey: !!data.okxSecretKey,
-          hasPassphrase: !!data.okxPassphrase,
+          hasApiKey: !!data.binanceApiKey,
+          hasSecretKey: !!data.binanceSecretKey,
           defaultBroker: data.defaultBroker,
           useTestnet: data.useTestnet
         });
@@ -186,10 +181,9 @@ export default function ApiKeys() {
       
       // Reset form
       setFormValues({
-        okxApiKey: "",
-        okxSecretKey: "",
-        okxPassphrase: "",
-        defaultBroker: "okx",
+        binanceApiKey: "",
+        binanceSecretKey: "",
+        defaultBroker: "binance",
         useTestnet: true
       });
       
@@ -221,7 +215,7 @@ export default function ApiKeys() {
   
   const validateApiKeys = async () => {
     // Check if any API keys are missing or just empty strings (after trimming)
-    if (!formValues.okxApiKey?.trim() || !formValues.okxSecretKey?.trim() || !formValues.okxPassphrase?.trim()) {
+    if (!formValues.binanceApiKey?.trim() || !formValues.binanceSecretKey?.trim()) {
       setValidationResult({
         isValid: false,
         message: "Please fill in all API key fields - empty values are not allowed"
@@ -235,9 +229,8 @@ export default function ApiKeys() {
     try {
       console.log("Validating API keys with /api/validate-api-keys endpoint");
       const response = await apiRequest("POST", "/api/validate-api-keys", {
-        okxApiKey: formValues.okxApiKey,
-        okxSecretKey: formValues.okxSecretKey,
-        okxPassphrase: formValues.okxPassphrase,
+        binanceApiKey: formValues.binanceApiKey,
+        binanceSecretKey: formValues.binanceSecretKey,
         useTestnet: formValues.useTestnet
       });
       
@@ -287,7 +280,7 @@ export default function ApiKeys() {
     e.preventDefault();
     
     // Validate inputs for all users - check if any field is empty or contains only whitespace
-    if (!formValues.okxApiKey?.trim() || !formValues.okxSecretKey?.trim() || !formValues.okxPassphrase?.trim()) {
+    if (!formValues.binanceApiKey?.trim() || !formValues.binanceSecretKey?.trim()) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields with valid values.",
@@ -321,57 +314,57 @@ export default function ApiKeys() {
       <div className="container mx-auto py-6">
         <h1 className="text-3xl font-bold mb-4">API Key Management</h1>
         
-        {/* הערה בולטת על חשיבות מפתחות API */}
+        {/* Important notice about API keys */}
         <div className="mb-8 p-4 bg-primary/10 rounded-lg border border-primary/30">
           <div className="flex items-start mb-3">
             <AlertTriangle className="h-5 w-5 text-primary mt-0.5 mr-2" />
-            <h2 className="text-lg font-semibold text-primary">חשיבות הגדרת מפתחות API</h2>
+            <h2 className="text-lg font-semibold text-primary">API Keys Importance</h2>
           </div>
           <p className="mb-2 text-sm">
-            כדי לגשת לנתוני החשבון האישיים שלך ולהפעיל את פונקציות המסחר האוטומטיות, חובה להגדיר את מפתחות ה-API של חשבון ה-OKX שלך. 
-            <strong> ללא הגדרה זו, לא תוכל לצפות ביתרה האמיתית שלך, לבצע פעולות מסחר או להפעיל רובוטים אוטומטיים.</strong>
+            To access your personal account data and enable automated trading functions, you must set up your Binance API keys.
+            <strong> Without these keys, you won't be able to view your actual balance, perform trading operations, or run automated bots.</strong>
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
             <div className="bg-white/60 p-3 rounded-md shadow-sm">
               <div className="flex items-center mb-2">
                 <KeyRound className="h-4 w-4 text-primary mr-2" />
-                <span className="font-medium text-sm">גישה פרטית</span>
+                <span className="font-medium text-sm">Private Access</span>
               </div>
-              <p className="text-xs text-gray-600">כל משתמש במערכת נדרש להגדיר את המפתחות האישיים שלו לצפייה בנתוניו.</p>
+              <p className="text-xs text-gray-600">Each user must configure their personal API keys to access their account data.</p>
             </div>
             <div className="bg-white/60 p-3 rounded-md shadow-sm">
               <div className="flex items-center mb-2">
                 <Lock className="h-4 w-4 text-primary mr-2" />
-                <span className="font-medium text-sm">אבטחה מלאה</span>
+                <span className="font-medium text-sm">Full Security</span>
               </div>
-              <p className="text-xs text-gray-600">המפתחות שלך מוצפנים ומאובטחים במערכת ומשמשים אך ורק עבור חשבונך.</p>
+              <p className="text-xs text-gray-600">Your keys are encrypted and secured, used only for your account operations.</p>
             </div>
             <div className="bg-white/60 p-3 rounded-md shadow-sm">
               <div className="flex items-center mb-2">
                 <Zap className="h-4 w-4 text-primary mr-2" />
-                <span className="font-medium text-sm">תפעול אוטומטי</span>
+                <span className="font-medium text-sm">Automated Trading</span>
               </div>
-              <p className="text-xs text-gray-600">הבוטים האוטומטיים יכולים לפעול רק עם מפתחות API תקפים שהוגדרו מראש.</p>
+              <p className="text-xs text-gray-600">Automated bots can only operate with valid API keys that have been properly configured.</p>
             </div>
           </div>
         </div>
         
-        <Tabs defaultValue="okx" className="w-full">
+        <Tabs defaultValue="binance" className="w-full">
           <TabsList className="mb-4">
-            <TabsTrigger value="okx">OKX Exchange</TabsTrigger>
+            <TabsTrigger value="binance">Binance Exchange</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="okx">
+          <TabsContent value="binance">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <KeyRound className="mr-2 h-5 w-5" />
-                      OKX API Credentials
+                      Binance API Credentials
                     </CardTitle>
                     <CardDescription>
-                      <span>Enter your OKX API credentials to enable trading.</span>
+                      <span>Enter your Binance API credentials to enable trading.</span>
                     </CardDescription>
                   </CardHeader>
                   
@@ -414,39 +407,26 @@ export default function ApiKeys() {
                       
                       <div className="grid gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="okxApiKey">API Key</Label>
+                          <Label htmlFor="binanceApiKey">API Key</Label>
                           <Input
-                            id="okxApiKey"
-                            name="okxApiKey"
+                            id="binanceApiKey"
+                            name="binanceApiKey"
                             type="text"
-                            placeholder="Enter your OKX API Key"
-                            value={formValues.okxApiKey}
+                            placeholder="Enter your Binance API Key"
+                            value={formValues.binanceApiKey}
                             onChange={handleInputChange}
                             disabled={updateMutation.isPending || isValidating}
                           />
                         </div>
                         
                         <div className="space-y-2">
-                          <Label htmlFor="okxSecretKey">Secret Key</Label>
+                          <Label htmlFor="binanceSecretKey">Secret Key</Label>
                           <Input
-                            id="okxSecretKey"
-                            name="okxSecretKey"
+                            id="binanceSecretKey"
+                            name="binanceSecretKey"
                             type="password"
-                            placeholder="Enter your OKX Secret Key"
-                            value={formValues.okxSecretKey}
-                            onChange={handleInputChange}
-                            disabled={updateMutation.isPending || isValidating}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="okxPassphrase">Passphrase</Label>
-                          <Input
-                            id="okxPassphrase"
-                            name="okxPassphrase"
-                            type="password"
-                            placeholder="Enter your OKX Passphrase"
-                            value={formValues.okxPassphrase}
+                            placeholder="Enter your Binance Secret Key"
+                            value={formValues.binanceSecretKey}
                             onChange={handleInputChange}
                             disabled={updateMutation.isPending || isValidating}
                           />
@@ -521,7 +501,7 @@ export default function ApiKeys() {
                       API Key Permissions
                     </CardTitle>
                     <CardDescription>
-                      Required permissions for your OKX API key
+                      Required permissions for your Binance API key
                     </CardDescription>
                   </CardHeader>
                   
@@ -532,29 +512,25 @@ export default function ApiKeys() {
                         <ul className="space-y-2">
                           <li className="flex items-center">
                             <Check className="mr-2 h-4 w-4 text-green-500" />
-                            <span>Read permission</span>
+                            <span>Enable Reading</span>
                           </li>
                           <li className="flex items-center">
                             <Check className="mr-2 h-4 w-4 text-green-500" />
-                            <span>Trade permission</span>
-                          </li>
-                          <li className="flex items-center">
-                            <Check className="mr-2 h-4 w-4 text-green-500" />
-                            <span>Spot trade</span>
+                            <span>Enable Spot & Margin Trading</span>
                           </li>
                         </ul>
                       </div>
                       
                       <div>
-                        <h3 className="text-sm font-medium mb-2">Recommended Permissions</h3>
+                        <h3 className="text-sm font-medium mb-2">Optional Permissions</h3>
                         <ul className="space-y-2">
                           <li className="flex items-center">
                             <Check className="mr-2 h-4 w-4 text-blue-400" />
-                            <span>Contract</span>
+                            <span>Enable Futures</span>
                           </li>
                           <li className="flex items-center">
                             <Check className="mr-2 h-4 w-4 text-blue-400" />
-                            <span>Funding</span>
+                            <span>Enable Withdrawals</span>
                           </li>
                         </ul>
                       </div>
@@ -562,15 +538,14 @@ export default function ApiKeys() {
                       <div>
                         <h3 className="text-sm font-medium mb-2">API Creation Instructions</h3>
                         <ol className="list-decimal list-inside space-y-2 text-sm">
-                          <li>Log in to your OKX account</li>
-                          <li>Navigate to "Settings" and then "API"</li>
+                          <li>Log in to your Binance account</li>
+                          <li>Go to "API Management" (found under your profile)</li>
                           <li>Click "Create API"</li>
-                          <li>Enable "Read" and "Trade" permissions</li>
-                          <li>Enable "Spot" permission</li>
-                          <li>Set the IP address restriction if desired</li>
-                          <li>Create a passphrase</li>
-                          <li>Complete verification</li>
-                          <li>Copy the API Key, Secret Key, and Passphrase</li>
+                          <li>Complete security verification if prompted</li>
+                          <li>Label your API key for this application</li>
+                          <li>Set IP restriction for enhanced security (recommended)</li>
+                          <li>Enable the required permissions (Reading and Trading)</li>
+                          <li>Save and record your API Key and Secret Key</li>
                         </ol>
                       </div>
                       
