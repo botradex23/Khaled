@@ -48,7 +48,7 @@ export async function apiRequest<T>(
       if (response.status === 451 || (errorData && errorData.geo_restricted)) {
         const error: ApiError = {
           status: response.status,
-          message: 'Binance API access is restricted in this region. Using simulation mode.',
+          message: 'Binance API access is restricted in this region.',
           geo_restricted: true,
           error: errorData.error
         };

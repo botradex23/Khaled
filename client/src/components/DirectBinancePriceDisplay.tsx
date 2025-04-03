@@ -155,13 +155,13 @@ const DirectBinancePriceDisplay: React.FC = () => {
       <CardContent>
         {/* Geo-restriction warning alert */}
         {isGeoRestricted && (
-          <Alert variant="warning" className="mb-6 border-amber-500 bg-amber-50 dark:border-amber-700 dark:bg-amber-950">
+          <Alert variant="destructive" className="mb-6 border-amber-500 bg-amber-50 dark:border-amber-700 dark:bg-amber-950">
             <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500" />
             <div className="ml-3">
               <AlertTitle className="text-amber-800 dark:text-amber-300">Geo-restriction Detected</AlertTitle>
               <AlertDescription className="text-amber-700 dark:text-amber-400 mt-1">
                 <p>{geoRestrictedMessage}</p>
-                <p className="mt-1 text-sm">The system will use simulated data where API access is not available.</p>
+                <p className="mt-1 text-sm">Binance API access is not available from this server location.</p>
               </AlertDescription>
             </div>
           </Alert>

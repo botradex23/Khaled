@@ -97,7 +97,7 @@ def ping():
             return jsonify({
                 "success": False, 
                 "geo_restricted": True,
-                "message": "Binance API access is restricted in this region. Using simulation mode.",
+                "message": "Binance API access is restricted in this region.",
                 "error": error_str
             }), 451
         else:
@@ -134,7 +134,7 @@ def get_all_prices():
             return jsonify({
                 "success": False, 
                 "geo_restricted": True,
-                "message": "Binance API access is restricted in this region. Using simulation mode.",
+                "message": "Binance API access is restricted in this region.",
                 "error": error_str
             }), 451
         else:
@@ -172,7 +172,7 @@ def get_symbol_price(symbol):
             return jsonify({
                 "success": False, 
                 "geo_restricted": True,
-                "message": "Binance API access is restricted in this region. Using simulation mode.",
+                "message": "Binance API access is restricted in this region.",
                 "symbol": symbol,
                 "error": error_str
             }), 451
@@ -216,7 +216,7 @@ def get_24hr_ticker():
             return jsonify({
                 "success": False, 
                 "geo_restricted": True,
-                "message": "Binance API access is restricted in this region. Using simulation mode.",
+                "message": "Binance API access is restricted in this region.",
                 "symbol": symbol if symbol else "all",
                 "error": error_str
             }), 451
@@ -242,7 +242,7 @@ def get_raw_prices():
             return jsonify({
                 "success": False, 
                 "geo_restricted": True,
-                "message": "Binance API access is restricted in this region. Using simulation mode.",
+                "message": "Binance API access is restricted in this region.",
                 "error": error_str
             }), 451
         else:
@@ -269,7 +269,7 @@ def get_raw_symbol_price(symbol):
             return jsonify({
                 "success": False, 
                 "geo_restricted": True,
-                "message": "Binance API access is restricted in this region. Using simulation mode.",
+                "message": "Binance API access is restricted in this region.",
                 "symbol": symbol,
                 "error": error_str
             }), 451
