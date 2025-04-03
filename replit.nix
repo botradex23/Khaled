@@ -1,5 +1,7 @@
 {pkgs}: {
   deps = [
+    pkgs.procps
+    pkgs.nettools
     pkgs.nodejs
     pkgs.mongodb
     pkgs.rustc
