@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * Minimal Express Server
+ * Minimal HTTP Server
  * 
- * This is a minimalist Express server that serves static files and
+ * This is a minimalist HTTP server that serves static files and
  * proxies requests to the Python API server (port 5001).
+ * Built with native Node.js modules (no Express dependency).
  */
 
 // Native modules
