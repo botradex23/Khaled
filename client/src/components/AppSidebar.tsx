@@ -55,7 +55,7 @@ export default function AppSidebar() {
       title: 'שווקים',
       items: [
         { name: "רשימת מטבעות", href: "/markets", icon: BarChart3, description: "רשימה מלאה של כל המטבעות הזמינים" },
-        { name: "צפייה בכל השווקים", href: "/markets-full", icon: LineChart, description: "סקירה מורחבת של כל השווקים" },
+        { name: "צפייה בכל השווקים", href: "/binance", icon: LineChart, description: "סקירה מורחבת של כל השווקים" },
         { name: "נתוני מחירים", href: "/market-prices", icon: TrendingUp, description: "מחירים מפורטים ונתוני השוואה" },
       ]
     },

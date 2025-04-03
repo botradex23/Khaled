@@ -15,7 +15,7 @@ import EnhancedDashboard from "@/pages/enhanced-dashboard";
 import Bots from "@/pages/bots-new";
 import BotsDashboard from "@/pages/bots-dashboard";
 import Markets from "@/pages/markets";
-import MarketsFull from "@/pages/markets-full";
+// MarketsFull has been removed as requested
 import MarketPrices from "@/pages/market-prices";
 import Register from "@/pages/register";
 import Login from "@/pages/login";
@@ -59,7 +59,7 @@ function Router() {
       <Route path="/bots" component={BotsDashboard} />
       <Route path="/bots-legacy" component={Bots} />
       <Route path="/markets" component={Markets} />
-      <Route path="/markets-full" component={MarketsFull} />
+      {/* markets-full has been removed and replaced by /binance */}
       <Route path="/market-prices" component={MarketPrices} />
       <Route path="/live-market" component={LiveMarket} />
       <Route path="/register" component={Register} />

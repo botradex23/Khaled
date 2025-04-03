@@ -51,7 +51,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: "Dashboard", href: "/dashboard", icon: BarChart3, auth: true },
     { name: "AI Trading", href: "/ai-trading", icon: Bot, auth: true },
     { name: "Binance Markets", href: "/markets", icon: CandlestickChart, auth: true },
-    { name: "All Binance Markets", href: "/markets-full", icon: BarChart, isNew: true },
+    { name: "All Binance Markets", href: "/binance", icon: BarChart, isNew: true },
     { name: "Live Market", href: "/live-market", icon: LineChart },
     { name: "Bots", href: "/bots", icon: FlaskConical, auth: true },
     { name: "Trade Logs", href: "/trade-logs", icon: ClipboardList, auth: true, isNew: true },

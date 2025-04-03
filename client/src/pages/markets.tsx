@@ -216,7 +216,7 @@ export default function Markets() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Link href="/markets-full">
+              <Link href="/binance">
                 <Button variant="secondary" className="w-full md:w-auto">
                   View All Binance Markets
                   <ArrowRight className="ml-2 h-4 w-4" />
