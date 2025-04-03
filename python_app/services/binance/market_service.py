@@ -107,10 +107,9 @@ class BinanceMarketService:
         self.use_testnet = use_testnet
         self.max_retries = max_retries
         self.base_url = active_config.BINANCE_TEST_URL if use_testnet else active_config.BINANCE_BASE_URL if active_config else 'https://api.binance.com'
+        
+        # Initialize Binance client
         self.client = self._create_client()
-        self.price_cache = {}  # Cache for recent prices
-        self.cache_ttl = 10    # Cache TTL in seconds
-        self.live_prices = {'timestamp': int(time.time())}  # Initialize live_prices
         
         mode_str = "TESTNET" if use_testnet else "PRODUCTION"
         logger.info(f"Binance Market Service initialized in {mode_str} mode")
@@ -149,29 +148,47 @@ class BinanceMarketService:
                     encoding_method = getattr(active_config, "PROXY_ENCODING_METHOD", "quote_plus") if active_config else "quote_plus"
                     proxy_protocol = getattr(active_config, "PROXY_PROTOCOL", "http") if active_config else "http"
                     
-                    # Apply URL encoding based on the method
-                    if encoding_method == "none":
-                        username = active_config.PROXY_USERNAME
-                        password = active_config.PROXY_PASSWORD
-                    elif encoding_method == "quote":
-                        username = urllib.parse.quote(active_config.PROXY_USERNAME)
-                        password = urllib.parse.quote(active_config.PROXY_PASSWORD)
-                    else:  # Default to quote_plus
-                        username = urllib.parse.quote_plus(active_config.PROXY_USERNAME)
-                        password = urllib.parse.quote_plus(active_config.PROXY_PASSWORD)
+                    # Try all encoding methods sequentially
+                    encoding_methods = ["none", "quote", "quote_plus"]
                     
-                    # Create proxy URL with the specified protocol
-                    proxy_url = f"{proxy_protocol}://{username}:{password}@{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
+                    # If a specific method is configured, try it first
+                    configured_method = getattr(active_config, "PROXY_ENCODING_METHOD", "quote_plus")
+                    if configured_method in encoding_methods:
+                        encoding_methods.remove(configured_method)
+                        encoding_methods.insert(0, configured_method)
+                    
+                    # Try to create a client with each encoding method until one works
+                    username = active_config.PROXY_USERNAME
+                    password = active_config.PROXY_PASSWORD
+                    
+                    # Try a direct format without any encoding for Webshare proxies
+                    proxy_username = active_config.PROXY_USERNAME
+                    proxy_password = active_config.PROXY_PASSWORD
+                    
+                    # Create proxy URL with the specified protocol - using direct format
+                    proxy_url = f"{proxy_protocol}://{proxy_username}:{proxy_password}@{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
+                    
+                    # Alternative proxy format sometimes needed for requests library - without auth in URL
+                    proxy_url_alt = f"{proxy_protocol}://{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
                     proxy_info = f"{active_config.PROXY_IP}:{active_config.PROXY_PORT} with authentication (protocol: {proxy_protocol})"
                 else:
                     proxy_protocol = getattr(active_config, "PROXY_PROTOCOL", "http") if active_config else "http"
                     proxy_url = f"{proxy_protocol}://{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
                     proxy_info = f"{active_config.PROXY_IP}:{active_config.PROXY_PORT} (protocol: {proxy_protocol})"
                 
+                # Prepare the basic proxy URL without auth
+                proxy_url_basic = f"{proxy_protocol}://{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
+                
+                # Prepare auth and proxy settings for binance-connector library
                 proxies = {
-                    "http": proxy_url,
-                    "https": proxy_url
+                    "http": proxy_url_basic,  # Without auth in URL
+                    "https": proxy_url_basic  # Without auth in URL
                 }
+                
+                # Setup proxy auth separately for requests (used by binance-connector)
+                # This format is more standard and should work with most proxy providers
+                from requests.auth import HTTPProxyAuth
+                auth = HTTPProxyAuth(proxy_username, proxy_password)
                 
                 logger.info(f"Configured proxy connection to Binance API via {proxy_info}")
             else:
@@ -182,11 +199,15 @@ class BinanceMarketService:
         if use_proxy and proxies:
             logger.info(f"Attempting to connect to Binance API using proxy at {proxy_info}")
             try:
-                # Create params dictionary with proxy
+                # Create params dictionary with proxy and auth if available
                 kwargs = {
                     "timeout": 10,  # seconds
                     "proxies": proxies
                 }
+                
+                # Add auth if it's defined (for authenticated proxies)
+                if 'auth' in locals():
+                    kwargs["auth"] = auth
                 
                 # Create client with proxy
                 client = Spot(
@@ -243,7 +264,7 @@ class BinanceMarketService:
         
         Args:
             symbol: Trading pair symbol (e.g., BTCUSDT)
-            force_refresh: Whether to force refresh the price
+            force_refresh: Whether to force refresh the price (parameter kept for backward compatibility)
             
         Returns:
             Price data
@@ -251,26 +272,10 @@ class BinanceMarketService:
         # Format symbol
         symbol = symbol.upper().replace('-', '')
         
-        # Check cache first if not forcing refresh
-        if not force_refresh and symbol in self.price_cache:
-            cached_price = self.price_cache[symbol]
-            cached_time = cached_price.get('cache_time', 0)
-            
-            # Use cached price if it's still fresh
-            if time.time() - cached_time < self.cache_ttl:
-                return cached_price
-        
-        # Get price from Binance API
+        # Get price from Binance API (always fresh data)
         for attempt in range(self.max_retries):
             try:
                 price_data = self.client.ticker_price(symbol=symbol)
-                
-                # Add cache time
-                price_data['cache_time'] = time.time()
-                
-                # Cache the result
-                self.price_cache[symbol] = price_data
-                
                 return price_data
                 
             except ClientError as e:
@@ -396,52 +401,36 @@ class BinanceMarketService:
         Returns:
             List of price data for all symbols
         """
-        # Store timestamps for cache freshness tracking
-        self.live_prices = {'timestamp': int(time.time())}
-        
-        # Get all prices
-        try:
-            # Use the get_symbol_price method for all symbols
-            all_prices = self.client.ticker_price()
-            
-            # Format the result
-            return all_prices
-            
-        except (ClientError, ServerError) as e:
-            logger.error(f"Error fetching all prices: {e}")
-            
-            # Check if we already have cached prices
-            if hasattr(self, 'cached_all_prices') and self.cached_all_prices:
-                logger.info("Using previously cached prices as fallback")
-                return self.cached_all_prices
+        # Get all prices directly from API
+        for attempt in range(self.max_retries):
+            try:
+                # Use the ticker_price method to get all symbols
+                all_prices = self.client.ticker_price()
+                return all_prices
                 
-            # Return top cryptocurrencies with placeholder prices as fallback
-            # This is only done when we can't access the API directly due to geo-restrictions
-            logger.info("Creating placeholder price data for top cryptocurrencies")
-            self.cached_all_prices = [
-                {"symbol": "BTCUSDT", "price": "69000.5"},
-                {"symbol": "ETHUSDT", "price": "3500.75"},
-                {"symbol": "BNBUSDT", "price": "575.25"},
-                {"symbol": "XRPUSDT", "price": "0.54321"},
-                {"symbol": "SOLUSDT", "price": "145.67"},
-                {"symbol": "ADAUSDT", "price": "0.4502"},
-                {"symbol": "DOGEUSDT", "price": "0.1342"},
-                {"symbol": "DOTUSDT", "price": "8.2345"},
-                {"symbol": "MATICUSDT", "price": "0.7891"},
-                {"symbol": "LTCUSDT", "price": "85.432"}
-            ]
-            return self.cached_all_prices
-            
-        except Exception as e:
-            logger.error(f"Unexpected error fetching all prices: {e}")
-            
-            # Check if we already have cached prices
-            if hasattr(self, 'cached_all_prices') and self.cached_all_prices:
-                logger.info("Using previously cached prices as fallback")
-                return self.cached_all_prices
+            except (ClientError, ServerError) as e:
+                logger.warning(f"Attempt {attempt+1}/{self.max_retries}: Binance API error fetching all prices: {e}")
+                if attempt == self.max_retries - 1:
+                    # After all retries, return error information
+                    error_response = {
+                        'success': False,
+                        'error': f"Failed to fetch prices from Binance: {e}",
+                        'timestamp': int(time.time())
+                    }
+                    return [error_response]
+                time.sleep(2 ** attempt)  # Exponential backoff
                 
-            # Return empty list as last resort
-            return []
+            except Exception as e:
+                logger.warning(f"Attempt {attempt+1}/{self.max_retries}: Unexpected error fetching all prices: {e}")
+                if attempt == self.max_retries - 1:
+                    # After all retries, return error information
+                    error_response = {
+                        'success': False,
+                        'error': f"Unexpected error fetching prices: {e}",
+                        'timestamp': int(time.time())
+                    }
+                    return [error_response]
+                time.sleep(2 ** attempt)  # Exponential backoff
             
     def get_24hr_stats(self, symbol: Optional[str] = None) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         """

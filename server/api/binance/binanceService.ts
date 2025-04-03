@@ -95,14 +95,34 @@ export class BinanceApiService {
     const url = `${this.baseUrl}${endpoint}${queryString ? '?' + queryString : ''}`;
     
     try {
-      const response = await axios({
+      const axiosConfig: any = {
         method,
         url,
         headers: {
           'X-MBX-APIKEY': this.apiKey,
           'User-Agent': 'BinanceApiService/1.0.0'
         }
-      });
+      };
+
+      // Add proxy if defined in environment
+      if (process.env.BINANCE_PROXY_HOST && process.env.BINANCE_PROXY_PORT) {
+        axiosConfig.proxy = {
+          host: process.env.BINANCE_PROXY_HOST,
+          port: parseInt(process.env.BINANCE_PROXY_PORT)
+        };
+        
+        // Add proxy auth if provided
+        if (process.env.BINANCE_PROXY_USERNAME && process.env.BINANCE_PROXY_PASSWORD) {
+          axiosConfig.proxy.auth = {
+            username: process.env.BINANCE_PROXY_USERNAME,
+            password: process.env.BINANCE_PROXY_PASSWORD
+          };
+        }
+        
+        console.log(`Using proxy for Binance API: ${process.env.BINANCE_PROXY_HOST}:${process.env.BINANCE_PROXY_PORT}`);
+      }
+
+      const response = await axios(axiosConfig);
       
       return response.data;
     } catch (error: any) {
