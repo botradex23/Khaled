@@ -279,11 +279,19 @@ export class MongoDBStorage implements IStorage {
         return undefined;
       }
       
-      const result = await this.updateUser(userId, {
+      // Create update object with the keys
+      const updateObj: any = {
         binanceApiKey: apiKeys.binanceApiKey,
         binanceSecretKey: apiKeys.binanceSecretKey
-      });
-      console.log(`✅ Updated Binance API keys for user: ${userId}`);
+      };
+      
+      // Add allowed IP if provided
+      if (apiKeys.binanceAllowedIp !== undefined) {
+        updateObj.binanceAllowedIp = apiKeys.binanceAllowedIp;
+      }
+      
+      const result = await this.updateUser(userId, updateObj);
+      console.log(`✅ Binance API keys saved for user: ${userId}`);
       return result;
     } catch (error) {
       console.error('❌ Error updating Binance API keys:', error);
@@ -301,7 +309,8 @@ export class MongoDBStorage implements IStorage {
       
       const result = {
         binanceApiKey: user.binanceApiKey,
-        binanceSecretKey: user.binanceSecretKey
+        binanceSecretKey: user.binanceSecretKey,
+        binanceAllowedIp: user.binanceAllowedIp || null
       };
       console.log(`✅ Retrieved Binance API keys for user: ${userId}`);
       return result;
@@ -325,9 +334,10 @@ export class MongoDBStorage implements IStorage {
       
       const updated = await this.updateUser(userId, {
         binanceApiKey: null,
-        binanceSecretKey: null
+        binanceSecretKey: null,
+        binanceAllowedIp: null
       });
-      console.log(`✅ Cleared API keys for user: ${userId}`);
+      console.log(`✅ Binance API keys removed for user: ${userId}`);
       return !!updated;
     } catch (error) {
       console.error('❌ Error clearing API keys:', error);
