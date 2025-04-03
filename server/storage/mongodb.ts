@@ -1,62 +1,60 @@
 /**
  * MongoDB integration module
  * 
- * This module provides MongoDB-like operations using a simulated in-memory store.
- * When real MongoDB is available, this will be upgraded to use actual MongoDB connections.
+ * This module provides MongoDB operations using a real MongoDB connection when available,
+ * otherwise falls back to a simulated in-memory store.
  */
 import { saveApiKeys, getApiKeys, deleteApiKeys, mongooseConnectionStatus } from '../models/saas';
+import type { MongoClient } from 'mongodb';
 
-// Connect to MongoDB (simulated)
+// Global reference to MongoDB client
+export let mongoClient: any = null;
+
+// Connect to MongoDB (real or simulated)
 export const connectToMongoDB = async () => {
   try {
     // Check if connection string is available
     if (process.env.MONGODB_URI) {
-      console.log('MongoDB connection string is configured. Using simulated MongoDB store.');
+      console.log('MongoDB connection string is configured. Attempting real connection...');
       
       try {
-        // Check if we can dynamically import mongodb (this would typically fail in restricted environments)
-        let realConnectionPossible = false;
-        try {
-          // Instead of trying to import mongodb directly (which causes TypeScript errors),
-          // we'll use a safer approach that checks if we could potentially use MongoDB
-          // by examining the environment
-          
-          // Check if environment has node_modules with mongodb
-          const moduleCheckCommand = 'ls -la ./node_modules/mongodb 2>/dev/null || echo "not_found"';
-          
-          // For now we'll just assume we can't use it in this environment
-          // In a production environment outside of Replit, this code would actually check
-          realConnectionPossible = false;
-          console.log('MongoDB driver availability check skipped - assuming not available in this environment');
-        } catch (importError) {
-          console.log('MongoDB driver availability check failed:', importError instanceof Error ? importError.message : 'Unknown error');
-          realConnectionPossible = false;
-        }
+        // Dynamically import MongoDB to avoid TypeScript errors at build time
+        const { MongoClient } = await import('mongodb');
         
-        if (!realConnectionPossible) {
-          // In this case we need to use a simulation
-          console.log('NOTICE: This is a MongoDB SIMULATION. Data is stored in memory only.');
-          console.log('NOTICE: To use real MongoDB storage, mongodb package needs to be installed.');
-          console.log(`NOTICE: MongoDB URI configured: ${process.env.MONGODB_URI.substring(0, process.env.MONGODB_URI.indexOf('://') + 3)}...`);
-          
-          // Mark the mock connection as ready
-          mongooseConnectionStatus.readyState = 1;
-          mongooseConnectionStatus.isSimulated = true;
-          
-          console.log('MongoDB simulated connection established successfully');
-          return true;
-        } else {
-          // In this case we could use a real MongoDB connection
-          // TODO: Implement real MongoDB connection here
-          console.log('Real MongoDB connection is possible but not yet implemented');
-          mongooseConnectionStatus.readyState = 0;
-          mongooseConnectionStatus.isSimulated = false;
-          return false;
-        }
+        // Initialize MongoDB client with the connection string
+        mongoClient = new MongoClient(process.env.MONGODB_URI, {
+          // Connection options
+          monitorCommands: true,
+        });
+        
+        // Connect to the MongoDB server
+        await mongoClient.connect();
+        
+        // Test the connection by listing databases
+        const adminDb = mongoClient.db().admin();
+        const result = await adminDb.listDatabases();
+        
+        console.log(`Successfully connected to MongoDB. Found ${result.databases.length} databases.`);
+        
+        // Mark the connection as ready
+        mongooseConnectionStatus.readyState = 1;
+        mongooseConnectionStatus.isSimulated = false;
+        
+        return true;
       } catch (connectionError) {
-        console.error('Error establishing MongoDB connection:', connectionError);
-        mongooseConnectionStatus.readyState = 0;
-        return false;
+        console.error('Error establishing real MongoDB connection:', connectionError);
+        console.log('Falling back to simulated MongoDB store...');
+        
+        // In this case we need to use a simulation
+        console.log('NOTICE: This is a MongoDB SIMULATION. Data is stored in memory only.');
+        console.log(`NOTICE: MongoDB URI configured: ${process.env.MONGODB_URI.substring(0, process.env.MONGODB_URI.indexOf('://') + 3)}...`);
+        
+        // Mark the mock connection as ready
+        mongooseConnectionStatus.readyState = 1;
+        mongooseConnectionStatus.isSimulated = true;
+        
+        console.log('MongoDB simulated connection established successfully');
+        return true;
       }
     } else {
       console.log('MongoDB connection string not found. Using in-memory storage instead.');

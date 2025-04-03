@@ -9,16 +9,50 @@ const saasStore = new Map<number, {
   updatedAt: Date;
 }>();
 
+// MongoDB collection name
+const COLLECTION_NAME = 'api_keys';
+
 /**
- * Mock SaaS model for MongoDB integration
- * This is a placeholder that will use in-memory storage until MongoDB is available
+ * SaaS model for MongoDB integration
+ * This will use real MongoDB if available, otherwise falls back to in-memory storage
  */
 export const SaasModel = {
-  // Mocked MongoDB functions to work with the in-memory store
+  // MongoDB functions to work with the database or in-memory store
   async updateOne(filter: { userId: number }, update: any, options: { upsert: boolean }) {
     const { userId } = filter;
-    const existingDoc = saasStore.get(userId);
     const now = new Date();
+    
+    // First try to use real MongoDB if available
+    try {
+      if (mongooseConnectionStatus.readyState === 1 && !mongooseConnectionStatus.isSimulated) {
+        // Import MongoDB dynamically
+        const mongodb = await import('mongodb');
+        const { mongoClient } = await import('../storage/mongodb');
+        
+        if (mongoClient) {
+          const db = mongoClient.db();
+          const collection = db.collection(COLLECTION_NAME);
+          
+          // Add timestamps to update
+          if (!update.$set.updatedAt) {
+            update.$set.updatedAt = now;
+          }
+          
+          if (options.upsert && !update.$set.createdAt) {
+            update.$set.createdAt = now;
+          }
+          
+          // Perform the update in MongoDB
+          const result = await collection.updateOne(filter, update, options);
+          return result;
+        }
+      }
+    } catch (error) {
+      console.error('Error using real MongoDB, falling back to in-memory store:', error);
+    }
+    
+    // Fall back to in-memory if real MongoDB is not available
+    const existingDoc = saasStore.get(userId);
     
     if (existingDoc) {
       // Update existing document
@@ -60,11 +94,55 @@ export const SaasModel = {
   
   async findOne(filter: { userId: number }) {
     const { userId } = filter;
+    
+    // First try to use real MongoDB if available
+    try {
+      if (mongooseConnectionStatus.readyState === 1 && !mongooseConnectionStatus.isSimulated) {
+        // Import MongoDB dynamically
+        const mongodb = await import('mongodb');
+        const { mongoClient } = await import('../storage/mongodb');
+        
+        if (mongoClient) {
+          const db = mongoClient.db();
+          const collection = db.collection(COLLECTION_NAME);
+          
+          // Find the document in MongoDB
+          const result = await collection.findOne(filter);
+          return result;
+        }
+      }
+    } catch (error) {
+      console.error('Error using real MongoDB, falling back to in-memory store:', error);
+    }
+    
+    // Fall back to in-memory if real MongoDB is not available
     return saasStore.get(userId) || null;
   },
   
   async deleteOne(filter: { userId: number }) {
     const { userId } = filter;
+    
+    // First try to use real MongoDB if available
+    try {
+      if (mongooseConnectionStatus.readyState === 1 && !mongooseConnectionStatus.isSimulated) {
+        // Import MongoDB dynamically
+        const mongodb = await import('mongodb');
+        const { mongoClient } = await import('../storage/mongodb');
+        
+        if (mongoClient) {
+          const db = mongoClient.db();
+          const collection = db.collection(COLLECTION_NAME);
+          
+          // Delete the document from MongoDB
+          const result = await collection.deleteOne(filter);
+          return result;
+        }
+      }
+    } catch (error) {
+      console.error('Error using real MongoDB, falling back to in-memory store:', error);
+    }
+    
+    // Fall back to in-memory if real MongoDB is not available
     const existed = saasStore.has(userId);
     saasStore.delete(userId);
     

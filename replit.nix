@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.mongodb
     pkgs.rustc
     pkgs.openssl
     pkgs.libxcrypt
