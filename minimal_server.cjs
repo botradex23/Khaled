@@ -1,215 +1,235 @@
 #!/usr/bin/env node
 
 /**
- * Minimal Cryptocurrency Trading Platform Server
+ * Minimal Express Server
  * 
- * This is a standalone Express server that provides basic functionality
- * and proxies requests to the Python Flask API for ML predictions and Binance API calls.
+ * This is a minimalist Express server that serves static files and
+ * proxies requests to the Python API server (port 5001).
  */
 
-const express = require('express');
-const path = require('path');
-const { spawn } = require('child_process');
+// Native modules
 const http = require('http');
+const path = require('path');
 const fs = require('fs');
-const axios = require('axios');
-const cors = require('cors');
+const { spawn } = require('child_process');
 
-// Configuration
+// Port configuration
 const PORT = process.env.PORT || 5000;
-const PYTHON_API_PORT = 5001;
-const PYTHON_API_URL = `http://localhost:${PYTHON_API_PORT}`;
-const HOST = process.env.HOST || '0.0.0.0';
+const PYTHON_PORT = 5001;
 
-// Create Express app
-const app = express();
+// Start Python server
+let pythonProcess = null;
 
-// Set up middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+// Simple request handler
+function handleRequest(req, res) {
+  // Log the request
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  
+  // Default response headers
+  res.setHeader('Content-Type', 'application/json');
+  
+  // Simple routing
+  if (req.url === '/api/status') {
+    // Server status endpoint
+    res.statusCode = 200;
+    res.end(JSON.stringify({
+      status: 'ok',
+      server: 'minimal_server',
+      timestamp: new Date().toISOString(),
+      nodeVersion: process.version
+    }));
+  } else if (req.url.startsWith('/api/')) {
+    // Proxy to Python server
+    proxyToPythonServer(req, res);
+  } else {
+    // Serve static content or 404
+    serveStaticContent(req, res);
+  }
+}
+
+// Proxy requests to Python server
+function proxyToPythonServer(req, res) {
+  // Simple proxy implementation
+  const options = {
+    hostname: 'localhost',
+    port: PYTHON_PORT,
+    path: req.url,
+    method: req.method,
+    headers: req.headers
+  };
+
+  const proxyReq = http.request(options, (proxyRes) => {
+    res.statusCode = proxyRes.statusCode;
+    
+    // Copy headers from Python response
+    Object.keys(proxyRes.headers).forEach(key => {
+      res.setHeader(key, proxyRes.headers[key]);
+    });
+    
+    // Stream the response data
+    proxyRes.pipe(res);
+  });
+  
+  // Error handling
+  proxyReq.on('error', (error) => {
+    console.error('Proxy error:', error.message);
+    res.statusCode = 502;
+    res.end(JSON.stringify({ 
+      error: 'Bad Gateway', 
+      message: 'Cannot connect to Python API server',
+      details: error.message
+    }));
+  });
+  
+  // If the original request has a body, pipe it to the proxy request
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+    req.pipe(proxyReq);
+  } else {
+    proxyReq.end();
+  }
+}
+
+// Serve static content from /public directory
+function serveStaticContent(req, res) {
+  let filePath = '.' + req.url;
+  
+  // Default to index.html for root path
+  if (filePath === './') {
+    filePath = './public/index.html';
+  } else {
+    filePath = './public' + req.url;
+  }
+  
+  // Get file extension
+  const extname = path.extname(filePath);
+  
+  // Set content type based on extension
+  let contentType = 'text/html';
+  switch (extname) {
+    case '.js':
+      contentType = 'text/javascript';
+      break;
+    case '.css':
+      contentType = 'text/css';
+      break;
+    case '.json':
+      contentType = 'application/json';
+      break;
+    case '.png':
+      contentType = 'image/png';
+      break;
+    case '.jpg':
+    case '.jpeg':
+      contentType = 'image/jpeg';
+      break;
+  }
+  
+  // Read the file
+  fs.readFile(filePath, (error, content) => {
+    if (error) {
+      if (error.code === 'ENOENT') {
+        // File not found
+        const html = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Crypto Trading Platform</title>
+              <style>
+                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                h1 { color: #333; }
+                p { color: #666; }
+              </style>
+            </head>
+            <body>
+              <h1>Crypto Trading Platform</h1>
+              <p>Welcome to the Crypto Trading Platform!</p>
+              <p>Server is running, but the frontend is not yet built.</p>
+              <p>API Status: <a href="/api/status">Check API Status</a></p>
+            </body>
+          </html>
+        `;
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(html, 'utf-8');
+      } else {
+        // Server error
+        res.writeHead(500);
+        res.end(`Server Error: ${error.code}`);
+      }
+    } else {
+      // Successful response
+      res.writeHead(200, { 'Content-Type': contentType });
+      res.end(content, 'utf-8');
+    }
+  });
+}
 
 // Start Python API server
 function startPythonServer() {
   console.log('Starting Python API server...');
   
-  const pythonScript = path.join(process.cwd(), 'binance_api_server.py');
+  // Try to use python3 first, fall back to python
+  const pythonCmd = fs.existsSync('/usr/bin/python3') ? 'python3' : 'python';
   
-  if (!fs.existsSync(pythonScript)) {
-    console.error(`Error: Python script not found at ${pythonScript}`);
-    process.exit(1);
+  // First, make sure all Python scripts are executable
+  try {
+    fs.chmodSync('./api_server.py', 0o755);
+    console.log('Made api_server.py executable');
+  } catch (err) {
+    console.warn('Could not make api_server.py executable:', err.message);
   }
   
-  const pythonProcess = spawn('python', [pythonScript], {
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      PYTHONUNBUFFERED: '1'
-    }
+  try {
+    fs.chmodSync('./binance_api_server.py', 0o755);
+    console.log('Made binance_api_server.py executable');
+  } catch (err) {
+    console.warn('Could not make binance_api_server.py executable:', err.message);
+  }
+  
+  // Start the Python server
+  pythonProcess = spawn(pythonCmd, ['./api_server.py']);
+  
+  pythonProcess.stdout.on('data', (data) => {
+    console.log(`Python server: ${data}`);
   });
   
-  pythonProcess.on('error', (err) => {
-    console.error('Failed to start Python process:', err);
+  pythonProcess.stderr.on('data', (data) => {
+    console.error(`Python server error: ${data}`);
   });
   
-  // Handle Python process exit
-  pythonProcess.on('exit', (code) => {
-    console.log(`Python API server exited with code ${code}`);
+  pythonProcess.on('close', (code) => {
+    console.log(`Python server process exited with code ${code}`);
+    
+    // Restart Python server if it crashes
     if (code !== 0) {
-      console.log('Restarting Python API server...');
-      startPythonServer();
+      console.log('Restarting Python server in 5 seconds...');
+      setTimeout(startPythonServer, 5000);
     }
   });
-  
-  return pythonProcess;
 }
 
-// Basic routes
-app.get('/', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'Cryptocurrency Trading Platform API is running',
-    documentation: '/api/docs',
-    version: '0.1.0'
-  });
-});
-
-app.get('/api/status', (req, res) => {
-  res.json({
-    server: 'online',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
-// Python API proxy routes
-app.get('/api/binance/status', async (req, res) => {
-  try {
-    const response = await axios.get(`${PYTHON_API_URL}/binance/status`);
-    res.json(response.data);
-  } catch (error) {
-    console.error('Error proxying to Python API:', error.message);
-    res.status(500).json({
-      error: 'Failed to connect to Binance API service',
-      message: error.message
-    });
-  }
-});
-
-app.get('/api/binance/ticker/:symbol', async (req, res) => {
-  try {
-    const symbol = req.params.symbol.toUpperCase();
-    const response = await axios.get(`${PYTHON_API_URL}/binance/ticker/${symbol}`);
-    res.json(response.data);
-  } catch (error) {
-    console.error('Error proxying to Python API:', error.message);
-    res.status(500).json({
-      error: 'Failed to fetch ticker data',
-      message: error.message
-    });
-  }
-});
-
-app.get('/api/binance/tickers', async (req, res) => {
-  try {
-    const response = await axios.get(`${PYTHON_API_URL}/binance/tickers`);
-    res.json(response.data);
-  } catch (error) {
-    console.error('Error proxying to Python API:', error.message);
-    res.status(500).json({
-      error: 'Failed to fetch tickers data',
-      message: error.message
-    });
-  }
-});
-
-app.get('/api/ml/predict/:symbol', async (req, res) => {
-  try {
-    const symbol = req.params.symbol.toUpperCase();
-    const response = await axios.get(`${PYTHON_API_URL}/ml/predict/${symbol}`);
-    res.json(response.data);
-  } catch (error) {
-    console.error('Error proxying to ML prediction API:', error.message);
-    res.status(500).json({
-      error: 'Failed to fetch ML prediction',
-      message: error.message
-    });
-  }
-});
-
-// API documentation
-app.get('/api/docs', (req, res) => {
-  res.json({
-    endpoints: [
-      {
-        path: '/',
-        method: 'GET',
-        description: 'API root, returns basic server information'
-      },
-      {
-        path: '/api/status',
-        method: 'GET',
-        description: 'Server status information'
-      },
-      {
-        path: '/api/binance/status',
-        method: 'GET',
-        description: 'Binance API connection status'
-      },
-      {
-        path: '/api/binance/ticker/:symbol',
-        method: 'GET',
-        description: 'Get price for a specific trading pair (e.g., BTCUSDT)'
-      },
-      {
-        path: '/api/binance/tickers',
-        method: 'GET',
-        description: 'Get prices for all trading pairs'
-      },
-      {
-        path: '/api/ml/predict/:symbol',
-        method: 'GET',
-        description: 'Get ML-based price prediction for a trading pair'
-      }
-    ]
-  });
-});
-
-// Handle 404
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `The requested resource '${req.url}' was not found on this server`
-  });
-});
-
-// Handle errors
-app.use((err, req, res, next) => {
-  console.error('Server error:', err);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: err.message
-  });
-});
-
-// Start Python API server
-const pythonProcess = startPythonServer();
-
 // Create HTTP server
-const server = http.createServer(app);
+const server = http.createServer(handleRequest);
 
-// Start server
-server.listen(PORT, HOST, () => {
-  console.log(`Cryptocurrency Trading Platform server running at http://${HOST}:${PORT}/`);
-  console.log(`Python API server running at http://localhost:${PYTHON_API_PORT}/`);
+// Start the server
+server.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}/`);
+  
+  // Start Python server
+  startPythonServer();
 });
 
-// Handle shutdown
-process.on('SIGINT', () => {
-  console.log('Shutting down server...');
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  
   server.close(() => {
     console.log('HTTP server closed');
-    pythonProcess.kill('SIGINT');
+    
+    // Kill Python process if running
+    if (pythonProcess) {
+      pythonProcess.kill();
+    }
+    
     process.exit(0);
   });
 });

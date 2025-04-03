@@ -1,28 +1,41 @@
 #!/usr/bin/env node
 
-// Script to update package.json with a minimal script
+/**
+ * This script updates the package.json file to use our minimal server approach
+ * instead of tsx which is failing to install properly
+ */
+
 const fs = require('fs');
 const path = require('path');
 
 // Path to package.json
 const packageJsonPath = path.join(process.cwd(), 'package.json');
 
+// Read current package.json
+console.log(`Reading package.json from ${packageJsonPath}`);
+let packageJson;
 try {
-  // Read the current package.json
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-  
-  // Add the minimal script if it doesn't exist
-  if (!packageJson.scripts.minimal) {
-    packageJson.scripts.minimal = 'node npm-run-minimal.js';
-    console.log('Added "minimal" script to package.json');
-  } else {
-    console.log('"minimal" script already exists in package.json');
-  }
-  
-  // Write the updated package.json
-  fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-  console.log('Successfully updated package.json');
-} catch (error) {
-  console.error('Error updating package.json:', error);
+  const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf8');
+  packageJson = JSON.parse(packageJsonContent);
+  console.log('Successfully read package.json');
+} catch (err) {
+  console.error('Error reading package.json:', err);
   process.exit(1);
 }
+
+// Update the dev script to use our new approach
+console.log('Updating package.json scripts...');
+const originalDev = packageJson.scripts.dev;
+packageJson.scripts.dev = 'node dev.cjs';
+console.log(`Changed dev script from '${originalDev}' to 'node dev.cjs'`);
+
+// Write updated package.json
+try {
+  fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+  console.log('Successfully updated package.json');
+} catch (err) {
+  console.error('Error writing package.json:', err);
+  process.exit(1);
+}
+
+console.log('Package.json update complete');
