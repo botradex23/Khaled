@@ -9,9 +9,7 @@ without dependencies on other services.
 import os
 import sys
 import logging
-import asyncio
-import telegram
-from telegram.constants import ParseMode
+import requests
 from datetime import datetime
 
 # Configure logging
@@ -25,8 +23,8 @@ logger = logging.getLogger("telegram_test")
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 TELEGRAM_ADMIN_CHAT_ID = os.environ.get('TELEGRAM_ADMIN_CHAT_ID')
 
-async def send_test_message():
-    """Send a test message to admin via Telegram"""
+def send_test_message():
+    """Send a test message to admin via Telegram using direct API calls"""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_ADMIN_CHAT_ID:
         logger.error("Telegram credentials not found in environment variables")
         logger.info(f"Bot token configured: {bool(TELEGRAM_BOT_TOKEN)}")
@@ -34,9 +32,19 @@ async def send_test_message():
         return False
     
     try:
-        # Initialize the bot
-        bot = telegram.Bot(token=TELEGRAM_BOT_TOKEN)
-        logger.info(f"Bot initialized: {bot.username}")
+        # Get bot information first
+        bot_info_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getMe"
+        logger.info(f"Getting bot info from Telegram API")
+        bot_response = requests.get(bot_info_url)
+        bot_response.raise_for_status()
+        bot_data = bot_response.json()
+        
+        if not bot_data.get('ok'):
+            logger.error(f"Failed to get bot info: {bot_data.get('description')}")
+            return False
+            
+        bot_username = bot_data['result']['username']
+        logger.info(f"Bot initialized: {bot_username}")
         
         # Format a test message
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -45,18 +53,28 @@ async def send_test_message():
 
 ✅ *Test Status*: Successful
 ⏰ *Time*: {now}
-🤖 *Bot Username*: {bot.username}
+🤖 *Bot Username*: {bot_username}
 
 This is a test message to verify that the Telegram notification system is working properly.
         """
         
-        # Send the message
+        # Send the message using HTTP request
+        send_message_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         logger.info(f"Sending test message to chat ID: {TELEGRAM_ADMIN_CHAT_ID}")
-        await bot.send_message(
-            chat_id=TELEGRAM_ADMIN_CHAT_ID,
-            text=message,
-            parse_mode=ParseMode.MARKDOWN
-        )
+        
+        payload = {
+            "chat_id": TELEGRAM_ADMIN_CHAT_ID,
+            "text": message,
+            "parse_mode": "Markdown"
+        }
+        
+        response = requests.post(send_message_url, json=payload)
+        response.raise_for_status()
+        
+        result = response.json()
+        if not result.get('ok'):
+            logger.error(f"Failed to send message: {result.get('description')}")
+            return False
         logger.info("Test message sent successfully")
         return True
     
@@ -77,8 +95,8 @@ def main():
     print(f"✓ Bot token found: {TELEGRAM_BOT_TOKEN[:5]}...{TELEGRAM_BOT_TOKEN[-5:]}")
     print(f"✓ Admin chat ID found: {TELEGRAM_ADMIN_CHAT_ID}")
     
-    # Run the async test
-    result = asyncio.run(send_test_message())
+    # Run the test
+    result = send_test_message()
     
     print("\n=== Test Results ===")
     if result:

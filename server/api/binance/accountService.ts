@@ -9,6 +9,9 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import { storage } from '../../storage';
+// Load environment variables
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Define UserAPIKeys interface to match storage.getUserApiKeys return type
 interface UserAPIKeys {
@@ -104,6 +107,33 @@ class BinanceAccountService {
       apiKeys.binanceApiKey.trim() !== '' &&
       apiKeys.binanceSecretKey.trim() !== ''
     );
+  }
+  
+  /**
+   * Check if API keys are configured for Binance - used for status checking
+   * @returns True if both API keys exist and are configured
+   */
+  public async hasBinanceApiKeys(userId?: number): Promise<boolean> {
+    try {
+      // If userId is provided, check that specific user
+      if (userId) {
+        const apiKeys = await storage.getUserApiKeys(userId);
+        return this.apiKeyConfigured(apiKeys);
+      }
+      
+      // Check if API keys are configured in .env as fallback for system-level status checks
+      const apiKey = process.env.BINANCE_API_KEY;
+      const secretKey = process.env.BINANCE_SECRET_KEY;
+      
+      return !!(
+        apiKey && secretKey && 
+        apiKey.trim() !== '' && 
+        secretKey.trim() !== ''
+      );
+    } catch (error) {
+      console.error('Error checking if Binance API keys exist:', error);
+      return false;
+    }
   }
 
   /**

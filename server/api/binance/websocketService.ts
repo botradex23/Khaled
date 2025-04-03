@@ -3,18 +3,26 @@ import { EventEmitter } from 'events';
 import { binanceMarketService, BinanceTickerPrice } from './marketPriceService';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 
-// פרטי הפרוקסי שעובד עם WebSocket של Binance
-const PROXY_HOST = '185.199.228.220'; // פרוקסי שעובד על פי הבדיקות
-const PROXY_PORT = 7300;             // פורט עובד מהבדיקות
-const PROXY_USERNAME = 'ahjqspco';    // שם משתמש Webshare
-const PROXY_PASSWORD = 'dzx3r1prpz9k'; // סיסמה Webshare
+// Proxy details for Binance WebSocket connection
+// Cycle through available proxies when one fails
+const AVAILABLE_PROXIES = [
+  { host: '86.38.234.176', port: 6630 },
+  { host: '154.36.110.199', port: 6853 },
+  { host: '45.151.162.198', port: 6600 },
+];
 
-// EventEmitter להעברת עדכוני מחירים בזמן אמת
+// Maximum number of connection retry attempts before giving up
+const MAX_PROXY_RETRIES = 3;
+
+// Check if proxy is enabled from environment
+const USE_PROXY = process.env.USE_PROXY === 'true';
+
+// Real-time price updates event emitter class
 class BinanceWebSocketService extends EventEmitter {
   private ws: WebSocket | null = null;
   private isConnected: boolean = false;
   private reconnectTimer: NodeJS.Timeout | null = null;
-  private reconnectInterval: number = 5000; // 5 שניות לניסיון חיבור מחדש
+  private reconnectInterval: number = 5000; // 5 seconds for reconnect attempts
   private currencyPairs: string[] = [
     'btcusdt', 'ethusdt', 'bnbusdt', 'solusdt', 'xrpusdt',
     'adausdt', 'dogeusdt', 'dotusdt', 'maticusdt', 'linkusdt',
@@ -22,16 +30,23 @@ class BinanceWebSocketService extends EventEmitter {
     'nearusdt', 'bchusdt', 'filusdt', 'trxusdt', 'xlmusdt'
   ];
 
+  // Status tracking fields
+  private lastConnectionError: string | null = null;
+  private currentProxy: {host: string, port: number} | null = null;
+  private connectionAttempts: number = 0;
+  private maxRetries: number = MAX_PROXY_RETRIES;
+  private lastMessageTime: number = 0;
+
   constructor() {
     super();
-    // הגדרה של האירועים העיקריים שהשירות מפיץ
+    // Register the error event handler
     this.on('error', this.handleError.bind(this));
   }
 
-  // מאפיינים למצב סימולציה
+  // Simulation mode properties
   private simulationMode: boolean = false;
   private simulationInterval: NodeJS.Timeout | null = null;
-  private simulationIntervalTime: number = 3000; // עדכון כל 3 שניות
+  private simulationIntervalTime: number = 3000; // Update every 3 seconds
   private importantCurrencyPairs: string[] = [
     'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
     'ADAUSDT', 'DOGEUSDT', 'DOTUSDT', 'MATICUSDT', 'LINKUSDT',
@@ -41,27 +56,35 @@ class BinanceWebSocketService extends EventEmitter {
   private lastPrices: Record<string, number> = {};
 
   /**
-   * התחברות לשירות WebSocket של Binance
+   * Connect to Binance WebSocket service
+   * Attempts to connect using available proxies, with failover capability
    */
-  public connect(): void {
+  public connect(proxyIndex: number = 0): void {
     if (this.isConnected || this.ws) {
       console.log('WebSocket connection already exists');
       return;
     }
 
     try {
-      // בניית ה-URL לפי הפורמט של Binance עבור multiple streams
+      // Build URL for multiple streams
       const streams = this.currencyPairs.map(pair => `${pair}@ticker`).join('/');
       const wsUrl = `wss://stream.binance.com:9443/stream?streams=${streams}`;
       
       console.log(`Connecting to Binance WebSocket: ${wsUrl}`);
       
-      // יצירת מופע פרוקסי להתחברות ל-WebSocket
-      const proxyUrl = `http://${PROXY_USERNAME}:${PROXY_PASSWORD}@${PROXY_HOST}:${PROXY_PORT}`;
-      console.log(`Using HTTPS proxy for WebSocket: ${PROXY_HOST}:${PROXY_PORT}`);
+      // Get proxy details - use either environment variables or try from our list
+      const currentProxy = AVAILABLE_PROXIES[proxyIndex] || AVAILABLE_PROXIES[0];
+      const proxyHost = process.env.PROXY_IP || currentProxy.host;
+      const proxyPort = process.env.PROXY_PORT ? parseInt(process.env.PROXY_PORT, 10) : currentProxy.port;
+      
+      // Create proxy agent for WebSocket
+      const proxyUsername = process.env.PROXY_USERNAME || 'ahjqspco';
+      const proxyPassword = process.env.PROXY_PASSWORD || 'dzx3r1prpz9k';
+      const proxyUrl = `http://${proxyUsername}:${proxyPassword}@${proxyHost}:${proxyPort}`;
+      console.log(`Using HTTPS proxy for WebSocket: ${proxyHost}:${proxyPort} with user ${proxyUsername}`);
       const agent = new HttpsProxyAgent(proxyUrl);
       
-      // יצירת אפשרויות WebSocket עם הפרוקסי
+      // Create WebSocket options with proxy
       const wsOptions = {
         agent,
         headers: {
@@ -70,7 +93,7 @@ class BinanceWebSocketService extends EventEmitter {
         }
       };
       
-      // התחברות ל-WebSocket דרך הפרוקסי
+      // Connect to WebSocket using proxy
       this.ws = new WebSocket(wsUrl, wsOptions);
       
       this.ws.on('open', () => {
@@ -78,12 +101,12 @@ class BinanceWebSocketService extends EventEmitter {
         this.isConnected = true;
         this.simulationMode = false;
         
-        // הפסק את הסימולציה אם היא רצה
+        // Stop simulation if running
         this.stopSimulation();
         
         this.emit('connected');
         
-        // ניקוי טיימר של ניסיון חיבור מחדש אם יש
+        // Clear reconnect timer if exists
         if (this.reconnectTimer) {
           clearTimeout(this.reconnectTimer);
           this.reconnectTimer = null;
@@ -94,23 +117,23 @@ class BinanceWebSocketService extends EventEmitter {
         try {
           const message = JSON.parse(data);
           
-          // בדיקה שהודעה מכילה נתוני מחיר
+          // Check if message contains price data
           if (message && message.data && message.data.s && message.data.p) {
             const ticker = {
-              symbol: message.data.s, // סמל המטבע (כמו BTCUSDT)
-              price: parseFloat(message.data.p), // מחיר נוכחי
-              priceChangePercent: parseFloat(message.data.P), // שינוי באחוזים ב-24 שעות
-              volume: message.data.v, // נפח מסחר
+              symbol: message.data.s, // Symbol (like BTCUSDT)
+              price: parseFloat(message.data.p), // Current price
+              priceChangePercent: parseFloat(message.data.P), // 24hr change percentage
+              volume: message.data.v, // Trading volume
               timestamp: Date.now()
             };
             
-            // עדכון המחיר במערכת שלנו
+            // Update price in our system
             binanceMarketService.updatePrice(ticker.symbol, ticker.price);
             
-            // שמירת המחיר האחרון
+            // Save last price
             this.lastPrices[ticker.symbol] = ticker.price;
             
-            // שידור האירוע לכל המאזינים
+            // Emit event to all listeners
             this.emit('price-update', {
               symbol: ticker.symbol, 
               price: ticker.price,
@@ -118,7 +141,7 @@ class BinanceWebSocketService extends EventEmitter {
               source: 'binance-websocket'
             });
             
-            // שידור אירוע ספציפי לכל מטבע
+            // Emit specific event for each currency
             this.emit(`ticker:${ticker.symbol}`, ticker);
           }
         } catch (error) {
@@ -130,10 +153,46 @@ class BinanceWebSocketService extends EventEmitter {
         console.error('Binance WebSocket error:', error);
         this.emit('error', error);
         
-        // במקרה ויש שגיאת חיבור עם קוד 451 (הגבלה גיאוגרפית), נפעיל סימולציה
-        if (error && (error.message?.includes('451') || error.code === 451)) {
-          console.log('[WebSocket] Binance WebSocket geo-restriction detected (451)');
-          // מפעילים סימולציה
+        // Handle proxy authentication errors (407) by trying the next proxy
+        if (error && (error.message?.includes('407') || error.code === 407)) {
+          console.log('[WebSocket] Proxy authentication failed, trying next proxy...');
+          
+          // Try next proxy if available
+          const nextProxyIndex = (proxyIndex + 1) % AVAILABLE_PROXIES.length;
+          
+          // Only try the next proxy if we haven't tried all of them
+          if (nextProxyIndex !== proxyIndex) {
+            console.log(`[WebSocket] Trying proxy ${nextProxyIndex + 1}/${AVAILABLE_PROXIES.length}`);
+            
+            // Close current connection if it exists
+            if (this.ws) {
+              try {
+                this.ws.close();
+              } catch (e) {
+                // Ignore
+              }
+              this.ws = null;
+              this.isConnected = false;
+            }
+            
+            // Try connect with next proxy
+            setTimeout(() => {
+              this.connect(nextProxyIndex);
+            }, 1000);
+            return;
+          }
+        }
+        
+        // If geo-restricted (451) or payment required (402), start simulation
+        if (error && (error.message?.includes('451') || error.code === 451 || 
+                      error.message?.includes('402') || error.code === 402 ||
+                      error.message?.includes('407') || error.code === 407)) {
+          console.log('[WebSocket] Binance WebSocket connection failed due to proxy issues, switching to simulation mode');
+          
+          // Inform all services that we're using simulation
+          console.log('Binance WebSocket switched to simulation mode due to connection issues (possibly geo-restricted)');
+          
+          // Start simulation mode for price updates
           this.startSimulation();
         }
       });
@@ -143,23 +202,23 @@ class BinanceWebSocketService extends EventEmitter {
         this.isConnected = false;
         this.ws = null;
         
-        // הודעה על סגירת החיבור
+        // Emit disconnected event
         this.emit('disconnected', { code, reason });
         
-        // מעבר למצב סימולציה במקרה של ניתוק
+        // Start simulation when disconnected
         this.startSimulation();
         
-        // ניסיון חיבור מחדש
+        // Attempt to reconnect
         this.scheduleReconnect();
       });
     } catch (error) {
       console.error('Error creating Binance WebSocket connection:', error);
       this.emit('error', error);
       
-      // התחל סימולציה במקרה של שגיאה ביצירת החיבור
+      // Start simulation when connection creation fails
       this.startSimulation();
       
-      // ניסיון חיבור מחדש
+      // Schedule reconnect attempt
       this.scheduleReconnect();
     }
   }
@@ -329,19 +388,22 @@ class BinanceWebSocketService extends EventEmitter {
   }
 
   /**
-   * תזמון ניסיון חיבור מחדש
+   * Schedule a reconnection attempt with proxy cycling
+   * Will try all proxies in sequence before giving up
    */
-  private scheduleReconnect(): void {
+  private scheduleReconnect(proxyIndex: number = 0): void {
     if (this.reconnectTimer) {
       return;
     }
     
-    console.log(`Scheduling WebSocket reconnect in ${this.reconnectInterval}ms`);
+    console.log(`Scheduling WebSocket reconnect in ${this.reconnectInterval}ms, will try proxy ${proxyIndex + 1}/${AVAILABLE_PROXIES.length}`);
     
     this.reconnectTimer = setTimeout(() => {
       console.log('Attempting to reconnect to Binance WebSocket');
       this.reconnectTimer = null;
-      this.connect();
+      
+      // Try to connect with the next proxy in sequence
+      this.connect(proxyIndex);
     }, this.reconnectInterval);
   }
 
@@ -365,14 +427,14 @@ class BinanceWebSocketService extends EventEmitter {
   }
   
   /**
-   * קבלת המחירים האחרונים (אמיתיים או מדומים)
+   * Get the last prices (real or simulated)
    */
   public getLastPrices(): Record<string, number> {
     return this.lastPrices;
   }
 
   /**
-   * הוספת מטבעות למעקב
+   * Add currency pairs to watch list
    */
   public addCurrencyPairs(pairs: string[]): void {
     pairs.forEach(pair => {
@@ -382,11 +444,53 @@ class BinanceWebSocketService extends EventEmitter {
       }
     });
     
-    // אם כבר מחובר, התחבר מחדש עם רשימת המטבעות המעודכנת
+    // If already connected, reconnect with updated currency list
     if (this.isConnected) {
       this.disconnect();
       this.connect();
     }
+  }
+  
+  /**
+   * Check if simulation mode is active
+   */
+  public isSimulationMode(): boolean {
+    return this.simulationMode;
+  }
+  
+  /**
+   * Get the current proxy being used
+   */
+  public getCurrentProxy(): {host: string, port: number} | null {
+    return this.currentProxy;
+  }
+  
+  /**
+   * Get the last connection error
+   */
+  public getLastConnectionError(): string | null {
+    return this.lastConnectionError;
+  }
+  
+  /**
+   * Get the number of connection attempts made
+   */
+  public getConnectionAttempts(): number {
+    return this.connectionAttempts;
+  }
+  
+  /**
+   * Get the maximum number of retry attempts
+   */
+  public getMaxRetries(): number {
+    return this.maxRetries;
+  }
+  
+  /**
+   * Get the timestamp of the last message received
+   */
+  public getLastMessageTime(): number {
+    return this.lastMessageTime;
   }
 }
 

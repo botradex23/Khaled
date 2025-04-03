@@ -21,6 +21,7 @@ import { createOkxServiceWithCustomCredentials, okxService } from "./api/okx/okx
 import updateApiKeysRouter from "./routes/update-api-keys";
 import binanceRouter from "./routes/binance";
 import binanceApiKeysRouter from "./routes/binance-api-keys";
+import binanceConnectionStatusRoutes from "./routes/binance-connection-status";
 import paperTradingRouter from "./routes/paper-trading";
 import databaseStatusRoutes from "./routes/database-status";
 import riskSettingsRouter from "./api/risk-settings";
@@ -93,6 +94,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Database status routes registered');
   }).catch(err => {
     console.error('Failed to register database status routes:', err);
+  });
+  
+  // Register Binance connection status route
+  import('./routes/binance-connection-status').then(binanceConnectionStatusRouter => {
+    app.use('', binanceConnectionStatusRouter.default);
+    console.log('Binance connection status route registered');
+  }).catch(err => {
+    console.error('Failed to register Binance connection status route:', err);
   });
   
   // Register Binance market prices routes

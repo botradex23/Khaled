@@ -10,8 +10,8 @@ const BINANCE_TEST_URL = 'https://testnet.binance.vision';
 const USE_PROXY = true; // Enable proxy to overcome geographical restrictions
 const PROXY_USERNAME = "ahjqspco";
 const PROXY_PASSWORD = "dzx3r1prpz9k";
-const PROXY_IP = process.env.PROXY_IP || '185.199.228.220'; // Working proxy IP from tests
-const PROXY_PORT = process.env.PROXY_PORT || '7300';       // Working proxy port
+const PROXY_IP = process.env.PROXY_IP || '86.38.234.176'; // Updated proxy IP from Webshare list
+const PROXY_PORT = process.env.PROXY_PORT || '6630';      // Updated proxy port
 
 /**
  * Enhanced Axios instance creator for reliable Binance API access
@@ -83,11 +83,20 @@ export interface LivePriceUpdate {
 export class BinanceMarketPriceService extends EventEmitter {
   private baseUrl: string;
   private livePrices: Record<string, number> = {}; // שמירת מחירים עדכניים
+  private lastUpdateTime: number = 0; // Track the last update time
   
   constructor(useTestnet: boolean = false) {
     super();
     this.baseUrl = useTestnet ? BINANCE_TEST_URL : BINANCE_BASE_URL;
     console.log(`Binance Market Price Service initialized with base URL: ${this.baseUrl}`);
+  }
+  
+  /**
+   * Get the timestamp of the last price update
+   * @returns Timestamp in milliseconds
+   */
+  public getLastUpdateTime(): number {
+    return this.lastUpdateTime;
   }
   
   /**
@@ -100,11 +109,14 @@ export class BinanceMarketPriceService extends EventEmitter {
     const oldPrice = this.livePrices[formattedSymbol];
     this.livePrices[formattedSymbol] = price;
     
+    // Update the lastUpdateTime timestamp
+    this.lastUpdateTime = Date.now();
+    
     // שלח אירוע עדכון מחיר
     const update: LivePriceUpdate = {
       symbol: formattedSymbol,
       price,
-      timestamp: Date.now(),
+      timestamp: this.lastUpdateTime,
       source: 'binance-websocket'
     };
     
