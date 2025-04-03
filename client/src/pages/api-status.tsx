@@ -840,7 +840,6 @@ function DatabaseStatusCard({ query }: { query: any }) {
             </p>
           </div>
         </div>
-        </div>
       </CardContent>
     </Card>
   );
