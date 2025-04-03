@@ -53,7 +53,7 @@ class ProxyManager:
     def load_proxies(self) -> None:
         """Load proxies from environment variables and/or proxy file"""
         # First, try to load from the proxy file
-        proxy_file = os.environ.get('PROXY_FILE', 'attached_assets/Webshare 3 proxies 3.txt')
+        proxy_file = os.environ.get('PROXY_FILE', 'attached_assets/Webshare 5 proxies.txt')
         if os.path.exists(proxy_file):
             try:
                 with open(proxy_file, 'r') as f:
