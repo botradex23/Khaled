@@ -1,0 +1,129 @@
+import { MongoClient, Db, Collection } from 'mongodb';
+import {
+  User,
+  InsertUser,
+  TradeLog,
+  InsertTradeLog
+} from '@shared/schema';
+
+export class MongoDBStorage {
+  private client: MongoClient;
+  private db: Db;
+  private usersCollection: Collection<User>;
+  private botsCollection: Collection<any>; // אפשר להגדיר ממשק מותאם
+  private tradesCollection: Collection<TradeLog>;
+
+  constructor() {
+    const uri = process.env.MONGO_URI;
+    if (!uri) throw new Error("Missing MONGO_URI in environment");
+    this.client = new MongoClient(uri);
+  }
+
+  async connect(): Promise<void> {
+    await this.client.connect();
+    console.log("✅ Connected to MongoDB Atlas");
+    this.db = this.client.db("Saas");
+    this.usersCollection = this.db.collection<User>("users");
+    this.botsCollection = this.db.collection("bots");
+    this.tradesCollection = this.db.collection<TradeLog>("trades");
+  }
+
+  async checkDatabaseStatus() {
+    try {
+      await this.client.db().command({ ping: 1 });
+      return {
+        connected: true,
+        isSimulated: false,
+        description: 'Connected to MongoDB Atlas',
+        error: null
+      };
+    } catch (err) {
+      return {
+        connected: false,
+        isSimulated: false,
+        description: 'Failed to connect to MongoDB',
+        error: err
+      };
+    }
+  }
+
+  // ===== USERS =====
+  async getUser(id: number): Promise<User | undefined> {
+    return await this.usersCollection.findOne({ id }) || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return await this.usersCollection.findOne({ username }) || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return await this.usersCollection.findOne({ email }) || undefined;
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const fullUser: User = {
+      id: Date.now(), // or use sequence logic
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...user
+    };
+    await this.usersCollection.insertOne(fullUser);
+    return fullUser;
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
+    const result = await this.usersCollection.findOneAndUpdate(
+      { id },
+      { $set: { ...updates, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    );
+    return result.value || undefined;
+  }
+
+  // ===== BOTS =====
+  async createBot(bot: any): Promise<any> {
+    const fullBot = { ...bot, createdAt: new Date(), updatedAt: new Date() };
+    const result = await this.botsCollection.insertOne(fullBot);
+    return { _id: result.insertedId, ...fullBot };
+  }
+
+  async getBotById(id: string): Promise<any> {
+    return await this.botsCollection.findOne({ _id: new this.client.db().bson.ObjectId(id) });
+  }
+
+  async getUserBots(userId: number): Promise<any[]> {
+    return await this.botsCollection.find({ userId }).toArray();
+  }
+
+  async updateBot(id: string, updates: any): Promise<any> {
+    const result = await this.botsCollection.findOneAndUpdate(
+      { _id: new this.client.db().bson.ObjectId(id) },
+      { $set: { ...updates, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    );
+    return result.value;
+  }
+
+  async deleteBot(id: string): Promise<boolean> {
+    const res = await this.botsCollection.deleteOne({ _id: new this.client.db().bson.ObjectId(id) });
+    return res.deletedCount > 0;
+  }
+
+  // ===== TRADES (Trade Logs) =====
+  async createTradeLog(tradeLog: InsertTradeLog): Promise<any> {
+    const fullLog = {
+      ...tradeLog,
+      timestamp: new Date()
+    };
+    const result = await this.tradesCollection.insertOne(fullLog);
+    return { _id: result.insertedId, ...fullLog };
+  }
+
+  async getAllTradeLogs(limit = 100): Promise<TradeLog[]> {
+    return await this.tradesCollection.find().sort({ timestamp: -1 }).limit(limit).toArray();
+  }
+
+  async getTradeLogsByUserId(userId: number, limit = 100): Promise<TradeLog[]> {
+    return await this.tradesCollection.find({ userId }).sort({ timestamp: -1 }).limit(limit).toArray();
+  }
+}
