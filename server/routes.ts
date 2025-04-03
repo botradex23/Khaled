@@ -90,7 +90,7 @@ const createTestUserWithKeys = async (req: Request, res: Response) => {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register database status routes
   import('./routes/database-status').then(databaseStatusRouter => {
-    app.use('/api/database', databaseStatusRouter.default);
+    app.use('/api/database-status', databaseStatusRouter.default);
     console.log('Database status routes registered');
   }).catch(err => {
     console.error('Failed to register database status routes:', err);

@@ -1,17 +1,21 @@
 // Simple script to test MongoDB connection directly using ESM
 import { MongoClient } from 'mongodb';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 // MongoDB connection string
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://Khaleddd:Khaled123.@cluster0.rh8kusi.mongodb.net/Binance_apis?retryWrites=true&w=majority&appName=Cluster0';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://Khaleddd:Khaled123.@cluster0.rh8kusi.mongodb.net/Saas?retryWrites=true&w=majority&appName=Cluster0';
 
 // Function to test the connection
 async function testConnection() {
   console.log('Attempting to connect to MongoDB...');
-  console.log(`Using connection string: ${MONGODB_URI.substring(0, MONGODB_URI.indexOf('@'))}...`);
+  console.log(`Using connection string: ${MONGO_URI.substring(0, MONGO_URI.indexOf('@'))}...`);
   
   try {
     // Connect to MongoDB
-    const client = new MongoClient(MONGODB_URI, {
+    const client = new MongoClient(MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
@@ -20,7 +24,7 @@ async function testConnection() {
     console.log('Successfully connected to MongoDB!');
     
     // Get the database name from the connection string or use a default
-    const dbName = 'Binance_apis';
+    const dbName = 'Saas';
     const db = client.db(dbName);
     
     // List all collections to verify access

@@ -1,8 +1,8 @@
 /**
  * MongoDB integration module
  * 
- * This module provides MongoDB operations using a real MongoDB connection when available,
- * otherwise falls back to a simulated in-memory store.
+ * This module provides MongoDB operations using a real MongoDB connection.
+ * Simulation mode has been completely disabled as per requirements.
  */
 import { saveApiKeys, getApiKeys, deleteApiKeys, mongooseConnectionStatus } from '../models/saas';
 import type { MongoClient } from 'mongodb';
@@ -10,59 +10,53 @@ import type { MongoClient } from 'mongodb';
 // Global reference to MongoDB client
 export let mongoClient: any = null;
 
-// Connect to MongoDB (real or simulated)
+// Connect to MongoDB
 export const connectToMongoDB = async () => {
   try {
     // Check if connection string is available
-    if (process.env.MONGODB_URI) {
-      console.log('MongoDB connection string is configured. Attempting real connection...');
+    const mongoUri = process.env.MONGO_URI;
+    if (!mongoUri) {
+      console.error('MongoDB connection string not found. Please set MONGO_URI in .env');
+      mongooseConnectionStatus.readyState = 0;
+      return false;
+    }
+    
+    console.log('MongoDB connection string is configured. Connecting to MongoDB Atlas...');
+    
+    try {
+      // Dynamically import MongoDB to avoid TypeScript errors at build time
+      const { MongoClient } = await import('mongodb');
       
-      try {
-        // Dynamically import MongoDB to avoid TypeScript errors at build time
-        const { MongoClient } = await import('mongodb');
-        
-        // Initialize MongoDB client with the connection string
-        mongoClient = new MongoClient(process.env.MONGODB_URI, {
-          // Connection options
-          monitorCommands: true,
-        });
-        
-        // Connect to the MongoDB server
-        await mongoClient.connect();
-        
-        // Test the connection by listing databases
-        const adminDb = mongoClient.db().admin();
-        const result = await adminDb.listDatabases();
-        
-        console.log(`Successfully connected to MongoDB. Found ${result.databases.length} databases.`);
-        
-        // Mark the connection as ready
-        mongooseConnectionStatus.readyState = 1;
-        mongooseConnectionStatus.isSimulated = false;
-        
-        return true;
-      } catch (connectionError) {
-        console.error('Error establishing real MongoDB connection:', connectionError);
-        console.log('Falling back to simulated MongoDB store...');
-        
-        // In this case we need to use a simulation
-        console.log('NOTICE: This is a MongoDB SIMULATION. Data is stored in memory only.');
-        console.log(`NOTICE: MongoDB URI configured: ${process.env.MONGODB_URI.substring(0, process.env.MONGODB_URI.indexOf('://') + 3)}...`);
-        
-        // Mark the mock connection as ready
-        mongooseConnectionStatus.readyState = 1;
-        mongooseConnectionStatus.isSimulated = true;
-        
-        console.log('MongoDB simulated connection established successfully');
-        return true;
-      }
-    } else {
-      console.log('MongoDB connection string not found. Using in-memory storage instead.');
+      // Initialize MongoDB client with the connection string
+      mongoClient = new MongoClient(mongoUri, {
+        // Connection options for better reliability
+        monitorCommands: true,
+      });
+      
+      // Connect to the MongoDB server
+      await mongoClient.connect();
+      
+      // Test the connection by listing databases
+      const adminDb = mongoClient.db().admin();
+      const result = await adminDb.listDatabases();
+      
+      console.log(`Successfully connected to MongoDB Atlas. Found ${result.databases.length} databases.`);
+      
+      // Mark the connection as ready
+      mongooseConnectionStatus.readyState = 1;
+      
+      return true;
+    } catch (connectionError) {
+      // No fallback to simulation - just report the error
+      console.error('Error establishing MongoDB connection:', connectionError);
+      console.error('MongoDB connection failed. Please check your MONGO_URI and network connectivity.');
+      
+      // Set connection status to disconnected
       mongooseConnectionStatus.readyState = 0;
       return false;
     }
   } catch (error) {
-    console.error('Error with MongoDB simulation:', error);
+    console.error('Error with MongoDB connection:', error);
     mongooseConnectionStatus.readyState = 0;
     return false;
   }
@@ -71,16 +65,17 @@ export const connectToMongoDB = async () => {
 export const testMongoDBConnection = async () => {
   try {
     // Check if connection string is available
-    if (!process.env.MONGODB_URI) {
+    const mongoUri = process.env.MONGO_URI;
+    if (!mongoUri) {
       return {
         connected: false,
-        isSimulated: true,
-        description: 'MongoDB connection string not found',
+        isSimulated: false,
+        description: 'MongoDB connection string not found. Please set MONGO_URI in .env.',
         error: 'MongoDB connection string not found'
       };
     }
     
-    // Check simulated MongoDB connection status
+    // Check MongoDB connection status
     const connected = mongooseConnectionStatus.readyState === 1;
     
     // Try to connect if not already connected
@@ -88,19 +83,19 @@ export const testMongoDBConnection = async () => {
       await connectToMongoDB();
     }
     
-    // Return detailed status information including simulation state
+    // Return detailed status information
     return {
       connected: mongooseConnectionStatus.readyState === 1,
-      isSimulated: mongooseConnectionStatus.isSimulated || true,
-      description: mongooseConnectionStatus.isSimulated 
-        ? 'MongoDB is running in simulation mode. Data is stored in memory only.' 
-        : 'MongoDB is connected to a real database.',
+      isSimulated: false,
+      description: mongooseConnectionStatus.readyState === 1
+        ? 'Successfully connected to MongoDB Atlas database.'
+        : 'Failed to connect to MongoDB Atlas. Check your connection string and network connectivity.',
       error: mongooseConnectionStatus.readyState !== 1 ? 'Failed to connect to MongoDB' : null
     };
   } catch (error) {
     return {
       connected: false,
-      isSimulated: true,
+      isSimulated: false,
       description: 'Error occurred during MongoDB connection check',
       error: error instanceof Error ? error.message : 'Unknown error during MongoDB connection check'
     };
@@ -110,7 +105,7 @@ export const testMongoDBConnection = async () => {
 // Helper function to save Binance API keys to MongoDB
 export const saveBinanceApiKeysToMongoDB = async (userId: number, apiKey: string, secretKey: string) => {
   try {
-    // Make sure our simulated MongoDB connection is ready
+    // Make sure our MongoDB connection is ready
     if (mongooseConnectionStatus.readyState !== 1) {
       await connectToMongoDB();
       
@@ -130,7 +125,7 @@ export const saveBinanceApiKeysToMongoDB = async (userId: number, apiKey: string
 // Helper function to get Binance API keys from MongoDB
 export const getBinanceApiKeysFromMongoDB = async (userId: number) => {
   try {
-    // Make sure our simulated MongoDB connection is ready
+    // Make sure our MongoDB connection is ready
     if (mongooseConnectionStatus.readyState !== 1) {
       await connectToMongoDB();
       
@@ -150,7 +145,7 @@ export const getBinanceApiKeysFromMongoDB = async (userId: number) => {
 // Helper function to delete Binance API keys from MongoDB
 export const deleteBinanceApiKeysFromMongoDB = async (userId: number) => {
   try {
-    // Make sure our simulated MongoDB connection is ready
+    // Make sure our MongoDB connection is ready
     if (mongooseConnectionStatus.readyState !== 1) {
       await connectToMongoDB();
       

@@ -1,115 +1,40 @@
-import { Router } from 'express';
-import { db } from '../db';
-import { sql } from 'drizzle-orm';
+/**
+ * Database Status API
+ * 
+ * Provides information about the status of connected databases (MongoDB, PostgreSQL, etc.)
+ */
+import express, { Request, Response } from 'express';
 import { testMongoDBConnection } from '../storage/mongodb';
 
-/**
- * Checks if PostgreSQL database is connected
- * @returns Object with connection information
- */
-const checkPostgres = async () => {
-  try {
-    // Test PostgreSQL connection by executing a simple query
-    const result = await db.execute(sql`SELECT 1 as connected`);
-    const rows = result as unknown as Array<{connected: number}>;
-    const connected = rows && rows.length > 0 && rows[0].connected === 1;
-    
-    return {
-      connected,
-      status: connected ? 'connected' : 'disconnected',
-      description: connected 
-        ? 'PostgreSQL connection is active and responding to queries' 
-        : 'PostgreSQL connection failed to execute test query'
-    };
-  } catch (error) {
-    console.error('Error checking PostgreSQL:', error);
-    return {
-      connected: false,
-      status: 'error',
-      description: `PostgreSQL connection error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
-};
+const router = express.Router();
 
 /**
- * Checks if MongoDB database is connected
- * @returns Object with connection information
+ * GET /api/database-status
+ * 
+ * Returns the status of all database connections
  */
-const checkMongoDB = async () => {
+router.get('/', async (req: Request, res: Response) => {
   try {
-    // Test MongoDB connection using the test function
-    const result = await testMongoDBConnection();
+    // Test MongoDB connection
+    const mongoStatus = await testMongoDBConnection();
     
-    // Extract connection details from the result
-    const { connected, isSimulated, description, error } = result;
-    
-    return {
-      connected,
-      status: connected ? 'connected' : 'disconnected',
-      description: description || (connected 
-        ? (isSimulated
-            ? 'MongoDB simulated connection is active (data stored in memory only)' 
-            : 'MongoDB connection is active and responding to queries')
-        : `MongoDB connection failed: ${error || 'Unknown reason'}`),
-      isSimulated, // Add flag to indicate simulation status
-      error
-    };
-  } catch (error) {
-    console.error('Error checking MongoDB:', error);
-    return {
-      connected: false,
-      status: 'error',
-      description: `MongoDB connection error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      isSimulated: true // Even on error, indicate it's a simulation
-    };
-  }
-};
-
-const router = Router();
-
-// Get database connection status
-router.get('/status', async (req, res) => {
-  try {
-    // Check PostgreSQL connection
-    const pgStatus = await checkPostgres();
-    
-    // Check MongoDB connection
-    const mongoStatus = await checkMongoDB();
-    
-    // Determine overall status
-    const allConnected = pgStatus.connected && mongoStatus.connected;
-    const anyConnected = pgStatus.connected || mongoStatus.connected;
-    
-    // Format response with connection details
-    const response = {
-      status: allConnected ? 'ok' : (anyConnected ? 'partial' : 'error'),
-      connections: {
-        postgresql: pgStatus,
-        mongodb: mongoStatus
-      },
-      message: allConnected 
-        ? 'All database connections are active' 
-        : (anyConnected ? 'Some database connections failed' : 'All database connections failed')
+    // Get MongoDB connection info
+    const mongoInfo = {
+      connected: mongoStatus.connected,
+      description: mongoStatus.description,
+      error: mongoStatus.error
     };
     
-    // Set HTTP status based on connection status
-    if (!pgStatus.connected && !mongoStatus.connected) {
-      // Both connections failed
-      return res.status(503).json(response);
-    } else if (!pgStatus.connected || !mongoStatus.connected) {
-      // One connection failed
-      return res.status(207).json(response);
-    }
-    
-    // All connections successful
-    return res.status(200).json(response);
+    // Return overall status
+    return res.json({
+      status: 'success',
+      mongodb: mongoInfo
+    });
   } catch (error) {
     console.error('Error checking database status:', error);
     return res.status(500).json({
       status: 'error',
-      message: 'An error occurred while checking database status',
+      message: 'Failed to check database status',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
