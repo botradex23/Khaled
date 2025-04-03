@@ -104,12 +104,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register JSON database status routes:', err);
   });
   
-  // Register direct MongoDB status check (no HTML, JSON only)
-  import('./storage/mongodb-status-check').then(mongodbStatusRouter => {
+  // Register dedicated MongoDB status check with detailed JSON response
+  import('./routes/mongodb-status').then(mongodbStatusRouter => {
     app.use('/api/mongodb/status', mongodbStatusRouter.default);
-    console.log('MongoDB direct status check route registered to /api/mongodb/status');
+    console.log('MongoDB dedicated status check route registered to /api/mongodb/status');
   }).catch(err => {
-    console.error('Failed to register MongoDB direct status check route:', err);
+    console.error('Failed to register MongoDB dedicated status check route:', err);
   });
   
   // Register Binance connection status route
@@ -446,6 +446,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register Mixpanel Analytics routes
   app.use("/api/analytics/mixpanel", mixpanelRouter);
   console.log('Mixpanel analytics routes registered to /api/analytics/mixpanel');
+  
+  // Register MongoDB detailed status endpoint
+  import('./api/mongodb-status').then(mongodbStatusRouter => {
+    app.use('/api/mongodb', mongodbStatusRouter.default);
+    console.log('MongoDB detailed status routes registered to /api/mongodb/detailed-status');
+  }).catch(err => {
+    console.error('Failed to register MongoDB detailed status routes:', err);
+  });
+  
+  // Register direct MongoDB status endpoint (CommonJS module)
+  const directMongodbStatusRouter = require('./direct-mongodb-status');
+  app.use('/api/mongodb-status-direct', directMongodbStatusRouter);
+  console.log('Direct MongoDB status route registered to /api/mongodb-status-direct');
   
   // Portfolio routes for dashboard data visualization
   app.use("/api/portfolio", portfolioRouter);

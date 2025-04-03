@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MongoDB Status Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .status-container {
+      margin-top: 20px;
+    }
+    .connected {
+      color: green;
+      font-weight: bold;
+    }
+    .disconnected {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>MongoDB Status Test</h1>
+  
+  <button id="checkStatus">Check MongoDB Status</button>
+  
+  <div class="status-container">
+    <h2>Status Result:</h2>
+    <div id="status">Click the button to check MongoDB status</div>
+    <h3>Raw Response:</h3>
+    <pre id="rawResponse">No data yet</pre>
+  </div>
+
+  <script>
+    document.getElementById('checkStatus').addEventListener('click', async () => {
+      try {
+        // Test the detailed status endpoint
+        const response = await fetch('/api/mongodb/detailed-status');
+        const data = await response.json();
+        
+        // Display the raw response
+        document.getElementById('rawResponse').textContent = JSON.stringify(data, null, 2);
+        
+        // Display a formatted status
+        const statusEl = document.getElementById('status');
+        if (data.status && data.status.connected) {
+          statusEl.innerHTML = `<span class="connected">Connected to MongoDB</span> - ${data.engine}`;
+        } else {
+          statusEl.innerHTML = `<span class="disconnected">Disconnected from MongoDB</span> - ${data.message || 'Unknown error'}`;
+        }
+      } catch (error) {
+        document.getElementById('status').innerHTML = `<span class="disconnected">Error checking status:</span> ${error.message}`;
+        document.getElementById('rawResponse').textContent = `Error: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -2179,59 +2179,67 @@ export class MemStorage implements IStorage {
 import { testMongoDBConnection } from './storage/mongodb';
 import { MongoDBStorage } from './storage/mongoStorage';
 
-// Create storage instances
-const memStorage = new MemStorage();
-let mongoStorage: MongoDBStorage | null = null;
-let useMongoDBStorage = false;
+// MongoDB is now the only storage implementation
 let mongoConnectionStatus = {
   connected: false,
-  isSimulated: true,
-  description: 'Using in-memory storage (simulation mode)',
+  isSimulated: false, 
+  description: 'Initializing MongoDB connection',
   error: null as string | null
 };
 
-// Storage selection logic
-let selectedStorage: IStorage = memStorage;
+// Explicit MongoDB storage - no more fallback to in-memory storage
+// Create MongoDB storage as our exclusive storage implementation
+const mongoStorage = new MongoDBStorage();
+// This is the storage that will be used throughout the application
+const selectedStorage: IStorage = mongoStorage;
 
-// Check if MongoDB connection is available
+// Initialize MongoDB connection - the only storage option
 (async () => {
   try {
-    console.log('Testing MongoDB connection...');
-    // Test MongoDB connection
-    const mongoStatus = await testMongoDBConnection();
-    useMongoDBStorage = mongoStatus.connected;
-    mongoConnectionStatus = mongoStatus;
+    console.log('Connecting to MongoDB Atlas database...');
+    console.log('MongoDB Atlas is required for all data persistence');
     
-    if (mongoStatus.connected) {
-      console.log('MongoDB connection successful! MongoDB is available for querying.');
-      console.log('Switching to MongoDB storage for data persistence.');
-      
-      // Create MongoDB storage if connected
-      mongoStorage = new MongoDBStorage();
-      
-      // Connect to MongoDB
-      const connected = await mongoStorage.connect();
-      if (connected) {
-        // Switch the active storage to MongoDB
-        selectedStorage = mongoStorage;
-        console.log('Successfully connected and switched to MongoDB storage.');
-      } else {
-        console.log('MongoDB storage created but connection failed. Staying with MemStorage.');
-      }
+    // Attempt to connect to MongoDB Atlas
+    const connected = await mongoStorage.connect();
+    
+    if (connected) {
+      console.log('✅ Successfully connected to MongoDB Atlas database');
+      mongoConnectionStatus = {
+        connected: true,
+        isSimulated: false,
+        description: 'Connected to MongoDB Atlas',
+        error: null
+      };
     } else {
-      console.log('MongoDB connection failed. Using MemStorage (in-memory storage). Data will be lost on restart.');
-      console.log('MongoDB error:', mongoStatus.error);
+      // Application cannot function without MongoDB connection
+      console.error('❌ CRITICAL ERROR: Failed to connect to MongoDB Atlas');
+      console.error('The application requires MongoDB Atlas to function');
+      console.error('Please check your MongoDB connection settings in .env (MONGO_URI)');
+      mongoConnectionStatus = {
+        connected: false,
+        isSimulated: false,
+        description: 'Failed to connect to MongoDB Atlas - application cannot function',
+        error: 'Connection failed - check your MongoDB URI'
+      };
     }
   } catch (error) {
-    console.error('Error checking MongoDB connection:', error);
-    console.log('Falling back to MemStorage due to initialization error.');
+    // Application cannot function without MongoDB connection
+    console.error('❌ CRITICAL ERROR: MongoDB connection error');
+    console.error('The application requires MongoDB Atlas to function');
+    console.error('Error details:', error);
+    mongoConnectionStatus = {
+      connected: false,
+      isSimulated: false,
+      description: 'Error initializing MongoDB connection - application cannot function',
+      error: error instanceof Error ? error.message : String(error)
+    };
   }
 })();
 
-// Export the storage instance - will be either MemStorage or MongoDBStorage
+// Export the storage instance - MongoDB is our exclusive storage implementation
 export const storage = new Proxy({} as IStorage, {
   get: function(target, prop) {
-    // This proxy forwards all method calls to the currently selected storage implementation
+    // This proxy forwards all method calls to MongoDB storage implementation
     // @ts-ignore
     return selectedStorage[prop];
   }
