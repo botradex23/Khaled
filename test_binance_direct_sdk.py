@@ -117,9 +117,12 @@ def create_binance_client(use_testnet=True):
                 logger.info(f"DEBUG - Password: {correct_password}, Encoded: {encoded_password}")
                 
                 # Use the corrected, encoded credentials
+                # Override proxy settings for this test (hardcoded values are wrong)
+                proxy_ip = "45.151.162.198"
+                proxy_port = "6600"
                 proxy_url = f"{proxy_protocol}://{encoded_username}:{encoded_password}@{proxy_ip}:{proxy_port}"
-                masked_user = username[:2] + "***" if len(username) > 2 else "***"
-                masked_pass = password[:2] + "***" if len(password) > 2 else "***"
+                masked_user = encoded_username[:2] + "***" if len(encoded_username) > 2 else "***"
+                masked_pass = encoded_password[:2] + "***" if len(encoded_password) > 2 else "***"
                 logger.info(f"Using proxy: {proxy_protocol}://{masked_user}:{masked_pass}@{proxy_ip}:{proxy_port}")
             else:
                 proxy_url = f"{proxy_protocol}://{proxy_ip}:{proxy_port}"
