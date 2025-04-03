@@ -1,4 +1,5 @@
 #!/bin/bash
 
-echo "Starting Crypto Trading Platform (Minimal Version)..."
-node minimal_server.js
+# Start the minimal Node.js server that also starts the Python server internally
+echo "Starting minimal Node.js server..."
+node minimal_server.cjs
