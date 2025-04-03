@@ -419,6 +419,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register direct Binance account API routes:', err);
   });
   
+  // Register direct Binance markets routes (using official SDK via Python)
+  import('./routes/direct-binance-markets').then(directBinanceMarketsRouter => {
+    app.use('/direct-api/markets', directBinanceMarketsRouter.default);
+    console.log('Direct Binance Markets API routes registered to /direct-api/markets');
+  }).catch(err => {
+    console.error('Failed to register direct Binance markets API routes:', err);
+  });
+  
   // Register Mixpanel Analytics routes
   app.use("/api/analytics/mixpanel", mixpanelRouter);
   console.log('Mixpanel analytics routes registered to /api/analytics/mixpanel');

@@ -47,7 +47,8 @@ TOP_CRYPTO_PAIRS = [
 # Initialize client once to avoid creating multiple connections
 def get_binance_client() -> Spot:
     """
-    Get a Binance client instance with the provided API keys
+    Get a Binance client instance with the provided API keys.
+    Uses the official Binance SDK and the configured proxy when available.
     
     Returns:
         Spot: Binance Spot client instance
@@ -56,12 +57,71 @@ def get_binance_client() -> Spot:
     api_key = os.environ.get('BINANCE_API_KEY')
     api_secret = os.environ.get('BINANCE_SECRET_KEY')
     
-    # Initialize client directly, without proxy
+    # Check proxy configuration
+    use_proxy = os.environ.get('USE_PROXY', 'true').lower() in ('true', '1', 'yes')
+    proxy_ip = os.environ.get('PROXY_IP', '')
+    proxy_port = os.environ.get('PROXY_PORT', '')
+    proxy_username = os.environ.get('PROXY_USERNAME', '')
+    proxy_password = os.environ.get('PROXY_PASSWORD', '')
+    proxy_encoding_method = os.environ.get('PROXY_ENCODING_METHOD', 'quote_plus')
+    
+    # Initialize client with proxy if available and configured
+    if use_proxy and proxy_ip and proxy_port:
+        import urllib.parse
+        
+        # Apply URL encoding based on the method
+        if proxy_username and proxy_password:
+            if proxy_encoding_method == "none":
+                username = proxy_username
+                password = proxy_password
+            elif proxy_encoding_method == "quote":
+                username = urllib.parse.quote(proxy_username)
+                password = urllib.parse.quote(proxy_password)
+            else:  # Default to quote_plus
+                username = urllib.parse.quote_plus(proxy_username)
+                password = urllib.parse.quote_plus(proxy_password)
+                
+            # Create proxy URL with authentication
+            proxy_url = f"http://{username}:{password}@{proxy_ip}:{proxy_port}"
+            proxy_info = f"{proxy_ip}:{proxy_port} with authentication"
+        else:
+            # Create proxy URL without authentication
+            proxy_url = f"http://{proxy_ip}:{proxy_port}"
+            proxy_info = f"{proxy_ip}:{proxy_port}"
+        
+        # Set up proxies dictionary
+        proxies = {
+            "http": proxy_url,
+            "https": proxy_url
+        }
+        
+        logger.info(f"Initializing Binance client using proxy: {proxy_info}")
+        
+        try:
+            # Create client with proxy
+            client = Spot(
+                api_key=api_key,
+                api_secret=api_secret,
+                base_url='https://api.binance.com',
+                proxies=proxies,
+                timeout=10
+            )
+            
+            # Test connection
+            client.ping()
+            logger.info("Successfully connected to Binance API via proxy")
+            return client
+        except Exception as e:
+            logger.warning(f"Failed to connect via proxy: {e}")
+            logger.info("Falling back to direct connection...")
+    
+    # If proxy is not configured or connection failed, use direct connection
     logger.info("Initializing Binance client with direct connection (no proxy)")
     client = Spot(
         api_key=api_key,
         api_secret=api_secret,
-        base_url='https://api.binance.com'  # Explicitly set the production API URL
+        base_url='https://api.binance.com',  # Explicitly set the production API URL
+        timeout=10
     )
     
     return client
@@ -299,24 +359,57 @@ def get_top_pairs():
         # Get all ticker prices
         all_tickers = binance_client.ticker_price()
         
-        # Filter for only the top pairs we're interested in
+        # Get 24hr stats for all symbols to get price changes
+        ticker_24hr = None
+        try:
+            ticker_24hr = binance_client.ticker_24hr()
+            logger.info(f"Successfully retrieved 24hr ticker data for {len(ticker_24hr)} symbols")
+        except Exception as e:
+            logger.warning(f"Failed to get 24hr ticker data: {e}")
+        
+        # Create lookup maps
+        ticker_price_map = {ticker['symbol']: ticker for ticker in all_tickers}
+        ticker_24hr_map = {}
+        
+        if ticker_24hr:
+            ticker_24hr_map = {ticker['symbol']: ticker for ticker in ticker_24hr}
+        
+        # Filter for only the top pairs we're interested in and combine data
         top_pairs = []
-        symbols_map = {ticker['symbol']: ticker for ticker in all_tickers}
         
         for symbol in TOP_CRYPTO_PAIRS:
-            if symbol in symbols_map:
-                top_pairs.append(symbols_map[symbol])
+            pair_data = {}
+            
+            # Get price data
+            if symbol in ticker_price_map:
+                pair_data.update(ticker_price_map[symbol])
             else:
                 # Try to get the individual price if not found in the bulk response
                 try:
                     ticker = binance_client.ticker_price(symbol=symbol)
-                    top_pairs.append(ticker)
+                    pair_data.update(ticker)
                 except Exception as e:
                     logger.warning(f"Could not get price for {symbol}: {e}")
+                    continue
+            
+            # Add 24hr ticker data if available
+            if ticker_24hr and symbol in ticker_24hr_map:
+                # Add important fields from 24hr data
+                stats = ticker_24hr_map[symbol]
+                pair_data.update({
+                    'priceChange': stats.get('priceChange', '0'),
+                    'priceChangePercent': stats.get('priceChangePercent', '0'),
+                    'volume': stats.get('volume', '0'),
+                    'quoteVolume': stats.get('quoteVolume', '0'),
+                    'high': stats.get('highPrice', '0'),
+                    'low': stats.get('lowPrice', '0')
+                })
+            
+            top_pairs.append(pair_data)
         
         end_time = time.time()
         
-        logger.info(f"Retrieved {len(top_pairs)} top ticker prices in {end_time - start_time:.2f}s directly from Binance API")
+        logger.info(f"Retrieved {len(top_pairs)} top ticker prices with 24hr data in {end_time - start_time:.2f}s directly from Binance API")
         
         return jsonify({
             "success": True,
@@ -324,6 +417,7 @@ def get_top_pairs():
             "count": len(top_pairs),
             "elapsed": end_time - start_time,
             "directConnection": True,
+            "using_sdk": True,  # Explicitly mark as using the official SDK
             "timestamp": int(time.time() * 1000)
         })
     except Exception as e:
