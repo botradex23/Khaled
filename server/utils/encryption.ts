@@ -34,12 +34,18 @@ if (!process.env.ENCRYPTION_KEY) {
 
 // Use environment variable if available, otherwise use generated secure default
 const masterKey = process.env.ENCRYPTION_KEY 
-  ? Buffer.from(process.env.ENCRYPTION_KEY, "hex") 
+  ? Buffer.from(process.env.ENCRYPTION_KEY, "base64") 
   : defaultKey;
 
-// Split the master key into encryption key and signing key
-const encryptionKey = masterKey.slice(0, 16);
-const signingKey = masterKey.slice(16, 32);
+// For aes-256-cbc, we need a 32-byte key
+// We'll use the entire masterKey for encryption if it's already 32 bytes
+// otherwise we'll derive a 32-byte key from it
+const encryptionKey = masterKey.length >= 32 
+  ? masterKey.slice(0, 32) 
+  : crypto.createHash('sha256').update(masterKey).digest(); // derive a 32-byte key
+
+// For HMAC we'll use a derived key
+const signingKey = crypto.createHash('sha256').update(masterKey + 'hmac-salt').digest();
 
 /**
  * Encrypts a string using Fernet-like encryption (AES-256-CBC with HMAC)
@@ -162,7 +168,7 @@ export function decrypt(token: string): string {
  */
 function decryptLegacy(encryptedText: string): string {
   const iv = masterKey.slice(0, 16); // Use part of the master key as IV
-  const decipher = crypto.createDecipheriv("aes-256-cbc", masterKey, iv);
+  const decipher = crypto.createDecipheriv("aes-256-cbc", encryptionKey, iv);
   let decrypted = decipher.update(encryptedText, "hex", "utf8");
   decrypted += decipher.final("utf8");
   return decrypted;
