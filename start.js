@@ -1,15 +1,28 @@
-// Simple script to run the server directly with Node.js
-// This avoids the need for tsx using ES modules
+/**
+ * Start Script for Replit
+ * 
+ * This script starts the application in a Replit-friendly way.
+ */
 
-import { execSync } from 'child_process';
+import { spawn } from 'child_process';
 
-try {
-  console.log('Compiling TypeScript...');
-  execSync('npx tsc -p tsconfig.build.json', { stdio: 'inherit' });
-  
-  console.log('Starting server...');
-  execSync('node dist/server/index.js', { stdio: 'inherit' });
-} catch (error) {
-  console.error('Error:', error.message);
-  process.exit(1);
-}
+console.log('Starting Crypto Trading Platform...');
+
+// Start the Node.js server
+const server = spawn('node', ['index.js'], { stdio: 'inherit' });
+
+server.on('close', (code) => {
+  console.log(`Main server process exited with code ${code}`);
+  process.exit(code);
+});
+
+// Handle termination signals
+process.on('SIGINT', () => {
+  console.log('Received SIGINT signal, shutting down...');
+  server.kill('SIGINT');
+});
+
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM signal, shutting down...');
+  server.kill('SIGTERM');
+});
