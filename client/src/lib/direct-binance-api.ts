@@ -122,6 +122,21 @@ class DirectBinanceApiService {
       throw error;
     }
   }
+  
+  /**
+   * Get prices for top cryptocurrency pairs from Binance
+   * This is optimized to return just the most relevant pairs
+   * @returns List of top cryptocurrency prices
+   */
+  async getTopPairs(): Promise<BinanceTickerPrice[]> {
+    try {
+      const response = await apiRequest<{ success: boolean; prices: BinanceTickerPrice[] }>('/api/direct-binance/top-pairs');
+      return response.prices;
+    } catch (error) {
+      console.error('Failed to get top pairs:', error);
+      throw error;
+    }
+  }
 
   /**
    * Get the current price for a specific symbol

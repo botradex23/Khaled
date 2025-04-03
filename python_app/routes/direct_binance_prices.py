@@ -36,6 +36,14 @@ except ImportError:
     logger.error("Binance SDK not found, please install it with 'pip install binance-connector'")
     sys.exit(1)
 
+# Top cryptocurrency pairs to track
+TOP_CRYPTO_PAIRS = [
+    'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 
+    'ADAUSDT', 'DOGEUSDT', 'DOTUSDT', 'MATICUSDT', 'LINKUSDT', 
+    'AVAXUSDT', 'UNIUSDT', 'SHIBUSDT', 'LTCUSDT', 'ATOMUSDT',
+    'NEARUSDT', 'BCHUSDT', 'FILUSDT', 'TRXUSDT', 'XLMUSDT'
+]
+
 # Initialize client once to avoid creating multiple connections
 def get_binance_client() -> Spot:
     """
@@ -52,7 +60,8 @@ def get_binance_client() -> Spot:
     logger.info("Initializing Binance client with direct connection (no proxy)")
     client = Spot(
         api_key=api_key,
-        api_secret=api_secret
+        api_secret=api_secret,
+        base_url='https://api.binance.com'  # Explicitly set the production API URL
     )
     
     return client
@@ -86,7 +95,8 @@ def ping():
         return jsonify({
             "success": True, 
             "message": "Connected to Binance API",
-            "serverTime": result.get('serverTime')
+            "serverTime": result.get('serverTime'),
+            "directConnection": True
         })
     except Exception as e:
         error_str = str(e)
@@ -117,13 +127,15 @@ def get_all_prices():
         ticker_prices = binance_client.ticker_price()
         end_time = time.time()
         
-        logger.info(f"Retrieved {len(ticker_prices)} ticker prices in {end_time - start_time:.2f}s")
+        logger.info(f"Retrieved {len(ticker_prices)} ticker prices in {end_time - start_time:.2f}s directly from Binance API")
         
         return jsonify({
             "success": True,
             "prices": ticker_prices,
             "count": len(ticker_prices),
-            "elapsed": end_time - start_time
+            "elapsed": end_time - start_time,
+            "directConnection": True,
+            "timestamp": int(time.time() * 1000)
         })
     except Exception as e:
         error_str = str(e)
@@ -275,3 +287,56 @@ def get_raw_symbol_price(symbol):
             }), 451
         else:
             return jsonify({"success": False, "message": f"Failed to get raw price: {error_str}"}), 500
+
+@direct_binance_prices_bp.route('/top-pairs', methods=['GET'])
+def get_top_pairs():
+    """Get price data for top cryptocurrency pairs"""
+    if not init_binance_client():
+        return jsonify({"success": False, "message": "Failed to initialize Binance client"}), 500
+    
+    try:
+        start_time = time.time()
+        # Get all ticker prices
+        all_tickers = binance_client.ticker_price()
+        
+        # Filter for only the top pairs we're interested in
+        top_pairs = []
+        symbols_map = {ticker['symbol']: ticker for ticker in all_tickers}
+        
+        for symbol in TOP_CRYPTO_PAIRS:
+            if symbol in symbols_map:
+                top_pairs.append(symbols_map[symbol])
+            else:
+                # Try to get the individual price if not found in the bulk response
+                try:
+                    ticker = binance_client.ticker_price(symbol=symbol)
+                    top_pairs.append(ticker)
+                except Exception as e:
+                    logger.warning(f"Could not get price for {symbol}: {e}")
+        
+        end_time = time.time()
+        
+        logger.info(f"Retrieved {len(top_pairs)} top ticker prices in {end_time - start_time:.2f}s directly from Binance API")
+        
+        return jsonify({
+            "success": True,
+            "prices": top_pairs,
+            "count": len(top_pairs),
+            "elapsed": end_time - start_time,
+            "directConnection": True,
+            "timestamp": int(time.time() * 1000)
+        })
+    except Exception as e:
+        error_str = str(e)
+        logger.error(f"Failed to get top pairs prices: {e}")
+        
+        # Check for geo-restriction error (HTTP 451)
+        if "451" in error_str and "restricted location" in error_str:
+            return jsonify({
+                "success": False, 
+                "geo_restricted": True,
+                "message": "Binance API access is restricted in this region.",
+                "error": error_str
+            }), 451
+        else:
+            return jsonify({"success": False, "message": f"Failed to get top pairs prices: {error_str}"}), 500

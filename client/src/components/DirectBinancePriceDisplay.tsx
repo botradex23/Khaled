@@ -33,7 +33,34 @@ const DirectBinancePriceDisplay: React.FC = () => {
   const [isGeoRestricted, setIsGeoRestricted] = useState<boolean>(false);
   const [geoRestrictedMessage, setGeoRestrictedMessage] = useState<string>('');
 
-  // Function to fetch all prices
+  // Function to fetch top cryptocurrency pairs
+  const fetchTopPairs = async () => {
+    setLoading(true);
+    setError(null);
+    setIsGeoRestricted(false);
+    
+    try {
+      // Use the new getTopPairs method for better performance
+      const data = await directBinanceApi.getTopPairs();
+      setPrices(data);
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error('Error fetching top pairs:', err);
+      
+      // Check if this is a geo-restriction error
+      if (err && typeof err === 'object' && 'geo_restricted' in err && (err as ApiError).geo_restricted) {
+        setIsGeoRestricted(true);
+        setGeoRestrictedMessage((err as ApiError).message || 'Binance API is geo-restricted in this region');
+        setError(null);
+      } else {
+        setError('Failed to fetch prices from Binance API');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Legacy function to fetch all prices (keeping for backwards compatibility)
   const fetchAllPrices = async () => {
     setLoading(true);
     setError(null);
@@ -44,7 +71,7 @@ const DirectBinancePriceDisplay: React.FC = () => {
       setPrices(data);
       setLastUpdated(new Date());
     } catch (err) {
-      console.error('Error fetching prices:', err);
+      console.error('Error fetching all prices:', err);
       
       // Check if this is a geo-restriction error
       if (err && typeof err === 'object' && 'geo_restricted' in err && (err as ApiError).geo_restricted) {
@@ -90,7 +117,7 @@ const DirectBinancePriceDisplay: React.FC = () => {
 
   // Fetch prices on component mount
   useEffect(() => {
-    fetchAllPrices();
+    fetchTopPairs();
   }, []);
 
   // Format price with commas, e.g. 48,235.75
@@ -135,15 +162,15 @@ const DirectBinancePriceDisplay: React.FC = () => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle className="text-xl">Direct Binance Prices</CardTitle>
+            <CardTitle className="text-xl">Real-Time Binance Prices</CardTitle>
             <CardDescription>
-              Real-time price data from the official Binance API
+              Live data from the official Binance API - no simulations or fallbacks
             </CardDescription>
           </div>
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={fetchAllPrices}
+            onClick={fetchTopPairs}
             disabled={loading}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -210,10 +237,10 @@ const DirectBinancePriceDisplay: React.FC = () => {
           )}
         </div>
 
-        {/* All prices section */}
+        {/* Top trading pairs section */}
         <div>
           <div className="flex justify-between items-center mb-2">
-            <div className="text-sm font-medium">All Prices</div>
+            <div className="text-sm font-medium">Top Trading Pairs</div>
             {lastUpdated && (
               <div className="text-xs text-muted-foreground">
                 Updated: {lastUpdated.toLocaleTimeString()}
