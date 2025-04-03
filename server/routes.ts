@@ -128,6 +128,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register All Binance markets routes:', err);
   });
   
+  // Register Python-based Binance routes for /api/markets/python/all-markets endpoint
+  import('./routes/markets-python-all').then(pythonAllMarketsRouter => {
+    app.use('/api/markets/python', pythonAllMarketsRouter.default);
+    console.log('Python-based Binance all markets route registered to /api/markets/python/all-markets');
+  }).catch(err => {
+    console.error('Failed to register Python-based Binance all markets route:', err);
+  });
+  
   // Register market prices routes (in Binance format)
   import('./routes/market-prices').then(marketPricesRouter => {
     app.use('/api/market', marketPricesRouter.default);

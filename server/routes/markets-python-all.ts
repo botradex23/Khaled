@@ -1,40 +1,37 @@
 /**
  * Markets Python All Routes
  * 
- * This module provides Express routes that use the Python Binance Bridge
- * to access Binance market data via the Python Flask application for the all-markets endpoint.
+ * This module provides Express routes that use the Python Binance SDK directly
+ * to access Binance market data via the Flask application for the all-markets endpoint.
  */
 
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
 import { log } from '../vite';
-import { pythonBinanceBridge } from '../api/binance/python-binance-bridge';
 
 const router = Router();
 const pythonServiceUrl = 'http://localhost:5001';
 
 /**
  * GET /api/markets/python/all-markets
- * Get all market data from the Python Binance service
+ * Get all market data directly from the official Binance SDK via Python service
  */
 router.get('/all-markets', async (req: Request, res: Response) => {
   try {
-    log('Fetching all markets data from Python Binance service via top-pairs endpoint');
-    
-    // Ensure the Python service is running
-    await pythonBinanceBridge.ensureServiceRunning();
+    log('Fetching all markets data using official Binance SDK via Python service');
     
     // Make a direct request to the Python service's top-pairs endpoint
+    // This endpoint uses ONLY the official Binance SDK with no fallbacks
     const response = await axios.get(`${pythonServiceUrl}/api/direct-binance/top-pairs`, {
       timeout: 10000 // 10-second timeout
     });
     
     // Check if the response has the expected structure
     if (!response.data || !response.data.success) {
-      log('Python Binance service returned unsuccessful response', 'error');
+      log('Binance SDK returned unsuccessful response', 'error');
       return res.status(500).json({
         success: false,
-        message: 'Failed to fetch markets data from Python Binance service',
+        message: 'Failed to fetch markets data from Binance SDK',
         error: response.data?.message || 'Unknown error'
       });
     }
@@ -78,17 +75,16 @@ router.get('/all-markets', async (req: Request, res: Response) => {
     // Return the transformed data in the expected format
     return res.json({
       success: true,
-      source: 'binance-python-direct-sdk',
+      source: 'binance-official-sdk',
       timestamp: new Date().toISOString(),
       count: processedData.length,
       data: processedData,
-      // Include the raw data for debugging
-      rawData: response.data,
-      directConnection: true
+      // Include raw timestamp from the API
+      apiTimestamp: response.data.timestamp
     });
     
   } catch (error: any) {
-    log(`Error fetching all markets from Python Binance service: ${error.message}`, 'error');
+    log(`Error fetching all markets from Binance SDK: ${error.message}`, 'error');
     
     // Check if this is a geo-restriction error
     const isGeoRestricted = error.response?.status === 451 || 
@@ -107,9 +103,8 @@ router.get('/all-markets', async (req: Request, res: Response) => {
     // Generic error response
     return res.status(500).json({
       success: false,
-      message: 'Failed to fetch markets data from Python Binance service',
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message: 'Failed to fetch markets data from official Binance SDK',
+      error: error.message
     });
   }
 });
