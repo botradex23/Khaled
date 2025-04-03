@@ -184,33 +184,55 @@ const BinanceStatusAlert: React.FC = () => {
     return null;
   }
   
-  // If in simulation mode, show a warning
+  // If in simulation mode, show a prominent warning
   if (status.connection.websocket.simulationMode) {
     return (
-      <Alert className={`border ${statusStyles.borderColor} ${statusStyles.bgColor}`}>
+      <Alert className="border-2 border-amber-400 bg-amber-50">
         <div className="flex justify-between items-start">
-          <div className="flex gap-2 items-start">
-            {statusStyles.icon}
+          <div className="flex gap-3 items-start">
+            <div className="bg-amber-100 p-2 rounded-full">
+              <AlertCircle className="h-5 w-5 text-amber-600" />
+            </div>
             <div>
-              <AlertTitle className={statusStyles.color}>
-                Binance Data in Simulation Mode
+              <AlertTitle className="text-amber-800 font-semibold text-lg flex items-center gap-2">
+                <span>Simulation Mode</span>
+                <div className="px-2 py-0.5 text-xs bg-amber-200 text-amber-800 rounded-full font-medium">
+                  Development Only
+                </div>
               </AlertTitle>
-              <AlertDescription className="text-gray-600 mt-1">
-                <p>
-                  You are viewing simulated price data. This may be due to proxy connection issues or geo-restrictions.
+              <AlertDescription className="text-gray-700 mt-2">
+                <p className="mb-2 font-medium">
+                  You are viewing simulated cryptocurrency price data. This is not real market data.
                 </p>
+                <div className="flex flex-col gap-1.5 mt-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-amber-600" />
+                    <span>
+                      Last update: {formatTimeDiff(status.connection.marketData.lastUpdateTime)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Server className="h-4 w-4 text-amber-600" />
+                    <span>
+                      Server time: {formatTimeDiff(status.timestamp)}
+                    </span>
+                  </div>
+                </div>
                 
                 {status.errors.lastConnectionError && (
-                  <div className="mt-2 p-2 bg-gray-100 rounded-md text-sm">
-                    <strong>Last error:</strong> {status.errors.lastConnectionError}
+                  <div className="mt-3 p-2.5 bg-amber-100 rounded-md text-sm border border-amber-200">
+                    <div className="font-medium text-amber-800 mb-1">Connection Status:</div>
+                    <div className="text-gray-700">{status.errors.lastConnectionError}</div>
                   </div>
                 )}
                 
-                <div className="mt-3 flex items-center gap-2">
-                  <Server className="h-4 w-4 text-gray-500" />
-                  <span>
-                    Server time: {formatTimeDiff(status.timestamp)}
-                  </span>
+                <div className="mt-4 p-2.5 bg-blue-50 rounded-md text-sm border border-blue-200">
+                  <div className="font-medium text-blue-800 mb-1">What does this mean?</div>
+                  <div className="text-gray-700">
+                    The system is unable to connect to Binance API. 
+                    The displayed prices are generated for demonstration purposes only and should not be used for actual trading decisions.
+                  </div>
                 </div>
               </AlertDescription>
             </div>
@@ -224,7 +246,7 @@ const BinanceStatusAlert: React.FC = () => {
               className="text-sm"
             >
               <RefreshCw className="h-3 w-3 mr-1" />
-              Retry
+              Retry Connection
             </Button>
           </div>
         </div>

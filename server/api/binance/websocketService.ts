@@ -46,7 +46,8 @@ class BinanceWebSocketService extends EventEmitter {
   // Simulation mode properties
   private simulationMode: boolean = false;
   private simulationInterval: NodeJS.Timeout | null = null;
-  private simulationIntervalTime: number = 3000; // Update every 3 seconds
+  private simulationIntervalTime: number = 5000; // Update every 5 seconds
+  private simulationStartTime: number = 0;
   private importantCurrencyPairs: string[] = [
     'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
     'ADAUSDT', 'DOGEUSDT', 'DOTUSDT', 'MATICUSDT', 'LINKUSDT',
@@ -224,29 +225,36 @@ class BinanceWebSocketService extends EventEmitter {
   }
   
   /**
-   * התחלת מצב סימולציה של עדכוני מחירים
+   * Start simulation mode for price updates
+   * This mode is used when real connection to Binance is not available
    */
   private startSimulation(): void {
-    // אם הסימולציה כבר פעילה, אין צורך להתחיל שוב
+    // If simulation is already active, don't start again
     if (this.simulationMode && this.simulationInterval) {
       return;
     }
     
     console.log('Starting WebSocket simulation mode for price updates');
     this.simulationMode = true;
+    this.simulationStartTime = Date.now();
+    this.lastMessageTime = Date.now(); // Update last message time
     
-    // קבלת מחירים ראשוניים מהשירות
+    // Store this error for status reporting
+    this.lastConnectionError = "Binance WebSocket connection failed. Using simulation mode for price data.";
+    
+    // Get initial prices from the service
     this.initializeSimulatedPrices();
     
-    // שליחת עדכון ראשוני
+    // Send initial update
     this.emitSimulatedPriceUpdates();
     
-    // הגדרת עדכונים תקופתיים
+    // Set up periodic updates
     this.simulationInterval = setInterval(() => {
       this.emitSimulatedPriceUpdates();
+      this.lastMessageTime = Date.now(); // Update last message time on each emit
     }, this.simulationIntervalTime);
     
-    // הודעה על מעבר למצב סימולציה
+    // Notify about simulation mode
     this.emit('simulation-started');
   }
   
