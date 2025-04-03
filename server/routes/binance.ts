@@ -517,7 +517,7 @@ router.get('/api-keys/full', ensureAuthenticated, async (req: Request, res: Resp
       success: true,
       apiKey: apiKeys.binanceApiKey || '',
       secretKey: apiKeys.binanceSecretKey || '',
-      allowedIp: apiKeys.binanceAllowedIp || '185.199.228.220',
+      allowedIp: apiKeys.binanceAllowedIp || '45.151.162.198',
       message: 'API keys retrieved successfully'
     });
   } catch (error: any) {
@@ -567,12 +567,12 @@ router.post('/api-keys', ensureAuthenticated, async (req: Request, res: Response
     const userId = req.user!.id;
     
     console.log(`Saving Binance API keys for user ${userId} - API Key length: ${cleanedApiKey.length}, Secret Key length: ${cleanedSecretKey.length}`);
-    console.log('Saving Binance API keys for user with allowed IP:', cleanedAllowedIp || "185.199.228.220");
+    console.log('Saving Binance API keys for user with allowed IP:', cleanedAllowedIp || "45.151.162.198");
     
     const updatedUser = await storage.updateUserBinanceApiKeys(userId, {
       binanceApiKey: cleanedApiKey,
       binanceSecretKey: cleanedSecretKey,
-      binanceAllowedIp: cleanedAllowedIp || "185.199.228.220" // Default to our proxy IP if not specified
+      binanceAllowedIp: cleanedAllowedIp || "45.151.162.198" // Default to our proxy IP if not specified
     });
     
     if (!updatedUser) {
