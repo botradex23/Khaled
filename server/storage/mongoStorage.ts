@@ -1,49 +1,47 @@
-// Temporary placeholder for mongodb module
-// We'll need to update this once we resolve the installation issues
-const FakeMongoModule = {
-  MongoClient: class {
-    constructor(uri: string) {
-      this.uri = uri;
-    }
-    uri: string;
-    connect() { return Promise.resolve(); }
-    db() { 
-      return {
-        collection: () => ({
-          find: () => ({
-            toArray: () => Promise.resolve([]),
-            sort: () => ({ limit: () => ({ toArray: () => Promise.resolve([]) }) })
-          }),
-          findOne: () => Promise.resolve(null),
-          insertOne: () => Promise.resolve({ insertedId: 'fake-id' }),
-          findOneAndUpdate: () => Promise.resolve(null),
-          deleteOne: () => Promise.resolve({ deletedCount: 0 })
-        }),
-        command: () => Promise.resolve({ ok: 1 })
-      };
-    }
-  },
-  ObjectId: class ObjectId {
-    constructor(id: string) {
-      this.id = id;
-    }
-    id: string;
-    toString() { return this.id; }
-  }
-};
-
-// Use the fake module as a fallback
-const { MongoClient, ObjectId } = (globalThis as any).mongodb || FakeMongoModule;
-
+// We'll use dynamic imports for MongoDB to avoid import issues
+// This allows us to use MongoDB without having to install it at the project level
+// @ts-nocheck
+// Import storage interface
+import { IStorage } from '../storage';
+// Import encryption module for API key security
+import { encrypt, decrypt } from '../services/encryptionService';
+// Import schema types
 import {
-  User,
   InsertUser,
   TradeLog,
   InsertTradeLog,
   RiskSettings,
   InsertRiskSettings
 } from '@shared/schema';
-import { IStorage } from '../storage';
+
+// MongoDB connection URI environment variable
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/crypto_trading_platform';
+
+// MongoDB ObjectId wrapper class for compatibility
+class MongoDBId {
+  constructor(id: string) {
+    this.id = id;
+  }
+  id: string;
+  toString() { return this.id; }
+}
+
+// Extended User interface for MongoDB that includes the binanceAllowedIp field
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  password: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  defaultBroker: string | null;
+  useTestnet: boolean | null;
+  binanceApiKey: string | null;
+  binanceSecretKey: string | null;
+  binanceAllowedIp: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
 
 /**
  * MongoDB Storage implementation
@@ -63,9 +61,9 @@ export class MongoDBStorage implements IStorage {
   private riskSettingsCollection: any; // Collection<RiskSettings>
 
   constructor() {
-    const uri = process.env.MONGO_URI || 'mongodb+srv://dbuser:dbpassword@cluster0.mongodb.net/saas';
-    console.log("Using MongoDB URI:", uri.substring(0, 20) + '...');
-    this.client = new MongoClient(uri);
+    console.log("Initializing MongoDB Storage...");
+    // We'll initialize the client in the connect method to avoid import errors
+    this.client = null;
   }
 
   /**
@@ -74,18 +72,33 @@ export class MongoDBStorage implements IStorage {
    */
   async connect(): Promise<boolean> {
     try {
-      await this.client.connect();
-      console.log("✅ Connected successfully to MongoDB Atlas");
-      this.db = this.client.db("Saas");
-      
-      // Initialize collections
-      this.usersCollection = this.db.collection("users");
-      this.botsCollection = this.db.collection("bots");
-      this.tradesCollection = this.db.collection("trades");
-      this.riskSettingsCollection = this.db.collection("risk_settings");
-      
-      console.log("✅ MongoDB collections initialized");
-      return true;
+      // Dynamically import MongoDB to avoid import errors
+      try {
+        const mongodb = await import('mongodb');
+        const { MongoClient } = mongodb;
+        
+        const uri = process.env.MONGO_URI || 'mongodb+srv://dbuser:dbpassword@cluster0.mongodb.net/saas';
+        console.log("Using MongoDB URI:", uri.substring(0, 20) + '...');
+        
+        // Create the client instance
+        this.client = new MongoClient(uri);
+        await this.client.connect();
+        
+        console.log("✅ Connected successfully to MongoDB Atlas");
+        this.db = this.client.db("Saas");
+        
+        // Initialize collections
+        this.usersCollection = this.db.collection("users");
+        this.botsCollection = this.db.collection("bots");
+        this.tradesCollection = this.db.collection("trades");
+        this.riskSettingsCollection = this.db.collection("risk_settings");
+        
+        console.log("✅ MongoDB collections initialized");
+        return true;
+      } catch (importError) {
+        console.error("❌ Failed to import MongoDB:", importError);
+        return false;
+      }
     } catch (error) {
       console.error("❌ Failed to connect to MongoDB:", error);
       return false;
@@ -198,6 +211,7 @@ export class MongoDBStorage implements IStorage {
         useTestnet: user.useTestnet !== undefined ? user.useTestnet : true,
         binanceApiKey: user.binanceApiKey || null,
         binanceSecretKey: user.binanceSecretKey || null,
+        binanceAllowedIp: null, // Initialize with null
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -279,19 +293,25 @@ export class MongoDBStorage implements IStorage {
         return undefined;
       }
       
-      // Create update object with the keys
+      // Encrypt the API keys before storing them
+      const encryptedApiKey = encrypt(apiKeys.binanceApiKey);
+      const encryptedSecretKey = encrypt(apiKeys.binanceSecretKey);
+      
+      console.log(`✅ Encrypted API keys successfully (API Key length: ${encryptedApiKey.length}, Secret Key length: ${encryptedSecretKey.length})`);
+      
+      // Create update object with the encrypted keys
       const updateObj: any = {
-        binanceApiKey: apiKeys.binanceApiKey,
-        binanceSecretKey: apiKeys.binanceSecretKey
+        binanceApiKey: encryptedApiKey,
+        binanceSecretKey: encryptedSecretKey
       };
       
-      // Add allowed IP if provided
+      // Add allowed IP if provided (no need to encrypt this)
       if (apiKeys.binanceAllowedIp !== undefined) {
         updateObj.binanceAllowedIp = apiKeys.binanceAllowedIp;
       }
       
       const result = await this.updateUser(userId, updateObj);
-      console.log(`✅ Binance API keys saved for user: ${userId}`);
+      console.log(`✅ Encrypted Binance API keys saved for user: ${userId}`);
       return result;
     } catch (error) {
       console.error('❌ Error updating Binance API keys:', error);
@@ -307,12 +327,29 @@ export class MongoDBStorage implements IStorage {
       const user = await this.getUser(userId);
       if (!user) return undefined;
       
+      // Decrypt the API keys if they exist
+      const decryptedApiKey = user.binanceApiKey ? decrypt(user.binanceApiKey) : null;
+      const decryptedSecretKey = user.binanceSecretKey ? decrypt(user.binanceSecretKey) : null;
+      
+      // Check if the keys look valid after decryption (basic validation)
+      const isValidApiKey = decryptedApiKey && decryptedApiKey.length >= 10;
+      const isValidSecretKey = decryptedSecretKey && decryptedSecretKey.length >= 10;
+      
+      if (user.binanceApiKey && !isValidApiKey) {
+        console.warn(`⚠️ Failed to properly decrypt API key for user ${userId} - likely encryption key changed`);
+      }
+      
+      if (user.binanceSecretKey && !isValidSecretKey) {
+        console.warn(`⚠️ Failed to properly decrypt Secret key for user ${userId} - likely encryption key changed`);
+      }
+      
       const result = {
-        binanceApiKey: user.binanceApiKey,
-        binanceSecretKey: user.binanceSecretKey,
+        binanceApiKey: decryptedApiKey,
+        binanceSecretKey: decryptedSecretKey,
         binanceAllowedIp: user.binanceAllowedIp || null
       };
-      console.log(`✅ Retrieved Binance API keys for user: ${userId}`);
+      
+      console.log(`✅ Retrieved and decrypted Binance API keys for user: ${userId}`);
       return result;
     } catch (error) {
       console.error('❌ Error getting Binance API keys:', error);
@@ -367,6 +404,9 @@ export class MongoDBStorage implements IStorage {
     try {
       // If string and looks like ObjectId, query by _id
       if (typeof id === 'string' && id.length === 24) {
+        // Dynamically import MongoDB to access ObjectId
+        const mongodb = await import('mongodb');
+        const { ObjectId } = mongodb;
         return await this.botsCollection.findOne({ _id: new ObjectId(id) });
       }
       // Otherwise query by numeric id field
