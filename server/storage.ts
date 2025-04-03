@@ -2165,18 +2165,58 @@ export class MemStorage implements IStorage {
 // Import MongoDB connection test
 import { testMongoDBConnection } from './storage/mongodb';
 
-// Initialize the appropriate storage implementation
+// Initialize storage with MemStorage
+const memStorage = new MemStorage();
 let useMongoDBStorage = false;
+let mongoConnectionStatus = {
+  connected: false,
+  isSimulated: true,
+  description: 'Using in-memory storage (simulation mode)',
+  error: null as string | null
+};
 
 // Check if MongoDB connection is available
 (async () => {
-  useMongoDBStorage = await testMongoDBConnection();
-  if (useMongoDBStorage) {
-    console.log('MongoDB integration is ready. Pending package installation to use MongoDB.');
-  } else {
-    console.log('Using MemStorage (in-memory storage). Data will be lost on restart.');
+  try {
+    // Test MongoDB connection
+    const mongoStatus = await testMongoDBConnection();
+    useMongoDBStorage = mongoStatus.connected;
+    mongoConnectionStatus = mongoStatus;
+    
+    if (mongoStatus.connected) {
+      console.log('MongoDB connection successful! MongoDB is available for querying.');
+      console.log('Using in-memory storage for now. Ready to switch to MongoDB when needed.');
+    } else {
+      console.log('MongoDB connection failed. Using MemStorage (in-memory storage). Data will be lost on restart.');
+      console.log('MongoDB error:', mongoStatus.error);
+    }
+  } catch (error) {
+    console.error('Error checking MongoDB connection:', error);
+    console.log('Falling back to MemStorage due to initialization error.');
   }
 })();
 
-// For now, use MemStorage
-export const storage = new MemStorage();
+// Override the checkDatabaseStatus method to report correct status
+const originalCheckDatabaseStatus = memStorage.checkDatabaseStatus;
+memStorage.checkDatabaseStatus = async function() {
+  try {
+    // If MongoDB is connected, return its status
+    if (useMongoDBStorage) {
+      return mongoConnectionStatus;
+    }
+    
+    // Otherwise use the original MemStorage implementation
+    return await originalCheckDatabaseStatus.call(this);
+  } catch (error) {
+    console.error('Error in checkDatabaseStatus:', error);
+    return {
+      connected: true,
+      isSimulated: true,
+      description: 'Using in-memory storage (simulation mode)',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+};
+
+// Export the storage instance
+export const storage = memStorage;

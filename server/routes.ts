@@ -96,6 +96,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register database status routes:', err);
   });
   
+  // Register JSON-only database status route (for the client to use)
+  import('./routes/database-status-json').then(databaseStatusJsonRouter => {
+    app.use('/api/database/status', databaseStatusJsonRouter.default);
+    console.log('JSON database status routes registered to /api/database/status');
+  }).catch(err => {
+    console.error('Failed to register JSON database status routes:', err);
+  });
+  
   // Register Binance connection status route
   import('./routes/binance-connection-status').then(binanceConnectionStatusRouter => {
     app.use('', binanceConnectionStatusRouter.default);

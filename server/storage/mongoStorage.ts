@@ -35,10 +35,42 @@ export class MongoDBStorage implements IStorage {
 
     // Create session store
     this.sessionStore = MongoStore.create({
-      mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/crypto-trading-platform',
+      mongoUrl: process.env.MONGO_URI || 'mongodb://localhost:27017/crypto-trading-platform',
       collectionName: 'sessions',
       ttl: 14 * 24 * 60 * 60 // 14 days
     });
+  }
+
+  /**
+   * Check MongoDB database connection status
+   * @returns Connection status object
+   */
+  async checkDatabaseStatus(): Promise<{
+    connected: boolean;
+    isSimulated?: boolean;
+    description?: string;
+    error?: string | null;
+  }> {
+    try {
+      // Use the testMongoDBConnection function to check MongoDB connection
+      const mongoStatus = await testMongoDBConnection();
+      
+      // Return the MongoDB connection status
+      return {
+        connected: mongoStatus.connected,
+        isSimulated: false,
+        description: mongoStatus.description,
+        error: mongoStatus.error
+      };
+    } catch (error) {
+      console.error('Error checking MongoDB connection status:', error);
+      return {
+        connected: false,
+        isSimulated: false,
+        description: 'Error checking MongoDB connection status',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }
 
   private async initializeData() {

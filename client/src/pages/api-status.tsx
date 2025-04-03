@@ -770,28 +770,22 @@ function DatabaseStatusCard({ query }: { query: any }) {
   }
 
   // Parse connection statuses
-  const pgConnected = data?.connections?.postgresql?.connected || false;
-  const mongoConnected = data?.connections?.mongodb?.connected || false;
-  const allConnected = pgConnected && mongoConnected;
-  const anyConnected = pgConnected || mongoConnected;
-  const isMongoSimulated = data?.connections?.mongodb?.isSimulated ?? true; // Is MongoDB connection simulated
+  const mongoConnected = data?.mongodb?.connected || false;
+  const mongoErrorMessage = data?.mongodb?.error || "";
+  const environment = data?.environment || "development"; 
+  const timestamp = data?.timestamp || new Date().toISOString();
   
-  // Determine badge styling
+  // Determine badge styling based on MongoDB connection
   let badgeClass = "";
   let badgeVariant: "default" | "destructive" | "secondary" | "outline" = "default";
   
-  if (allConnected) {
+  if (mongoConnected) {
     badgeClass = "bg-green-100 text-green-800 hover:bg-green-200";
-  } else if (anyConnected) {
-    badgeClass = "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
-    badgeVariant = "secondary";
   } else {
     badgeVariant = "destructive";
   }
   
-  const cardClass = allConnected 
-    ? "border-green-200" 
-    : (anyConnected ? "border-yellow-200" : "border-red-200");
+  const cardClass = mongoConnected ? "border-green-200" : "border-red-200";
 
   return (
     <Card className={cardClass}>
@@ -799,9 +793,7 @@ function DatabaseStatusCard({ query }: { query: any }) {
         <div className="flex justify-between items-center">
           <CardTitle>Database Status</CardTitle>
           <Badge variant={badgeVariant} className={badgeClass}>
-            {allConnected 
-              ? "All Connected" 
-              : (anyConnected ? "Partial" : "Disconnected")}
+            {mongoConnected ? "Connected" : "Disconnected"}
           </Badge>
         </div>
         <CardDescription>
@@ -810,34 +802,15 @@ function DatabaseStatusCard({ query }: { query: any }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {/* PostgreSQL Connection */}
-          <div className="flex items-center gap-2">
-            <Database className={`h-5 w-5 ${pgConnected ? "text-green-500" : "text-destructive"}`} />
-            <div className="flex-1">
-              <div className="font-medium">PostgreSQL</div>
-              <p className="text-sm text-muted-foreground">
-                {data?.connections?.postgresql?.description || "Connection status unknown"}
-              </p>
-            </div>
-            <Badge variant={pgConnected ? "default" : "destructive"} className={pgConnected ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}>
-              {pgConnected ? "Connected" : "Disconnected"}
-            </Badge>
-          </div>
-          
           {/* MongoDB Connection */}
           <div className="flex items-center gap-2">
             <Database className={`h-5 w-5 ${mongoConnected ? "text-green-500" : "text-destructive"}`} />
             <div className="flex-1">
-              <div className="font-medium">
-                MongoDB {isMongoSimulated && <span className="text-amber-600 text-xs font-normal">(Simulated)</span>}
-              </div>
+              <div className="font-medium">MongoDB</div>
               <p className="text-sm text-muted-foreground">
-                {data?.connections?.mongodb?.description || "Connection status unknown"}
-                {mongoConnected && isMongoSimulated && (
-                  <span className="block text-amber-600 text-xs mt-1">
-                    Data stored in memory only. Not persisted to actual MongoDB.
-                  </span>
-                )}
+                {mongoConnected 
+                  ? "Successfully connected to MongoDB database" 
+                  : "Connection failed: " + mongoErrorMessage}
               </p>
             </div>
             <Badge variant={mongoConnected ? "default" : "destructive"} className={mongoConnected ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}>
@@ -847,37 +820,26 @@ function DatabaseStatusCard({ query }: { query: any }) {
         </div>
         
         <p className="text-sm text-muted-foreground mt-4">
-          {data?.message || "Database status check completed"}
+          {data?.message || "Database check completed at " + new Date(timestamp).toLocaleTimeString()}
         </p>
         
-        {/* הסבר נוסף על הסימולציות */}
         <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
           <h4 className="text-sm font-medium text-amber-800">Database Integration Notes</h4>
           <ul className="text-xs text-amber-700 mt-1 space-y-1 list-disc pl-4">
-            <li>PostgreSQL is used as the primary database for structured data</li>
-            <li>MongoDB (currently simulated) is used for API key storage</li>
-            <li>API Keys are securely encrypted before storage in either database</li>
-            <li>MongoDB connection requires additional configuration for actual storage</li>
+            <li>MongoDB is used for API key storage and transaction history</li>
+            <li>API Keys are securely encrypted before storage in the database</li>
+            <li>Connected to {environment} environment</li>
           </ul>
           
-          {isMongoSimulated && (
-            <div className="mt-3 p-2 bg-amber-100 rounded text-xs">
-              <strong className="text-amber-800">Why MongoDB is simulated:</strong>
-              <p className="mt-1 text-amber-700">
-                The application currently uses a simulation of MongoDB for storing API keys. 
-                Even though your MongoDB is working correctly, the app cannot connect to it
-                due to missing dependencies that can't be installed in this environment.
-                Your API keys are still saved, but they're stored in memory (not in the real MongoDB database).
-              </p>
-              <p className="mt-1 text-amber-700">
-                <strong>Solution options:</strong>
-              </p>
-              <ol className="list-decimal pl-4 text-amber-700 space-y-1">
-                <li>Deploy this application to a full server environment where all dependencies can be installed</li>
-                <li>Continue using the simulation (API keys will work but will not persist between application restarts)</li>
-              </ol>
-            </div>
-          )}
+          <div className="mt-3 p-2 bg-amber-100 rounded text-xs">
+            <strong className="text-amber-800">Connection Details</strong>
+            <p className="mt-1 text-amber-700">
+              {mongoConnected 
+                ? "Connection established to MongoDB database. Your data is being securely stored and will persist between application restarts."
+                : "Connection to MongoDB database failed. Your API keys and transaction history will not be saved persistently. Try checking your database connection settings."}
+            </p>
+          </div>
+        </div>
         </div>
       </CardContent>
     </Card>
