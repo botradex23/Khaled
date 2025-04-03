@@ -130,25 +130,25 @@ class DirectBinanceApiService {
    */
   async getTopPairs(): Promise<BinanceTickerPrice[]> {
     try {
-      // First try our new endpoint that uses the Python Binance SDK
-      try {
-        const response = await apiRequest<{ success: boolean; data: any[] }>('/api/markets/python/all-markets');
-        if (response.success && response.data && response.data.length > 0) {
-          // Transform the response to match the expected format
-          return response.data.map(item => ({
-            symbol: item.symbol,
-            price: item.price.toString()
-          }));
-        }
-      } catch (innerError) {
-        console.warn('Could not fetch from Python all-markets endpoint, falling back to direct endpoint', innerError);
+      // Use only the Python Binance SDK endpoint - no API fallbacks
+      const response = await apiRequest<{ success: boolean; data: any[] }>('/api/markets/python/all-markets');
+      
+      if (response.success && response.data && response.data.length > 0) {
+        // Transform the response to match the expected format
+        return response.data.map(item => ({
+          symbol: item.symbol,
+          price: item.price.toString()
+        }));
       }
       
-      // Fall back to the original direct endpoint
-      const response = await apiRequest<{ success: boolean; prices: BinanceTickerPrice[] }>('/api/direct-binance/top-pairs');
-      return response.prices;
+      // If we got a successful response but with no data,
+      // throw a clear error rather than silently failing
+      console.error('Official Binance SDK returned an empty data set');
+      throw new Error('No market data available from Binance SDK');
+      
     } catch (error) {
-      console.error('Failed to get top pairs:', error);
+      console.error('Failed to get market data from Binance SDK:', error);
+      // Make sure the error is propagated
       throw error;
     }
   }

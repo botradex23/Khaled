@@ -3,6 +3,7 @@
  * 
  * This module provides Express routes that use the Python Binance SDK directly
  * to access Binance market data via the Flask application for the all-markets endpoint.
+ * This uses ONLY the official Binance SDK for data access - no API calls or fallbacks.
  */
 
 import { Router, Request, Response } from 'express';
@@ -15,13 +16,15 @@ const pythonServiceUrl = 'http://localhost:5001';
 /**
  * GET /api/markets/python/all-markets
  * Get all market data directly from the official Binance SDK via Python service
+ * This endpoint exclusively uses the SDK, not any public API
  */
 router.get('/all-markets', async (req: Request, res: Response) => {
   try {
-    log('Fetching all markets data using official Binance SDK via Python service');
+    log('Fetching market data directly from the official Binance SDK via Python Flask service');
     
-    // Make a direct request to the Python service's top-pairs endpoint
-    // This endpoint uses ONLY the official Binance SDK with no fallbacks
+    // Get top cryptocurrency pairs from the direct-binance Python service
+    // The Python endpoint uses the official Binance SDK for spot markets
+    // (binance-connector library with Spot client) for data access
     const response = await axios.get(`${pythonServiceUrl}/api/direct-binance/top-pairs`, {
       timeout: 10000 // 10-second timeout
     });
@@ -75,11 +78,13 @@ router.get('/all-markets', async (req: Request, res: Response) => {
     // Return the transformed data in the expected format
     return res.json({
       success: true,
-      source: 'binance-official-sdk',
+      source: 'binance-official-sdk', // Indicates this data comes from the SDK, not API
+      using_api: false, // Explicitly mark we're using the SDK not the public API
+      sdk_version: 'binance-connector',
       timestamp: new Date().toISOString(),
       count: processedData.length,
       data: processedData,
-      // Include raw timestamp from the API
+      // Include raw timestamp from the SDK
       apiTimestamp: response.data.timestamp
     });
     
