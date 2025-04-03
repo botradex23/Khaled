@@ -305,6 +305,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Binance API routes
   app.use("/api/binance", binanceRouter);
   
+  // Binance Account routes (replacement for OKX accounts)
+  import('./routes/binance-account').then(binanceAccountRouter => {
+    app.use("/api/binance", binanceAccountRouter.default);
+    console.log('Binance account routes registered to /api/binance');
+  }).catch(err => {
+    console.error('Failed to register Binance account routes:', err);
+  });
+  
   // Binance API keys specific routes
   app.use("/api/binance/api-keys", binanceApiKeysRouter);
   
@@ -384,6 +392,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Direct API routes registered to /direct-api');
   }).catch(err => {
     console.error('Failed to register direct API routes:', err);
+  });
+  
+  // Register Direct Binance Account API routes for simplified testing
+  import('./routes/direct-binance-account').then(directBinanceAccountRouter => {
+    app.use('/direct-api/binance', directBinanceAccountRouter.default);
+    console.log('Direct Binance Account API routes registered to /direct-api/binance');
+  }).catch(err => {
+    console.error('Failed to register direct Binance account API routes:', err);
   });
   
   // Register Mixpanel Analytics routes
