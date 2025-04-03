@@ -1,0 +1,13 @@
+
+[[workflows.workflow]]
+name = "Start Binance API Server"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python binance_api_server.py"
+waitForPort = 5001
+
