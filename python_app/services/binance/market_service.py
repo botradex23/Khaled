@@ -121,141 +121,136 @@ class BinanceMarketService:
         Returns:
             Binance Spot client
         """
-        # Check if proxy is enabled in configuration
-        use_proxy = False
-        if active_config:
-            use_proxy = active_config.USE_PROXY
-            fallback_to_direct = active_config.FALLBACK_TO_DIRECT
-        else:
-            use_proxy = False
-            fallback_to_direct = True
-            
-        # Setup proxy configuration if enabled
-        proxies = None
-        proxy_info = None
+        # Import our enhanced proxy manager - using explicit import here
+        import sys
+        import os
         
-        if use_proxy:
-            # Check if proxy settings are complete
-            if (active_config and 
-                active_config.PROXY_IP and 
-                active_config.PROXY_PORT):
-                
-                # Format proxy URL based on authentication requirements
-                if active_config.PROXY_USERNAME and active_config.PROXY_PASSWORD:
-                    # Use URL-encoded username and password for special characters
-                    import urllib.parse
-                    # Get encoding method and protocol from config
-                    encoding_method = getattr(active_config, "PROXY_ENCODING_METHOD", "quote_plus") if active_config else "quote_plus"
-                    proxy_protocol = getattr(active_config, "PROXY_PROTOCOL", "http") if active_config else "http"
-                    
-                    # Try all encoding methods sequentially
-                    encoding_methods = ["none", "quote", "quote_plus"]
-                    
-                    # If a specific method is configured, try it first
-                    configured_method = getattr(active_config, "PROXY_ENCODING_METHOD", "quote_plus")
-                    if configured_method in encoding_methods:
-                        encoding_methods.remove(configured_method)
-                        encoding_methods.insert(0, configured_method)
-                    
-                    # Try to create a client with each encoding method until one works
-                    username = active_config.PROXY_USERNAME
-                    password = active_config.PROXY_PASSWORD
-                    
-                    # Try a direct format without any encoding for Webshare proxies
-                    proxy_username = active_config.PROXY_USERNAME
-                    proxy_password = active_config.PROXY_PASSWORD
-                    
-                    # Create proxy URL with the specified protocol - using direct format
-                    proxy_url = f"{proxy_protocol}://{proxy_username}:{proxy_password}@{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
-                    
-                    # Alternative proxy format sometimes needed for requests library - without auth in URL
-                    proxy_url_alt = f"{proxy_protocol}://{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
-                    proxy_info = f"{active_config.PROXY_IP}:{active_config.PROXY_PORT} with authentication (protocol: {proxy_protocol})"
-                else:
-                    proxy_protocol = getattr(active_config, "PROXY_PROTOCOL", "http") if active_config else "http"
-                    proxy_url = f"{proxy_protocol}://{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
-                    proxy_info = f"{active_config.PROXY_IP}:{active_config.PROXY_PORT} (protocol: {proxy_protocol})"
-                
-                # Prepare the basic proxy URL without auth
-                proxy_url_basic = f"{proxy_protocol}://{active_config.PROXY_IP}:{active_config.PROXY_PORT}"
-                
-                # Prepare auth and proxy settings for binance-connector library
-                proxies = {
-                    "http": proxy_url_basic,  # Without auth in URL
-                    "https": proxy_url_basic  # Without auth in URL
-                }
-                
-                # Setup proxy auth separately for requests (used by binance-connector)
-                # This format is more standard and should work with most proxy providers
-                from requests.auth import HTTPProxyAuth
-                auth = HTTPProxyAuth(proxy_username, proxy_password)
-                
-                logger.info(f"Configured proxy connection to Binance API via {proxy_info}")
-            else:
-                logger.warning("Proxy is enabled but proxy settings are incomplete - falling back to direct connection")
-                use_proxy = False
-        
-        # First try with proxy if enabled
-        if use_proxy and proxies:
-            logger.info(f"Attempting to connect to Binance API using proxy at {proxy_info}")
+        # Get the proxy manager through various import paths
+        try:
+            from python_app.services.binance.proxy_manager import get_proxy_manager
+            proxy_manager = get_proxy_manager()
+        except ImportError:
             try:
-                # Create params dictionary with proxy and auth if available
+                from .proxy_manager import get_proxy_manager
+                proxy_manager = get_proxy_manager()
+            except ImportError:
+                # For direct script execution
+                sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+                try:
+                    from proxy_manager import get_proxy_manager
+                    proxy_manager = get_proxy_manager()
+                except ImportError as e:
+                    logger.error(f"Failed to import proxy_manager: {e}")
+                    # Create a minimal proxy list with empty configuration
+                    # This will make the client fall back to direct connection
+                    class MinimalProxyManager:
+                        def __init__(self):
+                            self.proxy_list = []
+                        def get_current_proxy(self):
+                            return None
+                        def rotate_proxy(self):
+                            pass
+                    proxy_manager = MinimalProxyManager()
+        
+        # Always enable fallback to direct connection (more reliable)
+        fallback_to_direct = True
+        
+        # Try all available proxies before falling back to direct connection
+        num_proxies = len(proxy_manager.proxy_list)
+        for proxy_attempt in range(num_proxies):
+            try:
+                # Get base parameters
                 kwargs = {
-                    "timeout": 10,  # seconds
-                    "proxies": proxies
+                    "base_url": self.base_url,
+                    "timeout": 15  # Increased timeout for reliability
                 }
                 
-                # Add auth if it's defined (for authenticated proxies)
-                if 'auth' in locals():
-                    kwargs["auth"] = auth
+                # Get current proxy
+                current_proxy = proxy_manager.get_current_proxy()
+                if current_proxy:
+                    # Format proxy URL in a way compatible with urllib3
+                    proxy_ip = current_proxy.get('ip')
+                    proxy_port = current_proxy.get('port')
+                    proxy_username = current_proxy.get('username')
+                    proxy_password = current_proxy.get('password')
+                    
+                    # Build proxy string
+                    proxy_str = f"{proxy_ip}:{proxy_port}"
+                    
+                    # Set proxies in the format expected by requests/urllib3
+                    # Use HTTP protocol for both HTTP_PROXY and HTTPS_PROXY as recommended in the error message
+                    if proxy_username and proxy_password:
+                        import urllib.parse
+                        encoded_auth = f"{urllib.parse.quote(proxy_username)}:{urllib.parse.quote(proxy_password)}"
+                        os.environ['HTTP_PROXY'] = f"http://{encoded_auth}@{proxy_str}"
+                        os.environ['HTTPS_PROXY'] = f"http://{encoded_auth}@{proxy_str}"  # Use HTTP protocol for HTTPS_PROXY
+                    else:
+                        os.environ['HTTP_PROXY'] = f"http://{proxy_str}"
+                        os.environ['HTTPS_PROXY'] = f"http://{proxy_str}"  # Use HTTP protocol for HTTPS_PROXY
+                        
+                    logger.info(f"Testing proxy #{proxy_attempt+1}/{num_proxies}: {proxy_ip}:{proxy_port}")
                 
-                # Create client with proxy
-                client = Spot(
-                    base_url=self.base_url,
-                    **kwargs
-                )
+                # Create client with parameters
+                client = Spot(**kwargs)
                 
-                # Test connection with a simple ping
+                # Test the connection
                 client.ping()
-                
-                logger.info(f"Successfully connected to Binance API via proxy")
+                logger.info(f"✅ Successfully connected to Binance API with proxy #{proxy_attempt+1}")
                 return client
                 
             except Exception as e:
-                logger.warning(f"Failed to connect to Binance API via proxy: {e}")
-                if not fallback_to_direct:
-                    logger.error("Proxy connection failed and fallback is disabled - returning unconfigured client")
-                    return Spot(base_url=self.base_url)
-                else:
-                    logger.info("Falling back to direct connection...")
+                error_str = str(e)
+                logger.warning(f"Failed to connect with proxy #{proxy_attempt+1}: {e}")
+                
+                # Clear environment variables
+                if 'HTTP_PROXY' in os.environ:
+                    del os.environ['HTTP_PROXY']
+                if 'HTTPS_PROXY' in os.environ:
+                    del os.environ['HTTPS_PROXY']
+                
+                # Check for specific errors 
+                if "402 Payment Required" in error_str:
+                    logger.error(f"Proxy payment required error. Rotating to next proxy.")
+                elif "451" in error_str and "restricted location" in error_str:
+                    logger.error(f"Geo-restriction error detected (451). Rotating to next proxy.")
+                    
+                # Rotate to the next proxy for the next attempt
+                proxy_manager.rotate_proxy()
         
-        # Try direct connection if proxy is disabled or proxy connection failed with fallback enabled
+        # If we get here, all proxies failed
+        logger.error(f"All {num_proxies} proxies failed to connect to Binance API")
+        
+        # If fallback is not allowed, return a basic client
+        if not fallback_to_direct:
+            logger.error("Proxy connections failed and fallback is disabled - returning unconfigured client")
+            return Spot(base_url=self.base_url)
+        
+        # Try direct connection as a last resort
+        logger.info("Attempting direct connection to Binance API...")
         try:
+            # Clear any proxy environment variables
+            if 'HTTP_PROXY' in os.environ:
+                del os.environ['HTTP_PROXY']
+            if 'HTTPS_PROXY' in os.environ:
+                del os.environ['HTTPS_PROXY']
+                
             # Create params dictionary without proxy
             kwargs = {
-                "timeout": 10,  # seconds
+                "timeout": 15,  # seconds
+                "base_url": self.base_url
             }
             
             # Create client without proxy
-            client = Spot(
-                base_url=self.base_url,
-                **kwargs
-            )
+            client = Spot(**kwargs)
             
-            # Test connection
-            try:
-                client.ping()
-                logger.info(f"Successfully connected to Binance API directly")
-            except Exception as e:
-                # Connection test failed, but we'll still return the client
-                logger.warning(f"Direct connection test failed: {e}")
-                logger.warning("Returning unconfigured client anyway - operations may fail")
-            
+            # Test the connection
+            client.ping()
+            logger.info("✅ Successfully connected to Binance API directly")
             return client
             
         except Exception as e:
-            logger.error(f"Failed to create Binance client: {e}")
-            # Return a basic client that might work later if connectivity issues resolve
+            logger.error(f"Failed to create Binance client with direct connection: {e}")
+            logger.warning("All connection attempts failed - returning basic unconfigured client")
             return Spot(base_url=self.base_url)
     
     def get_symbol_price(self, symbol: str, force_refresh: bool = False) -> Dict[str, Any]:
@@ -280,12 +275,20 @@ class BinanceMarketService:
                 
             except ClientError as e:
                 logger.warning(f"Attempt {attempt+1}/{self.max_retries}: Binance client error: {e}")
+                # Check if this is a geo-restriction error (451)
+                error_str = str(e)
+                if "451" in error_str and "restricted location" in error_str:
+                    logger.error("Geo-restriction error detected (451). Proxy might not be working correctly.")
+                    
                 if attempt == self.max_retries - 1:
-                    return {
+                    error_response = {
                         'success': False,
                         'error': f"Binance client error: {e}",
-                        'symbol': symbol
+                        'symbol': symbol,
+                        'geo_restricted': "451" in error_str and "restricted location" in error_str
                     }
+                    logger.error(f"Failed to get price for {symbol} after {self.max_retries} attempts: {error_response}")
+                    return error_response
                 time.sleep(2 ** attempt)  # Exponential backoff
                 
             except ServerError as e:
