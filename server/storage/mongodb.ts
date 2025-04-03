@@ -2,33 +2,56 @@
  * MongoDB integration module
  * 
  * This module provides connection and operations for MongoDB Atlas.
+ * Uses a simple wrapper approach that doesn't directly require the mongodb package
+ * to be available at import time.
  */
-import { MongoClient, ServerApiVersion } from 'mongodb';
-import 'dotenv/config';
 
-// MongoDB connection URI from environment variable
-const uri = process.env.MONGO_URI || '';
-
-// MongoDB client options
-const options = {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
-};
+// Avoid direct imports by using require later
+let MongoClient: any = null;
+let ServerApiVersion: any = null;
+let uri = '';
+let options: any = {};
 
 // Global reference to MongoDB client
-export let mongoClient: MongoClient | null = null;
+export let mongoClient: any = null;
+
+// Safe getter for environment variables to avoid direct import of dotenv/config
+function getEnvVar(name: string, defaultValue: string = ''): string {
+  return process.env[name] || defaultValue;
+}
 
 // Connect to MongoDB Atlas
 export const connectToMongoDB = async (): Promise<boolean> => {
+  // Get the MongoDB URI from environment variables
+  uri = getEnvVar('MONGO_URI', '');
+  
   if (!uri) {
     console.error('⚠️ WARNING: MONGO_URI environment variable is not set. MongoDB connection will not be attempted.');
     return false;
   }
 
   try {
+    // Try to dynamically import the mongodb package
+    try {
+      console.log('Attempting to import MongoDB driver...');
+      const mongodb = await import('mongodb');
+      MongoClient = mongodb.MongoClient;
+      ServerApiVersion = mongodb.ServerApiVersion;
+      
+      // Now set the options
+      options = {
+        serverApi: {
+          version: ServerApiVersion.v1,
+          strict: true,
+          deprecationErrors: true,
+        }
+      };
+      console.log('MongoDB driver imported successfully');
+    } catch (importError) {
+      console.error('Failed to import MongoDB driver:', importError);
+      return false;
+    }
+
     console.log('Connecting to MongoDB Atlas...');
     mongoClient = new MongoClient(uri, options);
     await mongoClient.connect();
@@ -51,6 +74,9 @@ export const connectToMongoDB = async (): Promise<boolean> => {
 // Test MongoDB connection
 export const testMongoDBConnection = async () => {
   try {
+    // Get the MongoDB URI from environment variables
+    uri = getEnvVar('MONGO_URI', '');
+    
     if (!uri) {
       return {
         connected: false,
@@ -58,6 +84,34 @@ export const testMongoDBConnection = async () => {
         description: 'MONGO_URI environment variable is not set',
         error: 'Missing MONGO_URI configuration'
       };
+    }
+
+    // Try to dynamically import the mongodb package if not already imported
+    if (!MongoClient) {
+      try {
+        console.log('Attempting to import MongoDB driver for connection test...');
+        const mongodb = await import('mongodb');
+        MongoClient = mongodb.MongoClient;
+        ServerApiVersion = mongodb.ServerApiVersion;
+        
+        // Now set the options
+        options = {
+          serverApi: {
+            version: ServerApiVersion.v1,
+            strict: true,
+            deprecationErrors: true,
+          }
+        };
+        console.log('MongoDB driver imported successfully for connection test');
+      } catch (importError) {
+        console.error('Failed to import MongoDB driver for connection test:', importError);
+        return {
+          connected: false,
+          isSimulated: true,
+          description: 'Failed to import MongoDB driver',
+          error: importError instanceof Error ? importError.message : 'Unknown import error'
+        };
+      }
     }
 
     const client = new MongoClient(uri, options);

@@ -7,6 +7,8 @@ import './override-console.js';
 import './api/risk-management/RiskManager.js';
 // Import Python service manager to start the ML predictions Flask service
 import { pythonServiceManager } from './services/python-service-manager';
+// Import the storage interface
+import { storage } from './storage';
 
 const app = express();
 app.use(express.json());
@@ -50,6 +52,18 @@ app.use((req, res, next) => {
     console.log('MongoDB Atlas URI is configured:', process.env.MONGO_URI.substring(0, 20) + '...');
     console.log('MongoDB Atlas cluster:', process.env.MONGO_URI.split('@')[1].split('/')[0]);
     console.log('MongoDB database name:', process.env.MONGO_URI.split('/').pop()?.split('?')[0]);
+  }
+
+  // Connect to MongoDB first before registering routes
+  if (process.env.MONGO_URI) {
+    try {
+      console.log('Connecting to MongoDB database...');
+      await storage.connect();
+      console.log('MongoDB connection established successfully');
+    } catch (error) {
+      console.error('Failed to connect to MongoDB:', error);
+      console.log('Continuing with fallback to memory storage');
+    }
   }
 
   // API routes are defined in routes.ts

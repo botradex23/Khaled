@@ -28,6 +28,9 @@ import { encrypt, decrypt, isEncrypted } from './utils/encryption';
 // you might need
 
 export interface IStorage {
+  // Connect to the database
+  connect(): Promise<boolean>;
+  
   // Database status check
   checkDatabaseStatus(): Promise<{
     connected: boolean;
@@ -227,6 +230,16 @@ export class MemStorage implements IStorage {
     
     // Initialize with sample data
     this.initializeData();
+  }
+
+  /**
+   * Connect to the database
+   * For memory storage, this is a no-op that always succeeds
+   */
+  async connect(): Promise<boolean> {
+    // Memory storage is always connected
+    this.isConnected = true;
+    return true;
   }
 
   /**
@@ -2196,10 +2209,15 @@ let selectedStorage: IStorage = memStorage;
       // Create MongoDB storage if connected
       mongoStorage = new MongoDBStorage();
       
-      // Switch the active storage to MongoDB
-      selectedStorage = mongoStorage;
-      
-      console.log('Successfully switched to MongoDB storage.');
+      // Connect to MongoDB
+      const connected = await mongoStorage.connect();
+      if (connected) {
+        // Switch the active storage to MongoDB
+        selectedStorage = mongoStorage;
+        console.log('Successfully connected and switched to MongoDB storage.');
+      } else {
+        console.log('MongoDB storage created but connection failed. Staying with MemStorage.');
+      }
     } else {
       console.log('MongoDB connection failed. Using MemStorage (in-memory storage). Data will be lost on restart.');
       console.log('MongoDB error:', mongoStatus.error);
