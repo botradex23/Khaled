@@ -125,10 +125,26 @@ export default function MarketsFullPage() {
       setFromCache(data.fromCache || false);
       setCacheAge(data.cacheAge || null);
       
-      // Make sure we're setting the actual array of market data
+      // Handle different response formats from different sources
+      let marketItems: any[] = [];
+      
       if (data.success && Array.isArray(data.data)) {
+        // Standard format with data array
+        marketItems = data.data;
+      } else if (data.success && Array.isArray(data.prices)) {
+        // Python Binance format with prices array
+        marketItems = data.prices;
+      } else if (Array.isArray(data)) {
+        // Direct array format
+        marketItems = data;
+      } else {
+        console.error('Unexpected data format from API:', data);
+        throw new Error('Invalid data format received from server');
+      }
+      
+      if (marketItems.length > 0) {
         // Transform the data to include missing properties with default values
-        const transformedData: MarketData[] = data.data.map((item: any): MarketData => ({
+        const transformedData: MarketData[] = marketItems.map((item: any): MarketData => ({
           symbol: item.symbol || '',
           baseSymbol: item.baseSymbol || '',
           quoteSymbol: item.quoteSymbol || '',
@@ -152,7 +168,16 @@ export default function MarketsFullPage() {
       }
     } catch (err: any) {
       console.error('Error fetching market data:', err);
-      setError(err.message || 'Failed to load market data');
+      
+      // Check for geo-restriction errors
+      if (err.geo_restricted || 
+          (err.status === 451) || 
+          (err.message && err.message.includes('restricted location'))) {
+        setError('Binance API access is restricted in this region. The system is using locally cached data.');
+      } else {
+        setError(err.message || 'Failed to load market data');
+      }
+      
       setMarketData([]);
     } finally {
       setIsLoading(false);
