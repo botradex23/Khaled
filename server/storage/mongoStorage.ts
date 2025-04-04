@@ -23,28 +23,26 @@ export class MongoDBStorage implements IStorage {
     // Explicitly read environment variables from process.env
     console.log('📦 Checking MongoDB environment variables...');
     
-    // Load dotenv directly if needed, this is a backup approach
-    try {
-      require('dotenv').config();
-    } catch (err) {
-      console.warn('⚠️ Could not load dotenv, assuming environment variables are already set');
-    }
-    
-    // Check if MONGO_URI is set in environment
-    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
-    if (!mongoUri) {
-      throw new Error('MONGO_URI environment variable is required but not set');
-    }
-    
     // Check for both MONGO_URI and MONGODB_URI environment variables
-    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    let mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
     
     if (!mongoUri) {
       console.error('❌ Neither MONGO_URI nor MONGODB_URI environment variables are found');
-      console.error('Available environment variables:', Object.keys(process.env)
-        .filter(key => !key.includes('KEY') && !key.includes('SECRET'))
+      console.error('Available environment variables keys:', Object.keys(process.env)
+        .filter(key => !key.includes('KEY') && !key.includes('SECRET') && !key.includes('PASSWORD'))
         .join(', '));
       throw new Error('MongoDB connection URI is required but not found in environment variables');
+    }
+    
+    // Fix the URI format if it contains the variable name by extracting just the URI part
+    if (mongoUri.startsWith('MONGO_URI=')) {
+      mongoUri = mongoUri.substring('MONGO_URI='.length);
+      console.log('Extracted MongoDB URI from MONGO_URI environment variable');
+    }
+    
+    if (!mongoUri.startsWith('mongodb://') && !mongoUri.startsWith('mongodb+srv://')) {
+      console.error('❌ Invalid MongoDB URI format. URI must start with mongodb:// or mongodb+srv://');
+      throw new Error('Invalid MongoDB URI format');
     }
     
     console.log(`📊 MongoDB URI found with format: ${mongoUri.substring(0, 20)}...`);
@@ -76,8 +74,15 @@ export class MongoDBStorage implements IStorage {
       await this.client.connect();
       console.log("✅ Connected successfully to MongoDB Atlas");
       
-      // Extract database name from MongoDB URI
-      const uri = process.env.MONGO_URI || process.env.MONGODB_URI || '';
+      // Extract database name from MongoDB URI (and fix uri if needed)
+      let uri = process.env.MONGO_URI || process.env.MONGODB_URI || '';
+      
+      // Fix the URI format if it contains the variable name
+      if (uri.startsWith('MONGO_URI=')) {
+        uri = uri.substring('MONGO_URI='.length);
+        console.log('Fixed MongoDB URI format in connect method');
+      }
+      
       const dbName = uri.split('/').pop()?.split('?')[0] || 'Saas';
       
       console.log(`Using MongoDB database: ${dbName}`);
@@ -87,40 +92,45 @@ export class MongoDBStorage implements IStorage {
         throw new Error('Failed to get database reference');
       }
       
-      // List of required collections
-      const requiredCollections = [
-        "users",
-        "bots",
-        "trades",
-        "risk_settings",
-        "paper_trading_accounts"
-      ];
+      // Initialize required collections directly without checking first
+      // This is more efficient and prevents timeout issues
+      console.log("Initializing MongoDB collections directly");
       
-      // Get a list of existing collections
-      const collections = await this.db.listCollections().toArray();
-      const existingCollections = collections.map((c: any) => c.name);
-      
-      console.log("Existing collections:", existingCollections);
-      
-      // Create any missing collections
-      for (const collName of requiredCollections) {
-        if (!existingCollections.includes(collName)) {
-          console.log(`Creating missing collection: ${collName}`);
-          await this.db.createCollection(collName);
-        }
-      }
-      
-      // Initialize collections with explicit error checking
       try {
+        // Initialize collections directly
         this.usersCollection = this.db.collection("users");
         this.botsCollection = this.db.collection("bots");
         this.tradesCollection = this.db.collection("trades");
         this.riskSettingsCollection = this.db.collection("risk_settings");
+        
+        console.log("Collections initialized, verifying access");
+        
+        // Verify we can access users collection with a simple query
+        await this.usersCollection.findOne({});
       } catch (error) {
-        const collErr = error as Error;
-        console.error('Failed to initialize collections:', collErr);
-        throw new Error(`Collection initialization failed: ${collErr.message}`);
+        console.error("Error accessing collections:", error);
+        
+        // If direct access fails, try to create collections first
+        console.log("Creating required collections as fallback");
+        const requiredCollections = [
+          "users",
+          "bots",
+          "trades",
+          "risk_settings",
+          "paper_trading_accounts"
+        ];
+        
+        for (const collName of requiredCollections) {
+          try {
+            await this.db.createCollection(collName);
+            console.log(`Created collection: ${collName}`);
+          } catch (createError) {
+            console.log(`Collection ${collName} already exists or couldn't be created`);
+          }
+        }
       }
+      
+      // Collections have already been initialized above, this is just a verification step
       
       // Verify collections were properly initialized
       if (!this.usersCollection || !this.botsCollection || 
@@ -142,6 +152,31 @@ export class MongoDBStorage implements IStorage {
    */
   async checkDatabaseStatus(): Promise<{ connected: boolean; isSimulated?: boolean; description?: string; error?: string | null }> {
     try {
+      // Add extra validation here for the client
+      if (!this.client) {
+        console.log('Recreating MongoDB client in checkDatabaseStatus due to undefined client');
+        
+        // Get and fix the MongoDB URI if needed
+        let mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || '';
+        if (mongoUri.startsWith('MONGO_URI=')) {
+          mongoUri = mongoUri.substring('MONGO_URI='.length);
+        }
+        
+        // Validate the URI format
+        if (!mongoUri.startsWith('mongodb://') && !mongoUri.startsWith('mongodb+srv://')) {
+          return {
+            connected: false,
+            isSimulated: false,
+            description: 'Invalid MongoDB URI format',
+            error: 'MongoDB URI must start with mongodb:// or mongodb+srv://'
+          };
+        }
+        
+        // Create a new client
+        this.client = new MongoClient(mongoUri);
+      }
+      
+      // Try to ping the database
       await this.client.db().command({ ping: 1 });
       return {
         connected: true,
@@ -150,6 +185,7 @@ export class MongoDBStorage implements IStorage {
         error: null
       };
     } catch (err) {
+      console.error('Database status check failed:', err);
       return {
         connected: false,
         isSimulated: false,

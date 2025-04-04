@@ -25,27 +25,38 @@ export function setupAuth(app: Express) {
   // Trust first proxy for secure cookies behind HTTPS
   app.set('trust proxy', 1);
   
-  // Create memory store for session
+  // Generate a random session secret if one doesn't exist
+  const sessionSecret = process.env.SESSION_SECRET || 
+    crypto.randomBytes(32).toString('hex');
+  
+  console.log(`Session security: Using ${process.env.SESSION_SECRET ? 'configured' : 'generated'} session secret`);
+  
+  // Create memory store for session with configurable options
   const memoryStore = new MemoryStoreSession({
-    checkPeriod: 86400000 // prune expired entries every 24h
+    checkPeriod: 86400000, // prune expired entries every 24h
+    ttl: 7 * 24 * 60 * 60 * 1000, // 7 days default TTL
+    stale: false, // Don't check for stale right away
+    dispose: (key, value) => {
+      console.log(`Session expired and pruned: ${key.substring(0, 8)}...`);
+    }
   });
   
   // Setup session with improved cookie settings
   app.use(
     session({
       store: memoryStore, // Use memory store to persist sessions
-      secret: process.env.SESSION_SECRET || 'mudrex-crypto-trading-secret',
-      resave: true, // Keep true to ensure session is saved even if unchanged
-      saveUninitialized: true, // Keep true to save new sessions
+      secret: sessionSecret,
+      resave: false, // Only save back if modified
+      saveUninitialized: false, // Don't save empty sessions
       rolling: true, // Reset expiration countdown with each request
+      name: 'crypto_trading_sid', // Custom name to avoid default connect.sid
       cookie: {
         secure: process.env.NODE_ENV === 'production', // Secure in production, but allow HTTP in dev
-        maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         httpOnly: true,
         sameSite: 'lax', // Better compatibility while still providing CSRF protection
         path: '/' // Ensure cookie is available for all paths
-      },
-      name: 'crypto.sid' // Custom name to avoid conflicts
+      }
     })
   );
 
@@ -299,6 +310,16 @@ function registerAuthRoutes(app: Express) {
 
   // Local authentication routes
   app.post('/api/auth/login', (req: Request, res: Response, next: NextFunction) => {
+    console.log('Login attempt received for email:', req.body.email);
+    
+    // Add additional security logging
+    console.log('Login request headers:', {
+      host: req.headers.host,
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      userAgent: req.headers['user-agent']
+    });
+    
     passport.authenticate('local', (err: Error | null, user: any, info: any) => {
       if (err) {
         console.error('Error during local authentication:', err);
@@ -307,7 +328,7 @@ function registerAuthRoutes(app: Express) {
       
       if (!user) {
         console.log('Local auth failed:', info);
-        return res.status(401).json({ success: false, message: info.message || 'Invalid credentials' });
+        return res.status(401).json({ success: false, message: info?.message || 'Invalid email or password' });
       }
       
       req.logIn(user, (loginErr) => {
@@ -316,18 +337,46 @@ function registerAuthRoutes(app: Express) {
           return res.status(500).json({ success: false, message: 'Login error' });
         }
         
-        console.log('Local authentication successful for user:', user.email);
-        return res.json({ 
-          success: true, 
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            isAdmin: user.isAdmin,
-            // Don't send sensitive fields like password
-          }
-        });
+        console.log('Login successful for user:', user.email);
+        console.log('Session ID after login:', req.sessionID);
+        
+        if (req.session) {
+          // Force session save to ensure it's written to the store
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.error('Error saving session after login:', saveErr);
+            } else {
+              console.log('Session saved successfully after login');
+            }
+            
+            // Return success response with user data
+            return res.json({ 
+              success: true, 
+              user: {
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                isAdmin: user.isAdmin,
+                // Don't send sensitive fields like password
+              },
+              sessionID: req.sessionID // Include the session ID for debugging
+            });
+          });
+        } else {
+          console.error('Session object not available in login request');
+          return res.json({ 
+            success: true, 
+            user: {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              isAdmin: user.isAdmin,
+            },
+            warning: "Session object not available, login may not persist"
+          });
+        }
       });
     })(req, res, next);
   });

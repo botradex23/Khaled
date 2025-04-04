@@ -127,7 +127,7 @@ export default function Login() {
       const response = await apiRequest("POST", "/api/auth/login", data);
       
       // If successful, update the auth context
-      if (response && response.user) {
+      if (response && response.success && response.user) {
         login(response.user as User);
         
         toast({
@@ -135,8 +135,18 @@ export default function Login() {
           description: "You have been logged in successfully.",
         });
         
+        // Verify the authentication state with the server
+        await checkSession();
+        
         // Redirect to dashboard after successful login
         setLocation("/dashboard");
+      } else {
+        console.error("Login response incomplete:", response);
+        toast({
+          title: "Login Failed",
+          description: response?.message || "Authentication failed - please try again",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error("Login error:", error);

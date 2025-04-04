@@ -1,10 +1,44 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-// Import and configure dotenv to load environment variables
-import dotenv from 'dotenv';
-// Load environment variables from .env file
-dotenv.config();
+// Import file system module to read .env file directly
+import fs from 'fs';
+import path from 'path';
+
+// Simple function to load environment variables from .env file
+function loadEnvFile() {
+  try {
+    const envPath = path.resolve('.env');
+    console.log('Loading environment variables from:', envPath);
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      const envLines = envContent.split('\n');
+      
+      for (const line of envLines) {
+        // Skip comments and empty lines
+        if (line.trim().startsWith('#') || !line.trim()) continue;
+        
+        // Parse KEY=VALUE format
+        const match = line.match(/^([^=]+)=(.*)$/);
+        if (match) {
+          const key = match[1].trim();
+          const value = match[2].trim();
+          if (!process.env[key]) {
+            process.env[key] = value;
+          }
+        }
+      }
+      console.log('Environment variables loaded successfully');
+    } else {
+      console.warn('No .env file found');
+    }
+  } catch (error) {
+    console.error('Error loading .env file:', error);
+  }
+}
+
+// Load environment variables
+loadEnvFile();
 
 // Import file for side effects only to override console messages
 import './override-console.js';
