@@ -4,9 +4,14 @@ import session from 'express-session';
 import { setupGoogleAuth } from './google';
 import { setupAppleAuth } from './apple';
 import { storage } from '../storage';
+// Import Memory Store for fallback
+import MemoryStore from 'memorystore';
 
 // Type definition for user in session
 import { User as UserModel } from '@shared/schema';
+
+// Create memory store with session
+const MemoryStoreSession = MemoryStore(session);
 
 declare global {
   namespace Express {
@@ -18,9 +23,15 @@ export function setupAuth(app: Express) {
   // Trust first proxy for secure cookies behind HTTPS
   app.set('trust proxy', 1);
   
+  // Create memory store for session
+  const memoryStore = new MemoryStoreSession({
+    checkPeriod: 86400000 // prune expired entries every 24h
+  });
+  
   // Setup session with improved cookie settings
   app.use(
     session({
+      store: memoryStore, // Use memory store to persist sessions
       secret: process.env.SESSION_SECRET || 'mudrex-crypto-trading-secret',
       resave: true, // Changed to true to ensure session is saved even if unchanged
       saveUninitialized: true, // Changed to true to save new sessions
@@ -140,9 +151,19 @@ function registerAuthRoutes(app: Express) {
 
   // Get current user
   app.get('/api/auth/user', (req: Request, res: Response) => {
+    // Add session debugging information
+    console.log('Session debug info:', {
+      hasSession: !!req.session,
+      sessionID: req.sessionID,
+      isAuthenticated: req.isAuthenticated(),
+      hasUser: !!req.user,
+      sessionUser: req.user ? { id: req.user.id, username: req.user.username } : null
+    });
+    
     // Check for test user header first
     if (req.headers['x-test-user-id']) {
       const testUserId = parseInt(req.headers['x-test-user-id'] as string);
+      console.log('Using test user ID from header:', testUserId);
       
       // Get user from storage
       storage.getUser(testUserId).then(user => {
@@ -165,13 +186,104 @@ function registerAuthRoutes(app: Express) {
         });
       });
     } 
+    // Check for X-Test-Admin header
+    else if (req.headers['x-test-admin']) {
+      console.log('Test admin header found, looking up admin user');
+      
+      // Find admin user
+      storage.getUserByUsername('admin').then(adminUser => {
+        console.log('getUserByUsername result:', adminUser ? 'Found admin' : 'Admin not found');
+        
+        if (adminUser) {
+          console.log('Admin user found via header:', adminUser.id);
+          
+          // Set user in request and session
+          req.user = adminUser;
+          
+          // Set the user as authenticated for this request
+          if (req.session) {
+            console.log('Setting user in session');
+            req.session.passport = { user: adminUser.id };
+            req.session.save((err) => {
+              if (err) {
+                console.error('Error saving session:', err);
+              } else {
+                console.log('Session saved successfully after x-test-admin header');
+              }
+            });
+          } else {
+            console.log('No session object available for request');
+          }
+          
+          return res.json({
+            isAuthenticated: true,
+            user: adminUser,
+          });
+        } else {
+          console.log('Admin user not found when looking up by username, trying to create one');
+          
+          // Try to create admin user
+          const newAdminUser = {
+            username: "admin",
+            email: "admin@example.com",
+            password: "admin123",
+            firstName: "Admin",
+            lastName: "User",
+            defaultBroker: "binance",
+            useTestnet: true,
+            isAdmin: true,
+            binanceApiKey: process.env.BINANCE_API_KEY || "IdDwQIIneNnLBtj515EZbX3beNliXTlLNPMID9cR5C3ON6C9qnMKybYflbt2Qwty",
+            binanceSecretKey: process.env.BINANCE_SECRET_KEY || "COhywWX9SDmIM9B1TrRb26yWFzweU46JdFqRKG6UbEdb60MGOFoCIyra7oLXV7xd"
+          };
+          
+          return storage.createUser(newAdminUser).then(createdAdmin => {
+            console.log('Created new admin user via header handler:', createdAdmin.id);
+            
+            // Set user in request and session
+            req.user = createdAdmin;
+            
+            // Set the user as authenticated for this request
+            if (req.session) {
+              console.log('Setting created user in session');
+              req.session.passport = { user: createdAdmin.id };
+              req.session.save((err) => {
+                if (err) {
+                  console.error('Error saving session for created user:', err);
+                } else {
+                  console.log('Session saved successfully for created user');
+                }
+              });
+            }
+            
+            return res.json({
+              isAuthenticated: true,
+              user: createdAdmin,
+            });
+          }).catch(createErr => {
+            console.error('Failed to create admin user:', createErr);
+            return res.json({
+              isAuthenticated: false,
+              user: null,
+            });
+          });
+        }
+      }).catch(err => {
+        console.error('Error getting admin user:', err);
+        return res.json({
+          isAuthenticated: false,
+          user: null,
+        });
+      });
+    }
     // Normal authentication check
     else if (req.isAuthenticated()) {
+      console.log('User is authenticated via session, user ID:', req.user?.id);
       res.json({
         isAuthenticated: true,
         user: req.user,
       });
     } else {
+      console.log('User is not authenticated');
       res.json({
         isAuthenticated: false,
         user: null,

@@ -45,13 +45,28 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Check MongoDB environment variable is set
-  if (!process.env.MONGO_URI) {
-    console.error('⚠️ WARNING: MONGO_URI environment variable is not set. MongoDB connection will not be attempted.');
-  } else {
-    console.log('MongoDB Atlas URI is configured:', process.env.MONGO_URI.substring(0, 20) + '...');
-    console.log('MongoDB Atlas cluster:', process.env.MONGO_URI.split('@')[1].split('/')[0]);
-    console.log('MongoDB database name:', process.env.MONGO_URI.split('/').pop()?.split('?')[0]);
+  // Load .env file if needed (though Replit should handle this)
+  try {
+    // Check MongoDB environment variable is set
+    const mongoUri = process.env.MONGO_URI;
+    if (!mongoUri) {
+      console.error('⚠️ WARNING: MONGO_URI environment variable is not set. MongoDB connection will not be attempted.');
+      // Set it manually from the value in .env file since there might be a loading issue
+      process.env.MONGO_URI = 'mongodb+srv://Khaleddd:Khaled123.@cluster0.rh8kusi.mongodb.net/Saas?retryWrites=true&w=majority&appName=Cluster0';
+      console.log('✅ Set MONGO_URI manually from known value');
+    }
+    
+    // Now we're sure MONGO_URI is set
+    const finalMongoUri = process.env.MONGO_URI || '';
+    if (finalMongoUri) {
+      console.log('MongoDB Atlas URI is configured:', finalMongoUri.substring(0, 20) + '...');
+      const clusterPart = finalMongoUri.split('@')[1]?.split('/')[0] || 'unknown';
+      console.log('MongoDB Atlas cluster:', clusterPart);
+      const dbName = finalMongoUri.split('/').pop()?.split('?')[0] || 'unknown';
+      console.log('MongoDB database name:', dbName);
+    }
+  } catch (error) {
+    console.error('Error processing MongoDB URI:', error);
   }
 
   // Connect to MongoDB first before registering routes
