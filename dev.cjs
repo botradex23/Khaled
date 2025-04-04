@@ -3,26 +3,26 @@
 /**
  * Development server launcher
  * 
- * This script starts the original server implementation from index.js
+ * This script starts the simplified server implementation
  */
 
 const fs = require('fs');
 const { exec, spawn } = require('child_process');
 
-console.log('Starting development server with original implementation...');
+console.log('Starting development server with simplified implementation...');
 
 // Make the server script executable
 try {
-  fs.chmodSync('./index.js', 0o755);
-  console.log('Made index.js executable');
+  fs.chmodSync('./run_server.cjs', 0o755);
+  console.log('Made run_server.cjs executable');
 } catch (err) {
-  console.error('Could not make index.js executable:', err.message);
+  console.error('Could not make run_server.cjs executable:', err.message);
 }
 
-console.log('Development server started');
+console.log('Development server starting...');
 
-// Start the original server
-const serverProcess = spawn('node', ['./index.js'], { 
+// Start the simplified server
+const serverProcess = spawn('node', ['./run_server.cjs'], { 
   stdio: 'inherit',
   detached: false
 });

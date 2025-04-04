@@ -5,14 +5,13 @@
  * the frontend and proxies requests to the Python API server.
  */
 
-import express from 'express';
-import cors from 'cors';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { createServer } from 'http';
-import { spawn } from 'child_process';
-import fetch from 'node-fetch';
-import dotenv from 'dotenv';
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const http = require('http');
+const { spawn } = require('child_process');
+const fetch = require('node-fetch');
+const dotenv = require('dotenv');
 
 // Load environment variables
 dotenv.config();
@@ -23,13 +22,12 @@ const PORT = process.env.PORT || 5000;
 const PYTHON_API_PORT = 5001;
 
 // Get current directory
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = process.cwd();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Start Python API server
 function startPythonServer() {
@@ -113,11 +111,11 @@ app.use('/api', async (req, res) => {
 
 // Serve the React frontend for any other route
 app.get('*', (req, res) => {
-  res.sendFile(join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Create HTTP server
-const server = createServer(app);
+const server = http.createServer(app);
 
 // Start the server
 async function startServer() {
@@ -153,3 +151,6 @@ startServer().catch(error => {
   console.error('Failed to start server:', error);
   process.exit(1);
 });
+
+// Export server for testing
+module.exports = { app, server, startServer };
