@@ -629,6 +629,7 @@ function registerAuthRoutes(app: Express) {
           await storage.updateUser(existingAdmin.id, { isAdmin: true });
         }
         
+        // Return the existing admin info but never expose the password
         return res.json({ 
           success: true, 
           message: 'Default admin already exists', 
@@ -640,17 +641,8 @@ function registerAuthRoutes(app: Express) {
         });
       }
       
-      // Generate a strong random password
-      const generatePassword = () => {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
-        let password = '';
-        for (let i = 0; i < 16; i++) {
-          password += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return password;
-      };
-      
-      const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || generatePassword();
+      // Use specific password for default admin
+      const adminPassword = 'Ameena123'; // Using the specific password requested
       
       // Hash the password with SHA-256
       const hashedPassword = crypto.createHash('sha256').update(adminPassword).digest('hex');
@@ -662,7 +654,8 @@ function registerAuthRoutes(app: Express) {
         firstName: 'Admin',
         lastName: 'User',
         username: 'admin',
-        isAdmin: true,
+        isAdmin: true,       // Regular admin flag
+        isSuperAdmin: true,  // Super admin flag for full permissions with admin-my-agent
         useTestnet: true,
         defaultBroker: "binance",
         binanceApiKey: process.env.BINANCE_API_KEY || null,
@@ -670,28 +663,28 @@ function registerAuthRoutes(app: Express) {
       };
       
       const createdAdmin = await storage.createUser(newAdmin);
-      console.log('Created default admin user:', createdAdmin.id);
+      console.log('Created super admin user:', createdAdmin.id);
       
       // Double-check the created admin has isAdmin set to true
       if (!createdAdmin.isAdmin) {
         console.log('Warning: Admin created without isAdmin flag, updating...');
-        await storage.updateUser(createdAdmin.id, { isAdmin: true });
+        await storage.updateUser(createdAdmin.id, { isAdmin: true, isSuperAdmin: true });
       }
       
-      // Return success with the plaintext password this one time
+      // Return success with confirmation but don't include password in response for security
       return res.json({ 
         success: true, 
-        message: 'Default admin created successfully', 
+        message: 'Super admin created successfully with the specified credentials', 
         admin: {
           id: createdAdmin.id,
           email: createdAdmin.email,
           isAdmin: true,
-          password: adminPassword // Only sent once during creation
+          isSuperAdmin: true
         }
       });
     } catch (error) {
-      console.error('Error creating default admin:', error);
-      return res.status(500).json({ success: false, message: 'Default admin creation failed' });
+      console.error('Error creating super admin:', error);
+      return res.status(500).json({ success: false, message: 'Super admin creation failed' });
     }
   });
   
