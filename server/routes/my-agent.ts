@@ -28,7 +28,37 @@ initializeOpenAI();
 
 // Simple health check endpoint to verify the agent is working
 router.get('/health', ensureAuthenticated, ensureAdmin, (req: Request, res: Response) => {
-  res.json({ success: true, message: 'My Agent service is online' });
+  const apiKey = process.env.OPENAI_API_KEY;
+  console.log('Health check called, OpenAI API Key present:', !!apiKey);
+  
+  if (!apiKey) {
+    console.log('OpenAI API Key is missing in health check');
+    return res.json({ 
+      success: false, 
+      message: 'OpenAI API Key is not set. Please configure the OPENAI_API_KEY environment variable.' 
+    });
+  }
+  
+  try {
+    // Verify that we can initialize the OpenAI client
+    const openaiInitResult = initializeOpenAI();
+    console.log('OpenAI initialization result in health check:', openaiInitResult);
+    
+    if (!openaiInitResult) {
+      return res.json({ 
+        success: false, 
+        message: 'Failed to initialize OpenAI service. Check server logs for details.' 
+      });
+    }
+    
+    return res.json({ success: true, message: 'My Agent service is online and OpenAI is properly initialized' });
+  } catch (error) {
+    console.error('Error in health check:', error);
+    return res.json({ 
+      success: false, 
+      message: 'Error checking OpenAI service: ' + (error instanceof Error ? error.message : 'Unknown error') 
+    });
+  }
 });
 
 // Chat with the AI agent
