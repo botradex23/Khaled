@@ -1,6 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+// Import and configure dotenv to load environment variables
+import dotenv from 'dotenv';
+// Load environment variables from .env file
+dotenv.config();
+
 // Import file for side effects only to override console messages
 import './override-console.js';
 // Import risk manager to start monitoring positions for SL/TP
@@ -14,6 +19,14 @@ import { initializeOpenAI } from './utils/openai';
 
 // ✅ NEW: Initialize OpenAI API key
 initializeOpenAI();
+
+// Log all available environment variables for debugging (hiding sensitive values)
+console.log('Environment variables loaded: ', {
+  MONGO_URI: process.env.MONGO_URI ? 'CONFIGURED' : 'MISSING',
+  DATABASE_URL: process.env.DATABASE_URL ? 'CONFIGURED' : 'MISSING',
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY ? 'CONFIGURED' : 'MISSING',
+  NODE_ENV: process.env.NODE_ENV
+});
 
 const app = express();
 app.use(express.json());
@@ -53,32 +66,34 @@ app.use((req, res, next) => {
   try {
     const mongoUri = process.env.MONGO_URI;
     if (!mongoUri) {
-      console.error('⚠️ WARNING: MONGO_URI environment variable is not set. MongoDB connection will not be attempted.');
-      process.env.MONGO_URI = 'mongodb+srv://Khaleddd:Khaled123.@cluster0.rh8kusi.mongodb.net/Saas?retryWrites=true&w=majority&appName=Cluster0';
-      console.log('✅ Set MONGO_URI manually from known value');
+      console.error('❌ CRITICAL ERROR: MONGO_URI environment variable is not set. MongoDB connection is required.');
+      throw new Error('MONGO_URI environment variable is required');
     }
 
-    const finalMongoUri = process.env.MONGO_URI || '';
-    if (finalMongoUri) {
-      console.log('MongoDB Atlas URI is configured:', finalMongoUri.substring(0, 20) + '...');
-      const clusterPart = finalMongoUri.split('@')[1]?.split('/')[0] || 'unknown';
-      console.log('MongoDB Atlas cluster:', clusterPart);
-      const dbName = finalMongoUri.split('/').pop()?.split('?')[0] || 'unknown';
-      console.log('MongoDB database name:', dbName);
-    }
+    console.log('MongoDB Atlas URI is configured:', mongoUri.substring(0, 20) + '...');
+    const clusterPart = mongoUri.split('@')[1]?.split('/')[0] || 'unknown';
+    console.log('MongoDB Atlas cluster:', clusterPart);
+    const dbName = mongoUri.split('/').pop()?.split('?')[0] || 'unknown';
+    console.log('MongoDB database name:', dbName);
   } catch (error) {
-    console.error('Error processing MongoDB URI:', error);
+    console.error('❌ CRITICAL ERROR: Failed to process MongoDB URI:', error);
+    process.exit(1); // Exit if MongoDB URI is invalid
   }
 
-  if (process.env.MONGO_URI) {
-    try {
-      console.log('Connecting to MongoDB database...');
-      await storage.connect();
-      console.log('MongoDB connection established successfully');
-    } catch (error) {
-      console.error('Failed to connect to MongoDB:', error);
-      console.log('Continuing with fallback to memory storage');
+  try {
+    console.log('Connecting to MongoDB database...');
+    const connected = await storage.connect();
+    
+    if (!connected) {
+      console.error('❌ CRITICAL ERROR: Failed to connect to MongoDB database');
+      process.exit(1); // Exit if MongoDB connection fails
     }
+    
+    console.log('✅ MongoDB connection established successfully');
+    console.log('📊 All data will be stored in MongoDB Atlas');
+  } catch (error) {
+    console.error('❌ CRITICAL ERROR: Failed to connect to MongoDB:', error);
+    process.exit(1); // Exit if MongoDB connection fails
   }
 
   // Direct route for admin check without Vite middleware
