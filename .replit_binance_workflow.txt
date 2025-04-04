@@ -1,2 +1,0 @@
-name = "Start Binance Trading Platform"
-command = "node run-app.cjs"

@@ -1,2 +1,0 @@
-#!/bin/bash
-node minimal_server.cjs

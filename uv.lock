@@ -145,15 +145,6 @@ wheels = [
 ]
 
 [[package]]
-name = "binance"
-version = "0.3.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/0e/cd/f8cd310f293c5a6f9bf2c93d1efdfcfd8b808b21d487d61603f370fa8647/binance-0.3.3.tar.gz", hash = "sha256:49b1307bcd42d89c4812091a4319dc057d53ba1e4478b41bc4ba76e0c54c1b47", size = 731980 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/87/cf/537c3dfdc02b66b11a467f4d42c1c5d982ba4ec96e1d425e8afde98c4c15/binance-0.3.3-py3-none-any.whl", hash = "sha256:b3efbd517969d77625b072e0002216f7c3236cb0e9ece85551b0ef9773e2b32b", size = 851479 },
-]
-
-[[package]]
 name = "binance-connector"
 version = "3.12.0"
 source = { registry = "https://pypi.org/simple" }
@@ -383,7 +374,6 @@ name = "crypto-trade"
 version = "1.0.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "binance" },
     { name = "binance-connector" },
     { name = "ccxt" },
     { name = "cryptography" },
@@ -407,7 +397,6 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "binance", specifier = ">=0.3.3" },
     { name = "binance-connector", specifier = ">=3.12.0" },
     { name = "ccxt", specifier = ">=4.4.70" },
     { name = "cryptography", specifier = ">=44.0.2" },
