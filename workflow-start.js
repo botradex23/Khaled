@@ -15,3 +15,10 @@ server.on('error', (err) => {
   console.error('Error starting server:', err);
   process.exit(1);
 });
+
+// Keep the process running
+process.on('SIGINT', () => {
+  console.log('Shutting down server...');
+  server.kill();
+  process.exit(0);
+});
