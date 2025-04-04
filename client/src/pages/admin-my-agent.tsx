@@ -36,8 +36,15 @@ export default function AdminMyAgentPage() {
       console.log('Fetching agent health status...');
       
       // Try direct port 5002 API first
+      // For Replit, we need to use the same domain but different port
+      const hostname = window.location.hostname;
+      const protocol = window.location.protocol;
+      const directApiUrl = `${protocol}//${hostname}:5002/health`;
+      
+      console.log('Attempting to connect to direct API at:', directApiUrl);
+      
       try {
-        const directResponse = await fetch('http://localhost:5002/health', {
+        const directResponse = await fetch(directApiUrl, {
           headers: {
             'Accept': 'application/json',
             'X-Test-Admin': 'true'
@@ -50,7 +57,7 @@ export default function AdminMyAgentPage() {
           console.log('Direct API agent health response:', directData);
           return directData;
         } else {
-          console.warn('Direct API request failed, falling back to standard API');
+          console.warn('Direct API request failed with status:', directResponse.status, 'Falling back to standard API');
         }
       } catch (directError) {
         console.warn('Direct API call failed, falling back to standard API:', directError);

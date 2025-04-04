@@ -18,11 +18,21 @@ import { ensureAuthenticated } from '../auth';
 const directApp = express();
 directApp.use(express.json());
 
-// Enable CORS for local development
+// Enable CORS for Replit and local development
 directApp.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  // Get the origin from the request
+  const origin = req.headers.origin || '*';
+  
+  // Log the origin for debugging
+  console.log('Request origin:', origin);
+  
+  // Allow the specific origin that made the request (or '*' if no origin)
+  res.header('Access-Control-Allow-Origin', origin);
+  res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, X-Test-Admin');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, X-Test-Admin, Authorization');
+  
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }

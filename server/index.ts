@@ -91,10 +91,28 @@ app.use((req, res, next) => {
     }
   });
 
-  console.log('Registering routes...');
-  const server = await registerRoutes(app);
-  console.log('Routes registered');
+  // Create server first
+  const server = await new Promise<any>((resolve) => {
+    const httpServer = app.listen(0, () => {
+      httpServer.close(() => {
+        resolve(httpServer);
+      });
+    });
+  });
 
+  // Set up Vite first in development mode to ensure proper route handling
+  if (app.get("env") === "development") {
+    console.log('Setting up Vite middleware first...');
+    await setupVite(app, server);
+    console.log('Vite middleware setup complete');
+  }
+
+  // Then register API routes
+  console.log('Registering API routes...');
+  await registerRoutes(app);
+  console.log('API Routes registered');
+
+  // Global error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || 500;
     const message = err.message || 'Server error';
@@ -102,9 +120,8 @@ app.use((req, res, next) => {
     res.status(status).json({ message });
   });
 
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
+  // In production, serve static files after API routes
+  if (app.get("env") !== "development") {
     serveStatic(app);
   }
 
