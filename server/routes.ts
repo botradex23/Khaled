@@ -371,6 +371,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register My Agent routes:', err);
   });
   
+  // OpenAI API key test route
+  import('./routes/test-openai-key').then(testOpenAIRouter => {
+    app.use("/api", testOpenAIRouter.default);
+    console.log('OpenAI API key test route registered to /api/test-openai-key');
+  }).catch(err => {
+    console.error('Failed to register OpenAI API key test route:', err);
+  });
+  
+  // OpenAI API key update route (admin only)
+  import('./routes/update-openai-key').then(updateOpenAIRouter => {
+    app.use("/api", updateOpenAIRouter.default);
+    console.log('OpenAI API key update route registered to /api/update-openai-key');
+  }).catch(err => {
+    console.error('Failed to register OpenAI API key update route:', err);
+  });
+  
   // Unified Bot API routes
   app.use("/api/bots", unifiedBotRouter);
   

@@ -15,16 +15,19 @@ let openaiApiKey: string | null = null;
  * Initialize the OpenAI API key from environment variables
  */
 export function initializeOpenAI() {
+  console.log('Initializing OpenAI API key');
   const apiKey = process.env.OPENAI_API_KEY;
   
   if (!apiKey) {
     console.error('OPENAI_API_KEY environment variable is not set');
+    console.log('All env vars:', Object.keys(process.env).join(', '));
     return null;
   }
   
   try {
+    console.log(`OpenAI API key found with length: ${apiKey.length}, starts with: ${apiKey.substring(0, 3)}...`);
     openaiApiKey = apiKey;
-    console.log('OpenAI API key initialized');
+    console.log('OpenAI API key initialized successfully');
     return true;
   } catch (error) {
     console.error('Failed to initialize OpenAI API:', error);
