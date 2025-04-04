@@ -38,6 +38,12 @@ export function setupLocalAuth() {
           const hash = crypto.createHash('sha256').update(password).digest('hex');
           const isMatch = hash === user.password;
           
+          console.log(`Password check details: 
+            hashed input  : ${hash.substring(0, 10)}...
+            stored password: ${user.password.substring(0, 10)}...
+            match result: ${isMatch}
+          `);
+          
           if (!isMatch) {
             console.log(`Password mismatch for user: ${email}`);
             return done(null, false, { message: 'Invalid email or password' });

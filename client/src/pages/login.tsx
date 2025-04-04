@@ -123,8 +123,8 @@ export default function Login() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      // Call the server to login
-      const response = await apiRequest("POST", "/api/login", data);
+      // Call the server to login using the passport-configured endpoint
+      const response = await apiRequest("POST", "/api/auth/login", data);
       
       // If successful, update the auth context
       if (response && response.user) {

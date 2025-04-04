@@ -81,6 +81,53 @@ app.use((req, res, next) => {
     }
   }
 
+  // Direct route for admin check without Vite middleware
+  app.get('/admin-check', async (req, res) => {
+    try {
+      const email = req.query.email as string;
+      
+      if (!email) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Email parameter is required'
+        });
+      }
+      
+      console.log(`Direct admin check (built-in) - looking up user with email: ${email}`);
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'User not found'
+        });
+      }
+      
+      // Mask sensitive data
+      const maskedUser = {
+        ...user,
+        password: user.password ? `${user.password.substring(0, 10)}...` : null,
+        binanceApiKey: user.binanceApiKey ? `***masked***` : null,
+        binanceSecretKey: user.binanceSecretKey ? `***masked***` : null,
+        okxApiKey: user.okxApiKey ? `***masked***` : null,
+        okxSecretKey: user.okxSecretKey ? `***masked***` : null,
+        okxPassphrase: user.okxPassphrase ? `***masked***` : null,
+      };
+      
+      return res.json({ 
+        success: true, 
+        user: maskedUser
+      });
+    } catch (error: any) {
+      console.error('Error fetching user by email:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch user',
+        error: error.message
+      });
+    }
+  });
+
   console.log('Registering API routes and initializing database connections...');
   const server = await registerRoutes(app);
   console.log('Server routes registered successfully');

@@ -11,6 +11,7 @@ import unifiedBotRouter from "./api/bots";
 import testAuthRouter from "./routes/test-auth";
 import userApiKeysRouter from './routes/user-api-keys';
 import adminApiRouter from './routes/admin-api';
+import adminCheckRouter from './routes/admin-check';
 import marketsRouter from './routes/markets';
 import marketsV2Router from './routes/markets.test';
 import marketsV3Router from './routes/markets-v3';
@@ -328,6 +329,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin API routes
   app.use("/api/admin", adminApiRouter);
   
+  // Admin Check routes - direct user check
+  app.use("/api/admin", adminCheckRouter);
+  
   // Market data and prices routes
   app.use("/api/markets", marketsRouter);
   app.use("/api/markets", marketsV2Router);
@@ -465,6 +469,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Direct API routes registered to /direct-api');
   }).catch(err => {
     console.error('Failed to register direct API routes:', err);
+  });
+  
+  // Register Direct Admin Check routes for bypassing Vite middleware
+  import('./routes/direct-admin-check').then(directAdminCheckRouter => {
+    app.use('/direct-api', directAdminCheckRouter.default);
+    console.log('Direct Admin Check routes registered to /direct-api/admin/user');
+  }).catch(err => {
+    console.error('Failed to register direct admin check routes:', err);
   });
   
   // Register Direct Binance Account API routes for simplified testing
@@ -815,13 +827,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Create the user
+      // Hash the password using SHA-256 (same as in local.ts)
+      const crypto = require('crypto');
+      const hashedPassword = crypto.createHash('sha256').update(data.password).digest('hex');
+      
+      // Create the user with hashed password
       const user = await storage.createUser({
         username: data.email, // Use email as username
         email: data.email,
         firstName: data.firstName,
         lastName: data.lastName,
-        password: data.password, // In a real app, this would be hashed
+        password: hashedPassword, // Now properly hashed for consistent authentication
         defaultBroker: "okx",
         useTestnet: true
       });
@@ -863,8 +879,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Find user by email
       const user = await storage.getUserByEmail(data.email);
       
+      // Hash the input password using SHA-256 (same as in registration)
+      const crypto = require('crypto');
+      const hashedInputPassword = crypto.createHash('sha256').update(data.password).digest('hex');
+      
       // Check if user exists and password matches
-      if (!user || user.password !== data.password) {
+      if (!user || user.password !== hashedInputPassword) {
+        console.log(`Login failed for ${data.email}: user not found or password mismatch`);
         return res.status(401).json({ 
           message: "Invalid email or password" 
         });

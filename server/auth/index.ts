@@ -446,8 +446,7 @@ function registerAuthRoutes(app: Express) {
               console.log('No default admin found, creating one');
               // Generate a default admin password
               const adminPassword = "admin123";
-              // Hash the password with SHA-256
-              const crypto = require('crypto');
+              // Hash the password with SHA-256 (crypto is already imported at the top of this file)
               const hashedPassword = crypto.createHash('sha256').update(adminPassword).digest('hex');
               
               // Create the admin user

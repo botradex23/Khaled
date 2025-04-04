@@ -53,10 +53,10 @@ export default function RegistrationForm() {
     try {
       setIsSubmitting(true);
       
-      // Register user
-      const response = await apiRequest<{ message: string, user: User }>(
+      // Register user using the passport-configured auth endpoint
+      const response = await apiRequest<{ success: boolean, user: User }>(
         "POST",
-        "/api/register",
+        "/api/auth/register",
         {
           firstName: data.firstName,
           lastName: data.lastName,
