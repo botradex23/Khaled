@@ -152,6 +152,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register All Binance markets routes:', err);
   });
   
+  // Register User management routes (admin status endpoints)
+  import('./routes/user').then(userRouter => {
+    app.use('/api/user', userRouter.default);
+    console.log('User management routes registered to /api/user');
+  }).catch(err => {
+    console.error('Failed to register user management routes:', err);
+  });
+  
   // Register Python-based Binance routes for /api/markets/python/all-markets endpoint
   import('./routes/markets-python-all').then(pythonAllMarketsRouter => {
     app.use('/api/markets/python', pythonAllMarketsRouter.default);

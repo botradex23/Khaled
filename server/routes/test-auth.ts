@@ -186,10 +186,15 @@ const ensureAdminUserExists = async () => {
     if (!adminUser) {
       console.log('Admin user not found, creating a new admin user...');
       
+      // Hash the password with SHA-256 (same as in local.ts)
+      const crypto = require('crypto');
+      const plainPassword = "admin123"; // Simple password for testing
+      const hashedPassword = crypto.createHash('sha256').update(plainPassword).digest('hex');
+      
       const newAdminUser = {
         username: "admin",
         email: "admin@example.com",
-        password: "admin123", // Simple password for testing
+        password: hashedPassword, // Using hashed password now
         firstName: "Admin",
         lastName: "User",
         defaultBroker: "binance",
@@ -211,6 +216,17 @@ const ensureAdminUserExists = async () => {
       if (adminUser && !adminUser.isAdmin) {
         console.log('Updating existing user to have admin privileges');
         adminUser = await storage.updateUser(adminUser.id, { isAdmin: true });
+      }
+      
+      // Check if password might be stored in plaintext (needs to be hashed)
+      if (adminUser && adminUser.password === "admin123") {
+        console.log('Found admin with plaintext password, updating to hashed password');
+        const crypto = require('crypto');
+        const plainPassword = "admin123";
+        const hashedPassword = crypto.createHash('sha256').update(plainPassword).digest('hex');
+        
+        adminUser = await storage.updateUser(adminUser.id, { password: hashedPassword });
+        console.log('Updated admin password to properly hashed version');
       }
       
       // Update Binance API keys if they're missing

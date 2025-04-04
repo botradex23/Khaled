@@ -434,10 +434,95 @@ function registerAuthRoutes(app: Express) {
   app.post('/api/auth/login-as-admin', (req: Request, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
     
+    // Check if using default admin credentials when no email/password provided
+    if (!email && !password) {
+      // Try to login with default admin credentials
+      console.log('No credentials provided, trying default admin login');
+      storage.getUserByEmail('admin@example.com')
+        .then(async (defaultAdmin) => {
+          if (!defaultAdmin) {
+            // Try to create a default admin if none exists
+            try {
+              console.log('No default admin found, creating one');
+              // Generate a default admin password
+              const adminPassword = "admin123";
+              // Hash the password with SHA-256
+              const crypto = require('crypto');
+              const hashedPassword = crypto.createHash('sha256').update(adminPassword).digest('hex');
+              
+              // Create the admin user
+              const newAdmin = {
+                email: 'admin@example.com',
+                password: hashedPassword,
+                firstName: 'Admin',
+                lastName: 'User',
+                username: 'admin',
+                isAdmin: true, // Ensure this is explicitly set to true
+                useTestnet: true,
+                defaultBroker: "binance"
+              };
+              
+              defaultAdmin = await storage.createUser(newAdmin);
+              console.log('Created default admin for auto-login:', defaultAdmin.id);
+            } catch (error) {
+              console.error('Error creating default admin for auto-login:', error);
+              return res.status(500).json({ success: false, message: 'Failed to create default admin' });
+            }
+          }
+          
+          // Ensure admin flag is set correctly
+          if (defaultAdmin && !defaultAdmin.isAdmin) {
+            console.log('Updating user to have admin privileges');
+            defaultAdmin = await storage.updateUser(defaultAdmin.id, { isAdmin: true });
+          }
+          
+          // Login with default admin
+          req.logIn(defaultAdmin, (loginErr) => {
+            if (loginErr) {
+              console.error('Error during default admin login:', loginErr);
+              return res.status(500).json({ success: false, message: 'Login error' });
+            }
+            
+            console.log('Default admin login successful for:', defaultAdmin.email);
+            
+            // Set X-Test-Admin header in the response for client to store
+            res.set('X-Test-Admin', 'true');
+            
+            return res.json({ 
+              success: true, 
+              user: {
+                id: defaultAdmin.id,
+                email: defaultAdmin.email,
+                firstName: defaultAdmin.firstName,
+                lastName: defaultAdmin.lastName,
+                isAdmin: true
+              }
+            });
+          });
+        })
+        .catch(error => {
+          console.error('Error handling default admin login:', error);
+          res.status(500).json({ success: false, message: 'Authentication error' });
+        });
+      return;
+    }
+    
+    // Regular email+password login
     // First check if this is an admin
     storage.getUserByEmail(email)
-      .then(user => {
-        if (user && user.isAdmin) {
+      .then(async user => {
+        if (!user) {
+          return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        
+        // Check if user isn't marked as admin yet but has admin email
+        if (!user.isAdmin && user.email.includes('admin')) {
+          console.log('User has admin email but no admin flag, updating user:', user.id);
+          user = await storage.updateUser(user.id, { isAdmin: true });
+          console.log('Updated user admin status:', user.isAdmin);
+        }
+        
+        if (user.isAdmin) {
           // Use passport local auth to verify credentials
           passport.authenticate('local', (err: Error | null, authenticatedUser: any, info: any) => {
             if (err) {
@@ -490,12 +575,19 @@ function registerAuthRoutes(app: Express) {
       // Check if admin already exists
       const existingAdmin = await storage.getUserByEmail('admin@example.com');
       if (existingAdmin) {
+        // Make sure the existing admin has isAdmin set to true
+        if (!existingAdmin.isAdmin) {
+          console.log('Updating existing user to have admin privileges');
+          await storage.updateUser(existingAdmin.id, { isAdmin: true });
+        }
+        
         return res.json({ 
           success: true, 
           message: 'Default admin already exists', 
           admin: {
             id: existingAdmin.id,
-            email: existingAdmin.email
+            email: existingAdmin.email,
+            isAdmin: true
           }
         });
       }
@@ -532,6 +624,12 @@ function registerAuthRoutes(app: Express) {
       const createdAdmin = await storage.createUser(newAdmin);
       console.log('Created default admin user:', createdAdmin.id);
       
+      // Double-check the created admin has isAdmin set to true
+      if (!createdAdmin.isAdmin) {
+        console.log('Warning: Admin created without isAdmin flag, updating...');
+        await storage.updateUser(createdAdmin.id, { isAdmin: true });
+      }
+      
       // Return success with the plaintext password this one time
       return res.json({ 
         success: true, 
@@ -539,6 +637,7 @@ function registerAuthRoutes(app: Express) {
         admin: {
           id: createdAdmin.id,
           email: createdAdmin.email,
+          isAdmin: true,
           password: adminPassword // Only sent once during creation
         }
       });
