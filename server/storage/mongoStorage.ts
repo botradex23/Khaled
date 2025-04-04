@@ -196,6 +196,10 @@ export class MongoDBStorage implements IStorage {
         lastName: user.lastName || null,
         defaultBroker: user.defaultBroker || null,
         useTestnet: user.useTestnet !== undefined ? user.useTestnet : true,
+        isAdmin: user.isAdmin || false, // Include isAdmin field 
+        okxApiKey: user.okxApiKey || null,
+        okxSecretKey: user.okxSecretKey || null,
+        okxPassphrase: user.okxPassphrase || null,
         binanceApiKey: user.binanceApiKey || null,
         binanceSecretKey: user.binanceSecretKey || null,
         createdAt: new Date(),
@@ -345,6 +349,23 @@ export class MongoDBStorage implements IStorage {
     }
   }
   
+  // ===== PAPER TRADING ACCOUNT METHODS =====
+
+  /**
+   * Get user's paper trading account
+   */
+  async getUserPaperTradingAccount(userId: number): Promise<any> {
+    try {
+      // Find the paper trading account for this user
+      const account = await this.db.collection("paper_trading_accounts").findOne({ userId: Number(userId) });
+      console.log(`Retrieved paper trading account for user: ${userId}`);
+      return account || undefined;
+    } catch (error) {
+      console.error('Error getting user paper trading account:', error);
+      return undefined;
+    }
+  }
+
   // ===== BOT METHODS =====
   
   /**

@@ -15,9 +15,8 @@ router.get('/users/api-keys-status', ensureAuthenticated, async (req: Request, r
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
     
-    // In a real system you'd check for admin role
-    // For now we're simply checking if the user is the default first admin
-    if (req.user.id !== 1) {
+    // Check if the user has admin privileges using the isAdmin field
+    if (!req.user.isAdmin) {
       return res.status(403).json({ 
         success: false, 
         message: 'Forbidden - Admin privileges required' 
@@ -73,8 +72,8 @@ router.post('/users/:userId/verify-api-keys', ensureAuthenticated, async (req: R
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
     
-    // In a real system you'd check for admin role
-    if (req.user.id !== 1) {
+    // Check if the user has admin privileges using the isAdmin field
+    if (!req.user.isAdmin) {
       return res.status(403).json({ 
         success: false, 
         message: 'Forbidden - Admin privileges required' 

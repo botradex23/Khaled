@@ -9,9 +9,7 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import { storage } from '../../storage';
-// Load environment variables
-import dotenv from 'dotenv';
-dotenv.config();
+// Environment variables are already loaded in main server
 
 // Define UserAPIKeys interface to match storage.getUserApiKeys return type
 interface UserAPIKeys {

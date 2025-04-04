@@ -42,8 +42,12 @@ export const users = pgTable('users', {
   lastName: text('last_name'),
   defaultBroker: text('default_broker').default('binance'), // Always set to 'binance'
   useTestnet: boolean('use_testnet').default(true),
+  isAdmin: boolean('is_admin').default(false), // Added isAdmin field
   
-  // Removed OKX API Keys since we exclusively use Binance now
+  // OKX API Keys - for legacy compatibility
+  okxApiKey: text('okx_api_key'),
+  okxSecretKey: text('okx_secret_key'),
+  okxPassphrase: text('okx_passphrase'),
   
   // Binance API Keys  
   binanceApiKey: text('binance_api_key'),

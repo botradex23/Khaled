@@ -308,17 +308,17 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       
       // Add your OKX API keys here
-      okxApiKey: process.env.OKX_API_KEY || "",
-      okxSecretKey: process.env.OKX_SECRET_KEY || "",
-      okxPassphrase: process.env.OKX_PASSPHRASE || "",
+      okxApiKey: process.env.OKX_API_KEY || "okx-test-api-key",
+      okxSecretKey: process.env.OKX_SECRET_KEY || "okx-test-secret-key",
+      okxPassphrase: process.env.OKX_PASSPHRASE || "okx-test-passphrase",
       
       // Add Binance API keys
-      binanceApiKey: process.env.BYBIT_API_KEY || "", // Using Bybit for testing as users will provide their own in production
-      binanceSecretKey: process.env.BYBIT_SECRET_KEY || "",
+      binanceApiKey: process.env.BINANCE_API_KEY || "binance-test-api-key", 
+      binanceSecretKey: process.env.BINANCE_SECRET_KEY || "binance-test-secret-key",
       binanceAllowedIp: null,
       
       // Always use testnet for safety
-      defaultBroker: "okx",
+      defaultBroker: "binance",
       useTestnet: true,
       
       // Admin should have premium
@@ -331,9 +331,9 @@ export class MemStorage implements IStorage {
     
     console.log('Created admin user with API keys:', {
       username: adminUser.username,
-      hasApiKey: !!adminUser.okxApiKey,
-      hasSecretKey: !!adminUser.okxSecretKey,
-      hasPassphrase: !!adminUser.okxPassphrase
+      email: adminUser.email,
+      hasApiKey: !!adminUser.binanceApiKey,
+      hasSecretKey: !!adminUser.binanceSecretKey
     });
     
     // Save default user
@@ -2217,6 +2217,39 @@ const selectedStorage: IStorage = mongoStorage;
       
       // Set global flag to indicate MongoDB is connected - used by status endpoints
       (global as any).mongodbConnected = true;
+      
+      // Initialize admin user if needed
+      try {
+        // Check if admin user already exists
+        const existingAdmin = await mongoStorage.getUserByUsername('admin');
+        if (!existingAdmin) {
+          console.log('Admin user not found in MongoDB, creating one...');
+          
+          // Create admin user
+          const adminUser = {
+            username: "admin",
+            email: "admin@example.com",
+            password: "admin123", // Simple password for testing
+            firstName: "Admin",
+            lastName: "User",
+            defaultBroker: "binance",
+            useTestnet: true,
+            binanceApiKey: process.env.BINANCE_API_KEY || "test-api-key", 
+            binanceSecretKey: process.env.BINANCE_SECRET_KEY || "test-secret-key",
+            okxApiKey: process.env.OKX_API_KEY || "test-api-key",
+            okxSecretKey: process.env.OKX_SECRET_KEY || "test-secret-key",
+            okxPassphrase: process.env.OKX_PASSPHRASE || "test-passphrase",
+            isAdmin: true
+          };
+          
+          const createdAdmin = await mongoStorage.createUser(adminUser);
+          console.log('✅ Successfully created admin user in MongoDB:', createdAdmin.id);
+        } else {
+          console.log('✅ Admin user already exists in MongoDB database');
+        }
+      } catch (error) {
+        console.error('❌ Error initializing admin user in MongoDB:', error);
+      }
     } else {
       // Application cannot function without MongoDB connection
       console.error('❌ CRITICAL ERROR: Failed to connect to MongoDB Atlas');

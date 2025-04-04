@@ -202,6 +202,7 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
       okxPassphrase: null,
       binanceApiKey: null,
       binanceSecretKey: null,
+      isAdmin: true, // Set isAdmin field to true
       createdAt: new Date(),
       updatedAt: null
     };
