@@ -3,27 +3,26 @@
 /**
  * Development server launcher
  * 
- * This script starts the minimal server implementation that doesn't
- * require express or other third-party dependencies.
+ * This script starts the original server implementation from index.js
  */
 
 const fs = require('fs');
 const { exec, spawn } = require('child_process');
 
-console.log('Starting development server with minimal server implementation...');
+console.log('Starting development server with original implementation...');
 
 // Make the server script executable
 try {
-  fs.chmodSync('./minimal_server.cjs', 0o755);
-  console.log('Made minimal_server.cjs executable');
+  fs.chmodSync('./index.js', 0o755);
+  console.log('Made index.js executable');
 } catch (err) {
-  console.error('Could not make minimal_server.cjs executable:', err.message);
+  console.error('Could not make index.js executable:', err.message);
 }
 
 console.log('Development server started');
 
-// Start the minimal server
-const serverProcess = spawn('node', ['./minimal_server.cjs'], { 
+// Start the original server
+const serverProcess = spawn('node', ['./index.js'], { 
   stdio: 'inherit',
   detached: false
 });

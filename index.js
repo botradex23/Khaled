@@ -35,7 +35,8 @@ app.use(express.static(join(__dirname, 'public')));
 function startPythonServer() {
   console.log('Starting Python API server...');
   
-  const pythonProcess = spawn('python', ['api_server.py']);
+  // Using binance_api_server.py instead of api_server.py to avoid dependency issues
+  const pythonProcess = spawn('python', ['binance_api_server.py']);
   
   pythonProcess.stdout.on('data', (data) => {
     console.log(`Python API: ${data}`);
@@ -64,7 +65,8 @@ async function waitForPythonServer() {
   
   for (let i = 0; i < 30; i++) {
     try {
-      const response = await fetch(`http://localhost:${PYTHON_API_PORT}/api/ping`);
+      // In binance_api_server.py the ping endpoint is at /api/binance/ping
+      const response = await fetch(`http://localhost:${PYTHON_API_PORT}/api/binance/ping`);
       if (response.ok) {
         console.log('Python API server is ready!');
         return true;
