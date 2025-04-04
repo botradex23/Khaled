@@ -363,6 +363,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI API routes
   app.use("/api/ai", aiRouter);
   
+  // My Agent routes (admin-only OpenAI-powered assistant)
+  import('./routes/my-agent').then(myAgentRouter => {
+    app.use("/api/my-agent", myAgentRouter.default);
+    console.log('My Agent routes registered to /api/my-agent');
+  }).catch(err => {
+    console.error('Failed to register My Agent routes:', err);
+  });
+  
   // Unified Bot API routes
   app.use("/api/bots", unifiedBotRouter);
   
