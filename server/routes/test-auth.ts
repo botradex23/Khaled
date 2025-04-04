@@ -15,10 +15,17 @@ const loginAsAdmin = (req: Request, res: Response, adminUser: any) => {
     passphraseLength: adminUser.okxPassphrase ? adminUser.okxPassphrase.length : 'N/A'
   });
   
-  // Create a session-compatible admin user object
+  // Create a session-compatible admin user object with all required fields
   const sessionUser = {
     ...adminUser,
-    // Include any additional properties needed
+    // Ensure all required fields are present
+    id: adminUser.id,
+    username: adminUser.username || 'admin',
+    email: adminUser.email || 'admin@example.com',
+    firstName: adminUser.firstName || 'Admin',
+    lastName: adminUser.lastName || 'User',
+    isAdmin: true,
+    useTestnet: adminUser.useTestnet !== undefined ? adminUser.useTestnet : true,
     createdAt: adminUser.createdAt || new Date(),
     updatedAt: adminUser.updatedAt || new Date()
   };
@@ -33,28 +40,66 @@ const loginAsAdmin = (req: Request, res: Response, adminUser: any) => {
       });
     }
     
-    // Ensure session is saved immediately
-    req.session.save((saveErr) => {
-      if (saveErr) {
-        console.error('Error saving session:', saveErr);
-      } else {
-        console.log('Session saved successfully, session ID:', req.sessionID);
+    // Store login timestamp in session for verification
+    if (req.session) {
+      // Use typecasting to bypass the TypeScript error
+      (req.session as any).loginTime = Date.now();
+      (req.session as any).user = { id: sessionUser.id, username: sessionUser.username };
+    }
+    
+    // Force session regeneration to avoid session fixation
+    req.session.regenerate((regenerateErr) => {
+      if (regenerateErr) {
+        console.error('Error regenerating session:', regenerateErr);
+        return res.status(500).json({ 
+          error: 'Session Error', 
+          message: 'Error creating secure session' 
+        });
       }
       
-      // Set header to indicate admin login
-      res.setHeader('X-Test-Admin', 'true');
-      
-      return res.json({ 
-        success: true, 
-        message: 'Admin login successful',
-        user: {
-          id: adminUser.id,
-          username: adminUser.username,
-          email: adminUser.email,
-          hasApiKeys: !!(adminUser.okxApiKey && adminUser.okxSecretKey && adminUser.okxPassphrase),
-          useTestnet: adminUser.useTestnet,
-          isAdmin: adminUser.isAdmin
+      // Re-login after session regeneration
+      req.login(sessionUser, { session: true }, (loginErr) => {
+        if (loginErr) {
+          console.error('Error during re-login:', loginErr);
+          return res.status(500).json({ 
+            error: 'Login Error', 
+            message: 'Error establishing session'
+          });
         }
+        
+        // Ensure session is saved immediately
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('Error saving session:', saveErr);
+          } else {
+            console.log('Session saved successfully, session ID:', req.sessionID);
+          }
+          
+          // Set header to indicate admin login
+          res.setHeader('X-Test-Admin', 'true');
+          
+          // Set cookie header explicitly to reinforce session cookie
+          res.cookie('crypto.sid.authenticated', 'true', { 
+            maxAge: 90 * 24 * 60 * 60 * 1000,
+            path: '/', 
+            httpOnly: false,
+            secure: process.env.NODE_ENV === 'production'
+          });
+          
+          return res.json({ 
+            success: true, 
+            message: 'Admin login successful',
+            user: {
+              id: adminUser.id,
+              username: adminUser.username,
+              email: adminUser.email,
+              hasApiKeys: !!(adminUser.okxApiKey && adminUser.okxSecretKey && adminUser.okxPassphrase),
+              useTestnet: adminUser.useTestnet,
+              isAdmin: adminUser.isAdmin
+            },
+            sessionID: req.sessionID
+          });
+        });
       });
     });
   });

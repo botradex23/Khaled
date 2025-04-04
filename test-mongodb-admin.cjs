@@ -4,7 +4,7 @@
  * This script tests directly looking up the admin user in MongoDB
  */
 
-import { storage } from './server/storage.js';
+const { storage } = require('./server/storage');
 
 async function testAdminLookup() {
   try {

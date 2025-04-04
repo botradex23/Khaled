@@ -33,15 +33,17 @@ export function setupAuth(app: Express) {
     session({
       store: memoryStore, // Use memory store to persist sessions
       secret: process.env.SESSION_SECRET || 'mudrex-crypto-trading-secret',
-      resave: true, // Changed to true to ensure session is saved even if unchanged
-      saveUninitialized: true, // Changed to true to save new sessions
+      resave: true, // Keep true to ensure session is saved even if unchanged
+      saveUninitialized: true, // Keep true to save new sessions
+      rolling: true, // Reset expiration countdown with each request
       cookie: {
-        secure: false, // Set to false to work in development environment
+        secure: process.env.NODE_ENV === 'production', // Secure in production, but allow HTTP in dev
         maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
         httpOnly: true,
         sameSite: 'lax', // Better compatibility while still providing CSRF protection
         path: '/' // Ensure cookie is available for all paths
       },
+      name: 'crypto.sid' // Custom name to avoid conflicts
     })
   );
 
@@ -203,7 +205,8 @@ function registerAuthRoutes(app: Express) {
           // Set the user as authenticated for this request
           if (req.session) {
             console.log('Setting user in session');
-            req.session.passport = { user: adminUser.id };
+            // Set session data in a type-safe way
+            (req.session as any).passport = { user: adminUser.id };
             req.session.save((err) => {
               if (err) {
                 console.error('Error saving session:', err);
@@ -245,7 +248,7 @@ function registerAuthRoutes(app: Express) {
             // Set the user as authenticated for this request
             if (req.session) {
               console.log('Setting created user in session');
-              req.session.passport = { user: createdAdmin.id };
+              (req.session as any).passport = { user: createdAdmin.id };
               req.session.save((err) => {
                 if (err) {
                   console.error('Error saving session for created user:', err);

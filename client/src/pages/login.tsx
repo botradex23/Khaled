@@ -268,6 +268,19 @@ export default function Login() {
                     const response = await apiRequest("POST", "/api/auth/login-as-admin");
                     
                     if (response && response.success) {
+                      // Set the X-Test-Admin header in localStorage for future requests
+                      localStorage.setItem('x-test-admin', 'true');
+                      
+                      // Store the session ID
+                      if (response.sessionID) {
+                        localStorage.setItem('sessionID', response.sessionID);
+                      }
+                      
+                      // Also store the user object
+                      if (response.user) {
+                        localStorage.setItem('admin-user', JSON.stringify(response.user));
+                      }
+                      
                       // Refresh session after admin login
                       await checkSession();
                       

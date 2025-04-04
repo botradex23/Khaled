@@ -15,8 +15,12 @@ export async function apiRequest<T = any>(
     headers?: Record<string, string>;
   }
 ): Promise<T> {
+  // Check if X-Test-Admin exists in localStorage and add it to headers if it does
+  const testAdmin = localStorage.getItem('x-test-admin');
+  
   const headers: Record<string, string> = {
     ...(data ? { "Content-Type": "application/json" } : {}),
+    ...(testAdmin ? { "X-Test-Admin": testAdmin } : {}),
     ...(options?.headers || {})
   };
 
@@ -37,8 +41,16 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Check if X-Test-Admin exists in localStorage and add it to headers if it does
+    const testAdmin = localStorage.getItem('x-test-admin');
+    
+    const headers: Record<string, string> = {
+      ...(testAdmin ? { "X-Test-Admin": testAdmin } : {})
+    };
+    
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
+      headers
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

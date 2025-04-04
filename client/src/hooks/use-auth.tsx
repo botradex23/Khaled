@@ -72,6 +72,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let authCheckTimeout: NodeJS.Timeout | null = null;
     let isCheckingSession = false;
     
+    // Check for admin status in localStorage
+    const testAdmin = localStorage.getItem('x-test-admin');
+    const adminUser = localStorage.getItem('admin-user');
+    
+    // If we have a stored admin user, use it immediately
+    if (testAdmin === 'true' && adminUser) {
+      try {
+        const parsedUser = JSON.parse(adminUser);
+        setUser(parsedUser);
+        setIsAuthenticated(true);
+        setNeedsProfileCompletion(false);
+        console.log('Restored admin user from localStorage');
+      } catch (error) {
+        console.error('Failed to parse admin user from localStorage:', error);
+      }
+    }
+    
     // Create a throttled check session function
     const throttledCheckSession = async () => {
       if (isCheckingSession) return; // Prevent multiple simultaneous checks
@@ -126,7 +143,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setIsAuthenticated(false);
       setNeedsProfileCompletion(false);
+      
+      // Clear all authentication-related items
       localStorage.removeItem("user");
+      localStorage.removeItem("x-test-admin");
+      localStorage.removeItem("admin-user");
+      localStorage.removeItem("sessionID");
     }
   };
 
