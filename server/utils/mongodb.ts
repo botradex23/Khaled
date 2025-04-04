@@ -51,8 +51,9 @@ const userSchema = new mongoose.Schema({
   hasPremium: { type: Boolean, default: false },
   premiumExpiresAt: { type: Date, default: null },
   
-  // Role
-  isAdmin: { type: Boolean, default: false }
+  // Roles
+  isAdmin: { type: Boolean, default: false },
+  isSuperAdmin: { type: Boolean, default: false } // Super admin role for full admin-my-agent access
 });
 
 // Bot schema
@@ -244,7 +245,8 @@ export function convertToUserModel(doc: any): any {
     hasPremium: doc.hasPremium,
     premiumExpiresAt: doc.premiumExpiresAt,
     
-    isAdmin: doc.isAdmin
+    isAdmin: doc.isAdmin,
+    isSuperAdmin: doc.isSuperAdmin
   };
 }
 

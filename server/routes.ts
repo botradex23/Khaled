@@ -121,6 +121,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register MongoDB direct status check route:', err);
   });
   
+  // Register database migration routes
+  import('./routes/db').then(dbRouter => {
+    app.use('/api/db', dbRouter.default);
+    console.log('Database migration routes registered to /api/db');
+  }).catch(err => {
+    console.error('Failed to register database migration routes:', err);
+  });
+  
   // Register Binance connection status route
   import('./routes/binance-connection-status').then(binanceConnectionStatusRouter => {
     app.use('', binanceConnectionStatusRouter.default);

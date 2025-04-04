@@ -42,7 +42,8 @@ export const users = pgTable('users', {
   lastName: text('last_name'),
   defaultBroker: text('default_broker').default('binance'), // Always set to 'binance'
   useTestnet: boolean('use_testnet').default(true),
-  isAdmin: boolean('is_admin').default(false), // Added isAdmin field
+  isAdmin: boolean('is_admin').default(false), // Admin user with elevated permissions
+  isSuperAdmin: boolean('is_super_admin').default(false), // Super admin flag for full access to admin-my-agent
   
   // OKX API Keys - for legacy compatibility
   okxApiKey: text('okx_api_key'),

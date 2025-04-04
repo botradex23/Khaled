@@ -629,6 +629,12 @@ function registerAuthRoutes(app: Express) {
           await storage.updateUser(existingAdmin.id, { isAdmin: true });
         }
         
+        // Make sure the existing admin has isSuperAdmin set to true
+        if (!existingAdmin.isSuperAdmin) {
+          console.log('Updating existing user to have super admin privileges');
+          await storage.updateUser(existingAdmin.id, { isSuperAdmin: true });
+        }
+        
         // Return the existing admin info but never expose the password
         return res.json({ 
           success: true, 
@@ -636,7 +642,8 @@ function registerAuthRoutes(app: Express) {
           admin: {
             id: existingAdmin.id,
             email: existingAdmin.email,
-            isAdmin: true
+            isAdmin: true,
+            isSuperAdmin: true
           }
         });
       }
@@ -711,7 +718,8 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
       okxPassphrase: null,
       binanceApiKey: null,
       binanceSecretKey: null,
-      isAdmin: true, // Set isAdmin field to true
+      isAdmin: true,      // Set isAdmin field to true
+      isSuperAdmin: true, // Set isSuperAdmin field for full permissions
       createdAt: new Date(),
       updatedAt: null
     };

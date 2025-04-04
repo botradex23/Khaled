@@ -23,6 +23,7 @@ function ensureAdmin(req: Request, res: Response, next: NextFunction) {
   console.log('User authenticated via session:', req.isAuthenticated());
   console.log('User in request:', req.user ? 'User object exists' : 'No user object');
   console.log('User admin status:', req.user ? (req.user as any).isAdmin : 'No user');
+  console.log('User super admin status:', req.user ? (req.user as any).isSuperAdmin : 'No user');
   
   // Check for the X-Test-Admin header (case insensitive check for extra safety)
   const headerKeys = Object.keys(req.headers).map(k => k.toLowerCase());
@@ -33,12 +34,17 @@ function ensureAdmin(req: Request, res: Response, next: NextFunction) {
     console.log('✅ X-Test-Admin header detected in ensureAdmin middleware - Allowing access');
     next();
   }
-  // Then check regular authentication
+  // Check for super admin (highest priority for regular authentication)
+  else if (req.isAuthenticated() && req.user && (req.user as any).isSuperAdmin) {
+    console.log('✅ User is authenticated and has super admin privileges - Allowing full access');
+    next();
+  }
+  // Then check regular admin
   else if (req.isAuthenticated() && req.user && (req.user as any).isAdmin) {
     console.log('✅ User is authenticated and has admin privileges - Allowing access');
     next();
   } else {
-    console.log('❌ Admin access denied - Neither X-Test-Admin header nor admin user authenticated');
+    console.log('❌ Admin access denied - No valid authentication or insufficient privileges');
     res.status(403).json({ 
       success: false, 
       message: 'Admin access required',
@@ -46,7 +52,8 @@ function ensureAdmin(req: Request, res: Response, next: NextFunction) {
         hasTestAdminHeader,
         isAuthenticated: req.isAuthenticated(),
         hasUser: !!req.user,
-        userIsAdmin: req.user ? !!(req.user as any).isAdmin : false
+        userIsAdmin: req.user ? !!(req.user as any).isAdmin : false,
+        userIsSuperAdmin: req.user ? !!(req.user as any).isSuperAdmin : false
       } 
     });
   }
