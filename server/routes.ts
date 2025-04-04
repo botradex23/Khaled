@@ -391,6 +391,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('Failed to register My Agent routes:', err);
   });
   
+  // Direct Agent routes (separate server for direct API access without Vite interference)
+  import('./routes/direct-agent').then(directAgentRouter => {
+    app.use("/api/direct-agent", directAgentRouter.default);
+    console.log('Direct Agent routes registered to /api/direct-agent and port 5002');
+  }).catch(err => {
+    console.error('Failed to register Direct Agent routes:', err);
+  });
+  
   // OpenAI API key test route
   import('./routes/test-openai-key').then(testOpenAIRouter => {
     app.use("/api", testOpenAIRouter.default);

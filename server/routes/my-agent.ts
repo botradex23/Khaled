@@ -86,14 +86,16 @@ function ensureTestAdminAuthenticated(req: Request, res: Response, next: NextFun
 }
 
 // Simple health check endpoint to verify the agent is working
-router.get('/health', ensureTestAdminAuthenticated, ensureAdmin, async (req: Request, res: Response) => {
+router.get('/health', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
   console.log('=============================================');
-  console.log('Agent health check request received');
+  console.log('AI Agent request received');
+  console.log('User:', req.user);
+  console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   console.log('Request IP:', req.ip);
   console.log('Request Headers:', JSON.stringify(req.headers, null, 2));
   console.log('User authenticated via standard auth:', req.isAuthenticated());
   console.log('X-Test-Admin header present:', !!req.headers['x-test-admin']);
-  console.log('User admin status (if authenticated):', req.user && (req.user as any).isAdmin);
+  console.log('User status (if authenticated):', req.user);
   console.log('=============================================');
 
   // List all available environment variables (without values for security)
@@ -242,7 +244,10 @@ router.get('/health', ensureTestAdminAuthenticated, ensureAdmin, async (req: Req
 });
 
 // Chat with the AI agent
-router.post('/chat', ensureTestAdminAuthenticated, ensureAdmin, async (req: Request, res: Response) => {
+router.post('/chat', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
+  console.log('AI Agent chat request received');
+  console.log('User:', req.user);
+  console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   try {
     const { prompt, systemPrompt } = req.body;
     
@@ -263,7 +268,10 @@ router.post('/chat', ensureTestAdminAuthenticated, ensureAdmin, async (req: Requ
 });
 
 // Analyze code files
-router.post('/analyze', ensureTestAdminAuthenticated, ensureAdmin, async (req: Request, res: Response) => {
+router.post('/analyze', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
+  console.log('AI Agent analyze request received');
+  console.log('User:', req.user);
+  console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   try {
     const { task, filePaths } = req.body;
     
@@ -287,7 +295,10 @@ router.post('/analyze', ensureTestAdminAuthenticated, ensureAdmin, async (req: R
 });
 
 // Suggest code changes for a file
-router.post('/suggest', ensureTestAdminAuthenticated, ensureAdmin, async (req: Request, res: Response) => {
+router.post('/suggest', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
+  console.log('AI Agent suggest request received');
+  console.log('User:', req.user);
+  console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   try {
     const { task, filePath } = req.body;
     
@@ -311,7 +322,10 @@ router.post('/suggest', ensureTestAdminAuthenticated, ensureAdmin, async (req: R
 });
 
 // List files in a directory
-router.post('/files', ensureTestAdminAuthenticated, ensureAdmin, async (req: Request, res: Response) => {
+router.post('/files', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
+  console.log('AI Agent files request received');
+  console.log('User:', req.user);
+  console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   try {
     const { directory } = req.body;
     
@@ -341,7 +355,10 @@ router.post('/files', ensureTestAdminAuthenticated, ensureAdmin, async (req: Req
 });
 
 // Read a file
-router.post('/read-file', ensureTestAdminAuthenticated, ensureAdmin, async (req: Request, res: Response) => {
+router.post('/read-file', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
+  console.log('AI Agent read-file request received');
+  console.log('User:', req.user);
+  console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   try {
     const { filePath } = req.body;
     
@@ -375,7 +392,10 @@ router.post('/read-file', ensureTestAdminAuthenticated, ensureAdmin, async (req:
 });
 
 // Write to a file
-router.post('/write-file', ensureTestAdminAuthenticated, ensureAdmin, async (req: Request, res: Response) => {
+router.post('/write-file', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
+  console.log('AI Agent write-file request received');
+  console.log('User:', req.user);
+  console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   try {
     const { filePath, content } = req.body;
     
