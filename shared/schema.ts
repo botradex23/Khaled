@@ -48,7 +48,6 @@ export const users = pgTable('users', {
   // Binance API Keys  
   binanceApiKey: text('binance_api_key'),
   binanceSecretKey: text('binance_secret_key'),
-  binanceAllowedIp: text('binance_allowed_ip'),
   
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),

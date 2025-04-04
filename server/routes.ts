@@ -357,9 +357,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Binance API keys specific routes
   app.use("/api/binance/api-keys", binanceApiKeysRouter);
   
-  // Direct Binance API keys endpoint (for direct API access)
-  app.use("/api/binance-api-keys", binanceApiKeysRouter);
-  
   // Compatibility endpoints for old Binance API keys path
   app.use("/api/users/binance-api-keys", binanceApiKeysRouter);
   

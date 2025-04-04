@@ -5,94 +5,51 @@
  * It uses the same connection logic as the application but in a standalone context.
  */
 
-// Use CommonJS import for MongoDB client
-let MongoClient;
-try {
-  MongoClient = require('mongodb').MongoClient;
-} catch (err) {
-  console.error(`Failed to load mongodb module: ${err.message}`);
-  console.error('Please install MongoDB using: npm install mongodb');
-  process.exit(1);
-}
+require('dotenv').config();
+const { MongoClient } = require('mongodb');
+
+// Set the MongoDB connection string from env
+const uri = process.env.MONGO_URI;
 
 async function checkMongoDBConnection() {
-  // Hardcoded URI for testing (from previous Python output)
-  // Note: In production, never hardcode sensitive information
-  const mongoUri = process.env.MONGO_URI;
-  
-  if (!mongoUri) {
-    console.error('MONGO_URI environment variable not found');
-    return;
-  }
-  
-  console.log(`Using MongoDB URI: ${mongoUri.slice(0, 20)}...`);
-
   let client;
   try {
-    // Create a MongoDB client
-    client = new MongoClient(mongoUri);
+    if (!uri) {
+      console.error('ERROR: MONGO_URI environment variable is not set!');
+      return false;
+    }
     
-    // Connect to the MongoDB server
+    console.log('MongoDB connection string found:', uri.substring(0, 20) + '...');
+    console.log('MongoDB cluster:', uri.split('@')[1]?.split('/')[0] || 'Invalid URI format');
+    console.log('MongoDB database name:', uri.split('/').pop()?.split('?')[0] || 'Invalid URI format');
+    
+    console.log('Attempting to connect to MongoDB...');
+    client = new MongoClient(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    
     await client.connect();
     
-    // Check connection by pinging the database
-    await client.db('admin').command({ ping: 1 });
+    // Check if we can issue a simple database command
+    const adminDb = client.db('admin');
+    const result = await adminDb.command({ ping: 1 });
     
-    console.log('✅ Successfully connected to MongoDB!');
-    
-    // Parse the database name from the URI
-    let dbName = 'Saas'; // Default database name
-    
-    if (mongoUri.includes('mongodb+srv://')) {
-      try {
-        const parts = mongoUri.split('/');
-        if (parts.length >= 4) {
-          const dbNameWithParams = parts[3];
-          dbName = dbNameWithParams.split('?')[0];
-        }
-      } catch (error) {
-        console.warn(`Warning: Could not parse database name from URI: ${error.message}`);
-      }
-    }
-    
-    console.log(`Database name: ${dbName}`);
-    
-    // Check for available collections
-    const db = client.db(dbName);
-    const collections = await db.listCollections().toArray();
-    
-    if (collections.length > 0) {
-      const collectionNames = collections.map(c => c.name).join(', ');
-      console.log(`Available collections: ${collectionNames}`);
+    if (result && result.ok === 1) {
+      console.log('MongoDB connection SUCCESSFUL! 🟢');
+      console.log('Server info:', JSON.stringify(result, null, 2));
+      return true;
     } else {
-      console.log('No collections found in database');
+      console.error('MongoDB ping command failed:', result);
+      return false;
     }
-    
-    // Check if required collections exist
-    const requiredCollections = ['users', 'bots', 'tradeLogs', 'riskSettings'];
-    const missingCollections = requiredCollections.filter(
-      name => !collections.some(c => c.name === name)
-    );
-    
-    if (missingCollections.length > 0) {
-      console.warn(`⚠️ Missing collections: ${missingCollections.join(', ')}`);
-    } else {
-      console.log('✅ All required collections exist');
-    }
-    
-    // Check for sample data in collections
-    for (const collectionName of requiredCollections) {
-      if (collections.some(c => c.name === collectionName)) {
-        const count = await db.collection(collectionName).countDocuments();
-        console.log(`Collection ${collectionName} has ${count} documents`);
-      }
-    }
-    
   } catch (error) {
-    console.error(`❌ MongoDB connection error: ${error.message}`);
-    console.error(error);
+    console.error('MongoDB connection FAILED! 🔴');
+    console.error('Error details:', error.message);
+    return false;
   } finally {
     if (client) {
+      console.log('Closing MongoDB connection...');
       await client.close();
       console.log('MongoDB connection closed');
     }
@@ -100,4 +57,12 @@ async function checkMongoDBConnection() {
 }
 
 // Run the check
-checkMongoDBConnection().catch(console.error);
+checkMongoDBConnection()
+  .then(isConnected => {
+    console.log('MongoDB connection status:', isConnected ? 'Connected' : 'Disconnected');
+    process.exit(isConnected ? 0 : 1);
+  })
+  .catch(error => {
+    console.error('Unexpected error during connection check:', error);
+    process.exit(1);
+  });

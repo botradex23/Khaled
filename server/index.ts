@@ -1,79 +1,118 @@
-// Simple TypeScript server for our application
-import express from 'express';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
+import express, { type Request, Response, NextFunction } from "express";
+import { registerRoutes } from "./routes";
+import { setupVite, serveStatic, log } from "./vite";
+// Import file for side effects only to override console messages
+import './override-console.js';
+// Import risk manager to start monitoring positions for SL/TP
+import './api/risk-management/RiskManager.js';
+// Import Python service manager to start the ML predictions Flask service
+import { pythonServiceManager } from './services/python-service-manager';
+// Import the storage interface
+import { storage } from './storage';
 
-// Get current directory
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Configure app
 const app = express();
-const PORT = process.env.PORT || 5000;
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
-// Middleware for logging
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  const start = Date.now();
+  const path = req.path;
+  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+
+  const originalResJson = res.json;
+  res.json = function (bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path.startsWith("/api")) {
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "…";
+      }
+
+      log(logLine);
+    }
+  });
+
   next();
 });
 
-// Basic API routes
-app.get('/api/status', (req, res) => {
-  res.json({
-    status: 'ok',
-    server: 'TypeScript Express',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+(async () => {
+  // Check MongoDB environment variable is set
+  if (!process.env.MONGO_URI) {
+    console.error('⚠️ WARNING: MONGO_URI environment variable is not set. MongoDB connection will not be attempted.');
+  } else {
+    console.log('MongoDB Atlas URI is configured:', process.env.MONGO_URI.substring(0, 20) + '...');
+    console.log('MongoDB Atlas cluster:', process.env.MONGO_URI.split('@')[1].split('/')[0]);
+    console.log('MongoDB database name:', process.env.MONGO_URI.split('/').pop()?.split('?')[0]);
+  }
+
+  // Connect to MongoDB first before registering routes
+  if (process.env.MONGO_URI) {
+    try {
+      console.log('Connecting to MongoDB database...');
+      await storage.connect();
+      console.log('MongoDB connection established successfully');
+    } catch (error) {
+      console.error('Failed to connect to MongoDB:', error);
+      console.log('Continuing with fallback to memory storage');
+    }
+  }
+
+  // API routes are defined in routes.ts
+  console.log('Registering API routes and initializing database connections...');
+  const server = await registerRoutes(app);
+  console.log('Server routes registered successfully');
+
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+
+    console.error(`Server Error: ${err.message || 'Unknown error'}`);
+    console.error(err.stack || 'No stack trace');
+    
+    // Send response but DON'T throw the error again, which would crash the server
+    res.status(status).json({ message });
   });
-});
 
-// Serve a simple HTML page for testing
-app.get('/', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Cryptocurrency Trading Platform</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-            line-height: 1.6;
-          }
-          h1 { color: #0066cc; }
-          .card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            background-color: #f8f9fa;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>Cryptocurrency Trading Platform</h1>
-        <div class="card">
-          <h2>Server Status</h2>
-          <p>The TypeScript server is running successfully!</p>
-          <p>Server time: ${new Date().toLocaleString()}</p>
-        </div>
-        <div class="card">
-          <h2>API Endpoints</h2>
-          <ul>
-            <li><code>/api/status</code> - Check server status</li>
-          </ul>
-        </div>
-      </body>
-    </html>
-  `);
-});
+  // importantly only setup vite in development and after
+  // setting up all the other routes so the catch-all route
+  // doesn't interfere with the other routes
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
 
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
-});
+  // ALWAYS serve the app on port 5000
+  // this serves both the API and the client.
+  // It is the only port that is not firewalled.
+  const port = 5000;
+  server.listen({
+    port: 5000,
+    host: "0.0.0.0",
+    reusePort: true,
+  }, async () => {
+    log(`serving on port ${port}`);
+    
+    // Start the Python Flask service for ML predictions
+    try {
+      log('Starting Python Flask service for ML predictions...');
+      const serviceStarted = await pythonServiceManager.startService();
+      if (serviceStarted) {
+        log('Python Flask service started successfully');
+      } else {
+        log('Failed to start Python Flask service. ML predictions may not be available.');
+      }
+    } catch (error) {
+      log(`Error starting Python Flask service: ${error}`);
+    }
+  });
+})();

@@ -18,12 +18,6 @@ from python_app.routes.ml_prediction_routes import ml_prediction_bp, register_ro
 from python_app.routes.live_prediction_routes import live_prediction_bp, register_routes as register_live_prediction_routes
 # Import our new direct binance prices blueprint
 from python_app.routes.direct_binance_prices import direct_binance_prices_bp
-# Import the API status blueprint
-try:
-    from python_app.routes.api_status_routes import api_status_bp
-except ImportError:
-    logging.warning("Could not import API Status blueprint. API status endpoints will be limited.")
-    api_status_bp = None
 # Import the trade logs blueprint
 try:
     from python_app.routes.trade_logs_routes import trade_logs_bp
@@ -94,11 +88,6 @@ def create_app(config=None):
     app.register_blueprint(direct_binance_prices_bp)
     logging.info("Direct Binance Prices blueprint registered successfully")
     
-    # Register API status blueprint if available
-    if api_status_bp:
-        app.register_blueprint(api_status_bp)
-        logging.info("API Status blueprint registered successfully")
-        
     # Register trade logs blueprint if available
     if trade_logs_bp:
         app.register_blueprint(trade_logs_bp)
@@ -200,19 +189,10 @@ def create_app(config=None):
     @app.route('/api/status')
     def status():
         """System status endpoint"""
-        # Check demo mode status
-        try:
-            from python_app.services.api_status_service import get_api_status_service
-            api_status_service = get_api_status_service()
-            is_demo = api_status_service.is_demo_mode()
-        except ImportError:
-            is_demo = os.environ.get('USE_DEMO_MODE', 'false').lower() == 'true'
-            
         return jsonify({
             'success': True,
             'version': '1.0.0',
             'environment': os.environ.get('FLASK_ENV', 'development'),
-            'demo_mode': is_demo,
             'services': {
                 'binance': True,
                 'ml': True,
