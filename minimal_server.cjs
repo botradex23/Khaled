@@ -198,8 +198,9 @@ function startPythonServer() {
     console.warn('Could not make binance_api_server.py executable:', err.message);
   }
   
-  // Start the Python server
-  pythonProcess = spawn(pythonCmd, ['./api_server.py']);
+  // Start the Python server - using binance_api_server.py instead of api_server.py
+  // because it doesn't have dependency issues with binance.spot package
+  pythonProcess = spawn(pythonCmd, ['./binance_api_server.py']);
   
   pythonProcess.stdout.on('data', (data) => {
     console.log(`Python server: ${data}`);
