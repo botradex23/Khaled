@@ -21,8 +21,8 @@ try {
 
 console.log('Development server starting...');
 
-// Start the simplified server
-const serverProcess = spawn('node', ['./run_server.cjs'], { 
+// Start the server using start.cjs instead of run_server.cjs
+const serverProcess = spawn('node', ['./start.cjs'], { 
   stdio: 'inherit',
   detached: false
 });
