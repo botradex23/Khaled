@@ -9,6 +9,11 @@ import './api/risk-management/RiskManager.js';
 import { pythonServiceManager } from './services/python-service-manager';
 // Import the storage interface
 import { storage } from './storage';
+// ✅ NEW: Import OpenAI initializer
+import { initializeOpenAI } from './utils/openai';
+
+// ✅ NEW: Initialize OpenAI API key
+initializeOpenAI();
 
 const app = express();
 app.use(express.json());
@@ -45,18 +50,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Load .env file if needed (though Replit should handle this)
   try {
-    // Check MongoDB environment variable is set
     const mongoUri = process.env.MONGO_URI;
     if (!mongoUri) {
       console.error('⚠️ WARNING: MONGO_URI environment variable is not set. MongoDB connection will not be attempted.');
-      // Set it manually from the value in .env file since there might be a loading issue
       process.env.MONGO_URI = 'mongodb+srv://Khaleddd:Khaled123.@cluster0.rh8kusi.mongodb.net/Saas?retryWrites=true&w=majority&appName=Cluster0';
       console.log('✅ Set MONGO_URI manually from known value');
     }
-    
-    // Now we're sure MONGO_URI is set
+
     const finalMongoUri = process.env.MONGO_URI || '';
     if (finalMongoUri) {
       console.log('MongoDB Atlas URI is configured:', finalMongoUri.substring(0, 20) + '...');
@@ -69,7 +70,6 @@ app.use((req, res, next) => {
     console.error('Error processing MongoDB URI:', error);
   }
 
-  // Connect to MongoDB first before registering routes
   if (process.env.MONGO_URI) {
     try {
       console.log('Connecting to MongoDB database...');
@@ -81,7 +81,6 @@ app.use((req, res, next) => {
     }
   }
 
-  // API routes are defined in routes.ts
   console.log('Registering API routes and initializing database connections...');
   const server = await registerRoutes(app);
   console.log('Server routes registered successfully');
@@ -92,23 +91,16 @@ app.use((req, res, next) => {
 
     console.error(`Server Error: ${err.message || 'Unknown error'}`);
     console.error(err.stack || 'No stack trace');
-    
-    // Send response but DON'T throw the error again, which would crash the server
+
     res.status(status).json({ message });
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = 5000;
   server.listen({
     port: 5000,
@@ -116,8 +108,6 @@ app.use((req, res, next) => {
     reusePort: true,
   }, async () => {
     log(`serving on port ${port}`);
-    
-    // Start the Python Flask service for ML predictions
     try {
       log('Starting Python Flask service for ML predictions...');
       const serviceStarted = await pythonServiceManager.startService();

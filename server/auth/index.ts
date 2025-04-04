@@ -1,8 +1,10 @@
 import { Express, Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 import session from 'express-session';
+import crypto from 'crypto';
 import { setupGoogleAuth } from './google';
 import { setupAppleAuth } from './apple';
+import { setupLocalAuth } from './local';
 import { storage } from '../storage';
 // Import Memory Store for fallback
 import MemoryStore from 'memorystore';
@@ -65,9 +67,10 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Setup OAuth providers
-  setupGoogleAuth();
-  setupAppleAuth();
+  // Setup authentication strategies
+  setupLocalAuth();  // Setup local (email/password) authentication
+  setupGoogleAuth(); // Setup Google OAuth authentication
+  setupAppleAuth();  // Setup Apple OAuth authentication
 
   // Register auth routes
   registerAuthRoutes(app);
@@ -294,6 +297,257 @@ function registerAuthRoutes(app: Express) {
     }
   });
 
+  // Local authentication routes
+  app.post('/api/auth/login', (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate('local', (err: Error | null, user: any, info: any) => {
+      if (err) {
+        console.error('Error during local authentication:', err);
+        return res.status(500).json({ success: false, message: 'Authentication error' });
+      }
+      
+      if (!user) {
+        console.log('Local auth failed:', info);
+        return res.status(401).json({ success: false, message: info.message || 'Invalid credentials' });
+      }
+      
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error('Error during login after local auth:', loginErr);
+          return res.status(500).json({ success: false, message: 'Login error' });
+        }
+        
+        console.log('Local authentication successful for user:', user.email);
+        return res.json({ 
+          success: true, 
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            isAdmin: user.isAdmin,
+            // Don't send sensitive fields like password
+          }
+        });
+      });
+    })(req, res, next);
+  });
+  
+  // Register new user
+  app.post('/api/auth/register', async (req: Request, res: Response) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      
+      // Validate input
+      if (!email || !password || !firstName || !lastName) {
+        return res.status(400).json({ success: false, message: 'All fields are required' });
+      }
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({ success: false, message: 'User with this email already exists' });
+      }
+      
+      // Hash the password with SHA-256
+      const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+      
+      // Create the new user
+      const newUser = {
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        username: email.split('@')[0], // Simple username from email
+        isAdmin: false, // Regular users are not admins by default
+        useTestnet: true // Default for safety
+      };
+      
+      const createdUser = await storage.createUser(newUser);
+      
+      // Automatically log the user in
+      req.logIn(createdUser, (loginErr) => {
+        if (loginErr) {
+          console.error('Error during login after registration:', loginErr);
+          return res.status(500).json({ success: false, message: 'Registration successful, but login failed' });
+        }
+        
+        // Return success without the password
+        const { password, ...userWithoutPassword } = createdUser;
+        return res.json({ success: true, user: userWithoutPassword });
+      });
+    } catch (error) {
+      console.error('Error during user registration:', error);
+      return res.status(500).json({ success: false, message: 'Registration failed' });
+    }
+  });
+  
+  // Create admin user endpoint (restricted)
+  app.post('/api/auth/create-admin', async (req: Request, res: Response) => {
+    try {
+      // Check for special admin creation key in request
+      const adminKey = req.headers['x-admin-creation-key'];
+      if (!adminKey || adminKey !== process.env.ADMIN_CREATION_KEY) {
+        return res.status(403).json({ success: false, message: 'Unauthorized' });
+      }
+      
+      const { email, password, firstName, lastName } = req.body;
+      
+      // Validate input
+      if (!email || !password || !firstName || !lastName) {
+        return res.status(400).json({ success: false, message: 'All fields are required' });
+      }
+      
+      // Check if admin already exists
+      const existingAdmin = await storage.getUserByEmail(email);
+      if (existingAdmin) {
+        return res.status(409).json({ success: false, message: 'Admin with this email already exists' });
+      }
+      
+      // Hash the password with SHA-256
+      const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+      
+      // Create the admin user
+      const newAdmin = {
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        username: email.split('@')[0], // Simple username from email
+        isAdmin: true, // Set as admin
+        useTestnet: true, // Default for safety
+        defaultBroker: "binance"
+      };
+      
+      const createdAdmin = await storage.createUser(newAdmin);
+      console.log('Created new admin user:', createdAdmin.id);
+      
+      // Return success without the password
+      const { password: _, ...adminWithoutPassword } = createdAdmin;
+      return res.json({ success: true, user: adminWithoutPassword });
+    } catch (error) {
+      console.error('Error creating admin user:', error);
+      return res.status(500).json({ success: false, message: 'Admin creation failed' });
+    }
+  });
+  
+  // Endpoint to login as admin (temporary approach until proper UI is built)
+  app.post('/api/auth/login-as-admin', (req: Request, res: Response, next: NextFunction) => {
+    const { email, password } = req.body;
+    
+    // First check if this is an admin
+    storage.getUserByEmail(email)
+      .then(user => {
+        if (user && user.isAdmin) {
+          // Use passport local auth to verify credentials
+          passport.authenticate('local', (err: Error | null, authenticatedUser: any, info: any) => {
+            if (err) {
+              console.error('Error during admin authentication:', err);
+              return res.status(500).json({ success: false, message: 'Authentication error' });
+            }
+            
+            if (!authenticatedUser) {
+              console.log('Admin auth failed:', info);
+              return res.status(401).json({ success: false, message: info.message || 'Invalid credentials' });
+            }
+            
+            req.logIn(authenticatedUser, (loginErr) => {
+              if (loginErr) {
+                console.error('Error during login after admin auth:', loginErr);
+                return res.status(500).json({ success: false, message: 'Login error' });
+              }
+              
+              console.log('Admin authentication successful for:', authenticatedUser.email);
+              
+              // Set X-Test-Admin header in the response for client to store
+              res.set('X-Test-Admin', 'true');
+              
+              return res.json({ 
+                success: true, 
+                user: {
+                  id: authenticatedUser.id,
+                  email: authenticatedUser.email,
+                  firstName: authenticatedUser.firstName,
+                  lastName: authenticatedUser.lastName,
+                  isAdmin: authenticatedUser.isAdmin,
+                }
+              });
+            });
+          })(req, res, next);
+        } else {
+          // Not an admin
+          res.status(403).json({ success: false, message: 'User is not an admin' });
+        }
+      })
+      .catch(error => {
+        console.error('Error getting user for admin login:', error);
+        res.status(500).json({ success: false, message: 'Authentication error' });
+      });
+  });
+  
+  // Add a route to create default admin, if one doesn't exist already
+  app.post('/api/auth/create-default-admin', async (req: Request, res: Response) => {
+    try {
+      // Check if admin already exists
+      const existingAdmin = await storage.getUserByEmail('admin@example.com');
+      if (existingAdmin) {
+        return res.json({ 
+          success: true, 
+          message: 'Default admin already exists', 
+          admin: {
+            id: existingAdmin.id,
+            email: existingAdmin.email
+          }
+        });
+      }
+      
+      // Generate a strong random password
+      const generatePassword = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+        let password = '';
+        for (let i = 0; i < 16; i++) {
+          password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return password;
+      };
+      
+      const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || generatePassword();
+      
+      // Hash the password with SHA-256
+      const hashedPassword = crypto.createHash('sha256').update(adminPassword).digest('hex');
+      
+      // Create the admin user
+      const newAdmin = {
+        email: 'admin@example.com',
+        password: hashedPassword,
+        firstName: 'Admin',
+        lastName: 'User',
+        username: 'admin',
+        isAdmin: true,
+        useTestnet: true,
+        defaultBroker: "binance",
+        binanceApiKey: process.env.BINANCE_API_KEY || null,
+        binanceSecretKey: process.env.BINANCE_SECRET_KEY || null
+      };
+      
+      const createdAdmin = await storage.createUser(newAdmin);
+      console.log('Created default admin user:', createdAdmin.id);
+      
+      // Return success with the plaintext password this one time
+      return res.json({ 
+        success: true, 
+        message: 'Default admin created successfully', 
+        admin: {
+          id: createdAdmin.id,
+          email: createdAdmin.email,
+          password: adminPassword // Only sent once during creation
+        }
+      });
+    } catch (error) {
+      console.error('Error creating default admin:', error);
+      return res.status(500).json({ success: false, message: 'Default admin creation failed' });
+    }
+  });
+  
   // Auth middleware for protected routes
   app.use('/api/protected', ensureAuthenticated);
 }

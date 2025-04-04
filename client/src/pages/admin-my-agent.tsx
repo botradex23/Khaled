@@ -1,12 +1,29 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import AdminMyAgent from '@/components/AdminMyAgent';
+import { AdminLoginForm } from '@/components/AdminLoginForm';
 import { useAuth } from '@/hooks/use-auth';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 export default function AdminMyAgentPage() {
   const [, setLocation] = useLocation();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, login, logout } = useAuth();
+  const [adminUser, setAdminUser] = useState<any>(null);
+  const [needsLogin, setNeedsLogin] = useState(false);
+  
+  // Handle admin login
+  const handleLoginSuccess = (userData: any) => {
+    console.log('Admin login successful', userData);
+    setAdminUser(userData);
+  };
+  
+  // Check if there's admin access in localStorage
+  useEffect(() => {
+    const storedIsAdmin = localStorage.getItem('isAdmin') === 'true';
+    setNeedsLogin(!storedIsAdmin && (!user || !user.isAdmin));
+  }, [user]);
   
   // Check agent health
   const { 
@@ -18,13 +35,7 @@ export default function AdminMyAgentPage() {
     queryFn: async () => {
       console.log('Fetching agent health status...');
       try {
-        const response = await fetch('/api/my-agent/health', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Test-Admin': 'true' // Add admin header for authentication
-          }
-        });
+        const response = await fetch('/api/my-agent/health');
         const data = await response.json();
         console.log('Agent health response:', data);
         return data;
@@ -33,17 +44,10 @@ export default function AdminMyAgentPage() {
         throw error;
       }
     },
-    enabled: !!user && user.isAdmin === true,
+    enabled: (!!user && user.isAdmin === true) || !!adminUser || localStorage.getItem('isAdmin') === 'true',
     retry: false,
     refetchOnWindowFocus: false,
   });
-  
-  // Redirect if not admin
-  useEffect(() => {
-    if (!authLoading && (!user || user.isAdmin !== true)) {
-      setLocation('/login');
-    }
-  }, [user, authLoading, setLocation]);
   
   // Handle loading
   if (authLoading) {
@@ -57,9 +61,25 @@ export default function AdminMyAgentPage() {
     );
   }
   
-  // Handle not admin
-  if (!user || user.isAdmin !== true) {
-    return null; // Will redirect via useEffect
+  // Display admin login form if needed
+  if (needsLogin && !adminUser && localStorage.getItem('isAdmin') !== 'true') {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-3xl font-bold mb-6 text-center">AI Agent Admin Access</h1>
+          
+          <Alert className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Admin Access Required</AlertTitle>
+            <AlertDescription>
+              This page requires admin credentials. Please log in with your admin account.
+            </AlertDescription>
+          </Alert>
+          
+          <AdminLoginForm onLoginSuccess={handleLoginSuccess} />
+        </div>
+      </div>
+    );
   }
   
   // Handle agent health check

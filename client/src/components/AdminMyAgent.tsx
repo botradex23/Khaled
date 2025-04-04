@@ -44,24 +44,71 @@ export default function AdminMyAgent() {
     checkAgentHealth();
   }, []);
   
+  // Manually test the authentication fix
+  const testAuthFix = async () => {
+    try {
+      console.log('Testing admin authentication...');
+      console.log('Current URL:', window.location.href);
+      
+      const response = await fetch('/api/my-agent/health');
+      
+      console.log('Response status:', response.status);
+      
+      // Create a simple object from headers to avoid iterator issues
+      const headers: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+      console.log('Response headers:', headers);
+      
+      const data = await response.json();
+      console.log('Test authentication response:', data);
+      
+      toast({
+        title: response.ok ? 'Authentication Success' : 'Authentication Failed',
+        description: response.ok 
+          ? 'You are properly authenticated as an admin.' 
+          : `Authentication failed: ${data.message || 'Unknown error'}`,
+        variant: response.ok ? 'default' : 'destructive',
+      });
+    } catch (error) {
+      console.error('Test authentication error:', error);
+      toast({
+        title: 'Test Failed',
+        description: error instanceof Error ? error.message : 'An unknown error occurred during the test',
+        variant: 'destructive',
+      });
+    }
+  };
+  
   // Check if the agent is available and functioning
   const checkAgentHealth = async () => {
     try {
       console.log('Fetching agent health status...');
-      const response = await fetch('/api/my-agent/health', {
-        headers: {
-          'X-Test-Admin': 'true', // Add admin header for authentication
-        },
+      console.log('Current URL:', window.location.href);
+      
+      const response = await fetch('/api/my-agent/health');
+      
+      console.log('Response status:', response.status);
+      
+      // Create a simple object from headers to avoid iterator issues
+      const headers: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headers[key] = value;
       });
+      console.log('Response headers:', headers);
       
       const data = await response.json();
       console.log('Agent health response:', data);
       
       if (response.ok && data.success === true) {
         console.log('Agent is available - OpenAI service functioning properly');
+        console.log('Authentication info:', data.authentication || 'No authentication info provided');
         setAgentHealth('available');
       } else {
         console.error('Agent is unavailable:', data.message || 'Unknown error');
+        console.error('Error details:', data.error || 'No detailed error provided');
+        console.error('Authentication info:', data.authentication || 'No authentication info provided');
         setAgentHealth('unavailable');
         
         // Show error toast with specific information
@@ -102,7 +149,6 @@ export default function AdminMyAgent() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Test-Admin': 'true', // Add admin header for authentication
         },
         body: JSON.stringify({
           prompt: chatPrompt,
@@ -162,8 +208,7 @@ export default function AdminMyAgent() {
       const response = await fetch('/api/my-agent/analyze', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Test-Admin': 'true', // Add admin header for authentication
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           task: analyzeTask,
@@ -217,8 +262,7 @@ export default function AdminMyAgent() {
       const response = await fetch('/api/my-agent/suggest', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Test-Admin': 'true', // Add admin header for authentication
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           task: suggestTask,
@@ -263,8 +307,7 @@ export default function AdminMyAgent() {
       const response = await fetch('/api/my-agent/files', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Test-Admin': 'true', // Add admin header for authentication
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           directory: directoryPath,
@@ -301,8 +344,7 @@ export default function AdminMyAgent() {
       const response = await fetch('/api/my-agent/read-file', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Test-Admin': 'true', // Add admin header for authentication
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           filePath: filePath,
@@ -347,8 +389,7 @@ export default function AdminMyAgent() {
       const response = await fetch('/api/my-agent/write-file', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Test-Admin': 'true', // Add admin header for authentication
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           filePath: selectedFile,
@@ -422,6 +463,15 @@ export default function AdminMyAgent() {
               </AlertDescription>
             </Alert>
           )}
+          
+          <div className="mb-4 flex space-x-2">
+            <Button onClick={checkAgentHealth} variant="outline" size="sm">
+              Refresh Status
+            </Button>
+            <Button onClick={testAuthFix} variant="secondary" size="sm">
+              Test Authentication Fix
+            </Button>
+          </div>
           
           <Tabs defaultValue="chat">
             <TabsList className="grid w-full grid-cols-4">
