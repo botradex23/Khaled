@@ -114,14 +114,23 @@ export async function getChatCompletion(
   }
   
   try {
+    console.log('Sending request to OpenAI API with project-based key');
+    
+    // Prepare messages array - if systemPrompt is provided, include it, otherwise just the user prompt
+    const messages = systemPrompt 
+      ? [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
+        ] 
+      : [
+          { role: "user", content: prompt }
+        ];
+    
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt }
-        ],
+        model: "gpt-4o-mini",
+        messages: messages,
         temperature: 0.7,
         max_tokens: 2000,
       },
@@ -133,6 +142,7 @@ export async function getChatCompletion(
       }
     );
     
+    console.log('OpenAI API response received successfully');
     return response.data.choices[0]?.message?.content || null;
   } catch (error: any) {
     console.error('Error getting chat completion:', error.response?.data || error.message);
@@ -186,10 +196,12 @@ export async function analyzeCodeFiles(task: string, filePaths: string[]): Promi
       3. Suggesting improvements or solutions
     `;
     
+    console.log('Sending code analysis request to OpenAI API with project-based key');
+    
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -205,6 +217,7 @@ export async function analyzeCodeFiles(task: string, filePaths: string[]): Promi
       }
     );
     
+    console.log('OpenAI API code analysis response received successfully');
     return response.data.choices[0]?.message?.content || null;
   } catch (error: any) {
     console.error('Error analyzing code files:', error.response?.data || error.message);
@@ -245,10 +258,12 @@ export async function suggestCodeChanges(task: string, filePath: string): Promis
       Please suggest the changes I should make to accomplish this task. Provide the full updated file content.
     `;
     
+    console.log('Sending code suggestion request to OpenAI API with project-based key');
+    
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -264,6 +279,7 @@ export async function suggestCodeChanges(task: string, filePath: string): Promis
       }
     );
     
+    console.log('OpenAI API code suggestion response received successfully');
     return response.data.choices[0]?.message?.content || null;
   } catch (error: any) {
     console.error('Error suggesting code changes:', error.response?.data || error.message);
