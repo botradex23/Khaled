@@ -34,4 +34,11 @@ export default defineConfig({
     outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
   },
+  server: {
+    proxy: {
+      "/api/my-agent": "http://localhost:5002",
+      "/api/direct-agent": "http://localhost:5002",
+      "/health": "http://localhost:5002",
+    },
+  },
 });

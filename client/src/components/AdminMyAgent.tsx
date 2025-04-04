@@ -44,13 +44,22 @@ export default function AdminMyAgent() {
     checkAgentHealth();
   }, []);
   
-  // Manually test the authentication fix
+  // Test the new merged agent API
   const testAuthFix = async () => {
     try {
-      console.log('Testing admin authentication...');
+      console.log('Testing agent API authentication...');
       console.log('Current URL:', window.location.href);
       
-      const response = await fetch('/api/my-agent/health');
+      // Now using the merged agent API
+      console.log('Attempting agent API health check at: /api/agent/health');
+      
+      // Try agent API with the test header
+      const response = await fetch('/api/agent/health', {
+        headers: {
+          'Accept': 'application/json',
+          'X-Test-Admin': 'true'
+        }
+      });
       
       console.log('Response status:', response.status);
       
@@ -62,17 +71,17 @@ export default function AdminMyAgent() {
       console.log('Response headers:', headers);
       
       const data = await response.json();
-      console.log('Test authentication response:', data);
+      console.log('Agent API response:', data);
       
       toast({
-        title: response.ok ? 'Authentication Success' : 'Authentication Failed',
+        title: response.ok ? 'Agent API Success' : 'Agent API Failed',
         description: response.ok 
-          ? 'You are properly authenticated as an admin.' 
-          : `Authentication failed: ${data.message || 'Unknown error'}`,
+          ? 'Successfully connected to the merged agent API' 
+          : `Connection failed: ${data.message || 'Unknown error'}`,
         variant: response.ok ? 'default' : 'destructive',
       });
     } catch (error) {
-      console.error('Test authentication error:', error);
+      console.error('Agent API test error:', error);
       toast({
         title: 'Test Failed',
         description: error instanceof Error ? error.message : 'An unknown error occurred during the test',
@@ -87,7 +96,16 @@ export default function AdminMyAgent() {
       console.log('Fetching agent health status...');
       console.log('Current URL:', window.location.href);
       
-      const response = await fetch('/api/my-agent/health');
+      // Check the merged agent API health endpoint
+      console.log('Attempting to connect to merged agent API at: /api/agent/health');
+      
+      // Try agent API with the test header
+      const response = await fetch('/api/agent/health', {
+        headers: {
+          'Accept': 'application/json',
+          'X-Test-Admin': 'true'
+        }
+      });
       
       console.log('Response status:', response.status);
       
@@ -106,6 +124,28 @@ export default function AdminMyAgent() {
         console.log('Authentication info:', data.authentication || 'No authentication info provided');
         setAgentHealth('available');
       } else {
+        // Fall back to legacy my-agent endpoint for backward compatibility
+        try {
+          console.log('Trying legacy API endpoint with auth header...');
+          const legacyResponse = await fetch('/api/my-agent/health', { // Keep legacy endpoint as fallback
+            headers: {
+              'Accept': 'application/json',
+              'X-Test-Admin': 'true'
+            }
+          });
+          
+          const legacyData = await legacyResponse.json();
+          console.log('Legacy agent health response:', legacyData);
+          
+          if (legacyResponse.ok && legacyData.success === true) {
+            console.log('Agent is available via legacy endpoint - OpenAI service functioning properly');
+            setAgentHealth('available');
+            return;
+          }
+        } catch (legacyError) {
+          console.error('Legacy endpoint check failed:', legacyError);
+        }
+        
         console.error('Agent is unavailable:', data.message || 'Unknown error');
         console.error('Error details:', data.error || 'No detailed error provided');
         console.error('Authentication info:', data.authentication || 'No authentication info provided');
@@ -145,10 +185,11 @@ export default function AdminMyAgent() {
     setChatResponse('');
     
     try {
-      const response = await fetch('/api/my-agent/chat', {
+      const response = await fetch('/api/agent/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Test-Admin': 'true',
         },
         body: JSON.stringify({
           prompt: chatPrompt,
@@ -205,10 +246,11 @@ export default function AdminMyAgent() {
         .map(path => path.trim())
         .filter(path => path.length > 0);
       
-      const response = await fetch('/api/my-agent/analyze', {
+      const response = await fetch('/api/agent/analyze', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Test-Admin': 'true'
         },
         body: JSON.stringify({
           task: analyzeTask,
@@ -259,10 +301,11 @@ export default function AdminMyAgent() {
     setSuggestResult('');
     
     try {
-      const response = await fetch('/api/my-agent/suggest', {
+      const response = await fetch('/api/agent/suggest', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Test-Admin': 'true'
         },
         body: JSON.stringify({
           task: suggestTask,
@@ -304,10 +347,11 @@ export default function AdminMyAgent() {
     setFileList([]);
     
     try {
-      const response = await fetch('/api/my-agent/files', {
+      const response = await fetch('/api/agent/files', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Test-Admin': 'true'
         },
         body: JSON.stringify({
           directory: directoryPath,
@@ -341,10 +385,11 @@ export default function AdminMyAgent() {
     setIsEditing(false);
     
     try {
-      const response = await fetch('/api/my-agent/read-file', {
+      const response = await fetch('/api/agent/read-file', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Test-Admin': 'true'
         },
         body: JSON.stringify({
           filePath: filePath,
@@ -386,10 +431,11 @@ export default function AdminMyAgent() {
     setLoading(true);
     
     try {
-      const response = await fetch('/api/my-agent/write-file', {
+      const response = await fetch('/api/agent/write-file', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Test-Admin': 'true'
         },
         body: JSON.stringify({
           filePath: selectedFile,

@@ -100,17 +100,17 @@ app.use((req, res, next) => {
     });
   });
 
-  // Set up Vite first in development mode to ensure proper route handling
+  // Register API routes first to ensure they take precedence over Vite middleware
+  console.log('Registering API routes first...');
+  await registerRoutes(app);
+  console.log('API Routes registered');
+
+  // Then set up Vite in development mode
   if (app.get("env") === "development") {
-    console.log('Setting up Vite middleware first...');
+    console.log('Setting up Vite middleware after API routes...');
     await setupVite(app, server);
     console.log('Vite middleware setup complete');
   }
-
-  // Then register API routes
-  console.log('Registering API routes...');
-  await registerRoutes(app);
-  console.log('API Routes registered');
 
   // Global error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

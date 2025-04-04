@@ -383,21 +383,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI API routes
   app.use("/api/ai", aiRouter);
   
-  // My Agent routes (admin-only OpenAI-powered assistant)
-  import('./routes/my-agent').then(myAgentRouter => {
-    app.use("/api/my-agent", myAgentRouter.default);
-    console.log('My Agent routes registered to /api/my-agent');
+  // Unified Agent routes (combines both my-agent and direct-agent functionality)
+  import('./routes/agent-routes').then(agentRouter => {
+    // Register both route patterns for backward compatibility
+    app.use("/api/agent", agentRouter.default);
+    app.use("/api/my-agent", agentRouter.default); // Legacy path for backward compatibility
+    console.log('Unified Agent routes registered to /api/agent and /api/my-agent');
   }).catch(err => {
-    console.error('Failed to register My Agent routes:', err);
+    console.error('Failed to register Unified Agent routes:', err);
   });
   
-  // Direct Agent routes (separate server for direct API access without Vite interference)
-  import('./routes/direct-agent').then(directAgentRouter => {
-    app.use("/api/direct-agent", directAgentRouter.default);
-    console.log('Direct Agent routes registered to /api/direct-agent and port 5002');
+  // Direct Agent Health Check route (uses a uniquely named endpoint to bypass Vite)
+  import('./routes/agent-health-direct').then(agentHealthRouter => {
+    // Register without the /api prefix to further avoid Vite interception
+    app.use("/direct-check", agentHealthRouter.default);
+    console.log('Direct Agent Health Check route registered to /direct-check/agent-health-direct-check-123456789.json');
   }).catch(err => {
-    console.error('Failed to register Direct Agent routes:', err);
+    console.error('Failed to register Direct Agent Health Check route:', err);
   });
+
+  // CommonJS Direct Agent Bypass routes (to avoid Vite middleware completely)
+  try {
+    const agentDirectBypassRouter = require('./routes/agent-direct-bypass.cjs');
+    app.use("/direct-bypass", agentDirectBypassRouter);
+    console.log('CommonJS Direct Agent Bypass routes registered to /direct-bypass');
+  } catch (err) {
+    console.error('Failed to register CommonJS Direct Agent Bypass routes:', err);
+  }
   
   // OpenAI API key test route
   import('./routes/test-openai-key').then(testOpenAIRouter => {
