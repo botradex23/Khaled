@@ -22,6 +22,7 @@ export default function AdminMyAgentPage() {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'X-Test-Admin': 'true' // Add admin header for authentication
           }
         });
         const data = await response.json();

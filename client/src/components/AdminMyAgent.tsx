@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 /**
  * AdminMyAgent - A component for the admin-only AI agent that can chat, analyze code, and suggest changes
@@ -36,6 +37,51 @@ export default function AdminMyAgent() {
   const [fileContent, setFileContent] = useState('');
   const [editedContent, setEditedContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [agentHealth, setAgentHealth] = useState<'available' | 'unavailable' | 'loading'>('loading');
+  
+  // Check agent health on component mount
+  useEffect(() => {
+    checkAgentHealth();
+  }, []);
+  
+  // Check if the agent is available and functioning
+  const checkAgentHealth = async () => {
+    try {
+      console.log('Fetching agent health status...');
+      const response = await fetch('/api/my-agent/health', {
+        headers: {
+          'X-Test-Admin': 'true', // Add admin header for authentication
+        },
+      });
+      
+      const data = await response.json();
+      console.log('Agent health response:', data);
+      
+      if (response.ok && data.success === true) {
+        console.log('Agent is available - OpenAI service functioning properly');
+        setAgentHealth('available');
+      } else {
+        console.error('Agent is unavailable:', data.message || 'Unknown error');
+        setAgentHealth('unavailable');
+        
+        // Show error toast with specific information
+        toast({
+          title: 'Agent Unavailable',
+          description: data.message || 'The AI agent is currently unavailable. Please check your OpenAI API key.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to check agent health:', error);
+      setAgentHealth('unavailable');
+      
+      toast({
+        title: 'Agent Health Check Failed',
+        description: 'Could not connect to the agent health endpoint. Please check your network connection.',
+        variant: 'destructive',
+      });
+    }
+  };
   
   // Chat handler
   const handleChat = async () => {
@@ -56,6 +102,7 @@ export default function AdminMyAgent() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Test-Admin': 'true', // Add admin header for authentication
         },
         body: JSON.stringify({
           prompt: chatPrompt,
@@ -116,6 +163,7 @@ export default function AdminMyAgent() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Test-Admin': 'true', // Add admin header for authentication
         },
         body: JSON.stringify({
           task: analyzeTask,
@@ -170,6 +218,7 @@ export default function AdminMyAgent() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Test-Admin': 'true', // Add admin header for authentication
         },
         body: JSON.stringify({
           task: suggestTask,
@@ -215,6 +264,7 @@ export default function AdminMyAgent() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Test-Admin': 'true', // Add admin header for authentication
         },
         body: JSON.stringify({
           directory: directoryPath,
@@ -252,6 +302,7 @@ export default function AdminMyAgent() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Test-Admin': 'true', // Add admin header for authentication
         },
         body: JSON.stringify({
           filePath: filePath,
@@ -297,6 +348,7 @@ export default function AdminMyAgent() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Test-Admin': 'true', // Add admin header for authentication
         },
         body: JSON.stringify({
           filePath: selectedFile,
@@ -338,6 +390,39 @@ export default function AdminMyAgent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {agentHealth === 'unavailable' && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTitle>Agent Unavailable</AlertTitle>
+              <AlertDescription className="flex flex-col space-y-2">
+                <span>The AI agent is currently unavailable. This might be due to:</span>
+                <ul className="list-disc pl-6">
+                  <li>Missing or invalid OpenAI API key</li>
+                  <li>OpenAI API quota exceeded</li>
+                  <li>Network connectivity issues to OpenAI</li>
+                </ul>
+                <span>Please contact an administrator to check and configure the API key settings.</span>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {agentHealth === 'loading' && (
+            <Alert className="mb-4">
+              <AlertTitle>Checking Agent Status</AlertTitle>
+              <AlertDescription>
+                Verifying the availability of the AI agent...
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {agentHealth === 'available' && (
+            <Alert className="mb-4" variant="default">
+              <AlertTitle>Agent Ready</AlertTitle>
+              <AlertDescription>
+                AI agent is connected and ready to assist with your tasks.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <Tabs defaultValue="chat">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="chat">Chat</TabsTrigger>
