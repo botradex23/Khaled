@@ -62,7 +62,7 @@ app.use((req, res, next) => {
 
   // Add error handling for response errors
   const originalResEnd = res.end;
-  res.end = function(chunk?: any, encodingOrCallback?: string | (() => void), callback?: () => void) {
+  res.end = function(chunk?: any, encodingOrCallback?: any, callback?: any) {
     if (path === '/api/my-agent/health') {
       console.log('=== MY AGENT HEALTH ENDPOINT RESPONSE END ===');
       console.log('Status:', res.statusCode);
@@ -70,12 +70,8 @@ app.use((req, res, next) => {
       console.log('=============================================');
     }
 
-    // Handle different overload signatures properly
-    if (typeof encodingOrCallback === 'function') {
-      return originalResEnd.call(res, chunk, encodingOrCallback);
-    } else {
-      return originalResEnd.call(res, chunk, encodingOrCallback as BufferEncoding, callback);
-    }
+    // Just pass the arguments directly to avoid typing issues
+    return originalResEnd.apply(res, arguments);
   };
 
   res.on("finish", () => {

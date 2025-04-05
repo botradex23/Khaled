@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import * as z from 'zod';
+import { z } from 'zod'; // ← תוקן כאן
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -38,8 +38,8 @@ import { Switch } from '@/components/ui/switch';
 // Form schema
 const tradeFormSchema = z.object({
   symbol: z.string().min(1, { message: 'Symbol is required' }),
-  direction: z.enum(['LONG', 'SHORT'], { 
-    required_error: 'Direction is required' 
+  direction: z.enum(['LONG', 'SHORT'], {
+    required_error: 'Direction is required',
   }),
   entryPrice: z.string().min(1, { message: 'Entry price is required' })
     .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -49,8 +49,8 @@ const tradeFormSchema = z.object({
     .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
       message: 'Quantity must be a positive number',
     }),
-  type: z.enum(['MARKET', 'LIMIT'], { 
-    required_error: 'Order type is required' 
+  type: z.enum(['MARKET', 'LIMIT'], {
+    required_error: 'Order type is required',
   }),
   isAiGenerated: z.boolean().default(false),
   aiConfidence: z.string().optional(),
@@ -69,21 +69,11 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
   const queryClient = useQueryClient();
   const [symbolInput, setSymbolInput] = useState('');
 
-  // Popular crypto trading pairs
   const defaultSymbols = [
-    'BTC-USDT',
-    'ETH-USDT',
-    'BNB-USDT',
-    'XRP-USDT',
-    'SOL-USDT',
-    'ADA-USDT',
-    'DOGE-USDT',
-    'SHIB-USDT',
-    'AVAX-USDT',
-    'DOT-USDT',
+    'BTC-USDT', 'ETH-USDT', 'BNB-USDT', 'XRP-USDT', 'SOL-USDT',
+    'ADA-USDT', 'DOGE-USDT', 'SHIB-USDT', 'AVAX-USDT', 'DOT-USDT',
   ];
 
-  // Fetch market prices for symbol suggestions
   const { data: binanceTickers } = useQuery({
     queryKey: ['/api/binance/market/tickers'],
     queryFn: async () => {
@@ -95,10 +85,9 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
         return [];
       }
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
-  // Create form
   const form = useForm<TradeFormValues>({
     resolver: zodResolver(tradeFormSchema),
     defaultValues: {
@@ -112,62 +101,42 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
     },
   });
 
-  // Watch for symbol changes to auto-populate price
   const selectedSymbol = form.watch('symbol');
   useEffect(() => {
     if (selectedSymbol && binanceTickers) {
-      // Find the current price for the selected symbol
       const ticker = binanceTickers.find(
         (t: any) => t.symbol === selectedSymbol.replace('-', '')
       );
-      
-      if (ticker && ticker.price) {
+      if (ticker?.price) {
         form.setValue('entryPrice', ticker.price);
       }
     }
   }, [selectedSymbol, binanceTickers, form]);
 
-  // Get filtered symbols based on user input
   const filteredSymbols = symbolInput
-    ? [...defaultSymbols, ...binanceTickers?.map((t: any) => 
+    ? [...defaultSymbols, ...binanceTickers?.map((t: any) =>
         t.symbol.replace(/([A-Z0-9]+)([A-Z0-9]+)/g, '$1-$2')
       ) || []]
-        .filter((sym: string) => 
-          sym.toLowerCase().includes(symbolInput.toLowerCase())
-        )
-        .filter((sym: string, index: number, self: string[]) => 
-          self.indexOf(sym) === index
-        ) // Remove duplicates
-        .slice(0, 10) // Limit results
+        .filter((sym: string) => sym.toLowerCase().includes(symbolInput.toLowerCase()))
+        .filter((sym: string, i: number, self: string[]) => self.indexOf(sym) === i)
+        .slice(0, 10)
     : defaultSymbols;
 
-  // Create trade mutation
   const createTradeMutation = useMutation({
     mutationFn: async (values: TradeFormValues) => {
-      if (!accountId) {
-        throw new Error('No paper trading account found');
-      }
-      
+      if (!accountId) throw new Error('No paper trading account found');
       const res = await apiRequest('POST', '/api/paper-trading/trades', {
         ...values,
         entryPrice: values.entryPrice.toString(),
         quantity: values.quantity.toString(),
         aiConfidence: values.isAiGenerated ? values.aiConfidence : null,
       });
-      
       return await res.json();
     },
     onSuccess: () => {
-      toast({
-        title: 'Trade Created',
-        description: 'Your paper trade has been created successfully.',
-      });
-      
-      // Reset form and close dialog
+      toast({ title: 'Trade Created', description: 'Your paper trade has been created successfully.' });
       form.reset();
       onOpenChange(false);
-      
-      // Refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/positions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/trades'] });
       queryClient.invalidateQueries({ queryKey: ['/api/paper-trading/account'] });
@@ -178,10 +147,9 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
         description: error.message || 'There was an error creating your trade.',
         variant: 'destructive',
       });
-    }
+    },
   });
 
-  // Handle form submission
   const onSubmit = (values: TradeFormValues) => {
     createTradeMutation.mutate(values);
   };
@@ -195,7 +163,6 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
             Add a new simulated trade to your paper trading account.
           </DialogDescription>
         </DialogHeader>
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -204,10 +171,7 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Trading Pair</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select trading pair" />
@@ -229,14 +193,11 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    Choose the cryptocurrency pair to trade
-                  </FormDescription>
+                  <FormDescription>Choose the cryptocurrency pair to trade</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -244,10 +205,7 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Direction</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select direction" />
@@ -262,17 +220,13 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="type"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Order Type</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select order type" />
@@ -288,7 +242,6 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
                 )}
               />
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -303,7 +256,6 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="quantity"
@@ -318,7 +270,6 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
                 )}
               />
             </div>
-
             <FormField
               control={form.control}
               name="isAiGenerated"
@@ -326,20 +277,14 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
                     <FormLabel>AI-Generated Trade</FormLabel>
-                    <FormDescription>
-                      Mark this trade as generated by AI
-                    </FormDescription>
+                    <FormDescription>Mark this trade as generated by AI</FormDescription>
                   </div>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
             />
-
             {form.watch('isAiGenerated') && (
               <FormField
                 control={form.control}
@@ -350,20 +295,14 @@ export default function NewTradeDialog({ open, onOpenChange, accountId }: NewTra
                     <FormControl>
                       <Input placeholder="0.75" {...field} />
                     </FormControl>
-                    <FormDescription>
-                      Enter a value between 0 and 1 (e.g. 0.75 for 75% confidence)
-                    </FormDescription>
+                    <FormDescription>Enter a value between 0 and 1 (e.g. 0.75)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             )}
-
             <DialogFooter>
-              <Button 
-                type="submit" 
-                disabled={createTradeMutation.isPending || !accountId}
-              >
+              <Button type="submit" disabled={createTradeMutation.isPending || !accountId}>
                 {createTradeMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -172,7 +172,7 @@ router.get('/health', ensureTestAdminAuthenticated, async (req: Request, res: Re
 // Chat endpoint - Ask the AI a general question
 router.post('/chat', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
   console.log('AI Agent chat request received');
-  console.log('User:', req.user);
+  console.log('X-Test-Admin header present:', !!req.headers['x-test-admin']);
   console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   try {
     const { prompt, systemPrompt } = req.body;
@@ -196,7 +196,7 @@ router.post('/chat', ensureTestAdminAuthenticated, async (req: Request, res: Res
 // Analyze code files
 router.post('/analyze', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
   console.log('AI Agent analyze request received');
-  console.log('User:', req.user);
+  console.log('X-Test-Admin header present:', !!req.headers['x-test-admin']);
   console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   try {
     const { task, filePaths } = req.body;
@@ -228,7 +228,7 @@ router.post('/analyze', ensureTestAdminAuthenticated, async (req: Request, res: 
 // Suggest code changes for a file
 router.post('/suggest', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
   console.log('AI Agent suggest request received');
-  console.log('User:', req.user);
+  console.log('X-Test-Admin header present:', !!req.headers['x-test-admin']);
   console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   try {
     const { task, filePath } = req.body;
@@ -255,7 +255,7 @@ router.post('/suggest', ensureTestAdminAuthenticated, async (req: Request, res: 
 // List files in a directory
 router.post('/files', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
   console.log('AI Agent files request received');
-  console.log('User:', req.user);
+  console.log('X-Test-Admin header present:', !!req.headers['x-test-admin']);
   console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   try {
     const { directory } = req.body;
@@ -288,7 +288,7 @@ router.post('/files', ensureTestAdminAuthenticated, async (req: Request, res: Re
 // Read a file
 router.post('/read-file', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
   console.log('AI Agent read-file request received');
-  console.log('User:', req.user);
+  console.log('X-Test-Admin header present:', !!req.headers['x-test-admin']);
   console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   try {
     const { filePath } = req.body;
@@ -325,7 +325,7 @@ router.post('/read-file', ensureTestAdminAuthenticated, async (req: Request, res
 // Write to a file
 router.post('/write-file', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
   console.log('AI Agent write-file request received');
-  console.log('User:', req.user);
+  console.log('X-Test-Admin header present:', !!req.headers['x-test-admin']);
   console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   try {
     const { filePath, content } = req.body;
@@ -533,6 +533,62 @@ router.post('/direct-read-file', ensureTestAdminAuthenticated, async (req: Reque
     });
   } catch (error) {
     console.error('Error in direct read file endpoint:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Direct write file endpoint (matches the /write-file endpoint in direct-agent-server.js)
+router.post('/direct-write-file', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
+  console.log('Direct write file request received');
+  console.log('X-Test-Admin header present:', !!req.headers['x-test-admin']);
+  setCorsHeaders(res);
+  res.setHeader('Content-Type', 'application/json');
+  
+  try {
+    const { filePath, content } = req.body;
+    
+    if (!filePath || content === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'File path and content are required',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Ensure the path is within the project
+    const normalizedPath = path.normalize(filePath);
+    if (normalizedPath.startsWith('..') || path.isAbsolute(normalizedPath)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid file path. Must be relative to project root.',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    const fullPath = path.resolve(process.cwd(), normalizedPath);
+    console.log(`Writing to file: ${fullPath}`);
+    
+    const success = await writeFile(fullPath, content);
+    
+    if (!success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to write file',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'File written successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in direct write file endpoint:', error);
     res.status(500).json({
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error',
