@@ -30,8 +30,24 @@ export class PythonServiceManager {
   private PYTHON_SERVICE_PORT = 5001;
   private PYTHON_SERVICE_URL = `http://localhost:${this.PYTHON_SERVICE_PORT}`;
   private PYTHON_APP_DIR = process.cwd();
-  private PYTHON_SERVICE_SCRIPT = path.join(this.PYTHON_APP_DIR, 'run_flask_app.py');
+  private PYTHON_SERVICE_SCRIPT = path.join(this.PYTHON_APP_DIR, 'minimal_flask_app.py');
   private STARTUP_TIMEOUT = 10000; // 10 seconds
+  
+  // Python executable options to try in order
+  private PYTHON_EXECUTABLES = [
+    // Absolute paths in Replit environment
+    '/nix/store/lg7akh0i11k7hfyyrk097qxzm9d85q1k-replit-module-python-base-3.11/bin/python3',
+    '/nix/store/jksn9ar54ya1zlyjbnxh2xzkd41m2pd9-replit-module-python-3.8/bin/python3',
+    '/nix/store/k2fd3lnbdf681gi14z37zf7jcmmlw8ms-replit-module-python-3.9/bin/python3',
+    '/nix/store/8rcv56dc390kg8p1j41nlq9glxr2kl01-replit-module-python-3.10/bin/python3',
+    // Common Python commands
+    'python3.11',
+    'python3.10',
+    'python3.9',
+    'python3.8',
+    'python3',
+    'python'
+  ];
 
   private constructor() {
     // Private constructor to enforce singleton pattern
@@ -91,7 +107,54 @@ export class PythonServiceManager {
       logger.info(`Starting Python service from ${this.PYTHON_SERVICE_SCRIPT}`);
       
       try {
-        this.serviceProcess = spawn('python', [this.PYTHON_SERVICE_SCRIPT], {
+        // Try each Python executable in order until one works
+        let pythonProcess: ChildProcess | null = null;
+        let pythonExecutable = '';
+        
+        for (const executable of this.PYTHON_EXECUTABLES) {
+          try {
+            logger.info(`Trying to spawn Python service with executable: ${executable}`);
+            pythonProcess = spawn(executable, ['-c', 'print("Python working")'], {
+              cwd: this.PYTHON_APP_DIR,
+              stdio: ['ignore', 'pipe', 'pipe']
+            });
+            
+            // Wait for the process to complete
+            const result = await new Promise<{ success: boolean, output: string }>((resolveCheck) => {
+              let output = '';
+              
+              pythonProcess?.stdout?.on('data', (data: Buffer) => {
+                output += data.toString().trim();
+              });
+              
+              pythonProcess?.on('error', () => {
+                resolveCheck({ success: false, output });
+              });
+              
+              pythonProcess?.on('exit', (code: number | null) => {
+                resolveCheck({ success: code === 0, output });
+              });
+            });
+            
+            if (result.success) {
+              logger.info(`Found working Python executable: ${executable}`);
+              pythonExecutable = executable;
+              break;
+            }
+          } catch (error) {
+            logger.warn(`Python executable ${executable} failed: ${error}`);
+          }
+        }
+        
+        if (!pythonExecutable) {
+          logger.error('No working Python executable found');
+          resolve(false);
+          this.startupPromise = null;
+          return;
+        }
+        
+        logger.info(`Starting Python service with executable: ${pythonExecutable}`);
+        this.serviceProcess = spawn(pythonExecutable, [this.PYTHON_SERVICE_SCRIPT], {
           cwd: this.PYTHON_APP_DIR,
           env: {
             ...process.env,

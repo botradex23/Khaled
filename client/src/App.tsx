@@ -15,7 +15,6 @@ import EnhancedDashboard from "@/pages/enhanced-dashboard";
 import Bots from "@/pages/bots-new";
 import BotsDashboard from "@/pages/bots-dashboard";
 import Markets from "@/pages/markets";
-// MarketsFull has been removed as requested
 import MarketPrices from "@/pages/market-prices";
 import Register from "@/pages/register";
 import Login from "@/pages/login";
@@ -39,18 +38,18 @@ import TradeLogsPage from "@/pages/trade-logs";
 import DirectPricesPage from "@/pages/DirectPricesPage";
 import AdminMyAgentPage from "@/pages/admin-my-agent";
 import { DiagnosticPage } from "@/pages/DiagnosticPage";
+import ChatWithAgentPage from "@/pages/ChatWithAgent"; // NEW LINE
 
 function Router() {
   const { isAuthenticated, needsProfileCompletion, isLoading } = useAuth();
   const [, navigate] = useLocation();
-  
-  // Check if authenticated user needs to complete profile
+
   React.useEffect(() => {
     if (isAuthenticated && needsProfileCompletion && !isLoading) {
       navigate('/complete-profile');
     }
   }, [isAuthenticated, needsProfileCompletion, isLoading, navigate]);
-  
+
   return (
     <Switch>
       <Route path="/" component={Landing} />
@@ -61,7 +60,6 @@ function Router() {
       <Route path="/bots" component={BotsDashboard} />
       <Route path="/bots-legacy" component={Bots} />
       <Route path="/markets" component={Markets} />
-      {/* markets-full has been removed and replaced by /binance */}
       <Route path="/market-prices" component={MarketPrices} />
       <Route path="/live-market" component={LiveMarket} />
       <Route path="/register" component={Register} />
@@ -85,6 +83,7 @@ function Router() {
       <Route path="/direct-prices" component={DirectPricesPage} />
       <Route path="/admin-my-agent" component={AdminMyAgentPage} />
       <Route path="/diagnostics" component={DiagnosticPage} />
+      <Route path="/chat-agent" component={ChatWithAgentPage} /> {/* NEW LINE */}
       <Route component={NotFound} />
     </Switch>
   );
