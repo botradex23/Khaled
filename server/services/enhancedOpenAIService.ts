@@ -34,8 +34,14 @@ Be concise, accurate, and helpful.`;
         return false;
       }
       
+      // Verify the key is a proper format (should at least be long enough)
+      if (apiKey.length < 30) {
+        console.error('❌ OpenAI API key appears to be invalid (too short)');
+        return false;
+      }
+      
       this.apiKey = apiKey;
-      console.log('✅ OpenAI service initialized with API key');
+      console.log('✅ OpenAI service initialized with API key:', apiKey.slice(0, 5) + '...');
       return true;
     } catch (error) {
       console.error('❌ Error initializing OpenAI service:', error);

@@ -31,59 +31,27 @@ export default function AdminMyAgentPage() {
     isLoading: healthLoading, 
     error: healthError 
   } = useQuery({
-    queryKey: ['/api/my-agent/health'],
+    queryKey: ['/api/agent/health'],
     queryFn: async () => {
       console.log('Fetching agent health status...');
       
-      // Use port 5002 for the direct agent API (different from main server)
-      // For Replit, we need to use the same domain but port 5002
-      const hostname = window.location.hostname;
-      const protocol = window.location.protocol;
-      const directApiUrl = `${protocol}//${hostname}:5002/health`;
-      
-      console.log('Attempting to connect to direct API at:', directApiUrl);
-      
+      // Use the unified Express server - no port specification
       try {
-        const directResponse = await fetch(directApiUrl, {
+        const response = await fetch('/api/agent/health', {
           headers: {
             'Accept': 'application/json',
             'X-Test-Admin': 'true'
           }
         });
         
-        // Check if we got a proper response from direct API
-        if (directResponse.ok) {
-          const directData = await directResponse.json();
-          console.log('Direct API agent health response:', directData);
-          return directData;
-        } else {
-          console.warn('Direct API request failed with status:', directResponse.status, 'Falling back to standard API');
-        }
-      } catch (directError) {
-        console.warn('Direct API call failed, falling back to standard API:', directError);
-      }
-      
-      // Fall back to original API route
-      try {
-        // Try the direct-agent router in the main API
-        const response = await fetch('/api/direct-agent/health', {
-          headers: {
-            'Accept': 'application/json',
-            'X-Test-Admin': 'true'
-          }
-        });
-        
-        // Check if we got a proper response from main API
+        // Check if we got a proper response
         if (response.ok) {
           const data = await response.json();
-          console.log('Agent health response from direct-agent route:', data);
+          console.log('Agent health response:', data);
           return data;
         } else {
-          // Last resort, try original endpoint
-          const fallbackResponse = await fetch('/api/my-agent/health');
-          const fallbackData = await fallbackResponse.json();
-          console.log('Agent health response from fallback route:', fallbackData);
-          return fallbackData;
+          console.warn('API request failed with status:', response.status);
+          throw new Error('Failed to check agent health');
         }
       } catch (error) {
         console.error('Error checking API key status:', error);

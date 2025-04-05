@@ -2,6 +2,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express, { Request, Response, NextFunction } from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import routes from './routes';
 import { setupVite, serveStatic, log } from './vite';
 import './override-console.js';
@@ -10,7 +13,10 @@ import { pythonServiceManager } from './services/python-service-manager';
 import { storage } from './storage';
 import { initializeOpenAI } from './utils/openai';
 import rateLimit from 'express-rate-limit';
-import { body, validationResult } from 'express-validator';
+
+// Setup __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 console.log(">>> Starting server/index.ts <<<");
 
@@ -47,11 +53,19 @@ app.use((req, res, next) => {
   next();
 });
 
-// Rate limiting
+// Enable trust proxy for Express first
+app.set('trust proxy', 1);
+
+// Then configure rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 1000, // Allow many more requests
+  standardHeaders: true,
+  legacyHeaders: false
+  // trustProxy removed as it's not a valid property
 });
+
+// Apply rate limiting
 app.use(limiter);
 
 // Error handler middleware
@@ -75,7 +89,11 @@ app.use(errorHandler);
 
   initializeOpenAI();
 
+  // Use routes first for API endpoints
   app.use(routes);
+  
+  // Let Vite handle static files and SPA routing in development mode
+  // setupVite() will be called later in the code
 
   const server = app.listen(0, () => {
     const port = process.env.PORT || 5000;

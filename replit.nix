@@ -1,5 +1,6 @@
-{pkgs}: {
+{ pkgs }: {
   deps = [
+    pkgs.nodejs_20  # הוספנו Node.js 20 בשביל לתמוך ב-npm
     pkgs.mongodb
     pkgs.rustc
     pkgs.openssl

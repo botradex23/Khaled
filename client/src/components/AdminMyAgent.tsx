@@ -41,7 +41,7 @@ export default function AdminMyAgent() {
   const checkAgentHealth = async () => {
     setAgentHealth('loading');
     try {
-      const response = await fetch('/api/agent/direct-health', {
+      const response = await fetch('/api/agent/health', {
         headers: {
           'Accept': 'application/json',
           'X-Test-Admin': 'true'

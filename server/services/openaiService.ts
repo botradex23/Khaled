@@ -11,13 +11,14 @@ let openaiApiKey: string | null = null;
  * Initialize OpenAI API key (used in health check route)
  */
 export function initializeOpenAI(): boolean {
+  // Always access the API key using the OPENAI_API_KEY environment variable
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey || apiKey.length < 30) {
     console.error('[OpenAI] Missing or invalid API key.');
     return false;
   }
   openaiApiKey = apiKey;
-  console.log('[OpenAI] API key initialized.');
+  console.log('[OpenAI] API key initialized:', apiKey.slice(0, 5) + '...');
   return true;
 }
 
