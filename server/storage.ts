@@ -31,6 +31,9 @@ export interface IStorage {
   // Connect to the database
   connect(): Promise<boolean>;
   
+  // Get database instance
+  getDb(): any;
+  
   // Database status check
   checkDatabaseStatus(): Promise<{
     connected: boolean;
@@ -240,6 +243,14 @@ export class MemStorage implements IStorage {
     // Memory storage is always connected
     this.isConnected = true;
     return true;
+  }
+  
+  /**
+   * Get the database instance
+   * For memory storage, this returns null since there's no actual database
+   */
+  getDb(): any {
+    return null;
   }
 
   /**

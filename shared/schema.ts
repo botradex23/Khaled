@@ -4,6 +4,13 @@ import { createInsertSchema } from 'drizzle-zod';
 import { relations } from 'drizzle-orm';
 import { z } from 'zod';
 
+// Message role enum
+export const MessageRoleEnum = {
+  SYSTEM: 'system',
+  ASSISTANT: 'assistant',
+  USER: 'user',
+} as const;
+
 // Enum for trade actions
 export const TradeActionEnum = {
   BUY: 'BUY',
@@ -224,6 +231,26 @@ export const tradeLogs = pgTable('trade_logs', {
   updated_at: timestamp('updated_at').defaultNow(),
 });
 
+// AI Agent conversations table - stores chat sessions
+export const conversations = pgTable('conversations', {
+  id: serial('id').primaryKey(),
+  sessionId: text('session_id').notNull().unique(), // Unique session identifier
+  userId: integer('user_id').references(() => users.id), // Associated user (optional)
+  title: text('title'), // Conversation title (e.g., first user message)
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// AI Agent messages table - stores individual messages in conversations
+export const messages = pgTable('messages', {
+  id: serial('id').primaryKey(),
+  conversationId: integer('conversation_id').notNull().references(() => conversations.id),
+  role: text('role').notNull(), // 'system', 'user', or 'assistant'
+  content: text('content').notNull(), // Message content
+  createdAt: timestamp('created_at').defaultNow(),
+  metadata: json('metadata'), // Additional message data (e.g., tokens used, model, etc.)
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   apiKeys: many(userApiKeys),
@@ -231,6 +258,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   paperAccounts: many(paperTradingAccounts),
   aiData: many(aiTradingData),
   riskSettings: one(riskSettings),
+  conversations: many(conversations),
 }));
 
 export const userApiKeysRelations = relations(userApiKeys, ({ one }) => ({
@@ -308,6 +336,21 @@ export const tradeLogsRelations = relations(tradeLogs, ({ one }) => ({
   }),
 }));
 
+export const conversationsRelations = relations(conversations, ({ one, many }) => ({
+  user: one(users, {
+    fields: [conversations.userId],
+    references: [users.id],
+  }),
+  messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  conversation: one(conversations, {
+    fields: [messages.conversationId],
+    references: [conversations.id],
+  }),
+}));
+
 // Insert schemas for validation
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertUserApiKeysSchema = createInsertSchema(userApiKeys).omit({ id: true, createdAt: true, updatedAt: true });
@@ -319,6 +362,8 @@ export const insertPaperTradingTradeSchema = createInsertSchema(paperTradingTrad
 export const insertAiTradingDataSchema = createInsertSchema(aiTradingData).omit({ id: true, timestamp: true });
 export const insertRiskSettingsSchema = createInsertSchema(riskSettings).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertTradeLogSchema = createInsertSchema(tradeLogs).omit({ id: true, timestamp: true, created_at: true, updated_at: true });
+export const insertConversationSchema = createInsertSchema(conversations).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
 
 // Type definitions
 export type User = typeof users.$inferSelect;
@@ -350,3 +395,15 @@ export type InsertRiskSettings = z.infer<typeof insertRiskSettingsSchema>;
 
 export type TradeLog = typeof tradeLogs.$inferSelect;
 export type InsertTradeLog = z.infer<typeof insertTradeLogSchema>;
+
+export type Conversation = typeof conversations.$inferSelect;
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+// Type for chat messages (used by OpenAI API)
+export type ChatMessage = {
+  role: typeof MessageRoleEnum[keyof typeof MessageRoleEnum];
+  content: string;
+};

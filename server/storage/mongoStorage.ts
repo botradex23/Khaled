@@ -64,6 +64,14 @@ export class MongoDBStorage implements IStorage {
     this.tradesCollection = null;
     this.riskSettingsCollection = null;
   }
+  
+  /**
+   * Get the database instance for direct access by other services
+   * @returns {any} MongoDB database instance
+   */
+  getDb(): any {
+    return this.db;
+  }
 
   /**
    * Connect to MongoDB database
