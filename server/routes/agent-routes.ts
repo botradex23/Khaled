@@ -9,7 +9,9 @@ import {
   readFile, 
   writeFile, 
   listFiles,
-  initializeOpenAI
+  initializeOpenAI,
+  validateOpenAIKey,
+  httpsRequest
 } from '../services/openaiService';
 import { ensureAuthenticated } from '../auth';
 
@@ -33,6 +35,13 @@ function ensureTestAdminAuthenticated(req: Request, res: Response, next: NextFun
     console.log('❌ No X-Test-Admin header, allowing access anyway (open access mode)');
     next();
   }
+}
+
+// Setting up CORS headers helper function
+function setCorsHeaders(res: Response) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Test-Admin');
 }
 
 // Add a separate endpoint with a unique name that's less likely to be intercepted by Vite
@@ -362,6 +371,182 @@ router.post('/write-file', ensureTestAdminAuthenticated, async (req: Request, re
     res.status(500).json({ 
       success: false, 
       message: error instanceof Error ? error.message : 'Unknown error' 
+    });
+  }
+});
+
+// CORS Preflight handler
+router.options('*', (req: Request, res: Response) => {
+  setCorsHeaders(res);
+  res.status(200).end();
+});
+
+//
+// Direct Agent API Server Endpoints
+// These endpoints match the functionality from the standalone direct-agent-server.js
+//
+
+// Simple health check endpoint that returns a 200 response with a JSON payload
+router.get('/direct-health', (req: Request, res: Response) => {
+  console.log('Direct agent health check requested');
+  setCorsHeaders(res);
+  res.setHeader('Content-Type', 'application/json');
+  
+  res.json({
+    success: true,
+    message: 'Direct agent server is running (integrated)',
+    apiKeyAvailable: !!process.env.OPENAI_API_KEY,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Validate OpenAI API key endpoint
+router.get('/validate-key', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
+  console.log('OpenAI key validation requested');
+  setCorsHeaders(res);
+  res.setHeader('Content-Type', 'application/json');
+  
+  const validationResult = await validateOpenAIKey();
+  
+  res.json({
+    ...validationResult,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Direct chat endpoint (matches the /chat endpoint in direct-agent-server.js)
+router.post('/direct-chat', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
+  console.log('Direct chat request received');
+  setCorsHeaders(res);
+  res.setHeader('Content-Type', 'application/json');
+  
+  try {
+    const { prompt, systemPrompt } = req.body;
+    
+    if (!prompt) {
+      return res.status(400).json({
+        success: false,
+        message: 'Prompt is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    console.log('Processing direct chat request with prompt length:', prompt.length);
+    const response = await getChatCompletion(prompt, systemPrompt);
+    
+    res.json({
+      success: true,
+      response,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in direct chat endpoint:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Direct list files endpoint (matches the /files endpoint in direct-agent-server.js)
+router.post('/direct-files', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
+  console.log('Direct list files request received');
+  setCorsHeaders(res);
+  res.setHeader('Content-Type', 'application/json');
+  
+  try {
+    const { directory } = req.body;
+    
+    if (!directory) {
+      return res.status(400).json({
+        success: false,
+        message: 'Directory path is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Ensure the path is within the project
+    const normalizedPath = path.normalize(directory);
+    if (normalizedPath.startsWith('..') || path.isAbsolute(normalizedPath)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid directory path. Must be relative to project root.',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    const projectPath = path.resolve(process.cwd(), normalizedPath);
+    console.log(`Listing files in directory: ${projectPath}`);
+    
+    const files = await listFiles(projectPath);
+    
+    res.json({
+      success: true,
+      files,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in direct list files endpoint:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Direct read file endpoint (matches the /read-file endpoint in direct-agent-server.js)
+router.post('/direct-read-file', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
+  console.log('Direct read file request received');
+  setCorsHeaders(res);
+  res.setHeader('Content-Type', 'application/json');
+  
+  try {
+    const { filePath } = req.body;
+    
+    if (!filePath) {
+      return res.status(400).json({
+        success: false,
+        message: 'File path is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Ensure the path is within the project
+    const normalizedPath = path.normalize(filePath);
+    if (normalizedPath.startsWith('..') || path.isAbsolute(normalizedPath)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid file path. Must be relative to project root.',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    const fullPath = path.resolve(process.cwd(), normalizedPath);
+    console.log(`Reading file: ${fullPath}`);
+    
+    const content = await readFile(fullPath);
+    
+    if (content === null) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found or could not be read',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    res.json({
+      success: true,
+      content,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in direct read file endpoint:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
     });
   }
 });

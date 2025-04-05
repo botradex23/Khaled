@@ -397,9 +397,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   import('./routes/agent-health-direct').then(agentHealthRouter => {
     // Register without the /api prefix to further avoid Vite interception
     app.use("/direct-check", agentHealthRouter.default);
-    console.log('Direct Agent Health Check route registered to /direct-check/agent-health-direct-check-123456789.json');
+    app.use("/direct-json-check", agentHealthRouter.default);
+    app.get("/agent-health-special-check.json", (req, res) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.json({
+        success: true,
+        message: 'Direct agent API health check successful',
+        timestamp: new Date().toISOString()
+      });
+    });
+    console.log('Multiple direct agent health check routes registered to bypass Vite');
   }).catch(err => {
     console.error('Failed to register Direct Agent Health Check route:', err);
+  });
+  
+  // Direct JSON Test routes (to bypass Vite middleware)
+  import('./routes/direct-json-test').then(directJsonTestRouter => {
+    // Register without the /api prefix to further avoid Vite interception
+    app.use("/direct-test", directJsonTestRouter.default);
+    app.use("/api-no-vite", directJsonTestRouter.default);
+    app.use("/test-json", directJsonTestRouter.default);
+    console.log('Direct JSON test routes registered to multiple paths to bypass Vite');
+  }).catch(err => {
+    console.error('Failed to register Direct JSON test routes:', err);
   });
 
   // CommonJS Direct Agent Bypass routes (to avoid Vite middleware completely)

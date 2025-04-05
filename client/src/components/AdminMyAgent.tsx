@@ -44,17 +44,17 @@ export default function AdminMyAgent() {
     checkAgentHealth();
   }, []);
   
-  // Test the new merged agent API
+  // Test the integrated agent API
   const testAuthFix = async () => {
     try {
-      console.log('Testing agent API authentication...');
+      console.log('Testing integrated agent API...');
       console.log('Current URL:', window.location.href);
       
-      // Now using the merged agent API
-      console.log('Attempting agent API health check at: /api/agent/health');
+      // Now using the direct health endpoint for the integrated agent API
+      console.log('Attempting direct agent API health check at: /api/agent/direct-health');
       
       // Try agent API with the test header
-      const response = await fetch('/api/agent/health', {
+      const response = await fetch('/api/agent/direct-health', {
         headers: {
           'Accept': 'application/json',
           'X-Test-Admin': 'true'
@@ -76,7 +76,7 @@ export default function AdminMyAgent() {
       toast({
         title: response.ok ? 'Agent API Success' : 'Agent API Failed',
         description: response.ok 
-          ? 'Successfully connected to the merged agent API' 
+          ? 'Successfully connected to the integrated agent API' 
           : `Connection failed: ${data.message || 'Unknown error'}`,
         variant: response.ok ? 'default' : 'destructive',
       });
@@ -96,11 +96,11 @@ export default function AdminMyAgent() {
       console.log('Fetching agent health status...');
       console.log('Current URL:', window.location.href);
       
-      // Check the merged agent API health endpoint
-      console.log('Attempting to connect to merged agent API at: /api/agent/health');
+      // Try the new integrated agent direct health endpoint first
+      console.log('Attempting to connect to integrated agent API at: /api/agent/direct-health');
       
       // Try agent API with the test header
-      const response = await fetch('/api/agent/health', {
+      const response = await fetch('/api/agent/direct-health', {
         headers: {
           'Accept': 'application/json',
           'X-Test-Admin': 'true'
@@ -120,43 +120,72 @@ export default function AdminMyAgent() {
       console.log('Agent health response:', data);
       
       if (response.ok && data.success === true) {
-        console.log('Agent is available - OpenAI service functioning properly');
-        console.log('Authentication info:', data.authentication || 'No authentication info provided');
+        console.log('Agent is available (direct endpoint) - OpenAI service functioning properly');
         setAgentHealth('available');
       } else {
-        // Fall back to legacy my-agent endpoint for backward compatibility
+        // Fall back to standard agent health endpoint
         try {
-          console.log('Trying legacy API endpoint with auth header...');
-          const legacyResponse = await fetch('/api/my-agent/health', { // Keep legacy endpoint as fallback
+          console.log('Trying standard agent health endpoint...');
+          const standardResponse = await fetch('/api/agent/health', {
             headers: {
               'Accept': 'application/json',
               'X-Test-Admin': 'true'
             }
           });
           
-          const legacyData = await legacyResponse.json();
-          console.log('Legacy agent health response:', legacyData);
+          const standardData = await standardResponse.json();
+          console.log('Standard agent health response:', standardData);
           
-          if (legacyResponse.ok && legacyData.success === true) {
-            console.log('Agent is available via legacy endpoint - OpenAI service functioning properly');
+          if (standardResponse.ok && standardData.success === true) {
+            console.log('Agent is available via standard endpoint - OpenAI service functioning properly');
+            console.log('Authentication info:', standardData.authentication || 'No authentication info provided');
             setAgentHealth('available');
             return;
           }
-        } catch (legacyError) {
-          console.error('Legacy endpoint check failed:', legacyError);
+          
+          // Fall back to legacy my-agent endpoint for backward compatibility
+          try {
+            console.log('Trying legacy API endpoint with auth header...');
+            const legacyResponse = await fetch('/api/my-agent/health', { // Keep legacy endpoint as fallback
+              headers: {
+                'Accept': 'application/json',
+                'X-Test-Admin': 'true'
+              }
+            });
+            
+            const legacyData = await legacyResponse.json();
+            console.log('Legacy agent health response:', legacyData);
+            
+            if (legacyResponse.ok && legacyData.success === true) {
+              console.log('Agent is available via legacy endpoint - OpenAI service functioning properly');
+              setAgentHealth('available');
+              return;
+            }
+          } catch (legacyError) {
+            console.error('Legacy endpoint check failed:', legacyError);
+          }
+          
+          console.error('Agent is unavailable:', standardData.message || 'Unknown error');
+          console.error('Error details:', standardData.error || 'No detailed error provided');
+          console.error('Authentication info:', standardData.authentication || 'No authentication info provided');
+          setAgentHealth('unavailable');
+          
+          // Show error toast with specific information
+          toast({
+            title: 'Agent Unavailable',
+            description: standardData.message || 'The AI agent is currently unavailable. Please check your OpenAI API key.',
+            variant: 'destructive',
+          });
+        } catch (standardError) {
+          console.error('Standard endpoint check failed:', standardError);
+          setAgentHealth('unavailable');
+          
+          toast({
+            title: 'Agent Unavailable',
+            description: data.message || 'The AI agent is currently unavailable. Please check your OpenAI API key.',
+            variant: 'destructive',
+          });
         }
-        
-        console.error('Agent is unavailable:', data.message || 'Unknown error');
-        console.error('Error details:', data.error || 'No detailed error provided');
-        console.error('Authentication info:', data.authentication || 'No authentication info provided');
-        setAgentHealth('unavailable');
-        
-        // Show error toast with specific information
-        toast({
-          title: 'Agent Unavailable',
-          description: data.message || 'The AI agent is currently unavailable. Please check your OpenAI API key.',
-          variant: 'destructive',
-        });
       }
     } catch (error) {
       console.error('Failed to check agent health:', error);

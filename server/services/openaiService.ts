@@ -1,11 +1,20 @@
 import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
+import https from 'https';
 
 // Interface for message format expected by OpenAI API
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
+}
+
+// Interface for HTTPS request options
+interface HttpsRequestOptions {
+  hostname: string;
+  path: string;
+  method: string;
+  headers: Record<string, string>;
 }
 
 // Initialize OpenAI API key for direct API calls
@@ -43,6 +52,93 @@ export function getOpenAIApiKey() {
     return initializeOpenAI() ? openaiApiKey : null;
   }
   return openaiApiKey;
+}
+
+/**
+ * Make a simple HTTPS request
+ * @param options HTTPS request options
+ * @param data Request body data (optional)
+ */
+export function httpsRequest(options: HttpsRequestOptions, data: any = null): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      const chunks: Buffer[] = [];
+      
+      res.on('data', (chunk) => chunks.push(chunk));
+      
+      res.on('end', () => {
+        const body = Buffer.concat(chunks).toString();
+        let parsedBody;
+        
+        try {
+          parsedBody = JSON.parse(body);
+        } catch (e) {
+          parsedBody = body;
+        }
+        
+        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(parsedBody);
+        } else {
+          reject(new Error(`Request failed with status code ${res.statusCode}: ${JSON.stringify(parsedBody)}`));
+        }
+      });
+    });
+    
+    req.on('error', reject);
+    
+    if (data) {
+      req.write(typeof data === 'string' ? data : JSON.stringify(data));
+    }
+    
+    req.end();
+  });
+}
+
+/**
+ * Check if OpenAI API key is valid by making a minimal test call
+ */
+export async function validateOpenAIKey(): Promise<{ success: boolean; message: string }> {
+  const apiKey = getOpenAIApiKey();
+  
+  if (!apiKey) {
+    return { 
+      success: false, 
+      message: 'OpenAI API key is not configured' 
+    };
+  }
+  
+  try {
+    // Make a minimal API call to verify the key
+    console.log('Testing OpenAI API with a minimal request');
+    await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: "Say hello" }
+        ],
+        max_tokens: 5, // Use minimal tokens to save quota
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        }
+      }
+    );
+    
+    return {
+      success: true,
+      message: 'OpenAI API key is valid and working'
+    };
+  } catch (error: any) {
+    console.error('Error validating OpenAI key:', error);
+    return {
+      success: false,
+      message: `OpenAI API key validation failed: ${error.message || 'Unknown error'}`
+    };
+  }
 }
 
 /**
