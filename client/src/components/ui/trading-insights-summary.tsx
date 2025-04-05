@@ -196,11 +196,28 @@ export function TradingInsightsSummary() {
     timestamp,
     isLoadingSignals,
     refetchSignals,
+    signalsError,
   } = useAiTrading();
   
   const [showInsights, setShowInsights] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [confetti, setConfetti] = useState<React.ReactNode[]>([]);
+  const [fetchAttempts, setFetchAttempts] = useState(0);
+  
+  // Handle data fetching with retries
+  const handleRefetch = () => {
+    console.log('Manually refreshing trading signals data...');
+    setFetchAttempts(prev => prev + 1);
+    refetchSignals();
+  };
+  
+  // Log for debugging
+  useEffect(() => {
+    console.log('Trading Insights Summary - Current signals:', signals);
+    console.log('Trading Insights Summary - Loading state:', isLoadingSignals);
+    console.log('Trading Insights Summary - Error state:', signalsError);
+    console.log('Trading Insights Summary - Fetch attempts:', fetchAttempts);
+  }, [signals, isLoadingSignals, signalsError, fetchAttempts]);
   
   // Format relative time
   const lastUpdated = timestamp
@@ -279,18 +296,22 @@ export function TradingInsightsSummary() {
               <div className="flex items-center text-sm text-muted-foreground">
                 <Clock className="h-4 w-4 mr-1" />
                 Last updated: {lastUpdated}
+                {signalsError && (
+                  <span className="ml-2 text-red-500 flex items-center">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Error fetching data
+                  </span>
+                )}
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex items-center gap-1"
-                onClick={() => {
-                  refetchSignals();
-                }}
+                className={`flex items-center gap-1 ${signalsError ? 'border-red-500 text-red-500 hover:bg-red-50' : ''}`}
+                onClick={handleRefetch}
                 disabled={isLoadingSignals}
               >
                 <RefreshCw className="h-3 w-3" />
-                Refresh
+                {signalsError ? 'Retry' : 'Refresh'} {fetchAttempts > 0 ? `(${fetchAttempts})` : ''}
               </Button>
             </div>
             
@@ -298,6 +319,20 @@ export function TradingInsightsSummary() {
               <div className="space-y-4">
                 <Skeleton className="h-48 w-full" />
                 <Skeleton className="h-48 w-full" />
+              </div>
+            ) : signalsError ? (
+              <div className="text-center py-12 border border-red-200 rounded-lg bg-red-50">
+                <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+                <h3 className="text-xl font-medium text-red-700">Error Loading Signals</h3>
+                <p className="text-red-600 mb-4">We couldn't load the trading signals at this time.</p>
+                <Button 
+                  onClick={handleRefetch}
+                  variant="destructive"
+                  className="mt-2"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Try Again
+                </Button>
               </div>
             ) : (
               <Tabs defaultValue="buy" className="w-full">
@@ -358,33 +393,46 @@ export function TradingInsightsSummary() {
                 <BarChart3 className="h-5 w-5" />
                 Market Sentiment Overview
               </h3>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Overall Market Sentiment</span>
-                      <Badge variant={topBuySignals.length > topSellSignals.length ? "default" : "destructive"}
-                             className={topBuySignals.length > topSellSignals.length ? "bg-green-500 hover:bg-green-600" : ""}>
-                        {topBuySignals.length > topSellSignals.length ? "Bullish" : "Bearish"}
-                      </Badge>
+              
+              {signalsError ? (
+                <Card className="border-red-200">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col items-center justify-center text-center py-6">
+                      <AlertCircle className="h-8 w-8 text-red-500 mb-2" />
+                      <h4 className="text-lg font-medium text-red-700">Market Sentiment Unavailable</h4>
+                      <p className="text-sm text-red-600 mt-1 mb-3">Unable to calculate market sentiment due to data loading issues.</p>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Strongest Buy Signal</span>
-                      <span className="font-medium">
-                        {topBuySignals.length > 0 ? topBuySignals[0].symbol : "None"}
-                        {topBuySignals.length > 0 && ` (${Math.round(topBuySignals[0].confidence * 100)}%)`}
-                      </span>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Overall Market Sentiment</span>
+                        <Badge variant={topBuySignals.length > topSellSignals.length ? "default" : "destructive"}
+                              className={topBuySignals.length > topSellSignals.length ? "bg-green-500 hover:bg-green-600" : ""}>
+                          {topBuySignals.length > topSellSignals.length ? "Bullish" : "Bearish"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Strongest Buy Signal</span>
+                        <span className="font-medium">
+                          {topBuySignals.length > 0 ? topBuySignals[0].symbol : "None"}
+                          {topBuySignals.length > 0 && ` (${Math.round(topBuySignals[0].confidence * 100)}%)`}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Strongest Sell Signal</span>
+                        <span className="font-medium">
+                          {topSellSignals.length > 0 ? topSellSignals[0].symbol : "None"}
+                          {topSellSignals.length > 0 && ` (${Math.round(topSellSignals[0].confidence * 100)}%)`}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Strongest Sell Signal</span>
-                      <span className="font-medium">
-                        {topSellSignals.length > 0 ? topSellSignals[0].symbol : "None"}
-                        {topSellSignals.length > 0 && ` (${Math.round(topSellSignals[0].confidence * 100)}%)`}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
           

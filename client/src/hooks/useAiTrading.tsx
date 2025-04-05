@@ -44,10 +44,28 @@ export function useAiTrading() {
     queryKey: ['/api/ai/trading/signals'],
     queryFn: async () => {
       try {
-        const res = await apiRequest('GET', '/api/ai/trading/signals');
-        return await res.json();
+        console.log('Fetching trading signals from API...');
+        // Direct fetch with more detailed error handling
+        const res = await fetch('/api/ai/trading/signals', {
+          credentials: 'include',  // Include cookies for auth if needed
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('API response error:', errorText);
+          throw new Error(`Failed to fetch signals: ${res.status} ${res.statusText} - ${errorText}`);
+        }
+        
+        const data = await res.json();
+        console.log('Successfully fetched trading signals:', data);
+        return data;
       } catch (error) {
         console.error('Failed to fetch AI trading signals:', error);
+        // Return a properly structured fallback response
         return {
           success: false,
           signals: [],
@@ -79,8 +97,31 @@ export function useAiTrading() {
   // Execute trade mutation
   const executeTradeMutation = useMutation({
     mutationFn: async ({ signalId, amount }: { signalId: string; amount?: number }) => {
-      const res = await apiRequest('POST', '/api/ai/trading/execute', { signalId, amount });
-      return await res.json() as TradeResult;
+      console.log('Executing trade with signal:', signalId, 'amount:', amount);
+      try {
+        const res = await fetch('/api/ai/trading/execute', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 
+            'Accept': 'application/json',
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify({ signalId, amount })
+        });
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('Trade execution error:', errorText);
+          throw new Error(`Failed to execute trade: ${res.status} ${res.statusText} - ${errorText}`);
+        }
+        
+        const data = await res.json() as TradeResult;
+        console.log('Trade executed successfully:', data);
+        return data;
+      } catch (error) {
+        console.error('Trade execution failed:', error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       if (data.success) {
@@ -110,8 +151,31 @@ export function useAiTrading() {
   // Train AI model mutation
   const trainModelMutation = useMutation({
     mutationFn: async (symbol: string) => {
-      const res = await apiRequest('POST', '/api/ai/trading/train', { symbol });
-      return await res.json();
+      console.log('Training AI model for symbol:', symbol);
+      try {
+        const res = await fetch('/api/ai/trading/train', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 
+            'Accept': 'application/json',
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify({ symbol })
+        });
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('Model training error:', errorText);
+          throw new Error(`Failed to train model: ${res.status} ${res.statusText} - ${errorText}`);
+        }
+        
+        const data = await res.json();
+        console.log('Model trained successfully:', data);
+        return data;
+      } catch (error) {
+        console.error('Model training failed:', error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       if (data.success) {
