@@ -1,72 +1,171 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { EventEmitter } from 'events';
-import https from 'https';
+import WebSocket from 'ws';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import { SocksProxyAgent } from 'socks-proxy-agent';
 
 // Base URLs for Binance API
 const BINANCE_BASE_URL = 'https://api.binance.com';
 const BINANCE_TEST_URL = 'https://testnet.binance.vision';
+const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws';
+const BINANCE_TEST_WS_URL = 'wss://testnet.binance.vision/ws';
 
-// Proxy configuration for bypassing geo-restrictions 
-const USE_PROXY = true; // Hardcoded to true to ensure proxy is used
-const PROXY_USERNAME = "xzwdlrlk"; // New proxy credentials from Webshare
-const PROXY_PASSWORD = "yrv2cpbyo1oa";
-const PROXY_IP = '45.151.162.198'; // Updated proxy IP from Webshare list
-const PROXY_PORT = '6600';      // Updated proxy port
+// Proxy configuration - load from environment variables for security
+const USE_PROXY = process.env.USE_PROXY === 'true' || true; // Default to true
+const PROXY_USERNAME = process.env.PROXY_USERNAME || "xzwdlrlk"; // Fallback to current working proxy
+const PROXY_PASSWORD = process.env.PROXY_PASSWORD || "yrv2cpbyo1oa";
+const PROXY_IP = process.env.PROXY_IP || '45.151.162.198'; 
+const PROXY_PORT = process.env.PROXY_PORT || '6600';
+const PROXY_PROTOCOL = process.env.PROXY_PROTOCOL || 'http';
+const PROXY_ENCODING_METHOD = process.env.PROXY_ENCODING_METHOD || 'quote_plus';
+const FALLBACK_TO_DIRECT = process.env.FALLBACK_TO_DIRECT === 'true' || true; // Default to true
 
 /**
- * Enhanced Axios instance creator for reliable Binance API access
- * Creates a properly configured instance with proxy support when needed
+ * Create a properly configured Axios instance with proxy support
+ * @returns Configured Axios instance for Binance API access
  */
-const createAxiosInstance = () => {
-  if (USE_PROXY) {
-    try {
-      // Configure a standard HTTP proxy URL
-      const proxyUrl = `http://${PROXY_USERNAME}:${PROXY_PASSWORD}@${PROXY_IP}:${PROXY_PORT}`;
+function createAxiosInstance(baseUrl: string): AxiosInstance {
+  try {
+    if (USE_PROXY && PROXY_IP && PROXY_PORT) {
       console.log(`Using proxy connection to Binance API via ${PROXY_IP}:${PROXY_PORT}`);
       
-      // Set environment variables for global proxy configuration
-      process.env.HTTP_PROXY = proxyUrl;
-      process.env.HTTPS_PROXY = proxyUrl;
-      
-      // Return a properly configured axios instance with proxy settings
-      return axios.create({
-        timeout: 15000, // 15 second timeout for slower proxy connections
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Accept': 'application/json',
-          'X-MBX-APIKEY': process.env.BINANCE_API_KEY || '' // Add API key if available
-        },
-        // Direct proxy configuration
-        proxy: {
-          host: PROXY_IP,
-          port: parseInt(PROXY_PORT, 10),
-          auth: {
-            username: PROXY_USERNAME,
-            password: PROXY_PASSWORD
+      try {
+        // Create proxy URL based on authentication requirements
+        let proxyUrl = '';
+        if (PROXY_USERNAME && PROXY_PASSWORD) {
+          // Apply URL encoding based on the method specified
+          let encodedUsername = PROXY_USERNAME;
+          let encodedPassword = PROXY_PASSWORD;
+
+          // Encode credentials based on encoding method
+          if (PROXY_ENCODING_METHOD === 'none') {
+            // No encoding
+          } else if (PROXY_ENCODING_METHOD === 'quote') {
+            encodedUsername = encodeURIComponent(PROXY_USERNAME);
+            encodedPassword = encodeURIComponent(PROXY_PASSWORD);
+          } else { // Default to quote_plus
+            encodedUsername = encodeURIComponent(PROXY_USERNAME).replace(/%20/g, '+');
+            encodedPassword = encodeURIComponent(PROXY_PASSWORD).replace(/%20/g, '+');
+          }
+
+          proxyUrl = `${PROXY_PROTOCOL}://${encodedUsername}:${encodedPassword}@${PROXY_IP}:${PROXY_PORT}`;
+          console.log(`Configured authenticated proxy for Binance API via ${PROXY_IP}:${PROXY_PORT}`);
+        } else {
+          proxyUrl = `${PROXY_PROTOCOL}://${PROXY_IP}:${PROXY_PORT}`;
+          console.log(`Configured unauthenticated proxy for Binance API via ${PROXY_IP}:${PROXY_PORT}`);
+        }
+
+        // Create proxy agent
+        const proxyAgent = PROXY_PROTOCOL.includes('socks') 
+          ? new SocksProxyAgent(proxyUrl)
+          : new HttpsProxyAgent(proxyUrl);
+
+        // Set environment variables for global proxy configuration
+        process.env.HTTP_PROXY = proxyUrl;
+        process.env.HTTPS_PROXY = proxyUrl;
+          
+        // Configure axios with proper headers and proxy
+        return axios.create({
+          baseURL: baseUrl,
+          timeout: 15000, // 15 second timeout for slower proxy connections
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept': 'application/json',
+            'X-MBX-APIKEY': process.env.BINANCE_API_KEY || '' // Add API key if available
           },
-          protocol: 'http'
-        },
-        // Enhanced error handling
-        validateStatus: (status) => {
-          return (status >= 200 && status < 300) || status === 429; // Handle rate limiting
+          // Direct proxy configuration
+          proxy: {
+            host: PROXY_IP,
+            port: parseInt(PROXY_PORT, 10),
+            auth: {
+              username: PROXY_USERNAME,
+              password: PROXY_PASSWORD
+            },
+            protocol: PROXY_PROTOCOL
+          },
+          // Also pass httpsAgent for HTTPS requests
+          httpsAgent: proxyAgent,
+          // Enhanced error handling
+          validateStatus: (status) => {
+            return (status >= 200 && status < 300) || status === 429; // Handle rate limiting
+          }
+        });
+      } catch (error) {
+        console.error('Failed to create proxy-enabled axios instance:', error);
+        if (!FALLBACK_TO_DIRECT) {
+          throw new Error('Proxy configuration failed and fallback is disabled');
+        }
+        console.log('Falling back to direct connection...');
+        return axios.create({
+          baseURL: baseUrl,
+          timeout: 10000,
+          headers: {
+            'X-MBX-APIKEY': process.env.BINANCE_API_KEY || ''
+          }
+        });
+      }
+    } else {
+      console.log('Using direct connection to Binance API (proxy disabled)');
+      return axios.create({
+        baseURL: baseUrl,
+        timeout: 10000,
+        headers: {
+          'X-MBX-APIKEY': process.env.BINANCE_API_KEY || ''
         }
       });
-    } catch (error) {
-      console.error('Failed to create proxy-enabled axios instance:', error);
-      console.log('Falling back to direct connection');
-      return axios;
     }
-  } else {
-    console.log('Using direct connection to Binance API (proxy disabled)');
+  } catch (error) {
+    console.error('Failed to create axios instance:', error);
+    // Return a basic axios instance as fallback
     return axios.create({
-      timeout: 10000,
-      headers: {
-        'X-MBX-APIKEY': process.env.BINANCE_API_KEY || ''
-      }
+      baseURL: baseUrl,
+      timeout: 10000
     });
   }
-};
+}
+
+/**
+ * Create a WebSocket with proxy support
+ * @param url WebSocket URL
+ * @returns WebSocket instance
+ */
+function createWebSocket(url: string): WebSocket {
+  try {
+    if (USE_PROXY && PROXY_IP && PROXY_PORT && (PROXY_USERNAME && PROXY_PASSWORD)) {
+      console.log(`Creating WebSocket with proxy via ${PROXY_IP}:${PROXY_PORT}`);
+      
+      // Create proxy URL with appropriate encoding
+      let encodedUsername = PROXY_USERNAME;
+      let encodedPassword = PROXY_PASSWORD;
+      
+      // Apply encoding based on method
+      if (PROXY_ENCODING_METHOD === 'quote') {
+        encodedUsername = encodeURIComponent(PROXY_USERNAME);
+        encodedPassword = encodeURIComponent(PROXY_PASSWORD);
+      } else if (PROXY_ENCODING_METHOD === 'quote_plus') {
+        encodedUsername = encodeURIComponent(PROXY_USERNAME).replace(/%20/g, '+');
+        encodedPassword = encodeURIComponent(PROXY_PASSWORD).replace(/%20/g, '+');
+      }
+      
+      // Create proxy agent
+      const proxyUrl = `${PROXY_PROTOCOL}://${encodedUsername}:${encodedPassword}@${PROXY_IP}:${PROXY_PORT}`;
+      const agent = PROXY_PROTOCOL.includes('socks') 
+        ? new SocksProxyAgent(proxyUrl)
+        : new HttpsProxyAgent(proxyUrl);
+      
+      // Create WebSocket with proxy agent
+      return new WebSocket(url, { agent });
+    } else {
+      console.log('Creating direct WebSocket connection');
+      return new WebSocket(url);
+    }
+  } catch (error) {
+    console.error('Failed to create WebSocket with proxy:', error);
+    console.log('Falling back to direct WebSocket connection');
+    return new WebSocket(url);
+  }
+}
 
 // ממשק עבור נתוני המחיר בזמן אמת
 export interface LivePriceUpdate {
@@ -77,17 +176,27 @@ export interface LivePriceUpdate {
 }
 
 /**
- * Service for fetching market price data from Binance public API
- * מאפשר גם עדכון מחירים בזמן אמת באמצעות WebSocket
+ * Service for fetching market price data from Binance API with enhanced proxy support
  */
 export class BinanceMarketPriceService extends EventEmitter {
+  private axiosInstance: AxiosInstance;
   private baseUrl: string;
-  private livePrices: Record<string, number> = {}; // שמירת מחירים עדכניים
+  private wsBaseUrl: string;
+  private wsConnections: WebSocket[] = [];
+  private livePrices: Record<string, number> = {}; // Latest prices
   private lastUpdateTime: number = 0; // Track the last update time
-  
+  private _lastSimulatedPrices: Record<string, string> = {}; // For simulation fallback
+  private useTestnet: boolean;
+  private reconnectAttempts: number = 0;
+  private readonly MAX_RECONNECT_ATTEMPTS = 5;
+  private reconnectTimeout?: NodeJS.Timeout;
+
   constructor(useTestnet: boolean = false) {
     super();
+    this.useTestnet = useTestnet;
     this.baseUrl = useTestnet ? BINANCE_TEST_URL : BINANCE_BASE_URL;
+    this.wsBaseUrl = useTestnet ? BINANCE_TEST_WS_URL : BINANCE_WS_URL;
+    this.axiosInstance = createAxiosInstance(this.baseUrl);
     console.log(`Binance Market Price Service initialized with base URL: ${this.baseUrl}`);
   }
   
@@ -222,7 +331,7 @@ export class BinanceMarketPriceService extends EventEmitter {
   async getAllPrices(): Promise<BinanceTickerPrice[]> {
     try {
       // השתמש ב-Axios עם פרוקסי כשצריך
-      const axiosInstance = createAxiosInstance();
+      const axiosInstance = createAxiosInstance(this.baseUrl);
       
       try {
         const response = await axiosInstance.get(`${this.baseUrl}/api/v3/ticker/price`);
@@ -343,8 +452,7 @@ export class BinanceMarketPriceService extends EventEmitter {
     return simulatedPrices;
   }
   
-  // משתנה לשמירת המחירים האחרונים
-  private _lastSimulatedPrices: Record<string, string> = {};
+  // Variable was defined at the class level already
   
   /**
    * Get the current price for a specific symbol
@@ -365,7 +473,7 @@ export class BinanceMarketPriceService extends EventEmitter {
       }
       
       // השתמש ב-Axios עם פרוקסי כשצריך
-      const axiosInstance = createAxiosInstance();
+      const axiosInstance = createAxiosInstance(this.baseUrl);
       
       try {
         console.log(`Trying to fetch price for ${formattedSymbol} from Binance API...`);
@@ -490,7 +598,7 @@ export class BinanceMarketPriceService extends EventEmitter {
       }
       
       // השתמש ב-Axios עם פרוקסי כשצריך
-      const axiosInstance = createAxiosInstance();
+      const axiosInstance = createAxiosInstance(this.baseUrl);
       
       try {
         const response = await axiosInstance.get(
