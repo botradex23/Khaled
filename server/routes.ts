@@ -9,6 +9,15 @@ import databaseStatusRouter from './routes/database-status';
 
 const router = express.Router();
 
+// Special routes for direct admin agent page access
+router.get('/admin-my-agent', (_req, res) => {
+  res.redirect('/');
+});
+
+router.get('/admin/my-agent', (_req, res) => {
+  res.redirect('/');
+});
+
 // Main application routes
 router.use('/api/my-agent', myAgentRouter);
 router.use('/api/users', userRouter);
