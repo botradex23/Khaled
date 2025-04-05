@@ -83,6 +83,7 @@ function Router() {
       <Route path="/trade-logs" component={TradeLogsPage} />
       <Route path="/direct-prices" component={DirectPricesPage} />
       <Route path="/admin-my-agent" component={AdminMyAgentPage} />
+      <Route path="/admin/my-agent" component={AdminMyAgentPage} />
       <Route component={NotFound} />
     </Switch>
   );

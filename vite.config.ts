@@ -4,6 +4,7 @@ import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
 import path, { dirname } from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { fileURLToPath } from "url";
+import history from "connect-history-api-fallback"; // ✅ חדש
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -13,6 +14,12 @@ export default defineConfig({
     react(),
     runtimeErrorOverlay(),
     themePlugin(),
+    {
+      name: 'spa-fallback', // ✅ חדש
+      configureServer(server) {
+        server.middlewares.use(history());
+      }
+    },
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
