@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TradingInsightsSummary } from '@/components/ui/trading-insights-summary';
 import {
   ArrowUpRight,
   TrendingUp,
@@ -200,6 +201,14 @@ export default function EnhancedDashboard() {
             </Button>
           </motion.div>
         </div>
+        
+        {/* Trading Insights Summary with Confetti */}
+        <motion.div
+          variants={cardVariants}
+          className="mb-8 flex justify-center"
+        >
+          <TradingInsightsSummary />
+        </motion.div>
         
         {/* Main stats cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
