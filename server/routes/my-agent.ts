@@ -11,7 +11,7 @@ import {
   listFiles,
   initializeOpenAI
 } from '../services/openaiService';
-import { ensureAuthenticated } from '../auth';
+import { ensureAuthenticated } from '../middleware/auth';
 
 const router = Router();
 
@@ -20,7 +20,10 @@ function ensureAdmin(req: Request, res: Response, next: NextFunction) {
   console.log('=== ensureAdmin middleware called ===');
   console.log('Headers:', JSON.stringify(req.headers, null, 2));
   console.log('Has X-Test-Admin header:', !!req.headers['x-test-admin']);
-  console.log('User authenticated via session:', req.isAuthenticated());
+  
+  // Safely check authentication
+  const isAuthenticated = typeof req.isAuthenticated === 'function' && req.isAuthenticated();
+  console.log('User authenticated via session:', isAuthenticated);
   console.log('User in request:', req.user ? 'User object exists' : 'No user object');
   console.log('User admin status:', req.user ? (req.user as any).isAdmin : 'No user');
   console.log('User super admin status:', req.user ? (req.user as any).isSuperAdmin : 'No user');
@@ -35,12 +38,12 @@ function ensureAdmin(req: Request, res: Response, next: NextFunction) {
     next();
   }
   // Check for super admin (highest priority for regular authentication)
-  else if (req.isAuthenticated() && req.user && (req.user as any).isSuperAdmin) {
+  else if (isAuthenticated && req.user && (req.user as any).isSuperAdmin) {
     console.log('✅ User is authenticated and has super admin privileges - Allowing full access');
     next();
   }
   // Then check regular admin
-  else if (req.isAuthenticated() && req.user && (req.user as any).isAdmin) {
+  else if (isAuthenticated && req.user && (req.user as any).isAdmin) {
     console.log('✅ User is authenticated and has admin privileges - Allowing access');
     next();
   } else {
@@ -50,7 +53,7 @@ function ensureAdmin(req: Request, res: Response, next: NextFunction) {
       message: 'Admin access required',
       authStatus: {
         hasTestAdminHeader,
-        isAuthenticated: req.isAuthenticated(),
+        isAuthenticated: isAuthenticated,
         hasUser: !!req.user,
         userIsAdmin: req.user ? !!(req.user as any).isAdmin : false,
         userIsSuperAdmin: req.user ? !!(req.user as any).isSuperAdmin : false
@@ -63,25 +66,58 @@ function ensureAdmin(req: Request, res: Response, next: NextFunction) {
 initializeOpenAI();
 
 // Custom middleware to handle X-Test-Admin header for direct authentication
+// or to allow basic agent functionality for all users
 function ensureTestAdminAuthenticated(req: Request, res: Response, next: NextFunction) {
   console.log('=== ensureTestAdminAuthenticated middleware called ===');
   console.log('Headers:', JSON.stringify(req.headers, null, 2));
   console.log('Has X-Test-Admin header:', !!req.headers['x-test-admin']);
-  console.log('User authenticated via session:', req.isAuthenticated());
-  console.log('Session ID:', req.sessionID || 'No session ID');
-  console.log('Session data:', req.session ? 'Has session' : 'No session');
-  console.log('User in request:', req.user ? 'User object exists' : 'No user object');
+  
+  // Check if this is a health check request - allow it without authentication
+  const isHealthCheck = req.path === '/health' || req.originalUrl.includes('/health');
+  if (isHealthCheck) {
+    console.log('✅ Health check request, allowing without authentication');
+    next();
+    return;
+  }
+  
+  // Handle authentication check safely
+  let isUserAuthenticated = false;
+  try {
+    // Safely check if authenticated function exists and if the user is authenticated
+    isUserAuthenticated = typeof req.isAuthenticated === 'function' && req.isAuthenticated();
+    console.log('User authenticated via session:', isUserAuthenticated);
+    console.log('Session ID:', req.sessionID || 'No session ID');
+    console.log('Session data:', req.session ? 'Has session' : 'No session');
+    console.log('User in request:', req.user ? 'User object exists' : 'No user object');
+  } catch (e) {
+    console.log('Error checking authentication:', e);
+    isUserAuthenticated = false;
+  }
   
   // Check for the X-Test-Admin header (case insensitive check for extra safety)
   const headerKeys = Object.keys(req.headers).map(k => k.toLowerCase());
   const hasTestAdminHeader = headerKeys.includes('x-test-admin');
   
+  // Allow access if:
+  // 1. The X-Test-Admin header is present, OR
+  // 2. The user is authenticated
+  // This makes all agent features available to logged in users, without checking isAdmin
   if (hasTestAdminHeader) {
     console.log('✅ X-Test-Admin header detected, skipping standard authentication');
     next();
+  } else if (isUserAuthenticated) {
+    console.log('✅ User is authenticated, allowing access to agent features');
+    next();
   } else {
-    console.log('❌ No X-Test-Admin header found, falling back to standard authentication');
-    ensureAuthenticated(req, res, next);
+    console.log('❌ No valid authentication, access denied');
+    res.status(401).json({ 
+      success: false, 
+      message: 'Authentication required',
+      authStatus: {
+        hasTestAdminHeader: hasTestAdminHeader,
+        isAuthenticated: isUserAuthenticated
+      }
+    });
   }
 }
 
@@ -93,7 +129,7 @@ router.get('/health', ensureTestAdminAuthenticated, async (req: Request, res: Re
   console.log('OPENAI_API_KEY loaded:', !!process.env.OPENAI_API_KEY);
   console.log('Request IP:', req.ip);
   console.log('Request Headers:', JSON.stringify(req.headers, null, 2));
-  console.log('User authenticated via standard auth:', req.isAuthenticated());
+  console.log('User authenticated via standard auth:', typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false);
   console.log('X-Test-Admin header present:', !!req.headers['x-test-admin']);
   console.log('User status (if authenticated):', req.user);
   console.log('=============================================');
@@ -115,7 +151,7 @@ router.get('/health', ensureTestAdminAuthenticated, async (req: Request, res: Re
       message: 'OpenAI API Key is not set. Please configure the OPENAI_API_KEY environment variable.',
       envVarsAvailable: availableEnvVars.includes('OPENAI_API_KEY'),
       authentication: {
-        standardAuth: req.isAuthenticated(), 
+        standardAuth: typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false, 
         xTestAdmin: !!req.headers['x-test-admin'],
         userPresent: !!req.user
       }
@@ -130,7 +166,7 @@ router.get('/health', ensureTestAdminAuthenticated, async (req: Request, res: Re
       message: 'OpenAI API Key appears to be invalid (too short). Please check the API key format.',
       apiKeyLength: apiKey.length,
       authentication: {
-        standardAuth: req.isAuthenticated(), 
+        standardAuth: typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false, 
         xTestAdmin: !!req.headers['x-test-admin'],
         userPresent: !!req.user
       }
@@ -149,7 +185,7 @@ router.get('/health', ensureTestAdminAuthenticated, async (req: Request, res: Re
         apiKeyLength: apiKey.length,
         apiKeyPrefix: apiKey.substring(0, 3) + '...', // Only show first 3 chars for security
         authentication: {
-          standardAuth: req.isAuthenticated(), 
+          standardAuth: typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false, 
           xTestAdmin: !!req.headers['x-test-admin'],
           userPresent: !!req.user
         }
@@ -189,7 +225,7 @@ router.get('/health', ensureTestAdminAuthenticated, async (req: Request, res: Re
         quotaAvailable: true,
         model: 'gpt-4o-mini',
         authentication: {
-          standardAuth: req.isAuthenticated(), 
+          standardAuth: typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false, 
           xTestAdmin: !!req.headers['x-test-admin'],
           userPresent: !!req.user
         }
@@ -206,7 +242,7 @@ router.get('/health', ensureTestAdminAuthenticated, async (req: Request, res: Re
           apiKeyValid: true,
           quotaExceeded: true,
           authentication: {
-            standardAuth: req.isAuthenticated(), 
+            standardAuth: typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false, 
             xTestAdmin: !!req.headers['x-test-admin'],
             userPresent: !!req.user
           }
@@ -222,7 +258,7 @@ router.get('/health', ensureTestAdminAuthenticated, async (req: Request, res: Re
         apiKeyValid: true,
         apiError: true,
         authentication: {
-          standardAuth: req.isAuthenticated(), 
+          standardAuth: typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false, 
           xTestAdmin: !!req.headers['x-test-admin'],
           userPresent: !!req.user
         }
@@ -235,7 +271,7 @@ router.get('/health', ensureTestAdminAuthenticated, async (req: Request, res: Re
       message: 'Error checking OpenAI service: ' + (error instanceof Error ? error.message : 'Unknown error'),
       error: error instanceof Error ? error.message : 'Unknown error',
       authentication: {
-        standardAuth: req.isAuthenticated(), 
+        standardAuth: typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false, 
         xTestAdmin: !!req.headers['x-test-admin'],
         userPresent: !!req.user
       }
