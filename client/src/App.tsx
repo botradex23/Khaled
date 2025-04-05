@@ -38,6 +38,7 @@ import TradeLogsTestPage from "@/pages/trade-logs-test";
 import TradeLogsPage from "@/pages/trade-logs";
 import DirectPricesPage from "@/pages/DirectPricesPage";
 import AdminMyAgentPage from "@/pages/admin-my-agent";
+import { DiagnosticPage } from "@/pages/DiagnosticPage";
 
 function Router() {
   const { isAuthenticated, needsProfileCompletion, isLoading } = useAuth();
@@ -83,6 +84,7 @@ function Router() {
       <Route path="/trade-logs" component={TradeLogsPage} />
       <Route path="/direct-prices" component={DirectPricesPage} />
       <Route path="/admin-my-agent" component={AdminMyAgentPage} />
+      <Route path="/diagnostics" component={DiagnosticPage} />
       <Route component={NotFound} />
     </Switch>
   );

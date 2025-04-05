@@ -18,13 +18,23 @@ export async function apiRequest<T = any>(
   // Check if X-Test-Admin exists in localStorage and add it to headers if it does
   const testAdmin = localStorage.getItem('x-test-admin');
   
+  // Determine if we're in Replit environment
+  const isReplit = typeof window !== 'undefined' && window.location.hostname.includes('.replit.dev');
+  
+  // In Replit we need to use the full URL including origin
+  const fullUrl = isReplit && url.startsWith('/api') 
+    ? `${window.location.origin}${url}`
+    : url;
+    
+  console.log(`API Request to: ${fullUrl} (original URL: ${url})`);
+  
   const headers: Record<string, string> = {
     ...(data ? { "Content-Type": "application/json" } : {}),
     ...(testAdmin ? { "X-Test-Admin": testAdmin } : {}),
     ...(options?.headers || {})
   };
 
-  const res = await fetch(url, {
+  const res = await fetch(fullUrl, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -44,11 +54,24 @@ export const getQueryFn: <T>(options: {
     // Check if X-Test-Admin exists in localStorage and add it to headers if it does
     const testAdmin = localStorage.getItem('x-test-admin');
     
+    // Determine if we're in Replit environment
+    const isReplit = typeof window !== 'undefined' && window.location.hostname.includes('.replit.dev');
+    
+    // Get the URL from the query key
+    const url = queryKey[0] as string;
+    
+    // In Replit we need to use the full URL including origin
+    const fullUrl = isReplit && url.startsWith('/api') 
+      ? `${window.location.origin}${url}`
+      : url;
+      
+    console.log(`Query fetch to: ${fullUrl} (original URL: ${url})`);
+    
     const headers: Record<string, string> = {
       ...(testAdmin ? { "X-Test-Admin": testAdmin } : {})
     };
     
-    const res = await fetch(queryKey[0] as string, {
+    const res = await fetch(fullUrl, {
       credentials: "include",
       headers
     });

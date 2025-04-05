@@ -1,459 +1,489 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useAiTrading, TradingSignal } from "@/hooks/useAiTrading";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Sparkles, 
-  AlertCircle, 
-  BarChart3, 
-  Clock,
-  RefreshCw
-} from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAiTrading, TradingSignal } from "@/hooks/useAiTrading";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useToast } from "@/hooks/use-toast";
+import { CheckCircle, XCircle, TrendingUp, TrendingDown, Shuffle, AlertTriangle, RefreshCw, Sparkles } from 'lucide-react';
 
-// Confetti styles
-const confettiStyles = `
-  .confetti-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 1000;
-    overflow: hidden;
-  }
-  .confetti {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background-color: var(--color);
-    opacity: 0.7;
-    animation: confetti-fall var(--fall-duration) ease-in forwards,
-               confetti-shake var(--shake-duration) ease-in-out infinite alternate;
-  }
-  @keyframes confetti-fall {
-    0% {
-      transform: translateY(-100vh);
-      opacity: 1;
-    }
-    70% {
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(100vh);
-      opacity: 0;
-    }
-  }
-  @keyframes confetti-shake {
-    0% {
-      transform: translateY(0) translateX(0) rotate(0deg);
-    }
-    25% {
-      transform: translateY(0) translateX(-15px) rotate(-45deg);
-    }
-    50% {
-      transform: translateY(0) translateX(0) rotate(0deg);
-    }
-    75% {
-      transform: translateY(0) translateX(15px) rotate(45deg);
-    }
-    100% {
-      transform: translateY(0) translateX(0) rotate(0deg);
-    }
-  }
-`;
-
-// Generate confetti elements
-const generateConfetti = (count = 100) => {
-  const confetti = [];
-  const colors = [
-    '#1a8fe3', // Blue
-    '#ff4757', // Red
-    '#feca57', // Yellow
-    '#2ed573', // Green
-    '#5f27cd', // Purple
-    '#ff6b6b', // Light Red
-    '#48dbfb', // Light Blue
-    '#1dd1a1', // Light Green
-  ];
-
-  for (let i = 0; i < count; i++) {
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    const fallDuration = 3 + Math.random() * 2 + 's'; // Between 3-5s
-    const shakeDuration = 1 + Math.random() * 1 + 's'; // Between 1-2s
-    const size = 5 + Math.random() * 15 + 'px'; // Between 5-20px
-    const leftPos = Math.random() * 100 + 'vw';
-    const style = {
-      '--color': color,
-      '--fall-duration': fallDuration,
-      '--shake-duration': shakeDuration,
-      left: leftPos,
-      width: size,
-      height: size,
-      transform: `rotate(${Math.random() * 360}deg)`,
-      borderRadius: Math.random() > 0.5 ? '50%' : '0', // Circle or square
-      top: `-${Math.random() * 20 + 10}%`, // Start off-screen
-    } as React.CSSProperties;
-
-    confetti.push(
-      <div 
-        className="confetti" 
-        key={`confetti-${i}`} 
-        style={style} 
-      />
-    );
-  }
-
-  return confetti;
-};
-
-// Summary card for a specific signal
-const SignalSummaryCard = ({ signal }: { signal: TradingSignal }) => {
-  const priceChangePercent = ((signal.predicted_price - signal.current_price) / signal.current_price) * 100;
-  const isPriceUp = priceChangePercent > 0;
+function calculateTrendStrength(signal: TradingSignal): number {
+  // Calculate trend strength on a scale of 0-100
+  const rsiWeight = 0.4;
+  const maWeight = 0.6;
   
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6
-    }).format(price);
-  };
+  let rsiStrength = 0;
+  if (signal.rsi < 30) rsiStrength = 100 - (signal.rsi * 3.33); // Oversold, bullish
+  else if (signal.rsi > 70) rsiStrength = (signal.rsi - 70) * 3.33; // Overbought, bearish
+  else rsiStrength = 50; // Neutral
+  
+  const maDiff = ((signal.ma_20 / signal.ma_50) - 1) * 100;
+  let maStrength = 0;
+  if (maDiff > 0) maStrength = Math.min(maDiff * 10, 100); // Bullish
+  else maStrength = Math.min(Math.abs(maDiff) * 10, 100); // Bearish
+  
+  return Math.round((rsiStrength * rsiWeight) + (maStrength * maWeight));
+}
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card className="border-2 relative">
-        <div className={`absolute top-0 left-0 w-full h-1 ${signal.signal === 'BUY' ? 'bg-green-500' : signal.signal === 'SELL' ? 'bg-red-500' : 'bg-yellow-500'}`}></div>
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-center">
-            <CardTitle>{signal.symbol}</CardTitle>
-            <Badge variant={signal.signal === 'BUY' ? 'default' : signal.signal === 'SELL' ? 'destructive' : 'outline'} 
-                   className={signal.signal === 'BUY' ? 'bg-green-500 hover:bg-green-600' : 
-                             signal.signal === 'SELL' ? '' : 'bg-yellow-500 hover:bg-yellow-600 text-black'}>
-              {signal.signal === 'BUY' ? 
-                <TrendingUp className="mr-1 h-3 w-3" /> : 
-                signal.signal === 'SELL' ? 
-                <TrendingDown className="mr-1 h-3 w-3" /> : 
-                <AlertCircle className="mr-1 h-3 w-3" />
-              }
-              {signal.signal}
-            </Badge>
-          </div>
-          <CardDescription>
-            Confidence: {Math.round(signal.confidence * 100)}%
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pb-2">
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Current Price</span>
-              <span className="font-medium">{formatPrice(signal.current_price)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Predicted Price</span>
-              <span className={`font-medium ${isPriceUp ? 'text-green-500' : 'text-red-500'}`}>
-                {formatPrice(signal.predicted_price)}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Potential Return</span>
-              <span className={`font-medium ${isPriceUp ? 'text-green-500' : 'text-red-500'}`}>
-                {isPriceUp ? '+' : ''}{priceChangePercent.toFixed(2)}%
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">RSI</span>
-              <span className="font-medium">
-                {signal.rsi.toFixed(2)}
-                {signal.rsi < 30 && <span className="text-green-500"> (Oversold)</span>}
-                {signal.rsi > 70 && <span className="text-red-500"> (Overbought)</span>}
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
+function formattedTimestamp(timestamp: string): string {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString() + ' ' + date.toLocaleDateString();
+}
+
+type ConditionalWrapperProps = {
+  condition: boolean;
+  wrapper: (children: React.ReactElement) => React.ReactElement;
+  children: React.ReactElement;
 };
 
-// Main Trading Insights Component
+const ConditionalWrapper: React.FC<ConditionalWrapperProps> = ({ condition, wrapper, children }) => (
+  condition ? wrapper(children) : children
+);
+
 export function TradingInsightsSummary() {
-  const {
-    signals,
-    timestamp,
-    isLoadingSignals,
-    refetchSignals,
-    signalsError,
-  } = useAiTrading();
-  
   const [showInsights, setShowInsights] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [confetti, setConfetti] = useState<React.ReactNode[]>([]);
-  const [fetchAttempts, setFetchAttempts] = useState(0);
-  
-  // Handle data fetching with retries
-  const handleRefetch = () => {
-    console.log('Manually refreshing trading signals data...');
-    setFetchAttempts(prev => prev + 1);
-    refetchSignals();
+  const [currentTab, setCurrentTab] = useState('overview');
+  const { toast } = useToast();
+  const [hasShownConfetti, setHasShownConfetti] = useState(false);
+
+  const { 
+    signals, 
+    timestamp, 
+    isFresh,
+    isLoadingSignals, 
+    signalsError,
+    refetchSignals,
+    getSignalStatus,
+    getPriceChangePercent
+  } = useAiTrading();
+
+  // Simple visual celebration animation using DOM elements
+  const triggerCelebration = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        // Create a container for the celebration particles
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.top = '0';
+        container.style.left = '0';
+        container.style.width = '100%';
+        container.style.height = '100%';
+        container.style.pointerEvents = 'none';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+        
+        // Create particles
+        const colors = ['#FFD700', '#FFA500', '#FF6347', '#00BFFF', '#32CD32'];
+        for (let i = 0; i < 50; i++) {
+          const particle = document.createElement('div');
+          particle.style.position = 'absolute';
+          particle.style.width = '10px';
+          particle.style.height = '10px';
+          particle.style.borderRadius = '50%';
+          particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          particle.style.left = Math.random() * 100 + '%';
+          particle.style.top = '120%';
+          particle.style.opacity = '1';
+          particle.style.transform = 'scale(1)';
+          particle.style.transition = 'all 1.5s ease-out';
+          container.appendChild(particle);
+          
+          // Animate particle
+          setTimeout(() => {
+            particle.style.top = 30 + (Math.random() * 50) + '%';
+          }, 10);
+          
+          // Fade out and remove
+          setTimeout(() => {
+            particle.style.opacity = '0';
+            particle.style.transform = 'scale(0)';
+          }, 800 + (Math.random() * 700));
+        }
+        
+        // Remove container after animation
+        setTimeout(() => {
+          document.body.removeChild(container);
+        }, 2000);
+      } catch (error) {
+        console.error('Failed to trigger celebration:', error);
+      }
+    }
   };
   
-  // Log for debugging
-  useEffect(() => {
-    console.log('Trading Insights Summary - Current signals:', signals);
-    console.log('Trading Insights Summary - Loading state:', isLoadingSignals);
-    console.log('Trading Insights Summary - Error state:', signalsError);
-    console.log('Trading Insights Summary - Fetch attempts:', fetchAttempts);
-  }, [signals, isLoadingSignals, signalsError, fetchAttempts]);
-  
-  // Format relative time
-  const lastUpdated = timestamp
-    ? formatDistanceToNow(new Date(timestamp), { addSuffix: true })
-    : "Unknown";
-
-  // Group signals by type
-  const topBuySignals = signals
-    .filter(signal => signal.signal === 'BUY')
-    .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, 3);
+  const toggleInsights = () => {
+    setShowInsights(prev => !prev);
     
-  const topSellSignals = signals
-    .filter(signal => signal.signal === 'SELL')
-    .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, 3);
-
-  // Create confetti effect when insights are shown
-  useEffect(() => {
-    if (showInsights && showConfetti) {
-      setConfetti(generateConfetti(150));
-      
-      // Remove confetti after animation is complete
-      const timer = setTimeout(() => {
-        setShowConfetti(false);
-      }, 5000);
-      
-      return () => clearTimeout(timer);
+    if (!showInsights && !hasShownConfetti) {
+      // Only trigger celebration the first time insights are shown
+      triggerCelebration();
+      setHasShownConfetti(true);
     }
-  }, [showInsights, showConfetti]);
+  };
   
-  const handleShowInsights = () => {
-    setShowInsights(true);
-    setShowConfetti(true);
-    // You could also add sound effect here if desired
+  // Get the latest signals (top 5)
+  const latestSignals = signals.slice(0, 5);
+  
+  // Calculate overall market sentiment
+  const calculateSentiment = () => {
+    if (signals.length === 0) return 'neutral';
+    
+    const buySignals = signals.filter(s => s.signal === 'BUY').length;
+    const sellSignals = signals.filter(s => s.signal === 'SELL').length;
+    const ratio = signals.length > 0 ? buySignals / signals.length : 0.5;
+    
+    if (ratio > 0.6) return 'bullish';
+    if (ratio < 0.4) return 'bearish';
+    return 'neutral';
+  };
+  
+  const sentiment = calculateSentiment();
+  
+  // Transform signals for chart
+  const chartData = latestSignals.map(signal => ({
+    name: signal.symbol,
+    current: signal.current_price,
+    predicted: signal.predicted_price,
+    ma20: signal.ma_20,
+    ma50: signal.ma_50
+  })).reverse();
+  
+  // Handle retry
+  const handleRetry = () => {
+    refetchSignals();
+    toast({
+      title: "Refreshing signals",
+      description: "Fetching the latest trading insights..."
+    });
   };
 
   return (
-    <>
-      <style>{confettiStyles}</style>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-yellow-500" />
+            AI Trading Insights
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={toggleInsights}
+            className="text-xs"
+          >
+            {showInsights ? 'Hide Insights' : 'One-Click Insights'}
+          </Button>
+        </CardTitle>
+        <CardDescription>
+          {timestamp ? (
+            <div className="flex items-center gap-2">
+              <span>Last updated: {formattedTimestamp(timestamp)}</span>
+              {isFresh ? (
+                <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">Fresh</Badge>
+              ) : (
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 hover:bg-yellow-50">Stale</Badge>
+              )}
+            </div>
+          ) : (
+            <span>Loading latest insights...</span>
+          )}
+        </CardDescription>
+      </CardHeader>
       
-      {/* Confetti Animation */}
-      {showConfetti && (
-        <div className="confetti-container">
-          {confetti}
-        </div>
-      )}
-      
-      {/* One-Click Insights Button */}
-      <Button 
-        size="lg" 
-        className="flex items-center gap-2 mb-6 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg"
-        onClick={handleShowInsights}
-        disabled={isLoadingSignals}
-      >
-        <Sparkles className="h-5 w-5" />
-        {isLoadingSignals ? 'Loading Trading Insights...' : 'One-Click Trading Insights'}
-      </Button>
-      
-      {/* Insights Dialog */}
-      <Dialog open={showInsights} onOpenChange={setShowInsights}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-2xl">
-              <Sparkles className="h-5 w-5 text-yellow-500" />
-              AI Trading Insights Summary
-            </DialogTitle>
-            <DialogDescription>
-              Here's your personalized trading insights based on market analysis and AI predictions.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 my-4">
-            {/* Timestamp and Refresh */}
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Clock className="h-4 w-4 mr-1" />
-                Last updated: {lastUpdated}
-                {signalsError && (
-                  <span className="ml-2 text-red-500 flex items-center">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    Error fetching data
-                  </span>
-                )}
-              </div>
+      <ConditionalWrapper
+        condition={showInsights}
+        wrapper={(children) => (
+          <>
+            {children}
+            <CardContent>
+              {isLoadingSignals ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-32 w-full" />
+                </div>
+              ) : signalsError ? (
+                <div className="p-4 text-center space-y-4">
+                  <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
+                  <div className="text-lg font-semibold">Failed to load trading signals</div>
+                  <p className="text-muted-foreground">
+                    {signalsError instanceof Error ? signalsError.message : "Unknown error occurred"}
+                  </p>
+                  <Button onClick={handleRetry} variant="outline" className="gap-2">
+                    <RefreshCw className="h-4 w-4" />
+                    Retry
+                  </Button>
+                </div>
+              ) : signals.length === 0 ? (
+                <div className="p-4 text-center">
+                  <p>No trading signals available at this time.</p>
+                </div>
+              ) : (
+                <Tabs 
+                  defaultValue="overview" 
+                  value={currentTab} 
+                  onValueChange={setCurrentTab}
+                  className="w-full"
+                >
+                  <TabsList className="grid grid-cols-3 mb-4">
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="signals">Top Signals</TabsTrigger>
+                    <TabsTrigger value="chart">Chart</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="overview" className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <div className={`p-4 rounded-lg border ${
+                        sentiment === 'bullish' ? 'border-green-300 bg-green-50' :
+                        sentiment === 'bearish' ? 'border-red-300 bg-red-50' :
+                        'border-yellow-300 bg-yellow-50'
+                      }`}>
+                        <h3 className="text-sm font-medium mb-1">Market Sentiment</h3>
+                        <div className="flex items-center gap-2">
+                          {sentiment === 'bullish' && <TrendingUp className="h-5 w-5 text-green-600" />}
+                          {sentiment === 'bearish' && <TrendingDown className="h-5 w-5 text-red-600" />}
+                          {sentiment === 'neutral' && <Shuffle className="h-5 w-5 text-yellow-600" />}
+                          <span className="font-semibold capitalize">{sentiment}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 rounded-lg border">
+                        <h3 className="text-sm font-medium mb-1">Signals Count</h3>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-green-600">
+                              {signals.filter(s => s.signal === 'BUY').length}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Buy</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-red-600">
+                              {signals.filter(s => s.signal === 'SELL').length}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Sell</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-yellow-600">
+                              {signals.filter(s => s.signal === 'HOLD').length}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Hold</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 rounded-lg border">
+                        <h3 className="text-sm font-medium mb-1">Average Confidence</h3>
+                        <div className="font-semibold text-lg">
+                          {signals.length > 0 
+                            ? `${(signals.reduce((sum, s) => sum + s.confidence, 0) / signals.length).toFixed(1)}%`
+                            : 'N/A'
+                          }
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="border rounded-lg p-4">
+                      <h3 className="font-medium mb-3">Top Opportunities</h3>
+                      <div className="space-y-3">
+                        {latestSignals.slice(0, 3).map((signal, index) => {
+                          const changePercent = getPriceChangePercent(signal);
+                          const signalStatus = getSignalStatus(signal);
+                          const trendStrength = calculateTrendStrength(signal);
+                          
+                          return (
+                            <div key={index} className="flex justify-between items-center">
+                              <div>
+                                <div className="font-medium">{signal.symbol}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  Current: ${signal.current_price.toFixed(2)}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className={`font-medium flex items-center gap-1 ${
+                                  signalStatus === 'buy' ? 'text-green-600' :
+                                  signalStatus === 'sell' ? 'text-red-600' :
+                                  'text-yellow-600'
+                                }`}>
+                                  {signalStatus === 'buy' && <TrendingUp className="h-4 w-4" />}
+                                  {signalStatus === 'sell' && <TrendingDown className="h-4 w-4" />}
+                                  {signalStatus === 'neutral' && <Shuffle className="h-4 w-4" />}
+                                  <span>{signal.signal}</span>
+                                </div>
+                                <div className={`text-sm ${
+                                  changePercent > 0 ? 'text-green-600' :
+                                  changePercent < 0 ? 'text-red-600' :
+                                  'text-yellow-600'
+                                }`}>
+                                  {changePercent > 0 ? '+' : ''}{changePercent.toFixed(2)}%
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="signals">
+                    <div className="space-y-3">
+                      {latestSignals.map((signal, index) => {
+                        const changePercent = getPriceChangePercent(signal);
+                        const signalStatus = getSignalStatus(signal);
+                        
+                        return (
+                          <div key={index} className={`p-3 rounded-lg border ${
+                            signalStatus === 'buy' ? 'border-green-300 bg-green-50' :
+                            signalStatus === 'sell' ? 'border-red-300 bg-red-50' :
+                            'border-yellow-300 bg-yellow-50'
+                          }`}>
+                            <div className="flex justify-between items-center mb-2">
+                              <div className="font-medium">{signal.symbol}</div>
+                              <Badge variant="outline" className={
+                                signalStatus === 'buy' ? 'bg-green-100 text-green-800' :
+                                signalStatus === 'sell' ? 'bg-red-100 text-red-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }>
+                                {signal.signal}
+                              </Badge>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <div className="text-muted-foreground">Current Price</div>
+                                <div className="font-medium">${signal.current_price.toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div className="text-muted-foreground">Predicted Price</div>
+                                <div className={`font-medium ${
+                                  changePercent > 0 ? 'text-green-600' :
+                                  changePercent < 0 ? 'text-red-600' :
+                                  'text-muted-foreground'
+                                }`}>
+                                  ${signal.predicted_price.toFixed(2)}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-muted-foreground">RSI (14)</div>
+                                <div className={`font-medium ${
+                                  signal.rsi < 30 ? 'text-green-600' :
+                                  signal.rsi > 70 ? 'text-red-600' :
+                                  'text-muted-foreground'
+                                }`}>
+                                  {signal.rsi.toFixed(1)}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-muted-foreground">Confidence</div>
+                                <div className="font-medium">{signal.confidence.toFixed(1)}%</div>
+                              </div>
+                            </div>
+                            
+                            <div className="mt-2 pt-2 border-t text-sm flex justify-between items-center">
+                              <div className="text-muted-foreground">
+                                Forecast: {Math.abs(changePercent).toFixed(2)}% {changePercent >= 0 ? 'increase' : 'decrease'}
+                              </div>
+                              <div className={
+                                changePercent > 3 ? 'text-green-600' :
+                                changePercent < -3 ? 'text-red-600' :
+                                'text-yellow-600'
+                              }>
+                                {changePercent > 3 ? 'Strong Buy' : 
+                                 changePercent > 1 ? 'Buy' : 
+                                 changePercent > -1 ? 'Hold' : 
+                                 changePercent > -3 ? 'Sell' : 'Strong Sell'}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="chart">
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={chartData}
+                          margin={{
+                            top: 5,
+                            right: 30,
+                            left: 20,
+                            bottom: 5,
+                          }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="current" stroke="#8884d8" name="Current Price" />
+                          <Line type="monotone" dataKey="predicted" stroke="#82ca9d" name="Predicted Price" />
+                          <Line type="monotone" dataKey="ma20" stroke="#ffc658" name="MA (20)" strokeDasharray="5 5" />
+                          <Line type="monotone" dataKey="ma50" stroke="#ff8042" name="MA (50)" strokeDasharray="3 3" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="mt-4 text-sm text-muted-foreground text-center">
+                      Comparing current prices with AI predictions and moving averages
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
+            </CardContent>
+            <CardFooter className="flex justify-between">
               <Button 
                 variant="outline" 
                 size="sm" 
-                className={`flex items-center gap-1 ${signalsError ? 'border-red-500 text-red-500 hover:bg-red-50' : ''}`}
-                onClick={handleRefetch}
+                onClick={handleRetry} 
                 disabled={isLoadingSignals}
+                className="gap-1"
               >
-                <RefreshCw className="h-3 w-3" />
-                {signalsError ? 'Retry' : 'Refresh'} {fetchAttempts > 0 ? `(${fetchAttempts})` : ''}
+                <RefreshCw className={`h-4 w-4 ${isLoadingSignals ? 'animate-spin' : ''}`} />
+                Refresh
               </Button>
-            </div>
-            
-            {isLoadingSignals ? (
-              <div className="space-y-4">
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-48 w-full" />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setCurrentTab(currentTab === 'overview' ? 'signals' : currentTab === 'signals' ? 'chart' : 'overview')}
+              >
+                Next View
+              </Button>
+            </CardFooter>
+          </>
+        )}
+      >
+        <CardContent className={!showInsights ? "p-4" : ""}>
+          {!showInsights && (
+            latestSignals.length > 0 ? (
+              <div className="text-center space-y-2">
+                <p className="text-muted-foreground">Click "One-Click Insights" to reveal AI trading insights</p>
+                <p className="text-xs text-muted-foreground">
+                  {latestSignals.length} signals available with {latestSignals.filter(s => s.signal === 'BUY').length} buy recommendations
+                </p>
               </div>
-            ) : signalsError ? (
-              <div className="text-center py-12 border border-red-200 rounded-lg bg-red-50">
-                <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-                <h3 className="text-xl font-medium text-red-700">Error Loading Signals</h3>
-                <p className="text-red-600 mb-4">We couldn't load the trading signals at this time.</p>
-                <Button 
-                  onClick={handleRefetch}
-                  variant="destructive"
-                  className="mt-2"
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Try Again
-                </Button>
+            ) : isLoadingSignals ? (
+              <div className="text-center space-y-4">
+                <Skeleton className="h-4 w-3/4 mx-auto" />
+                <Skeleton className="h-4 w-1/2 mx-auto" />
               </div>
             ) : (
-              <Tabs defaultValue="buy" className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="buy" className="flex items-center gap-1">
-                    <TrendingUp className="h-4 w-4" />
-                    Buy Signals ({topBuySignals.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="sell" className="flex items-center gap-1">
-                    <TrendingDown className="h-4 w-4" />
-                    Sell Signals ({topSellSignals.length})
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="buy" className="mt-0">
-                  {topBuySignals.length > 0 ? (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {topBuySignals.map((signal, index) => (
-                        <SignalSummaryCard 
-                          key={`${signal.symbol}-${index}`} 
-                          signal={signal} 
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <AlertCircle className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                      <h3 className="text-lg font-medium">No Buy Signals</h3>
-                      <p className="text-muted-foreground">The AI hasn't detected any strong buy opportunities at the moment.</p>
-                    </div>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="sell" className="mt-0">
-                  {topSellSignals.length > 0 ? (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {topSellSignals.map((signal, index) => (
-                        <SignalSummaryCard 
-                          key={`${signal.symbol}-${index}`} 
-                          signal={signal} 
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <AlertCircle className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                      <h3 className="text-lg font-medium">No Sell Signals</h3>
-                      <p className="text-muted-foreground">The AI hasn't detected any strong sell indicators at the moment.</p>
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-            )}
-            
-            {/* Market Overview */}
-            <div className="mt-6">
-              <h3 className="text-lg font-medium flex items-center gap-2 mb-3">
-                <BarChart3 className="h-5 w-5" />
-                Market Sentiment Overview
-              </h3>
-              
-              {signalsError ? (
-                <Card className="border-red-200">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col items-center justify-center text-center py-6">
-                      <AlertCircle className="h-8 w-8 text-red-500 mb-2" />
-                      <h4 className="text-lg font-medium text-red-700">Market Sentiment Unavailable</h4>
-                      <p className="text-sm text-red-600 mt-1 mb-3">Unable to calculate market sentiment due to data loading issues.</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Overall Market Sentiment</span>
-                        <Badge variant={topBuySignals.length > topSellSignals.length ? "default" : "destructive"}
-                              className={topBuySignals.length > topSellSignals.length ? "bg-green-500 hover:bg-green-600" : ""}>
-                          {topBuySignals.length > topSellSignals.length ? "Bullish" : "Bearish"}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Strongest Buy Signal</span>
-                        <span className="font-medium">
-                          {topBuySignals.length > 0 ? topBuySignals[0].symbol : "None"}
-                          {topBuySignals.length > 0 && ` (${Math.round(topBuySignals[0].confidence * 100)}%)`}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Strongest Sell Signal</span>
-                        <span className="font-medium">
-                          {topSellSignals.length > 0 ? topSellSignals[0].symbol : "None"}
-                          {topSellSignals.length > 0 && ` (${Math.round(topSellSignals[0].confidence * 100)}%)`}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowInsights(false)}
-            >
-              Close
-            </Button>
-            <Button 
-              className="flex items-center gap-1"
-              asChild
-            >
-              <a href="/ai-trading">
-                Full Trading Analysis
-              </a>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+              <div className="text-center space-y-2">
+                <p className="text-muted-foreground">No trading signals available</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRetry} 
+                  className="gap-1 mx-auto"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh
+                </Button>
+              </div>
+            )
+          )}
+        </CardContent>
+      </ConditionalWrapper>
+    </Card>
   );
 }
