@@ -13,7 +13,7 @@ import {
   validateOpenAIKey,
   httpsRequest
 } from '../services/openaiService';
-import { ensureAuthenticated } from '../auth';
+import { ensureAuthenticated } from '../middleware/auth';
 
 // Create a router for agent API
 const router = Router();

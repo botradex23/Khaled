@@ -1,0 +1,11 @@
+[[workflows.workflow]]
+name = "Replit Server"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node replit-server.js"
+waitForPort = 3000

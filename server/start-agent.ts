@@ -2,7 +2,7 @@ import express from 'express';
 import agentRoutes from './routes/my-agent';
 
 const app = express();
-const PORT = 5002;
+const PORT = 5000;
 
 app.use(express.json());
 app.use('/', agentRoutes);

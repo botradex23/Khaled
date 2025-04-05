@@ -91,12 +91,26 @@ app.use((req, res, next) => {
     }
   });
 
-  // Skip creating a temporary server that gets closed immediately
+  // Create server first
+  const server = await new Promise<any>((resolve) => {
+    const httpServer = app.listen(0, () => {
+      httpServer.close(() => {
+        resolve(httpServer);
+      });
+    });
+  });
 
   // Register API routes first to ensure they take precedence over Vite middleware
   console.log('Registering simplified API routes...');
   app.use(routes);
   console.log('Simplified API Routes registered');
+
+  // Then set up Vite in development mode
+  if (app.get("env") === "development") {
+    console.log('Setting up Vite middleware after API routes...');
+    await setupVite(app, server);
+    console.log('Vite middleware setup complete');
+  }
 
   // Global error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -111,9 +125,8 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Create the server instance
   const port = 5000;
-  const httpServer = app.listen(port, "0.0.0.0", async () => {
+  server.listen({ port, host: "0.0.0.0", reusePort: true }, async () => {
     log(`Server running on port ${port}`);
     try {
       const flaskUp = await pythonServiceManager.startService();
@@ -126,11 +139,4 @@ app.use((req, res, next) => {
       log(`Error starting ML service: ${err}`);
     }
   });
-  
-  // Then set up Vite in development mode (after server is created)
-  if (app.get("env") === "development") {
-    console.log('Setting up Vite middleware after API routes...');
-    await setupVite(app, httpServer);
-    console.log('Vite middleware setup complete');
-  }
 })();

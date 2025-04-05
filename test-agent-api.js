@@ -1,50 +1,30 @@
-// Using built-in fetch API
+const fetch = require('node-fetch');
 
-async function testAgentApi() {
-  console.log('Testing Agent API...');
-  
+async function testMyAgentApi() {
   try {
-    // Test the health endpoint
-    const healthResponse = await fetch('http://localhost:5000/api/agent/health');
-    const healthData = await healthResponse.json();
-    console.log('Health check response:', healthData);
+    console.log('Testing AI Agent API endpoint...');
     
-    if (healthData.success) {
-      console.log('✅ Agent API health check passed');
-    } else {
-      console.log('❌ Agent API health check failed');
-    }
-    
-    // Test agent chat
-    const chatPayload = {
-      message: 'Hello agent, can you help me?',
-      sessionId: 'test-session-' + Date.now(),
-      userId: 'test-user'
-    };
-    
-    console.log('Sending test chat message...');
-    const chatResponse = await fetch('http://localhost:5000/api/agent/chat', {
-      method: 'POST',
+    const response = await fetch('http://localhost:5000/api/my-agent/health', {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'X-Test-Admin': 'true'  // Add test admin header for authentication
-      },
-      body: JSON.stringify(chatPayload)
+        'Accept': 'application/json'
+      }
     });
     
-    const chatData = await chatResponse.json();
-    console.log('Chat response:', chatData);
+    console.log('Response status:', response.status);
+    console.log('Response headers:', JSON.stringify(response.headers.raw(), null, 2));
     
-    if (chatData.success) {
-      console.log('✅ Agent chat test passed');
-      console.log('Agent replied:', chatData.response);
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Response data:', JSON.stringify(data, null, 2));
     } else {
-      console.log('❌ Agent chat test failed');
+      console.log('Error response:', await response.text());
     }
     
   } catch (error) {
-    console.error('Error testing agent API:', error);
+    console.error('Error testing AI Agent API:', error);
   }
 }
 
-testAgentApi();
+testMyAgentApi();

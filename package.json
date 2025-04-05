@@ -51,7 +51,6 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
-    "connect-history-api-fallback": "^2.0.0",
     "connect-pg-simple": "^10.0.0",
     "crypto-js": "^4.2.0",
     "date-fns": "^3.6.0",
