@@ -1,7 +1,7 @@
 /**
  * Simple test server to check CORS and connectivity issues
  */
-const express = require('express');
+import express from 'express';
 const app = express();
 const port = 3500;
 

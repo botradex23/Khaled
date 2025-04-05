@@ -45,8 +45,19 @@ export function useAiTrading() {
     queryFn: async () => {
       try {
         console.log('Fetching trading signals from API...');
+        
+        // Determine base URL based on environment
+        const isReplit = typeof window !== 'undefined' && window.location.hostname.includes('.replit.dev');
+        
+        // In Replit we need to use the full URL including port
+        const apiUrl = isReplit 
+          ? `${window.location.origin}/api/ai/trading/signals`
+          : '/api/ai/trading/signals';
+        
+        console.log(`Using API URL: ${apiUrl}`);
+        
         // Direct fetch with more detailed error handling
-        const res = await fetch('/api/ai/trading/signals', {
+        const res = await fetch(apiUrl, {
           credentials: 'include',  // Include cookies for auth if needed
           headers: {
             'Accept': 'application/json',
@@ -99,7 +110,17 @@ export function useAiTrading() {
     mutationFn: async ({ signalId, amount }: { signalId: string; amount?: number }) => {
       console.log('Executing trade with signal:', signalId, 'amount:', amount);
       try {
-        const res = await fetch('/api/ai/trading/execute', {
+        // Determine base URL based on environment
+        const isReplit = typeof window !== 'undefined' && window.location.hostname.includes('.replit.dev');
+        
+        // In Replit we need to use the full URL including port
+        const apiUrl = isReplit 
+          ? `${window.location.origin}/api/ai/trading/execute`
+          : '/api/ai/trading/execute';
+          
+        console.log(`Using API URL for trade execution: ${apiUrl}`);
+        
+        const res = await fetch(apiUrl, {
           method: 'POST',
           credentials: 'include',
           headers: { 
@@ -153,7 +174,17 @@ export function useAiTrading() {
     mutationFn: async (symbol: string) => {
       console.log('Training AI model for symbol:', symbol);
       try {
-        const res = await fetch('/api/ai/trading/train', {
+        // Determine base URL based on environment
+        const isReplit = typeof window !== 'undefined' && window.location.hostname.includes('.replit.dev');
+        
+        // In Replit we need to use the full URL including port
+        const apiUrl = isReplit 
+          ? `${window.location.origin}/api/ai/trading/train`
+          : '/api/ai/trading/train';
+          
+        console.log(`Using API URL for model training: ${apiUrl}`);
+        
+        const res = await fetch(apiUrl, {
           method: 'POST',
           credentials: 'include',
           headers: { 
