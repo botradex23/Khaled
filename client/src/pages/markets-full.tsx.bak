@@ -274,7 +274,7 @@ export default function MarketsFullPage() {
         <div className="max-w-7xl mx-auto py-6">
           {/* Page Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-            <h1 className="text-3xl font-bold text-primary mb-2 md:mb-0">Cryptex</h1>
+            <h1 className="text-3xl font-bold text-primary mb-2 md:mb-0">Tradeliy</h1>
             
             <div className="flex items-center space-x-2">
               <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 hover:bg-yellow-500/30">

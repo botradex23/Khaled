@@ -179,7 +179,7 @@ export default function Header() {
           <div className="flex items-center">
             <Link href="/">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary text-xl font-bold cursor-pointer">
-                Cryptex
+                Tradeliy
               </span>
             </Link>
           </div>

@@ -58,7 +58,7 @@ export default function Footer() {
           <div>
             <div className="text-primary font-bold text-2xl mb-4">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                Cryptex
+                Tradeliy
               </span>
             </div>
             <p className="text-muted-foreground mb-4">
@@ -87,7 +87,7 @@ export default function Footer() {
         
         <div className="border-t border-border mt-12 pt-6 flex flex-col md:flex-row justify-between items-center">
           <p className="text-muted-foreground text-sm mb-4 md:mb-0">
-            &copy; 2023 Cryptex. All rights reserved.
+            &copy; 2025 Tradeliy. All rights reserved.
           </p>
           <div className="flex items-center space-x-4">
             <Link href="/" className="text-muted-foreground hover:text-primary transition-colors text-sm">

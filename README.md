@@ -1,8 +1,8 @@
-# CryptoTrade: Advanced Cryptocurrency Trading Platform
+# Tradeliy: Advanced Cryptocurrency Trading Platform
 
-![CryptoTrade Logo](./generated-icon.png)
+![Tradeliy Logo](./generated-icon.png)
 
-CryptoTrade is a cutting-edge cryptocurrency investment platform that combines advanced AI-driven trading solutions with an engaging, interactive user experience. The platform offers sophisticated trading algorithms, real-time market data, and comprehensive portfolio management in a user-friendly interface.
+Tradeliy is a cutting-edge cryptocurrency investment platform that combines advanced AI-driven trading solutions with an engaging, interactive user experience. The platform offers sophisticated trading algorithms, real-time market data, and comprehensive portfolio management in a user-friendly interface.
 
 ## Features
 

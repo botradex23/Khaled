@@ -27,7 +27,7 @@ export default function Features() {
     <section className="bg-card py-16 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">How Cryptex Works</h2>
+          <h2 className="text-3xl font-bold mb-4">How Tradeliy Works</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Our platform makes automated crypto trading accessible to everyone with 
             pre-built strategies and real-time monitoring.

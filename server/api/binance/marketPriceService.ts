@@ -7,11 +7,11 @@ const BINANCE_BASE_URL = 'https://api.binance.com';
 const BINANCE_TEST_URL = 'https://testnet.binance.vision';
 
 // Proxy configuration for bypassing geo-restrictions 
-const USE_PROXY = false; // Disable proxy since we're in simulation mode
-const PROXY_USERNAME = process.env.PROXY_USERNAME || "ahjqspco";
-const PROXY_PASSWORD = process.env.PROXY_PASSWORD || "dzx3r1prpz9k";
-const PROXY_IP = process.env.PROXY_IP || '86.38.234.176'; // Updated proxy IP from Webshare list
-const PROXY_PORT = process.env.PROXY_PORT || '6630';      // Updated proxy port
+const USE_PROXY = true; // Hardcoded to true to ensure proxy is used
+const PROXY_USERNAME = "xzwdlrlk"; // New proxy credentials from Webshare
+const PROXY_PASSWORD = "yrv2cpbyo1oa";
+const PROXY_IP = '45.151.162.198'; // Updated proxy IP from Webshare list
+const PROXY_PORT = '6600';      // Updated proxy port
 
 /**
  * Enhanced Axios instance creator for reliable Binance API access

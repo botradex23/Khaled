@@ -100,7 +100,7 @@ export default function AppSidebar() {
       {/* Logo */}
       <div className="px-6 py-4 border-b border-border flex items-center">
         <LineChart className="w-6 h-6 text-primary mr-2" />
-        <h1 className="text-xl font-bold text-primary">Cryptex</h1>
+        <h1 className="text-xl font-bold text-primary">Tradeliy</h1>
       </div>
 
       {/* Navigation Links */}

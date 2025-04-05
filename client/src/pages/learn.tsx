@@ -63,7 +63,7 @@ export default function Learn() {
                 • Reading candlestick patterns
               </li>
               <li className="flex items-center text-muted-foreground">
-                • Using Cryptex's bot features
+                • Using Tradeliy's bot features
               </li>
               <li className="flex items-center text-muted-foreground">
                 • Risk management strategies
