@@ -41,12 +41,41 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
+  
+  // Enhanced logging for debugging the agent health endpoint
+  if (path === '/api/my-agent/health') {
+    console.log('=== MY AGENT HEALTH ENDPOINT ACCESSED ===');
+    console.log('URL:', req.url);
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Method:', req.method);
+    console.log('IP:', req.ip);
+    console.log('=============================================');
+  }
+  
   let capturedJsonResponse: Record<string, any> | undefined;
 
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
     capturedJsonResponse = bodyJson;
     return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+
+  // Add error handling for response errors
+  const originalResEnd = res.end;
+  res.end = function(chunk?: any, encodingOrCallback?: string | (() => void), callback?: () => void) {
+    if (path === '/api/my-agent/health') {
+      console.log('=== MY AGENT HEALTH ENDPOINT RESPONSE END ===');
+      console.log('Status:', res.statusCode);
+      console.log('Headers:', JSON.stringify(res.getHeaders(), null, 2));
+      console.log('=============================================');
+    }
+
+    // Handle different overload signatures properly
+    if (typeof encodingOrCallback === 'function') {
+      return originalResEnd.call(res, chunk, encodingOrCallback);
+    } else {
+      return originalResEnd.call(res, chunk, encodingOrCallback as BufferEncoding, callback);
+    }
   };
 
   res.on("finish", () => {
@@ -58,6 +87,20 @@ app.use((req, res, next) => {
       }
       if (logLine.length > 80) logLine = logLine.slice(0, 79) + "…";
       log(logLine);
+    }
+  });
+
+  // Add error handling for unexpected errors during request processing
+  res.on("error", (err) => {
+    console.error(`Request error for ${path}:`, err);
+    // Try to send an error response if headers haven't been sent yet
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        path: path,
+        error: err.message
+      });
     }
   });
 

@@ -10,8 +10,7 @@ import {
   writeFile, 
   listFiles,
   initializeOpenAI,
-  validateOpenAIKey,
-  httpsRequest
+  validateOpenAIKey
 } from '../services/openaiService';
 import { ensureAuthenticated } from '../middleware/auth';
 
@@ -20,20 +19,11 @@ const router = Router();
 
 // Middleware to ensure the user is authenticated (with X-Test-Admin header)
 function ensureTestAdminAuthenticated(req: Request, res: Response, next: NextFunction) {
-  console.log('=== ensureTestAdminAuthenticated middleware called ===');
-  console.log('Headers:', JSON.stringify(req.headers, null, 2));
-  console.log('Has X-Test-Admin header:', !!req.headers['x-test-admin']);
-  
-  // Check for the X-Test-Admin header (case insensitive check for extra safety)
-  const headerKeys = Object.keys(req.headers).map(k => k.toLowerCase());
-  const hasTestAdminHeader = headerKeys.includes('x-test-admin');
-  
+  const hasTestAdminHeader = req.headers['x-test-admin'] === 'true';
   if (hasTestAdminHeader) {
-    console.log('✅ X-Test-Admin header detected in agent route, skipping authentication');
-    next();
+    return next();
   } else {
-    console.log('❌ No X-Test-Admin header, allowing access anyway (open access mode)');
-    next();
+    return res.status(403).json({ success: false, message: 'Admin access required (missing header)' });
   }
 }
 
@@ -387,7 +377,7 @@ router.options('*', (req: Request, res: Response) => {
 //
 
 // Simple health check endpoint that returns a 200 response with a JSON payload
-router.get('/direct-health', (req: Request, res: Response) => {
+router.get('/direct-health', ensureTestAdminAuthenticated, (req: Request, res: Response) => {
   console.log('Direct agent health check requested');
   setCorsHeaders(res);
   res.setHeader('Content-Type', 'application/json');
