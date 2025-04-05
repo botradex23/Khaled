@@ -118,6 +118,7 @@ export default function AdminMyAgent() {
     setLoading(true);
 
     try {
+      // The backend expects a 'prompt' parameter, not 'messages'
       const response = await fetch('/api/agent/chat', {
         method: 'POST',
         headers: {
@@ -125,8 +126,8 @@ export default function AdminMyAgent() {
           'X-Test-Admin': 'true'
         },
         body: JSON.stringify({ 
-          messages: [...messages, userMessage],
-          systemMessage: 'You are a helpful AI assistant with access to the codebase.'
+          prompt: prompt,
+          systemPrompt: 'You are a helpful AI assistant with access to the codebase.'
         })
       });
 
