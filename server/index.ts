@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
+import routes from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import './override-console.js';
 import './api/risk-management/RiskManager.js';
@@ -101,9 +101,9 @@ app.use((req, res, next) => {
   });
 
   // Register API routes first to ensure they take precedence over Vite middleware
-  console.log('Registering API routes first...');
-  await registerRoutes(app);
-  console.log('API Routes registered');
+  console.log('Registering simplified API routes...');
+  app.use(routes);
+  console.log('Simplified API Routes registered');
 
   // Then set up Vite in development mode
   if (app.get("env") === "development") {

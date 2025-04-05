@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { DatabaseHealth } from './DatabaseHealth';
 
 /**
  * AdminMyAgent - A component for the admin-only AI agent that can chat, analyze code, and suggest changes
@@ -546,6 +547,11 @@ export default function AdminMyAgent() {
             <Button onClick={testAuthFix} variant="secondary" size="sm">
               Test Authentication Fix
             </Button>
+          </div>
+          
+          {/* Database Health Status */}
+          <div className="mb-6">
+            <DatabaseHealth />
           </div>
           
           <Tabs defaultValue="chat">
