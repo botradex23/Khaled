@@ -14,6 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { toast } from '@/hooks/use-toast';
 
 export default function AdminMyAgent() {
   const [prompt, setPrompt] = useState<string>('');
@@ -25,6 +28,13 @@ export default function AdminMyAgent() {
   const [files, setFiles] = useState<string[]>([]);
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [fileContent, setFileContent] = useState<string>('');
+  const [editedContent, setEditedContent] = useState<string>('');
+  const [newFileName, setNewFileName] = useState<string>('');
+  const [newFileContent, setNewFileContent] = useState<string>('');
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState<boolean>(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState<boolean>(false);
+  const [saveLoading, setSaveLoading] = useState<boolean>(false);
+  const [createLoading, setCreateLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Check agent health on load
@@ -102,10 +112,120 @@ export default function AdminMyAgent() {
       const data = await response.json();
       if (data.success && data.content) {
         setFileContent(data.content);
+        setEditedContent(data.content); // Also set the edited content for potential editing
         setSelectedFile(path);
       }
     } catch (error) {
       console.error('Error loading file:', error);
+    }
+  };
+  
+  const openEditDialog = () => {
+    if (!selectedFile) {
+      toast({
+        title: "No File Selected",
+        description: "Please select a file to edit first.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsEditDialogOpen(true);
+  };
+
+  const saveFileChanges = async () => {
+    if (!selectedFile) return;
+    
+    setSaveLoading(true);
+    try {
+      const response = await fetch('/api/agent/write-file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Test-Admin': 'true'
+        },
+        body: JSON.stringify({ 
+          filePath: selectedFile,
+          content: editedContent
+        })
+      });
+
+      if (!response.ok) throw new Error('Network error');
+
+      const data = await response.json();
+      if (data.success) {
+        toast({
+          title: "File Saved",
+          description: "File has been updated successfully.",
+        });
+        setFileContent(editedContent);
+        setIsEditDialogOpen(false);
+      } else {
+        throw new Error(data.message || 'Failed to save file');
+      }
+    } catch (error) {
+      console.error('Error saving file:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to save file',
+        variant: "destructive"
+      });
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+  
+  const createNewFile = async () => {
+    if (!newFileName.trim()) {
+      toast({
+        title: "Error",
+        description: "File name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setCreateLoading(true);
+    try {
+      // Construct the full path for the new file
+      const filePath = currentDirectory + (newFileName.startsWith('./') ? newFileName.substring(2) : newFileName);
+      
+      const response = await fetch('/api/agent/write-file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Test-Admin': 'true'
+        },
+        body: JSON.stringify({ 
+          filePath,
+          content: newFileContent
+        })
+      });
+
+      if (!response.ok) throw new Error('Network error');
+
+      const data = await response.json();
+      if (data.success) {
+        toast({
+          title: "File Created",
+          description: `${filePath} has been created successfully.`,
+        });
+        setNewFileName('');
+        setNewFileContent('');
+        setIsCreateDialogOpen(false);
+        // Reload the current directory to show the new file
+        loadDirectoryFiles(currentDirectory);
+      } else {
+        throw new Error(data.message || 'Failed to create file');
+      }
+    } catch (error) {
+      console.error('Error creating file:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to create file',
+        variant: "destructive"
+      });
+    } finally {
+      setCreateLoading(false);
     }
   };
 
@@ -232,11 +352,29 @@ export default function AdminMyAgent() {
         {/* Files Tab */}
         <TabsContent value="files" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>File Explorer</CardTitle>
-              <CardDescription>
-                Browse and view project files
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle>File Explorer</CardTitle>
+                <CardDescription>
+                  Browse, view, edit and create project files
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsCreateDialogOpen(true)}
+                  disabled={agentHealth !== 'available'}
+                >
+                  Create File
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={openEditDialog}
+                  disabled={!selectedFile || agentHealth !== 'available'}
+                >
+                  Edit File
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="flex gap-4">
               <div className="w-1/3">
@@ -269,6 +407,91 @@ export default function AdminMyAgent() {
               </div>
             </CardContent>
           </Card>
+          
+          {/* Edit File Dialog */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent className="sm:max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Edit File: {selectedFile}</DialogTitle>
+                <DialogDescription>
+                  Make changes to the file content below
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <Textarea 
+                  className="font-mono text-sm min-h-[400px]" 
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsEditDialogOpen(false)}
+                  disabled={saveLoading}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={saveFileChanges}
+                  disabled={saveLoading}
+                >
+                  {saveLoading ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Create File Dialog */}
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogContent className="sm:max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Create New File</DialogTitle>
+                <DialogDescription>
+                  Enter the file name and content
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fileName">File Name (relative to current directory)</Label>
+                  <Input
+                    id="fileName"
+                    placeholder="e.g., example.js or subfolder/example.js"
+                    value={newFileName}
+                    onChange={(e) => setNewFileName(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Current directory: {currentDirectory}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fileContent">File Content</Label>
+                  <Textarea 
+                    id="fileContent"
+                    className="font-mono text-sm min-h-[300px]" 
+                    value={newFileContent}
+                    onChange={(e) => setNewFileContent(e.target.value)}
+                    placeholder="Enter file content here..."
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsCreateDialogOpen(false)}
+                  disabled={createLoading}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={createNewFile}
+                  disabled={createLoading || !newFileName.trim()}
+                >
+                  {createLoading ? 'Creating...' : 'Create File'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
     </div>
