@@ -52,11 +52,6 @@ export const users = pgTable('users', {
   isAdmin: boolean('is_admin').default(false), // Admin user with elevated permissions
   isSuperAdmin: boolean('is_super_admin').default(false), // Super admin flag for full access to admin-my-agent
   
-  // OKX API Keys - for legacy compatibility
-  okxApiKey: text('okx_api_key'),
-  okxSecretKey: text('okx_secret_key'),
-  okxPassphrase: text('okx_passphrase'),
-  
   // Binance API Keys  
   binanceApiKey: text('binance_api_key'),
   binanceSecretKey: text('binance_secret_key'),

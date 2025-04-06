@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { binanceMarketService, BinanceTickerPrice } from '../api/binance/marketPriceService';
+import { binanceService, BinanceTickerPrice } from '../api/binance/binanceServiceIntegration';
 import { okxService } from '../api/okx/okxService';
 
 const router = Router();
@@ -35,7 +35,7 @@ router.get('/market-prices', async (req: Request, res: Response) => {
     }
     
     // Fallback to Binance if OKX fails
-    const allPrices = await binanceMarketService.getAllPrices();
+    const allPrices = await binanceService.getAllPrices();
     
     if (!allPrices || allPrices.length === 0) {
       return res.status(404).json({
@@ -138,7 +138,7 @@ router.get('/markets', async (req: Request, res: Response) => {
     }
     
     // Fallback to Binance if OKX fails
-    const allPrices = await binanceMarketService.getAllPrices();
+    const allPrices = await binanceService.getAllPrices();
     
     if (!allPrices || allPrices.length === 0) {
       return res.status(404).json({
@@ -149,7 +149,7 @@ router.get('/markets', async (req: Request, res: Response) => {
     
     // Get 24-hour data for the important symbols
     const responses = await Promise.allSettled(
-      importantSymbols.map(symbol => binanceMarketService.get24hrStats(symbol))
+      importantSymbols.map(symbol => binanceService.get24hrTicker(symbol))
     );
     
     const tickerData: any = {};
@@ -223,7 +223,7 @@ router.get('/markets', async (req: Request, res: Response) => {
  */
 router.get('/market-overview', async (req: Request, res: Response) => {
   try {
-    const allPrices = await binanceMarketService.getAllPrices();
+    const allPrices = await binanceService.getAllPrices();
     
     if (!allPrices || allPrices.length === 0) {
       return res.status(404).json({
@@ -281,6 +281,34 @@ router.get('/market-overview', async (req: Request, res: Response) => {
 });
 
 /**
+ * Test endpoint to verify our integration is working
+ * @route GET /api/binance/test-integration
+ */
+router.get('/test-integration', async (req: Request, res: Response) => {
+  try {
+    // Get implementation type
+    const implementationType = binanceService.getImplementationType();
+    
+    // Try to get some simple data
+    const btcPrice = await binanceService.getSymbolPrice('BTCUSDT');
+    
+    res.json({
+      success: true,
+      implementationType,
+      serviceType: 'Binance SDK Integration Service',
+      btcPrice: btcPrice ? btcPrice.price : 'unavailable',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('Error testing binance integration:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
  * Get price for a specific symbol
  * @route GET /api/binance/price/:symbol
  */
@@ -293,7 +321,7 @@ router.get('/price/:symbol', async (req: Request, res: Response) => {
   console.log(`Processing price request for ${formattedSymbol}`);
   
   // Try WebSocket cache first (fastest and most reliable)
-  const livePrices = binanceMarketService.getAllLatestPrices();
+  const livePrices = binanceService.getAllLatestPrices();
   console.log(`Found ${livePrices.length} live prices in cache`);
   
   const livePrice = livePrices.find(p => p.symbol === formattedSymbol);
@@ -355,7 +383,7 @@ router.get('/price/:symbol', async (req: Request, res: Response) => {
   // Try Binance API as a last resort
   try {
     console.log(`Trying Binance API for ${formattedSymbol}`);
-    const tickerPrice = await binanceMarketService.getSymbolPrice(formattedSymbol);
+    const tickerPrice = await binanceService.getSymbolPrice(formattedSymbol);
     
     if (tickerPrice) {
       console.log(`Successfully got price from Binance API for ${formattedSymbol}: ${tickerPrice.price}`);
@@ -363,7 +391,7 @@ router.get('/price/:symbol', async (req: Request, res: Response) => {
         success: true,
         source: 'binance',
         symbol: tickerPrice.symbol,
-        formattedSymbol: formatSymbolForDisplay(tickerPrice.symbol),
+        formattedSymbol: formatSymbolForDisplay(formattedSymbol),
         price: parseFloat(tickerPrice.price),
         timestamp: new Date().toISOString()
       });

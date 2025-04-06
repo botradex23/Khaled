@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { storage } from '../storage';
 import { ensureAuthenticated } from '../auth';
-import { createOkxServiceWithCustomCredentials } from '../api/okx/okxService';
+import { binanceService } from '../api/binance/binanceServiceIntegration';
 
 const router = Router();
 
-// Route to update API keys with a special warning about OKX passphrase format
+// Route to update API keys for Binance
 router.post('/update-keys', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -13,42 +13,24 @@ router.post('/update-keys', ensureAuthenticated, async (req: Request, res: Respo
       return res.status(401).json({ success: false, message: 'User not authenticated' });
     }
 
-    const { apiKey, secretKey, passphrase, useTestnet = true } = req.body;
-
-    // Check if the passphrase ends with a dot - which causes issues with OKX API
-    const endsWithDot = passphrase && passphrase.endsWith('.');
-    if (endsWithDot) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Passphrase ends with a dot/period which is known to cause authentication issues with OKX API. Please use a passphrase without a trailing dot.'
-      });
-    }
+    const { apiKey, secretKey, useTestnet = true } = req.body;
 
     // Update the user's API keys
     await storage.updateUserApiKeys(userId, {
-      okxApiKey: apiKey,
-      okxSecretKey: secretKey,
-      okxPassphrase: passphrase,
+      binanceApiKey: apiKey,
+      binanceSecretKey: secretKey,
       useTestnet,
-      defaultBroker: 'okx' // Set OKX as the default broker
+      defaultBroker: 'binance' // Set Binance as the default broker
     });
 
-    // Validate the new keys immediately
-    const testService = createOkxServiceWithCustomCredentials(
-      apiKey,
-      secretKey,
-      passphrase,
-      useTestnet // Use testnet if requested
-    );
-
-    // Attempt a simple authenticated request to validate credentials
+    // Attempt to check API status to validate credentials
     try {
-      await testService.getAccountInfo();
+      const apiStatus = await binanceService.checkApiStatus();
       
       // If we get here, authentication was successful
       return res.status(200).json({
         success: true,
-        message: 'API keys updated and verified successfully',
+        message: 'Binance API keys updated and verified successfully',
         username: req.user?.username,
         hasApiKeys: true,
         useTestnet
@@ -88,30 +70,21 @@ router.get('/test-keys', ensureAuthenticated, async (req: Request, res: Response
 
     // Get the user's API keys
     const apiKeys = await storage.getUserApiKeys(userId);
-    if (!apiKeys || !apiKeys.okxApiKey || !apiKeys.okxSecretKey || !apiKeys.okxPassphrase) {
+    if (!apiKeys || !apiKeys.binanceApiKey || !apiKeys.binanceSecretKey) {
       return res.status(400).json({ 
         success: false, 
-        message: 'No API keys configured for this user' 
+        message: 'No Binance API keys configured for this user' 
       });
     }
 
-    // Create a service instance with the user's API keys
-    const testService = createOkxServiceWithCustomCredentials(
-      apiKeys.okxApiKey,
-      apiKeys.okxSecretKey,
-      apiKeys.okxPassphrase,
-      apiKeys.useTestnet === true // Ensure it's a boolean
-    );
-
-    // Attempt a simple authenticated request to validate credentials
+    // Attempt to check API status to validate credentials
     try {
-      const accountInfo = await testService.getAccountInfo();
+      const apiStatus = await binanceService.checkApiStatus();
       
       // If we get here, authentication was successful
       return res.status(200).json({
         success: true,
-        message: 'API keys verified successfully',
-        accountInfo,
+        message: 'Binance API keys verified successfully',
         username: req.user?.username,
         hasApiKeys: true,
         useTestnet: apiKeys.useTestnet
@@ -126,11 +99,6 @@ router.get('/test-keys', ensureAuthenticated, async (req: Request, res: Response
           code: apiError.code || 'unknown',
           details: apiError.response?.data?.msg || 'No additional details available'
         },
-        passphraseInfo: {
-          endsWithDot: apiKeys.okxPassphrase.endsWith('.'),
-          hasSpecialChars: apiKeys.okxPassphrase !== encodeURIComponent(apiKeys.okxPassphrase),
-          length: apiKeys.okxPassphrase.length
-        },
         username: req.user?.username,
       });
     }
@@ -144,25 +112,25 @@ router.get('/test-keys', ensureAuthenticated, async (req: Request, res: Response
   }
 });
 
-// Route to provide guidance on creating proper OKX API keys
+// Route to provide guidance on creating proper Binance API keys
 router.get('/guidance', (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
-    title: 'Creating OKX API Keys',
+    title: 'Creating Binance API Keys',
     steps: [
-      'Log in to your OKX account at https://www.okx.com/',
+      'Log in to your Binance account at https://www.binance.com/',
       'Navigate to "API Management" in your account settings',
-      'Create a new API key with "Read" and "Trade" permissions',
-      'Use a simple passphrase WITHOUT special characters or trailing dots',
-      'Save your API Key, Secret Key, and Passphrase securely',
-      'Enter these credentials in our platform to connect to your OKX account'
+      'Create a new API key with "Read" and "Trading" permissions',
+      'Configure IP restrictions for additional security',
+      'Save your API Key and Secret Key securely',
+      'Enter these credentials in our platform to connect to your Binance account'
     ],
     commonIssues: [
-      'Passphrase ending with a dot/period (.) - This causes encoding issues',
-      'Special characters in passphrase - These can cause authentication problems',
-      'Insufficient permissions - Ensure your API key has "Read" and "Trade" permissions',
-      'Using keys from OKX Wallet instead of the main OKX exchange',
-      'Testnet and mainnet confusion - Our platform uses the testnet for testing'
+      'Insufficient permissions - Ensure your API key has both "Read" and "Trading" permissions',
+      'IP restriction issues - If you set IP restrictions, make sure our platform IP is allowed',
+      'Key expiration - Some API keys may expire, check if they need renewal',
+      'Using testnet vs. mainnet - Our platform defaults to testnet for testing',
+      'Account verification - Ensure your Binance account is properly verified for trading'
     ]
   });
 });

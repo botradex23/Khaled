@@ -168,7 +168,7 @@ function createWebSocket(url: string): WebSocket {
 }
 
 // ממשק עבור נתוני המחיר בזמן אמת
-export interface LivePriceUpdate {
+export type LivePriceUpdate = {
   symbol: string;
   price: number;
   timestamp: number;
@@ -860,20 +860,20 @@ export class BinanceMarketPriceService extends EventEmitter {
   private _last24hrStats: Record<string, Binance24hrTicker> = {};
   
   /**
-   * Convert OKX symbol format to Binance format
-   * @param okxSymbol Symbol in OKX format (e.g., "BTC-USDT")
+   * Convert hyphenated symbol format to Binance format
+   * @param hyphenatedSymbol Symbol with hyphen (e.g., "BTC-USDT")
    * @returns Symbol in Binance format (e.g., "BTCUSDT")
    */
-  static convertOkxToBinanceSymbol(okxSymbol: string): string {
-    return okxSymbol.replace('-', '');
+  static convertHyphenatedToBinanceSymbol(hyphenatedSymbol: string): string {
+    return hyphenatedSymbol.replace('-', '');
   }
   
   /**
-   * Convert Binance symbol format to OKX format
+   * Convert Binance symbol format to hyphenated format
    * @param binanceSymbol Symbol in Binance format (e.g., "BTCUSDT")
-   * @returns Symbol in OKX format (e.g., "BTC-USDT")
+   * @returns Symbol with hyphen (e.g., "BTC-USDT")
    */
-  static convertBinanceToOkxSymbol(binanceSymbol: string): string {
+  static convertBinanceToHyphenatedSymbol(binanceSymbol: string): string {
     // For USDT pairs like BTCUSDT -> BTC-USDT
     if (binanceSymbol.endsWith('USDT')) {
       return binanceSymbol.replace('USDT', '-USDT');
@@ -899,28 +899,28 @@ export class BinanceMarketPriceService extends EventEmitter {
   }
   
   /**
-   * Get currency pairs for the most important cryptocurrencies and convert them to Binance format
+   * Get currency pairs for the most important cryptocurrencies
    * @returns Array of symbols in Binance format
    */
   static getImportantCurrencyPairs(): string[] {
-    const okxPairs = [
-      'BTC-USDT', 'ETH-USDT', 'SOL-USDT', 'BNB-USDT', 'XRP-USDT',
-      'DOGE-USDT', 'ADA-USDT', 'MATIC-USDT', 'AVAX-USDT', 'DOT-USDT',
-      'UNI-USDT', 'LINK-USDT', 'SHIB-USDT', 'LTC-USDT', 'ATOM-USDT',
-      'NEAR-USDT', 'BCH-USDT', 'FIL-USDT', 'TRX-USDT', 'XLM-USDT'
+    const standardPairs = [
+      'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT',
+      'DOGEUSDT', 'ADAUSDT', 'MATICUSDT', 'AVAXUSDT', 'DOTUSDT',
+      'UNIUSDT', 'LINKUSDT', 'SHIBUSDT', 'LTCUSDT', 'ATOMUSDT',
+      'NEARUSDT', 'BCHUSDT', 'FILUSDT', 'TRXUSDT', 'XLMUSDT'
     ];
     
-    return okxPairs.map(pair => BinanceMarketPriceService.convertOkxToBinanceSymbol(pair));
+    return standardPairs;
   }
 }
 
 // Type definitions
-export interface BinanceTickerPrice {
+export type BinanceTickerPrice = {
   symbol: string;
   price: string;
 }
 
-export interface Binance24hrTicker {
+export type Binance24hrTicker = {
   symbol: string;
   priceChange: string;
   priceChangePercent: string;

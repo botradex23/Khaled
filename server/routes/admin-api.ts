@@ -40,8 +40,8 @@ router.get('/users/api-keys-status', ensureAuthenticated, async (req: Request, r
       id: user.id,
       email: user.email,
       username: user.username,
-      apiKeysConfigured: !!(user.okxApiKey && user.okxSecretKey && user.okxPassphrase),
-      defaultBroker: user.defaultBroker || 'okx',
+      apiKeysConfigured: !!(user.binanceApiKey && user.binanceSecretKey),
+      defaultBroker: user.defaultBroker || 'binance',
       useTestnet: user.useTestnet === undefined ? true : !!user.useTestnet,
       lastUpdated: user.createdAt // In a real system, you'd track when keys were last updated
     }));
@@ -99,14 +99,13 @@ router.post('/users/:userId/verify-api-keys', ensureAuthenticated, async (req: R
     
     // Check if the user has API keys configured
     const apiKeys = await storage.getUserApiKeys(targetUserId);
-    if (!apiKeys || !apiKeys.okxApiKey || !apiKeys.okxSecretKey || !apiKeys.okxPassphrase) {
+    if (!apiKeys || !apiKeys.binanceApiKey || !apiKeys.binanceSecretKey) {
       return res.status(400).json({ 
         success: false, 
-        message: 'User does not have API keys configured',
+        message: 'User does not have Binance API keys configured',
         details: {
-          hasApiKey: !!apiKeys?.okxApiKey,
-          hasSecretKey: !!apiKeys?.okxSecretKey,
-          hasPassphrase: !!apiKeys?.okxPassphrase
+          hasApiKey: !!apiKeys?.binanceApiKey,
+          hasSecretKey: !!apiKeys?.binanceSecretKey
         }
       });
     }

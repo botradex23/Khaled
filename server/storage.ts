@@ -51,22 +51,22 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
   
-  // OKX API key related methods
+  // API key related methods (Binance only)
   updateUserApiKeys(
     userId: number, 
     apiKeys: { 
-      okxApiKey?: string; 
-      okxSecretKey?: string; 
-      okxPassphrase?: string; 
+      binanceApiKey?: string; 
+      binanceSecretKey?: string; 
+      binanceAllowedIp?: string; 
       defaultBroker?: string;
       useTestnet?: boolean;
     }
   ): Promise<User | undefined>;
   
   getUserApiKeys(userId: number): Promise<{ 
-    okxApiKey?: string | null; 
-    okxSecretKey?: string | null; 
-    okxPassphrase?: string | null;
+    binanceApiKey?: string | null; 
+    binanceSecretKey?: string | null; 
+    binanceAllowedIp?: string | null;
     defaultBroker: string;
     useTestnet: boolean;
   } | undefined>;
@@ -286,15 +286,12 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       
       // No default API keys - user must set their own
-      okxApiKey: null,
-      okxSecretKey: null,
-      okxPassphrase: null,
       binanceApiKey: null,
       binanceSecretKey: null,
       binanceAllowedIp: null,
       
       // Default broker settings
-      defaultBroker: "okx",
+      defaultBroker: "binance",
       useTestnet: true,
       
       // Stripe related fields
@@ -317,11 +314,6 @@ export class MemStorage implements IStorage {
       appleId: null,
       profilePicture: null,
       createdAt: new Date(),
-      
-      // Add your OKX API keys here
-      okxApiKey: process.env.OKX_API_KEY || "okx-test-api-key",
-      okxSecretKey: process.env.OKX_SECRET_KEY || "okx-test-secret-key",
-      okxPassphrase: process.env.OKX_PASSPHRASE || "okx-test-passphrase",
       
       // Add Binance API keys
       binanceApiKey: process.env.BINANCE_API_KEY || "binance-test-api-key", 
@@ -579,15 +571,12 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       
       // No default API keys - user must set their own
-      okxApiKey: null,
-      okxSecretKey: null,
-      okxPassphrase: null,
       binanceApiKey: null,
       binanceSecretKey: null,
       binanceAllowedIp: null,
       
       // Default broker settings
-      defaultBroker: insertUser.defaultBroker || "okx",
+      defaultBroker: insertUser.defaultBroker || "binance",
       useTestnet: insertUser.useTestnet !== undefined ? !!insertUser.useTestnet : true,
       
       // Stripe related fields
@@ -614,26 +603,6 @@ export class MemStorage implements IStorage {
     }
     
     // Add API keys if provided - with encryption
-    if (insertUser.okxApiKey) {
-      const cleanedApiKey = insertUser.okxApiKey.trim();
-      // Encrypt API key before storing
-      user.okxApiKey = encrypt(cleanedApiKey);
-      console.log(`Encrypted OKX API key during user creation, length: ${user.okxApiKey.length}`);
-    }
-    
-    if (insertUser.okxSecretKey) {
-      const cleanedSecretKey = insertUser.okxSecretKey.trim();
-      // Encrypt Secret key before storing
-      user.okxSecretKey = encrypt(cleanedSecretKey);
-      console.log(`Encrypted OKX Secret key during user creation, length: ${user.okxSecretKey.length}`);
-    }
-    
-    if (insertUser.okxPassphrase) {
-      const cleanedPassphrase = insertUser.okxPassphrase.trim();
-      // Encrypt Passphrase before storing
-      user.okxPassphrase = encrypt(cleanedPassphrase);
-      console.log(`Encrypted OKX Passphrase during user creation, length: ${user.okxPassphrase.length}`);
-    }
     
     if (insertUser.binanceApiKey) {
       const cleanedApiKey = insertUser.binanceApiKey.trim();
@@ -668,30 +637,7 @@ export class MemStorage implements IStorage {
     // Check if any API keys are being updated, and encrypt them if needed
     const processedUpdates = { ...updates };
     
-    // Encrypt OKX API keys if provided
-    if (updates.okxApiKey !== undefined && updates.okxApiKey !== null) {
-      const cleanedApiKey = updates.okxApiKey.trim();
-      if (cleanedApiKey) {
-        processedUpdates.okxApiKey = encrypt(cleanedApiKey);
-        console.log(`Encrypted OKX API key in updateUser, length: ${processedUpdates.okxApiKey.length}`);
-      }
-    }
-    
-    if (updates.okxSecretKey !== undefined && updates.okxSecretKey !== null) {
-      const cleanedSecretKey = updates.okxSecretKey.trim();
-      if (cleanedSecretKey) {
-        processedUpdates.okxSecretKey = encrypt(cleanedSecretKey);
-        console.log(`Encrypted OKX Secret key in updateUser, length: ${processedUpdates.okxSecretKey.length}`);
-      }
-    }
-    
-    if (updates.okxPassphrase !== undefined && updates.okxPassphrase !== null) {
-      const cleanedPassphrase = updates.okxPassphrase.trim();
-      if (cleanedPassphrase) {
-        processedUpdates.okxPassphrase = encrypt(cleanedPassphrase);
-        console.log(`Encrypted OKX Passphrase in updateUser, length: ${processedUpdates.okxPassphrase.length}`);
-      }
-    }
+
     
     // Encrypt Binance API keys if provided
     if (updates.binanceApiKey !== undefined && updates.binanceApiKey !== null) {

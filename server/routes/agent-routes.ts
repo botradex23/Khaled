@@ -113,23 +113,19 @@ router.get('/health', ensureTestAdminAuthenticated, async (req: Request, res: Re
     try {
       console.log('Testing OpenAI API with a minimal request');
       console.log('Using model: gpt-4o-mini for health check');
-      const testResponse = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          model: "gpt-4o-mini", // Use the current model we're standardizing on
-          messages: [
-            { role: "system", content: "You are a helpful assistant." },
-            { role: "user", content: "Say hello" }
-          ],
-          max_tokens: 5, // Use minimal tokens to save quota
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          }
-        }
-      );
+      
+      // Use our validateOpenAIKey function which has proper proxy support
+      const validationResult = await validateOpenAIKey();
+      
+      if (!validationResult.success) {
+        throw new Error(validationResult.message);
+      }
+      
+      // Mock response data just for logging
+      const testResponse = {
+        status: 200,
+        data: { success: true, message: 'Proxy connection is working properly' }
+      };
       
       console.log('OpenAI Test Response Status:', testResponse.status);
       console.log('OpenAI Test Response first chars:', JSON.stringify(testResponse.data).substring(0, 100) + '...');
