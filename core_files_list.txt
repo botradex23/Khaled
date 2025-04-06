@@ -1,0 +1,31 @@
+# Tradeliy Deployment - Files and Directories to Keep
+
+## Essential Directories
+- ./agent        (Agent functionality)
+- ./client       (Frontend React app)
+- ./data         (Application data)
+- ./dist         (Built application)
+- ./public       (Public static files)
+- ./python_app   (Python application components)
+- ./server       (Backend server code)
+- ./shared       (Shared code between client and server)
+
+## Essential Configuration Files
+- ./.env              (Environment variables)
+- ./.env.example      (Reference for environment variables)
+- ./drizzle.config.ts (Database configuration)
+- ./package.json      (Project definition)
+- ./package-lock.json (Dependency lock file)
+- ./postcss.config.js (CSS processing)
+- ./pyproject.toml    (Python dependencies)
+- ./tailwind.config.ts (Tailwind CSS config)
+- ./tsconfig.json     (TypeScript config)
+- ./vite.config.ts    (Vite build config)
+- ./components.json   (UI components)
+- ./theme.json        (UI theme)
+
+## Core Runtime Files
+- ./server/index.ts   (Main server entry point)
+- ./server/vite.ts    (Vite integration)
+- ./server/routes.ts  (API routes)
+- ./server/auth/index.ts (Authentication)

@@ -1,0 +1,128 @@
+# Tradeliy Deployment Overview
+
+This document provides guidance on preparing the Tradeliy platform for deployment to a VPS server.
+
+## WHAT TO KEEP
+
+### Essential Directories
+- ./agent        (Agent functionality)
+- ./client       (Frontend React app)
+- ./data         (Application data)
+- ./dist         (Built application)
+- ./public       (Public static files)
+- ./python_app   (Python application components)
+- ./server       (Backend server code)
+- ./shared       (Shared code between client and server)
+
+### Essential Configuration Files
+- ./.env              (Environment variables)
+- ./.env.example      (Reference for environment variables)
+- ./drizzle.config.ts (Database configuration)
+- ./package.json      (Project definition)
+- ./package-lock.json (Dependency lock file)
+- ./postcss.config.js (CSS processing)
+- ./pyproject.toml    (Python dependencies)
+- ./tailwind.config.ts (Tailwind CSS config)
+- ./tsconfig.json     (TypeScript config)
+- ./vite.config.ts    (Vite build config)
+- ./components.json   (UI components)
+- ./theme.json        (UI theme)
+
+### Core Runtime Files
+- ./server/index.ts   (Main server entry point)
+- ./server/vite.ts    (Vite integration)
+- ./server/routes.ts  (API routes)
+- ./server/auth/index.ts (Authentication)
+
+## WHAT TO REMOVE
+
+### Directories to Remove
+- ./attached_assets   (Development assets)
+- ./bin               (Development binaries)
+- ./.cache            (Development cache)
+- ./docs              (Documentation)
+- ./load_test         (Load testing files)
+- ./logs              (Log files)
+- ./__pycache__       (Python cache)
+- ./temp              (Temporary files)
+- ./tests             (Unit/integration tests)
+- ./unit_tests        (Unit tests)
+- ./.git              (Git repository data)
+- ./.workflow         (Replit workflow files)
+- ./.upm              (Package manager cache)
+- ./.pythonlibs       (Python library files - should be reinstalled in production)
+- ./cleanup_example   (Our temporary cleanup example)
+- ./cleanup_dirs_example (Our temporary cleanup example)
+
+### Test Files to Remove
+All files with these patterns:
+- *test*.js  
+- *test*.py
+- *test*.ts
+- *test*.cjs
+- *test*.mjs
+
+### Development Tools and Utilities to Remove
+- check-*.js
+- direct-*.js
+- simple-*.js
+- *-agent-*.js (except core agent functionality)
+- *.log files
+- *.pid files
+- diagnose-*.js
+- run-*.js
+- start_*.js
+
+### Temporary and Development Data Files to Remove
+- bot_*.txt
+- binance_*.md
+- demo-*.json
+- raw_*.json
+- response.* files
+
+## DEPLOYMENT STEPS
+
+1. PREPARE PROJECT
+   - Create a new directory for deployment
+   - Copy only essential files and directories 
+   - Remove any unnecessary files
+
+2. SET UP VPS ENVIRONMENT
+   - Install Node.js, npm, Python, PostgreSQL, MongoDB
+   - Configure environment variables in .env
+   - Set NODE_ENV=production
+
+3. INSTALL DEPENDENCIES
+   - Node.js dependencies
+   - Python dependencies
+
+4. BUILD APPLICATION
+   - Use npm run build to compile frontend and backend
+
+5. START APPLICATION
+   - Use npm start for testing
+   - Consider using PM2 for production management
+
+6. ADDITIONAL RECOMMENDATIONS
+   - Configure NGINX as a reverse proxy
+   - Set up SSL with Let's Encrypt
+   - Implement regular database backups
+   - Create a process for future updates
+
+## IMPORTANT CONFIGURATION NOTES
+
+1. MongoDB and PostgreSQL Connection
+   - Update connection strings in .env
+   - Ensure database users have appropriate permissions
+
+2. Proxy Configuration (if needed)
+   - If accessing Binance API from restricted regions
+   - Update proxy settings in .env
+
+3. API Keys and Secrets
+   - Update all API keys and secrets in .env
+   - Never commit these to version control
+
+4. Server Port
+   - The application runs on port 5000 by default
+   - Can be changed via PORT environment variable

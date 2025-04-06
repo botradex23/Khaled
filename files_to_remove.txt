@@ -1,0 +1,45 @@
+# Tradeliy Deployment - Files and Directories to Remove
+
+## Directories to Remove
+- ./attached_assets   (Development assets)
+- ./bin               (Development binaries)
+- ./.cache            (Development cache)
+- ./docs              (Documentation)
+- ./load_test         (Load testing files)
+- ./logs              (Log files)
+- ./__pycache__       (Python cache)
+- ./temp              (Temporary files)
+- ./tests             (Unit/integration tests)
+- ./unit_tests        (Unit tests)
+- ./.git              (Git repository data)
+- ./.workflow         (Replit workflow files)
+- ./.upm              (Package manager cache)
+- ./.pythonlibs       (Python library files - these should be reinstalled in production)
+- ./cleanup_example   (Our temporary cleanup example)
+- ./cleanup_dirs_example (Our temporary cleanup example)
+
+## Test Files to Remove
+All files with these patterns:
+- *test*.js  
+- *test*.py
+- *test*.ts
+- *test*.cjs
+- *test*.mjs
+
+## Development Tools and Utilities to Remove
+- check-*.js
+- direct-*.js
+- simple-*.js
+- *-agent-*.js (except core agent functionality)
+- *.log files
+- *.pid files
+- diagnose-*.js
+- run-*.js
+- start_*.js
+
+## Temporary and Development Data Files to Remove
+- bot_*.txt
+- binance_*.md
+- demo-*.json
+- raw_*.json
+- response.* files

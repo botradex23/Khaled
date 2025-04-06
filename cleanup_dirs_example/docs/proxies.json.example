@@ -1,0 +1,41 @@
+{
+  "proxies": [
+    {
+      "name": "primary",
+      "protocol": "http",
+      "ip": "uk.smartproxy.com",
+      "port": "20000",
+      "username": "your_username",
+      "password": "your_password",
+      "country": "UK",
+      "priority": 1
+    },
+    {
+      "name": "backup",
+      "protocol": "socks5",
+      "ip": "de.proxyprovider.com",
+      "port": "1080",
+      "username": "backup_username",
+      "password": "backup_password",
+      "country": "Germany",
+      "priority": 2
+    },
+    {
+      "name": "emergency",
+      "protocol": "https",
+      "ip": "jp.secureproxy.com",
+      "port": "443",
+      "username": "emergency_username",
+      "password": "emergency_password", 
+      "country": "Japan",
+      "priority": 3
+    }
+  ],
+  "settings": {
+    "rotation_strategy": "on_failure",
+    "rotation_interval_minutes": 60,
+    "max_failures_before_rotation": 3,
+    "test_url": "https://api.binance.com/api/v3/ping",
+    "timeout_seconds": 10
+  }
+}

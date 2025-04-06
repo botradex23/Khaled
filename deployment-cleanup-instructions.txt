@@ -1,0 +1,97 @@
+# PROJECT CLEANUP INSTRUCTIONS FOR DEPLOYMENT
+
+This document outlines which files and directories should be kept or removed when preparing for deployment to a VPS.
+
+## DIRECTORIES TO KEEP
+
+- ./agent (Agent functionality)
+- ./client (Frontend React app)
+- ./data (Application data)
+- ./dist (Built application)
+- ./public (Public static files)
+- ./python_app (Python application components)
+- ./server (Backend server code)
+- ./shared (Shared code between client and server)
+- ./node_modules (Dependencies - or recreate with npm install)
+
+## DIRECTORIES TO REMOVE
+
+- ./attached_assets (Development assets)
+- ./bin (Development binaries)
+- ./.cache (Development cache)
+- ./docs (Documentation)
+- ./load_test (Load testing files)
+- ./logs (Log files)
+- ./__pycache__ (Python cache)
+- ./temp (Temporary files)
+- ./tests (Unit/integration tests)
+- ./unit_tests (Unit tests)
+- ./.git (Git repository data)
+- ./.workflow (Replit workflow files)
+- ./.upm (Package manager cache)
+- ./.pythonlibs (Python library files - should be reinstalled in production)
+
+## CONFIGURATION FILES TO KEEP
+
+- .env (Environment variables - ensure secrets are updated for production)
+- .env.example (As reference)
+- drizzle.config.ts (Database configuration)
+- package.json (Project definition)
+- package-lock.json (Dependency lock file)
+- postcss.config.js (CSS processing configuration)
+- pyproject.toml (Python dependencies)
+- tailwind.config.ts (Tailwind CSS configuration)
+- tsconfig.json (TypeScript configuration)
+- vite.config.ts (Vite build configuration)
+- components.json (UI component configuration)
+- theme.json (UI theme configuration)
+
+## FILES TO REMOVE
+
+1. All test files:
+   - *test*.js
+   - *test*.py
+   - *test*.ts
+   - *test*.cjs
+   - *test*.mjs
+
+2. All development tools and utilities:
+   - check-*.js
+   - direct-*.js
+   - simple-*.js
+   - *-agent-*.js (except core agent functionality)
+   - *.log files
+   - *.pid files
+
+3. Temporary and development data files:
+   - bot_*.txt
+   - binance_*.md
+   - demo-*.json
+   - raw_*.json
+   - response.* files
+
+## DEPLOYMENT STEPS
+
+1. Create a clean directory for deployment
+2. Copy all required files and directories to the deployment directory
+3. Install dependencies:
+   ```
+   npm install
+   ```
+4. Build the application:
+   ```
+   npm run build
+   ```
+5. Set up environment variables (from .env)
+6. Start the production server:
+   ```
+   npm start
+   ```
+
+## IMPORTANT NOTES
+
+- Ensure MongoDB and PostgreSQL are properly configured and accessible
+- Make sure all API keys and secrets are set up correctly in the production environment
+- If deploying behind a proxy or load balancer, ensure proper configuration
+- Update any hardcoded URLs or references to match your production domain
+- For Binance API access from restricted regions, ensure proper proxy configuration
