@@ -10,15 +10,15 @@ const BINANCE_TEST_URL = 'https://testnet.binance.vision';
 const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws';
 const BINANCE_TEST_WS_URL = 'wss://testnet.binance.vision/ws';
 
-// Proxy configuration - load from environment variables for security
-const USE_PROXY = process.env.USE_PROXY === 'true' || true; // Default to true
-const PROXY_USERNAME = process.env.PROXY_USERNAME || "xzwdlrlk"; // Fallback to current working proxy
+// Proxy configuration - load from environment variables with reliable defaults
+const USE_PROXY = process.env.USE_PROXY !== 'false'; // Default to true if not explicitly set to 'false'
+const PROXY_USERNAME = process.env.PROXY_USERNAME || "xzwdlrlk"; 
 const PROXY_PASSWORD = process.env.PROXY_PASSWORD || "yrv2cpbyo1oa";
-const PROXY_IP = process.env.PROXY_IP || '45.151.162.198'; 
-const PROXY_PORT = process.env.PROXY_PORT || '6600';
+const PROXY_IP = process.env.PROXY_IP || '154.36.110.199'; 
+const PROXY_PORT = process.env.PROXY_PORT || '6853';
 const PROXY_PROTOCOL = process.env.PROXY_PROTOCOL || 'http';
 const PROXY_ENCODING_METHOD = process.env.PROXY_ENCODING_METHOD || 'quote_plus';
-const FALLBACK_TO_DIRECT = process.env.FALLBACK_TO_DIRECT === 'true' || true; // Default to true
+const FALLBACK_TO_DIRECT = process.env.FALLBACK_TO_DIRECT !== 'false'; // Default to true
 
 /**
  * Create a properly configured Axios instance with proxy support
@@ -74,17 +74,7 @@ function createAxiosInstance(baseUrl: string): AxiosInstance {
             'Accept': 'application/json',
             'X-MBX-APIKEY': process.env.BINANCE_API_KEY || '' // Add API key if available
           },
-          // Direct proxy configuration
-          proxy: {
-            host: PROXY_IP,
-            port: parseInt(PROXY_PORT, 10),
-            auth: {
-              username: PROXY_USERNAME,
-              password: PROXY_PASSWORD
-            },
-            protocol: PROXY_PROTOCOL
-          },
-          // Also pass httpsAgent for HTTPS requests
+          // Use httpsAgent for proxy connection - this is more reliable than the proxy object for authenticated proxies
           httpsAgent: proxyAgent,
           // Enhanced error handling
           validateStatus: (status) => {
@@ -167,7 +157,13 @@ function createWebSocket(url: string): WebSocket {
   }
 }
 
-// ממשק עבור נתוני המחיר בזמן אמת
+// Interfaces for binance price data
+export type BinanceTickerPrice = {
+  symbol: string;
+  price: string;
+};
+
+// Interface for live price updates
 export type LivePriceUpdate = {
   symbol: string;
   price: number;
@@ -914,12 +910,7 @@ export class BinanceMarketPriceService extends EventEmitter {
   }
 }
 
-// Type definitions
-export type BinanceTickerPrice = {
-  symbol: string;
-  price: string;
-}
-
+// Type definitions for 24hr ticker statistics
 export type Binance24hrTicker = {
   symbol: string;
   priceChange: string;
