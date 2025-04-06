@@ -3,10 +3,24 @@ import WebSocket from 'ws';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import axios, { AxiosInstance } from 'axios';
+import { Agent } from 'https';
 
-// Initially we'll need to dynamically import node-binance-api to handle the case where it might not be installed
-let Binance: any = null;
+// Try to import Binance SDK - will use dynamic import to handle case where it's not installed
+let Binance: any = null; 
 let hasBinanceSdk = false;
+
+// Attempt to dynamically import binance-api-node when available
+try {
+  // Using require here to handle both ESM and CommonJS environments
+  // This is a workaround since dynamic import might not work well in certain configurations
+  Binance = require('binance-api-node').default;
+  hasBinanceSdk = true;
+  console.log('Successfully imported binance-api-node SDK');
+} catch (error) {
+  console.warn('Failed to import binance-api-node SDK:', error instanceof Error ? error.message : error);
+  console.warn('Using Axios fallback for Binance API access');
+  hasBinanceSdk = false;
+}
 
 // Base URLs for Binance API
 const BINANCE_BASE_URL = 'https://api.binance.com';
@@ -15,14 +29,14 @@ const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws';
 const BINANCE_TEST_WS_URL = 'wss://testnet.binance.vision/ws';
 
 // Proxy configuration - load from environment variables for security
-const USE_PROXY = process.env.USE_PROXY === 'true' || true; // Default to true
+const USE_PROXY = process.env.USE_PROXY !== 'false'; // Default to true if not explicitly 'false'
 const PROXY_USERNAME = process.env.PROXY_USERNAME || "xzwdlrlk"; // Fallback to current working proxy
 const PROXY_PASSWORD = process.env.PROXY_PASSWORD || "yrv2cpbyo1oa";
-const PROXY_IP = process.env.PROXY_IP || '45.151.162.198'; 
-const PROXY_PORT = process.env.PROXY_PORT || '6600';
+const PROXY_IP = process.env.PROXY_IP || '86.38.234.176'; // Using latest working proxy from logs
+const PROXY_PORT = process.env.PROXY_PORT || '6630';
 const PROXY_PROTOCOL = process.env.PROXY_PROTOCOL || 'http';
 const PROXY_ENCODING_METHOD = process.env.PROXY_ENCODING_METHOD || 'quote_plus';
-const FALLBACK_TO_DIRECT = process.env.FALLBACK_TO_DIRECT === 'true' || true; // Default to true
+const FALLBACK_TO_DIRECT = process.env.FALLBACK_TO_DIRECT !== 'false'; // Default to true if not 'false'
 
 // Interface for real-time price updates
 export interface LivePriceUpdate {
