@@ -47,9 +47,8 @@ interface TradingBot {
 interface ApiKeysResponse {
   message: string;
   apiKeys: {
-    okxApiKey: string | null;
-    okxSecretKey: string | null;
-    okxPassphrase: string | null;
+    binanceApiKey: string | null;
+    binanceSecretKey: string | null;
     defaultBroker: string;
     useTestnet: boolean;
   };
@@ -73,7 +72,7 @@ export default function Bots() {
   useEffect(() => {
     if (apiKeysData && (apiKeysData as ApiKeysResponse).apiKeys) {
       const keys = (apiKeysData as ApiKeysResponse).apiKeys;
-      if (keys.okxApiKey && keys.okxSecretKey) {
+      if (keys.binanceApiKey && keys.binanceSecretKey) {
         setIsApiKeysAvailable(true);
       }
     }
@@ -81,14 +80,14 @@ export default function Bots() {
 
   // Query user's trading bots
   const { data: botsData, isLoading: isLoadingBots, error: botsError } = useQuery({
-    queryKey: ['/api/okx/bots'],
+    queryKey: ['/api/binance/bots'],
     enabled: isAuthenticated && isApiKeysAvailable,
   });
 
   // Mutation to start/stop bot
   const toggleBotStatusMutation = useMutation({
     mutationFn: async ({ botId, action }: { botId: number, action: 'start' | 'stop' }) => {
-      const url = `/api/okx/bots/${botId}/${action}`;
+      const url = `/api/binance/bots/${botId}/${action}`;
       const options = { method: 'POST' };
       return apiRequest(url, options as any);
     }
@@ -97,7 +96,7 @@ export default function Bots() {
   // Handle mutation success/error
   useEffect(() => {
     if (toggleBotStatusMutation.isSuccess) {
-      queryClient.invalidateQueries({ queryKey: ['/api/okx/bots'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/binance/bots'] });
       toast({
         title: "Success",
         description: "Bot status updated successfully",
@@ -237,7 +236,7 @@ export default function Bots() {
                           <p className="mb-2">Failed to load your trading bots</p>
                           <Button 
                             variant="outline" 
-                            onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/okx/bots'] })}
+                            onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/binance/bots'] })}
                           >
                             Try Again
                           </Button>

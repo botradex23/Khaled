@@ -97,9 +97,8 @@ export default function Bots() {
   interface ApiKeysResponse {
     message: string;
     apiKeys: {
-      okxApiKey: string | null;
-      okxSecretKey: string | null;
-      okxPassphrase: string | null;
+      binanceApiKey: string | null;
+      binanceSecretKey: string | null;
       defaultBroker: string;
       useTestnet: boolean;
     };
@@ -127,9 +126,8 @@ export default function Bots() {
       if (!isHindi1000Hindi && apiKeysData) {
         // Check if API keys are missing
         if (!apiKeysData.apiKeys || 
-            !apiKeysData.apiKeys.okxApiKey || 
-            !apiKeysData.apiKeys.okxSecretKey || 
-            !apiKeysData.apiKeys.okxPassphrase) {
+            !apiKeysData.apiKeys.binanceApiKey || 
+            !apiKeysData.apiKeys.binanceSecretKey) {
           // Show dialog
           setShowApiKeyDialog(true);
         }
@@ -140,7 +138,7 @@ export default function Bots() {
   // Start bot mutation
   const startBotMutation = useMutation({
     mutationFn: async (botId: number) => {
-      const response = await fetch(`/api/okx/bots/${botId}/start`, {
+      const response = await fetch(`/api/binance/bots/${botId}/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -169,7 +167,7 @@ export default function Bots() {
   // Stop bot mutation
   const stopBotMutation = useMutation({
     mutationFn: async (botId: number) => {
-      const response = await fetch(`/api/okx/bots/${botId}/stop`, {
+      const response = await fetch(`/api/binance/bots/${botId}/stop`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -199,7 +197,7 @@ export default function Bots() {
   // Update bot parameters mutation
   const updateBotParametersMutation = useMutation({
     mutationFn: async ({ botId, parameters }: { botId: number, parameters: any }) => {
-      const response = await fetch(`/api/okx/bots/${botId}/parameters`, {
+      const response = await fetch(`/api/binance/bots/${botId}/parameters`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ parameters }),
@@ -269,13 +267,13 @@ export default function Bots() {
     }
   };
   
-  // Available trading pairs from OKX
+  // Available trading pairs from Binance
   const tradingPairs = [
-    "BTC-USDT",
-    "ETH-USDT",
-    "SOL-USDT",
-    "XRP-USDT",
-    "BNB-USDT"
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "BNBUSDT"
   ];
   
   // Handle trading pair change
@@ -286,7 +284,7 @@ export default function Bots() {
   // Effect to set the currently selected trading pair and symbols when bot changes
   useEffect(() => {
     if (selectedBot) {
-      setSelectedTradingPair(selectedBot.tradingPair || 'BTC-USDT');
+      setSelectedTradingPair(selectedBot.tradingPair || 'BTCUSDT');
       
       // Try to extract the symbols from bot parameters if available
       try {
@@ -296,14 +294,14 @@ export default function Bots() {
             setSelectedSymbols(params.symbols);
           } else {
             // Fallback to setting just the trading pair if no symbols array
-            setSelectedSymbols([selectedBot.tradingPair || 'BTC-USDT']);
+            setSelectedSymbols([selectedBot.tradingPair || 'BTCUSDT']);
           }
         } else {
-          setSelectedSymbols([selectedBot.tradingPair || 'BTC-USDT']);
+          setSelectedSymbols([selectedBot.tradingPair || 'BTCUSDT']);
         }
       } catch (e) {
         // If JSON parsing fails, just set the trading pair
-        setSelectedSymbols([selectedBot.tradingPair || 'BTC-USDT']);
+        setSelectedSymbols([selectedBot.tradingPair || 'BTCUSDT']);
       }
     }
   }, [selectedBot]);

@@ -11,9 +11,6 @@ interface User {
   hasPremium?: boolean;
   
   // API keys
-  okxApiKey?: string | null;
-  okxSecretKey?: string | null;
-  okxPassphrase?: string | null;
   binanceApiKey?: string | null;
   binanceSecretKey?: string | null;
   binanceAllowedIp?: string | null;

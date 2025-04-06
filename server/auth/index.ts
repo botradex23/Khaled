@@ -575,8 +575,11 @@ function registerAuthRoutes(app: Express) {
         // Check if user isn't marked as admin yet but has admin email
         if (!user.isAdmin && user.email.includes('admin')) {
           console.log('User has admin email but no admin flag, updating user:', user.id);
-          user = await storage.updateUser(user.id, { isAdmin: true });
-          console.log('Updated user admin status:', user.isAdmin);
+          const updatedUser = await storage.updateUser(user.id, { isAdmin: true });
+          if (updatedUser) {
+            user = updatedUser;
+            console.log('Updated user admin status:', user.isAdmin);
+          }
         }
         
         if (user.isAdmin) {

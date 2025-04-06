@@ -151,9 +151,8 @@ export default function AIGridBot() {
   interface ApiKeysResponse {
     message: string;
     apiKeys: {
-      okxApiKey: string | null;
-      okxSecretKey: string | null;
-      okxPassphrase: string | null;
+      binanceApiKey: string | null;
+      binanceSecretKey: string | null;
       defaultBroker: string;
       useTestnet: boolean;
     };
@@ -176,9 +175,8 @@ export default function AIGridBot() {
       if (!isHindi1000Hindi && apiKeysData) {
         // Check if API keys are missing
         if (!apiKeysData.apiKeys || 
-            !apiKeysData.apiKeys.okxApiKey || 
-            !apiKeysData.apiKeys.okxSecretKey || 
-            !apiKeysData.apiKeys.okxPassphrase) {
+            !apiKeysData.apiKeys.binanceApiKey || 
+            !apiKeysData.apiKeys.binanceSecretKey) {
           // Show dialog
           setShowApiKeyDialog(true);
         }
@@ -189,7 +187,7 @@ export default function AIGridBot() {
   // Get market data for the selected pair
   const selectedPair = form.watch("symbol");
   const { data: marketData = [] } = useQuery<any[]>({
-    queryKey: ['/api/okx/markets', selectedPair],
+    queryKey: ['/api/binance/markets', selectedPair],
     enabled: !!selectedPair,
     refetchInterval: 30000,
   });
@@ -931,7 +929,7 @@ export default function AIGridBot() {
               API Keys Required
             </DialogTitle>
             <DialogDescription>
-              You need to configure your OKX API keys before creating a trading bot.
+              You need to configure your Binance API keys before creating a trading bot.
             </DialogDescription>
           </DialogHeader>
           
@@ -941,7 +939,7 @@ export default function AIGridBot() {
                 <AlertCircle className="w-4 h-4 mr-2" />
                 Trading requires API access
               </AlertTitle>
-              <p className="mt-2">To use the AI Grid Bot, you need to provide your OKX API keys with trading permissions.</p>
+              <p className="mt-2">To use the AI Grid Bot, you need to provide your Binance API keys with trading permissions.</p>
             </Alert>
             
             <p className="mb-4">

@@ -50,7 +50,7 @@ import {
 } from "recharts";
 
 export default function BotDemo() {
-  const [selectedSymbols, setSelectedSymbols] = useState<string[]>(["BTC-USDT"]);
+  const [selectedSymbols, setSelectedSymbols] = useState<string[]>(["BTCUSDT"]);
   const [trades, setTrades] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [botStatus, setBotStatus] = useState<{
@@ -84,7 +84,7 @@ export default function BotDemo() {
     setIsLoading(true);
     
     // Fetch trading history
-    fetch('/api/okx/trading/history')
+    fetch('/api/binance/trading/history')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -126,7 +126,7 @@ export default function BotDemo() {
       .finally(() => setIsLoading(false));
       
     // Also fetch bot status
-    fetch('/api/okx/bots/1/status')
+    fetch('/api/binance/bots/1/status')
       .then(res => res.json())
       .then(data => {
         if (data && typeof data === 'object') {
@@ -163,13 +163,13 @@ export default function BotDemo() {
     }
   };
   
-  // Available trading pairs
+  // Available trading pairs (Binance format without hyphen)
   const availableTradingPairs = [
-    "BTC-USDT",
-    "ETH-USDT",
-    "SOL-USDT",
-    "XRP-USDT",
-    "BNB-USDT"
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "BNBUSDT"
   ];
   
   return (
@@ -197,7 +197,7 @@ export default function BotDemo() {
                   </Button>
                   <Button
                     onClick={() => {
-                      fetch('/api/okx/bots/1/start', {
+                      fetch('/api/binance/bots/1/start', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' }
                       })
@@ -452,8 +452,8 @@ export default function BotDemo() {
                                       : parseFloat(trade.size || '0');
                                     
                                     if (sizeNumber < 1 && sizeNumber > 0) {
-                                      const symbol = (trade.instId || '').split('-')[0] || 
-                                                    (trade.symbol || '').split('-')[0];
+                                      // For Binance format (BTCUSDT), extract the base asset (BTC)
+                                      const symbol = trade.symbol ? trade.symbol.replace(/USDT$|BUSD$|USDC$/, '') : '';
                                       return (
                                         <span className="text-xs text-green-300">
                                           {(sizeNumber * 100).toFixed(2)}% of 1 {symbol}
@@ -632,7 +632,7 @@ export default function BotDemo() {
                       className="w-1/2 bg-green-600 hover:bg-green-700"
                       onClick={() => {
                         // Update bot parameters with selected currencies
-                        fetch('/api/okx/bots/1/parameters', {
+                        fetch('/api/binance/bots/1/parameters', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
@@ -647,7 +647,7 @@ export default function BotDemo() {
                         })
                         .then(() => {
                           // Then start the bot
-                          return fetch('/api/okx/bots/1/start', {
+                          return fetch('/api/binance/bots/1/start', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' }
                           });
