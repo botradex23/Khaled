@@ -46,12 +46,12 @@ export function setupAuth(app: Express) {
     session({
       store: memoryStore, // Use memory store to persist sessions
       secret: sessionSecret,
-      resave: false, // Only save back if modified
-      saveUninitialized: false, // Don't save empty sessions
+      resave: true, // Force session to be saved back to the store
+      saveUninitialized: true, // Save new sessions even if not modified
       rolling: true, // Reset expiration countdown with each request
       name: 'crypto_trading_sid', // Custom name to avoid default connect.sid
       cookie: {
-        secure: process.env.NODE_ENV === 'production', // Secure in production, but allow HTTP in dev
+        secure: false, // Don't require HTTPS in development
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         httpOnly: true,
         sameSite: 'lax', // Better compatibility while still providing CSRF protection
