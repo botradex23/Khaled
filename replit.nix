@@ -1,6 +1,7 @@
 { pkgs }: {
   deps = [
-    pkgs.nodejs_20  # הוספנו Node.js 20 בשביל לתמוך ב-npm
+    pkgs.nodejs_20
+    pkgs.nodePackages.npm   # מוסיף את הפקודה npm כדי שתעבוד כמו שצריך
     pkgs.mongodb
     pkgs.rustc
     pkgs.openssl
