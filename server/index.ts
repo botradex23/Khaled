@@ -69,10 +69,10 @@ if (isDev) {
       process.exit(1);
     });
 } else {
-  // Production: serve static files from dist directory
-  const distPath = path.resolve(__dirname, '..', 'dist');
+  // Production: serve static files from dist/public directory
+  const distPath = path.resolve(__dirname, '..', 'dist', 'public');
   app.use(express.static(distPath));
-  
+
   // Serve index.html for all non-API routes (SPA fallback)
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) {
@@ -80,11 +80,13 @@ if (isDev) {
     }
     res.sendFile(path.join(distPath, 'index.html'));
   });
-  
+
   log("Static file serving configured for production");
 }
 
 // Start server
 server.listen(port, "0.0.0.0", () => {
   log(`Server is running on port ${port} in ${isProduction ? 'production' : 'development'} mode`);
+  // Log complete URL for clarity
+  log(`Access the app at http://0.0.0.0:${port}`);
 });

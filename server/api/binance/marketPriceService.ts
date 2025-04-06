@@ -11,14 +11,14 @@ const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws';
 const BINANCE_TEST_WS_URL = 'wss://testnet.binance.vision/ws';
 
 // Proxy configuration - load from environment variables with reliable defaults
-const USE_PROXY = process.env.USE_PROXY !== 'false'; // Default to true if not explicitly set to 'false'
+const USE_PROXY = false; // Disable proxy to use direct connection
 const PROXY_USERNAME = process.env.PROXY_USERNAME || "xzwdlrlk"; 
 const PROXY_PASSWORD = process.env.PROXY_PASSWORD || "yrv2cpbyo1oa";
-const PROXY_IP = process.env.PROXY_IP || '154.36.110.199'; 
-const PROXY_PORT = process.env.PROXY_PORT || '6853';
+const PROXY_IP = process.env.PROXY_IP || '45.151.162.198'; // Use a different proxy from the list
+const PROXY_PORT = process.env.PROXY_PORT || '6600'; // Matching port for the new proxy
 const PROXY_PROTOCOL = process.env.PROXY_PROTOCOL || 'http';
-const PROXY_ENCODING_METHOD = process.env.PROXY_ENCODING_METHOD || 'quote_plus';
-const FALLBACK_TO_DIRECT = process.env.FALLBACK_TO_DIRECT !== 'false'; // Default to true
+const PROXY_ENCODING_METHOD = process.env.PROXY_ENCODING_METHOD || 'quote'; // Use quote encoding method
+const FALLBACK_TO_DIRECT = true; // Always fall back to direct connection
 
 /**
  * Create a properly configured Axios instance with proxy support
