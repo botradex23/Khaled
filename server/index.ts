@@ -1,69 +1,90 @@
+// server/index.ts
+
 import express from "express";
 import http from "http";
-import { log } from "./vite";
+import { log, serveStatic } from "./vite";
 import routes from "./routes";
 import { setupVite } from "./vite";
 import { setupAuth } from "./auth";
 import path from "path";
+import { fileURLToPath } from "url";
 import session from "express-session";
 import dotenv from "dotenv";
 
-// Load environment variables
+// Load environment variables from .env
 dotenv.config();
+
+// Get directory path for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Create Express app
 const app = express();
-// Explicitly use port 5000 as required
-const port = 5000;
 
-// Apply middleware and routes
+// Use environment port or fallback to 5000
+const port = parseInt(process.env.PORT || "5000", 10);
+
+// Detect environment
+const isProduction = process.env.NODE_ENV === "production";
+const isDev = !isProduction;
+
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session configuration with secure settings for production
-const isProduction = process.env.NODE_ENV === 'production';
+// Session configuration
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'session-secret-dev-only',
+  secret: process.env.SESSION_SECRET || 'default-session-secret',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: isProduction, // Use secure cookies in production
+    secure: isProduction,
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
   }
 }));
 
-// Initialize authentication system
+// Initialize authentication
 setupAuth(app);
 
-// Apply API routes
+// Routes
 app.use(routes);
 
-// Create HTTP server
-const server = http.createServer(app);
+// Health check
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
 
-// Set server timeout to 60000ms (60 seconds)
+// Server
+const server = http.createServer(app);
 server.timeout = 60000;
 
-// Setup Vite middleware for development
-const isDev = process.env.NODE_ENV !== "production";
+// Serve frontend based on environment
 if (isDev) {
+  // Development: use Vite middleware
   setupVite(app, server)
-    .then(() => {
-      log("Vite middleware setup complete");
-    })
+    .then(() => log("Vite middleware setup complete"))
     .catch((err) => {
       log(`Vite middleware setup failed: ${err.message}`);
       process.exit(1);
     });
+} else {
+  // Production: serve static files from dist directory
+  const distPath = path.resolve(__dirname, '..', 'dist');
+  app.use(express.static(distPath));
+  
+  // Serve index.html for all non-API routes (SPA fallback)
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+  
+  log("Static file serving configured for production");
 }
 
-// Add a health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Start the server
+// Start server
 server.listen(port, "0.0.0.0", () => {
-  log(`Server is running on port ${port}`);
+  log(`Server is running on port ${port} in ${isProduction ? 'production' : 'development'} mode`);
 });

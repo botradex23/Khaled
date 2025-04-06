@@ -114,9 +114,8 @@ export default function Dashboard() {
   interface ApiKeysResponse {
     message: string;
     apiKeys: {
-      okxApiKey: string | null;
-      okxSecretKey: string | null;
-      okxPassphrase: string | null;
+      binanceApiKey: string | null;
+      binanceSecretKey: string | null;
       defaultBroker: string;
       useTestnet: boolean;
     };
@@ -142,9 +141,8 @@ export default function Dashboard() {
       if (apiKeysData) {
         console.log("API keys data (for development purposes only):", {
           hasApiKeysObject: !!apiKeysData.apiKeys,
-          apiKeyValue: apiKeysData.apiKeys?.okxApiKey ? "exists" : "missing", 
-          secretKeyPresent: !!apiKeysData.apiKeys?.okxSecretKey,
-          passphrasePresent: !!apiKeysData.apiKeys?.okxPassphrase
+          apiKeyValue: apiKeysData.apiKeys?.binanceApiKey ? "exists" : "missing", 
+          secretKeyPresent: !!apiKeysData.apiKeys?.binanceSecretKey
         });
       }
     }
@@ -162,7 +160,7 @@ export default function Dashboard() {
               <AlertCircle className="h-4 w-4 text-amber-600" />
               <AlertTitle className="text-amber-800">API Keys Missing</AlertTitle>
               <AlertDescription className="text-amber-700">
-                <p>You need to set up your OKX API keys to see your account data and use trading functionality.</p>
+                <p>You need to set up your Binance API keys to see your account data and use trading functionality.</p>
                 <Button 
                   variant="outline" 
                   className="mt-3 bg-amber-100 hover:bg-amber-200 border-amber-300 text-amber-800"

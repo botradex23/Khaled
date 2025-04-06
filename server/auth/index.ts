@@ -524,6 +524,12 @@ function registerAuthRoutes(app: Express) {
             defaultAdmin = await storage.updateUser(defaultAdmin.id, { isAdmin: true });
           }
           
+          // Make sure defaultAdmin exists before proceeding
+          if (!defaultAdmin) {
+            console.error('Default admin is undefined, cannot proceed with login');
+            return res.status(500).json({ success: false, message: 'Admin account not available' });
+          }
+            
           // Login with default admin
           req.logIn(defaultAdmin, (loginErr) => {
             if (loginErr) {
@@ -531,7 +537,7 @@ function registerAuthRoutes(app: Express) {
               return res.status(500).json({ success: false, message: 'Login error' });
             }
             
-            console.log('Default admin login successful for:', defaultAdmin.email);
+            console.log('Default admin login successful for:', defaultAdmin?.email);
             
             // Set X-Test-Admin header in the response for client to store
             res.set('X-Test-Admin', 'true');
@@ -558,10 +564,13 @@ function registerAuthRoutes(app: Express) {
     // Regular email+password login
     // First check if this is an admin
     storage.getUserByEmail(email)
-      .then(async user => {
-        if (!user) {
+      .then(async userResult => {
+        if (!userResult) {
           return res.status(404).json({ success: false, message: 'User not found' });
         }
+        
+        // Assign to a new variable to address the possibly undefined warning
+        let user = userResult;
         
         // Check if user isn't marked as admin yet but has admin email
         if (!user.isAdmin && user.email.includes('admin')) {
@@ -713,11 +722,10 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
       lastName: 'User',
       defaultBroker: null,
       useTestnet: true,
-      okxApiKey: null,
-      okxSecretKey: null,
-      okxPassphrase: null,
+      // OKX fields removed
       binanceApiKey: null,
       binanceSecretKey: null,
+      binanceAllowedIp: null,  // Add missing property
       isAdmin: true,      // Set isAdmin field to true
       isSuperAdmin: true, // Set isSuperAdmin field for full permissions
       createdAt: new Date(),

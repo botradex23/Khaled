@@ -7,6 +7,7 @@
     "dev": "tsx server/index.ts",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
+    "postinstall": "npm run build",
     "check": "tsc",
     "db:push": "drizzle-kit push"
   },
