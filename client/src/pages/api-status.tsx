@@ -16,11 +16,6 @@ import { CheckCircle, XCircle, AlertTriangle, Info, Database,
 import { apiRequest } from "@/lib/queryClient";
 
 export default function ApiStatus() {
-  // Query OKX API status
-  const okxQuery = useQuery({
-    queryKey: ["/api/okx/status"],
-    retry: 1
-  });
 
   // Query Binance API status
   const binanceQuery = useQuery({
@@ -102,18 +97,6 @@ export default function ApiStatus() {
             })}
           />
 
-          {/* OKX Status */}
-          <ApiStatusCard
-            title="OKX API"
-            query={okxQuery}
-            getStatus={(data) => ({
-              isConnected: data?.connected || false,
-              authStatus: data?.authenticated || false,
-              message: data?.message || "",
-              environment: data?.isDemoMode ? "Demo/Testnet" : "Mainnet",
-              details: data
-            })}
-          />
         </div>
 
         <div className="mt-8 border rounded-lg p-6">
@@ -122,10 +105,6 @@ export default function ApiStatus() {
             <li className="flex items-start">
               <Info className="h-5 w-5 text-primary mr-2 flex-shrink-0 mt-0.5" />
               <span>Binance API uses the <Badge variant="outline">BINANCE_API_KEY</Badge> and <Badge variant="outline">BINANCE_SECRET_KEY</Badge> environment variables.</span>
-            </li>
-            <li className="flex items-start">
-              <Info className="h-5 w-5 text-primary mr-2 flex-shrink-0 mt-0.5" />
-              <span>OKX API uses the <Badge variant="outline">OKX_API_KEY</Badge>, <Badge variant="outline">OKX_SECRET_KEY</Badge>, and <Badge variant="outline">OKX_PASSPHRASE</Badge> environment variables.</span>
             </li>
             <li className="flex items-start mt-4">
               <AlertTriangle className="h-5 w-5 text-warning mr-2 flex-shrink-0 mt-0.5" />

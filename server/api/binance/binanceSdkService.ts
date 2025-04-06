@@ -176,19 +176,13 @@ function createAxiosInstance(baseUrl: string): AxiosInstance {
  */
 async function createBinanceClient(useTestnet: boolean = false): Promise<any> {
   try {
-    // Dynamically import node-binance-api
-    if (!Binance) {
-      try {
-        Binance = (await import('node-binance-api')).default;
-        hasBinanceSdk = true;
-      } catch (importError) {
-        console.warn('Failed to import node-binance-api:', importError.message);
-        console.warn('Using Axios fallback for Binance API access');
-        hasBinanceSdk = false;
-        return null;
-      }
-    }
-
+    // Skip dynamic import - only use Axios fallback since SDK is not installed
+    hasBinanceSdk = false;
+    console.warn('Using Axios fallback for Binance API access');
+    return null;
+    
+    // The code below is kept but never executed to maintain structure
+    // for future SDK integration if needed
     if (!hasBinanceSdk) {
       return null;
     }
@@ -256,7 +250,9 @@ async function createBinanceClient(useTestnet: boolean = false): Promise<any> {
       console.log('Using direct connection to Binance API (proxy disabled)');
     }
 
-    return new Binance.default(options);
+    // This line won't be executed since we return early now
+    // The code is kept for future reference if SDK is installed later
+    return null;
   } catch (error) {
     console.error('Failed to create Binance client:', error);
     hasBinanceSdk = false;
@@ -440,36 +436,37 @@ export class BinanceSdkService extends EventEmitter {
       
       console.log(`Subscribing to symbols: ${formattedSymbols.join(', ')}`);
       
-      try {
-        // Use miniTicker for best performance
-        const bookTickers = this.client.websockets.miniTicker(
-          (ticker: any) => {
-            if (ticker && ticker.symbol && ticker.close) {
-              const price = parseFloat(ticker.close);
-              this.updatePrice(ticker.symbol, price);
-            }
-          }
-        );
+      // Since SDK is not available, use direct WebSocket connection
+      if (this.client) {
+        // SDK implementation would go here, but we know it's not available
+        console.log('SDK client available, but WebSocket not implemented');
+      } else {
+        console.log('Using fallback REST polling for price updates');
         
-        console.log('Successfully subscribed to miniTicker stream');
-      } catch (wsError) {
-        console.error('Failed to subscribe to miniTicker:', wsError);
-        console.log('Falling back to individual symbol subscriptions');
-        
-        // Fallback: subscribe to each symbol individually
-        for (const symbol of formattedSymbols) {
+        // Set up a polling interval instead of WebSocket
+        const pollInterval = setInterval(async () => {
           try {
-            this.client.websockets.candlesticks(symbol, "1m", (candlesticks: any) => {
-              if (candlesticks && candlesticks.close) {
-                const price = parseFloat(candlesticks.close);
-                this.updatePrice(candlesticks.symbol, price);
+            if (this.axiosInstance) {
+              // Poll for specific symbols
+              for (const symbol of formattedSymbols) {
+                try {
+                  const response = await this.axiosInstance.get(`/api/v3/ticker/price?symbol=${symbol.toUpperCase()}`);
+                  if (response.data && response.data.price) {
+                    const price = parseFloat(response.data.price);
+                    this.updatePrice(response.data.symbol, price);
+                  }
+                } catch (symbolError) {
+                  console.error(`Error polling price for ${symbol}:`, symbolError);
+                }
               }
-            });
-            console.log(`Subscribed to ${symbol} candlesticks successfully`);
-          } catch (symbolError) {
-            console.error(`Failed to subscribe to ${symbol}:`, symbolError);
+            }
+          } catch (pollError) {
+            console.error('Error in price polling interval:', pollError);
           }
-        }
+        }, 10000); // Poll every 10 seconds
+        
+        // Store the interval for cleanup
+        this.reconnectTimeout = pollInterval;
       }
     } catch (error) {
       console.error('Failed to subscribe to symbols:', error);

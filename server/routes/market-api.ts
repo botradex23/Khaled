@@ -5,25 +5,11 @@
 import express, { Request, Response } from 'express';
 import { binanceMarketService } from '../api/binance/marketPriceService';
 import { log } from '../vite';
-import { okxService } from '../api/okx/okxService';
 
 // ממשק עבור מחירי בינאנס כפי שמגיע מה-API המקורי
 interface BinanceTickerPrice {
   symbol: string;
   price: string;
-}
-
-// ממשק עבור תגובת OKX API
-interface OkxTicker {
-  instId: string;  // למשל "BTC-USDT"
-  last: string;    // המחיר האחרון
-  askPx: string;   // מחיר מכירה מינימלי
-  bidPx: string;   // מחיר קנייה מקסימלי
-  open24h: string; // מחיר פתיחה ב-24 שעות אחרונות
-  high24h: string; // מחיר הגבוה ביותר ב-24 שעות אחרונות
-  low24h: string;  // מחיר הנמוך ביותר ב-24 שעות אחרונות
-  volCcy24h: string; // נפח מסחר במטבע הבסיס
-  vol24h: string;  // נפח מסחר
 }
 
 const router = express.Router();
