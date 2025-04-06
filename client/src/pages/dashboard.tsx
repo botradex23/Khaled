@@ -547,7 +547,7 @@ export default function Dashboard() {
               API Keys Required
             </DialogTitle>
             <DialogDescription>
-              You need to set up your OKX API keys to access trading functionality.
+              You need to set up your Binance API keys to access trading functionality.
             </DialogDescription>
           </DialogHeader>
           
@@ -556,7 +556,7 @@ export default function Dashboard() {
               <AlertCircle className="h-4 w-4 text-primary" />
               <AlertTitle className="text-primary-foreground font-bold">חשוב מאוד!</AlertTitle>
               <AlertDescription className="text-primary-foreground">
-                כדי לגשת לנתוני המסחר האישיים שלך ב-OKX, עליך להגדיר את מפתחות ה-API שלך בחשבונך.
+                כדי לגשת לנתוני המסחר האישיים שלך ב-Binance, עליך להגדיר את מפתחות ה-API שלך בחשבונך.
               </AlertDescription>
             </Alert>
             
@@ -567,7 +567,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h4 className="text-sm font-medium mb-1">גישה לנתונים אישיים</h4>
-                  <p className="text-xs text-muted-foreground">צפייה ביתרת החשבון, היסטוריית מסחר ונתונים נוספים מחשבון ה-OKX שלך.</p>
+                  <p className="text-xs text-muted-foreground">צפייה ביתרת החשבון, היסטוריית מסחר ונתונים נוספים מחשבון ה-Binance שלך.</p>
                 </div>
               </div>
               

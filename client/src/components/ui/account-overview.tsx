@@ -29,49 +29,35 @@ export function AccountBalanceCard() {
   // Use the authenticated endpoint if user is logged in, otherwise use demo endpoint
   // For demo endpoint, we'll show only prices, not account balance if user is not authenticated
   // Regardless, we'll show market prices for cryptocurrencies at minimum
-  const okxEndpoint = isAuthenticated 
-    ? "/api/okx/account/balance"     // Authenticated endpoint with user-specific API keys
-    : "/api/okx/demo/account/balance"; // Demo endpoint that doesn't require auth
+  const binanceEndpoint = isAuthenticated 
+    ? "/api/binance/account/balance"     // Authenticated endpoint with user-specific API keys
+    : "/api/binance/demo/account/balance"; // Demo endpoint that doesn't require auth
   
-  console.log("Account Balance Card - Using endpoint:", okxEndpoint, "isAuthenticated:", isAuthenticated);
+  console.log("Account Balance Card - Using endpoint:", binanceEndpoint, "isAuthenticated:", isAuthenticated);
   
-  // We'll fetch balances from both exchanges and display them
-  const bitgetQuery = useQuery({
-    queryKey: ["/api/bitget/account/balance"],
-    refetchInterval: 60000 // 1 minute refresh
-  });
-
-  const okxQuery = useQuery({
-    queryKey: [okxEndpoint],
+  // We'll fetch balances from Binance and display them
+  // Removed Bitget completely as we're focusing on Binance only
+  const binanceQuery = useQuery({
+    queryKey: [binanceEndpoint],
     refetchInterval: 15000 // 15 seconds refresh for more up-to-date data
   });
   
-  // אסוף את רשימת כל המטבעות מהבאלאנס כדי לבקש את המחירים שלהם ספציפית
-  // כך נקבל תמיד את מחיר השוק לכל מטבע שיש באקאונט
+  // Collect the list of all currencies from the balance to request their prices specifically
+  // This way we'll always get the market price for every currency in the account
   const allAssetCurrencies = useMemo(() => {
     const currencies: string[] = [];
     
-    // מבאלאנס של OKX
-    const okxBalances = okxQuery.data || [];
-    if (Array.isArray(okxBalances)) {
-      okxBalances.forEach(asset => {
+    // From Binance balance
+    const binanceBalances = binanceQuery.data || [];
+    if (Array.isArray(binanceBalances)) {
+      binanceBalances.forEach(asset => {
         if (asset.currency && !currencies.includes(asset.currency)) {
           currencies.push(asset.currency);
         }
       });
     }
     
-    // מבאלאנס של Bitget
-    const bitgetBalances = bitgetQuery.data || [];
-    if (Array.isArray(bitgetBalances)) {
-      bitgetBalances.forEach(asset => {
-        if (asset.currency && !currencies.includes(asset.currency)) {
-          currencies.push(asset.currency);
-        }
-      });
-    }
-    
-    // מוסיף את המטבעות הפופולריים תמיד (גיבוי)
+    // Add popular coins as backup
     const popularCoins = ['BTC', 'ETH', 'XRP', 'USDT', 'SOL', 'DOGE', 'DOT', 'ADA', 'AVAX', 'LINK'];
     popularCoins.forEach(coin => {
       if (!currencies.includes(coin)) {
@@ -81,7 +67,7 @@ export function AccountBalanceCard() {
     
     console.log("Requesting prices for all balance currencies:", currencies);
     return currencies;
-  }, [okxQuery.data, bitgetQuery.data]);
+  }, [binanceQuery.data]);
   
   // Get market prices directly from our new API for more accurate pricing
   // כעת אנחנו מבקשים רק את המטבעות שיש בחשבון או את הפופולריים
@@ -91,23 +77,14 @@ export function AccountBalanceCard() {
   });
   
   // Debug output to console to help identify issues with the data
-  console.log("Account Balance Card - OKX Query Result:", {
-    endpoint: okxEndpoint,
-    data: okxQuery.data,
-    isLoading: okxQuery.isLoading,
-    error: okxQuery.error,
-    isError: okxQuery.isError,
-    status: okxQuery.status,
-    isSuccess: okxQuery.isSuccess
-  });
-  
-  console.log("Account Balance Card - Bitget Query Result:", {
-    data: bitgetQuery.data,
-    isLoading: bitgetQuery.isLoading,
-    error: bitgetQuery.error,
-    isError: bitgetQuery.isError,
-    status: bitgetQuery.status,
-    isSuccess: bitgetQuery.isSuccess
+  console.log("Account Balance Card - Binance Query Result:", {
+    endpoint: binanceEndpoint,
+    data: binanceQuery.data,
+    isLoading: binanceQuery.isLoading,
+    error: binanceQuery.error,
+    isError: binanceQuery.isError,
+    status: binanceQuery.status,
+    isSuccess: binanceQuery.isSuccess
   });
   
   // Log market prices data
@@ -123,23 +100,18 @@ export function AccountBalanceCard() {
   });
   
   // Combine loading state from queries
-  const isLoading = okxQuery.isLoading || bitgetQuery.isLoading || marketPricesQuery.isLoading;
+  const isLoading = binanceQuery.isLoading || marketPricesQuery.isLoading;
   
   // Check for errors in queries
-  const okxError = okxQuery.error;
-  const bitgetError = bitgetQuery.error;
+  const binanceError = binanceQuery.error;
   const marketPricesError = marketPricesQuery.error;
   
   // Debug logging to see the status of both queries
   console.log("Account Balance Card - Debug Status:", {
-    okxLoading: okxQuery.isLoading,
-    okxSuccess: okxQuery.isSuccess,
-    okxError: okxQuery.error ? "Error" : "None",
-    okxData: okxQuery.data,
-    bitgetLoading: bitgetQuery.isLoading,
-    bitgetSuccess: bitgetQuery.isSuccess,
-    bitgetError: bitgetQuery.error ? "Error" : "None",
-    bitgetData: bitgetQuery.data,
+    binanceLoading: binanceQuery.isLoading,
+    binanceSuccess: binanceQuery.isSuccess,
+    binanceError: binanceQuery.error ? "Error" : "None",
+    binanceData: binanceQuery.data,
     marketPricesSuccess: marketPricesQuery.isSuccess,
     marketPricesError: marketPricesQuery.error ? "Error" : "None",
     marketPricesCount: marketPricesQuery.data?.prices ? marketPricesQuery.data.prices.length : 0,
@@ -169,82 +141,11 @@ export function AccountBalanceCard() {
     );
   }
 
-  // Check if we have data from either API
-  const hasOkxData = okxQuery.data && Array.isArray(okxQuery.data) && okxQuery.data.length > 0;
-  const hasBitgetData = bitgetQuery.data && Array.isArray(bitgetQuery.data) && bitgetQuery.data.length > 0;
+  // Check if we have data from the Binance API
+  const hasBinanceData = binanceQuery.data && Array.isArray(binanceQuery.data) && binanceQuery.data.length > 0;
   
-  // If neither API has data and they're not loading, create a fake minimal portfolio with market prices
-  if (!hasOkxData && !hasBitgetData && !isLoading) {
-    // Check if we have market prices data
-    const hasMarketPrices = marketPricesQuery.data?.prices && Array.isArray(marketPricesQuery.data.prices) && marketPricesQuery.data.prices.length > 0;
-    
-    // If we have market prices, we'll create mock balances for display purposes
-    if (hasMarketPrices) {
-      console.log("Creating minimal portfolio from market prices");
-      
-      // We'll just create a minimal portfolio with 0 balances but real market prices
-      const minimalPortfolio: AccountBalance[] = [];
-      
-      // Add major cryptocurrencies to the display
-      const popularCrypto = ["BTC", "ETH", "SOL", "XRP", "USDT"];
-      
-      if (marketPricesQuery.data && marketPricesQuery.data.prices) {
-        marketPricesQuery.data.prices.forEach((price: Market) => {
-          if (popularCrypto.includes(price.symbol)) {
-            minimalPortfolio.push({
-              currency: price.symbol,
-              available: 0,
-              frozen: 0,
-              total: 0,
-              valueUSD: 0,
-              pricePerUnit: price.price
-            });
-          }
-        });
-      }
-      
-      // Use the minimal portfolio for our calculations
-      const dummyBalances: AccountBalance[] = minimalPortfolio;
-      if (dummyBalances.length > 0) {
-        // Don't reassign the outer balances variable, use dummyBalances directly
-        // Continue rendering with the normal path
-        return (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold">Cryptocurrency Prices</CardTitle>
-              <CardDescription>Current market prices (view only)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-sm">
-                      <th className="text-left p-2 bg-muted/30 rounded-l-md font-semibold">Cryptocurrency</th>
-                      <th className="text-right p-2 bg-muted/30 rounded-r-md font-semibold">Market Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dummyBalances.map((asset) => (
-                      <tr key={asset.currency} className="text-sm border-b border-muted-foreground/10 last:border-0">
-                        <td className="p-2 font-medium">{asset.currency}</td>
-                        <td className="p-2 text-right">${asset.pricePerUnit?.toLocaleString(undefined, { 
-                          maximumFractionDigits: asset.pricePerUnit > 1000 ? 0 : asset.pricePerUnit > 1 ? 2 : 6
-                        })}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div className="text-center text-xs text-muted-foreground mt-4">
-                  <p>Log in and configure API keys to see your account balances</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      }
-    }
-    
-    // Otherwise show the error UI
+  // If the API has no data and they're not loading, show the error UI
+  if (!hasBinanceData && !isLoading) {
     return (
       <Card>
         <CardHeader className="pb-2">
@@ -255,32 +156,19 @@ export function AccountBalanceCard() {
           <div className="flex flex-col items-center justify-center py-6">
             <BadgeInfo className="h-10 w-10 text-muted-foreground mb-2" />
             <p className="text-center text-muted-foreground mb-2">
-              Could not retrieve account balance from either API
+              Could not retrieve account balance from Binance API
             </p>
             <p className="text-center text-sm text-muted-foreground">
               Please check your API connections and try again
             </p>
-            <div className="grid grid-cols-2 gap-4 mt-4 w-full">
+            <div className="mt-4 w-full">
               <div>
-                <p className="text-xs font-semibold mb-1">OKX API:</p>
-                {okxError ? (
+                <p className="text-xs font-semibold mb-1">Binance API:</p>
+                {binanceError ? (
                   <div className="p-2 bg-muted rounded-md text-xs overflow-auto max-h-20">
                     <p className="text-red-500">Error</p>
                   </div>
-                ) : !hasOkxData ? (
-                  <p className="text-xs text-muted-foreground">No data returned</p>
-                ) : (
-                  <p className="text-xs text-green-500">OK</p>
-                )}
-              </div>
-              
-              <div>
-                <p className="text-xs font-semibold mb-1">Bitget API:</p>
-                {bitgetError ? (
-                  <div className="p-2 bg-muted rounded-md text-xs overflow-auto max-h-20">
-                    <p className="text-red-500">Error</p>
-                  </div>
-                ) : !hasBitgetData ? (
+                ) : !hasBinanceData ? (
                   <p className="text-xs text-muted-foreground">No data returned</p>
                 ) : (
                   <p className="text-xs text-green-500">OK</p>
@@ -293,10 +181,9 @@ export function AccountBalanceCard() {
     );
   }
   
-  // Prioritize OKX data for demo testnet purposes, but fall back to Bitget if needed
-  const useOkxData = hasOkxData;
-  const selectedData = useOkxData ? okxQuery.data : bitgetQuery.data;
-  const dataSource = useOkxData ? "OKX" : "Bitget";
+  // Use Binance data
+  const selectedData = binanceQuery.data;
+  const dataSource = "Binance";
   
   // Check if data is not an array or empty (this should not happen with our validation above, but just in case)
   if (!Array.isArray(selectedData)) {
@@ -551,9 +438,9 @@ export function AccountBalanceCard() {
       {sortedBalances.length > 0 && (
         <CardFooter className="pt-0">
           <div className="text-xs text-muted-foreground w-full text-center">
-            Data from {dataSource} {useOkxData ? "(Demo Mode)" : ""} • 
+            Data from {dataSource} {!isAuthenticated ? "(Demo Mode)" : ""} • 
             Market prices updated {new Date().toLocaleTimeString()} • 
-            Refresh interval: {useOkxData ? "15 seconds" : "60 seconds"}
+            Refresh interval: 15 seconds
           </div>
         </CardFooter>
       )}
@@ -567,36 +454,26 @@ export function TradingHistoryCard() {
   
   // Log which endpoint we're using for troubleshooting
   const tradingHistoryEndpoint = isAuthenticated 
-    ? "/api/okx/trading/history" 
-    : "/api/okx/demo/trading/history";
+    ? "/api/binance/trading/history" 
+    : "/api/binance/demo/trading/history";
   
   console.log("Trading History Card - Using endpoint:", tradingHistoryEndpoint, "isAuthenticated:", isAuthenticated);
   
-  // Query both OKX and Bitget data sources, but prioritize OKX
-  const okxQuery = useQuery({
+  // Query Binance data sources
+  const binanceQuery = useQuery({
     queryKey: [tradingHistoryEndpoint],
     refetchInterval: 30000 // 30 second refresh for more up-to-date data
   });
   
-  const bitgetQuery = useQuery({
-    queryKey: ["/api/bitget/account/history"],
-    refetchInterval: 60000 // 1 minute refresh
-  });
+  // Track loading and error states
+  const isLoading = binanceQuery.isLoading;
+  const binanceError = binanceQuery.error;
   
-  // Track loading and error states from both queries
-  const isLoading = okxQuery.isLoading && bitgetQuery.isLoading;
-  const okxError = okxQuery.error;
-  const bitgetError = bitgetQuery.error;
-  
-  // Prefer OKX data if available, otherwise fall back to Bitget
-  const hasOkxData = okxQuery.data && Array.isArray(okxQuery.data) && okxQuery.data.length > 0;
-  const hasBitgetData = bitgetQuery.data && Array.isArray(bitgetQuery.data) && bitgetQuery.data.length > 0;
-  const useOkxData = hasOkxData;
-  const selectedData = useOkxData ? okxQuery.data : bitgetQuery.data;
+  // Use Binance data
+  const hasBinanceData = binanceQuery.data && Array.isArray(binanceQuery.data) && binanceQuery.data.length > 0;
+  const selectedData = binanceQuery.data;
   // Show appropriate data source name based on authentication status
-  const dataSource = useOkxData 
-    ? (isAuthenticated ? "OKX" : "OKX Demo") 
-    : "Bitget";
+  const dataSource = isAuthenticated ? "Binance" : "Binance Demo";
 
   if (isLoading) {
     return (
@@ -618,8 +495,8 @@ export function TradingHistoryCard() {
     );
   }
 
-  // If neither API has data and they're both done loading, show an error
-  if (!hasOkxData && !hasBitgetData && !isLoading) {
+  // If the API has no data and is done loading, show an error
+  if (!hasBinanceData && !isLoading) {
     return (
       <Card>
         <CardHeader className="pb-2">
@@ -632,27 +509,14 @@ export function TradingHistoryCard() {
             <p className="text-center text-muted-foreground mb-2">
               Could not retrieve trading history
             </p>
-            <div className="grid grid-cols-2 gap-4 mt-4 w-full">
+            <div className="mt-4 w-full">
               <div>
-                <p className="text-xs font-semibold mb-1">OKX API:</p>
-                {okxError ? (
+                <p className="text-xs font-semibold mb-1">Binance API:</p>
+                {binanceError ? (
                   <div className="p-2 bg-muted rounded-md text-xs overflow-auto max-h-20">
                     <p className="text-red-500">Error</p>
                   </div>
-                ) : !hasOkxData ? (
-                  <p className="text-xs text-muted-foreground">No data returned</p>
-                ) : (
-                  <p className="text-xs text-green-500">OK</p>
-                )}
-              </div>
-              
-              <div>
-                <p className="text-xs font-semibold mb-1">Bitget API:</p>
-                {bitgetError ? (
-                  <div className="p-2 bg-muted rounded-md text-xs overflow-auto max-h-20">
-                    <p className="text-red-500">Error</p>
-                  </div>
-                ) : !hasBitgetData ? (
+                ) : !hasBinanceData ? (
                   <p className="text-xs text-muted-foreground">No data returned</p>
                 ) : (
                   <p className="text-xs text-green-500">OK</p>
@@ -669,17 +533,17 @@ export function TradingHistoryCard() {
   
   // Calculate profit/loss for each trade when possible
   const tradesWithPnL = (Array.isArray(tradingHistory) ? tradingHistory : []).map(trade => {
-    // First standardize field names between OKX and Bitget
+    // Standardize field names for Binance API
     const standardizedTrade = {
-      id: trade.id || trade.ordId || trade.tradeId || `trade-${Math.random().toString(36).substring(2, 10)}`,
-      symbol: trade.symbol || trade.instId || 'Unknown Pair',
+      id: trade.id || trade.orderId || trade.tradeId || `trade-${Math.random().toString(36).substring(2, 10)}`,
+      symbol: trade.symbol || 'Unknown Pair',
       side: trade.side || 'unknown', 
-      price: parseFloat(trade.price || trade.px || trade.fillPx || '0'),
-      quantity: parseFloat(trade.size || trade.fillSz || trade.quantity || '0'),
-      value: parseFloat(trade.value || '0'),
-      fee: parseFloat(trade.fee || '0'),
-      feeCcy: trade.feeCcy || '',
-      timestamp: new Date(trade.timestamp || trade.cTime || trade.fillTime || Date.now()).getTime()
+      price: parseFloat(trade.price || trade.executedQty || '0'),
+      quantity: parseFloat(trade.qty || trade.executedQty || trade.quantity || '0'),
+      value: parseFloat(trade.value || trade.cummulativeQuoteQty || '0'),
+      fee: parseFloat(trade.fee || trade.commission || '0'),
+      feeCcy: trade.feeCcy || trade.commissionAsset || '',
+      timestamp: new Date(trade.timestamp || trade.time || trade.transactTime || Date.now()).getTime()
     };
     
     return standardizedTrade;

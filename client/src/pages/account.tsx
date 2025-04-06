@@ -17,7 +17,7 @@ export default function Account() {
   // For authenticated users, use their API keys
   // For non-authenticated users, use the demo endpoint
   const { data: balanceData, isLoading: isBalanceLoading } = useQuery({
-    queryKey: [isAuthenticated ? "/api/okx/account/balance" : "/api/okx/demo/account/balance"],
+    queryKey: [isAuthenticated ? "/api/binance/account/balance" : "/api/binance/demo/account/balance"],
     refetchInterval: 15000 // 15 seconds refresh
   });
 

@@ -25,8 +25,8 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   
   // Use the authenticated endpoint if user is logged in, otherwise use demo endpoint
   const endpoint = isAuthenticated 
-    ? "/api/okx/account/balance"
-    : "/api/okx/demo/account/balance";
+    ? "/api/binance/account/balance"
+    : "/api/binance/demo/account/balance";
   
   // Fetch the account balance data
   const { data, isLoading, error } = useQuery({
