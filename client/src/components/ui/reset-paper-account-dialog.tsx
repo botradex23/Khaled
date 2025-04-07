@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "./dialog.tsx";
 import { Button } from "./button";
 import { Loader2, RefreshCw } from "lucide-react";
 

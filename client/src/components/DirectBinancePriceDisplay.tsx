@@ -6,7 +6,7 @@ import {
   CardFooter, 
   CardHeader, 
   CardTitle 
-} from "@/components/ui/card";
+} from "./ui/card.tsx";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { RefreshCw, AlertCircle, AlertTriangle, MapPin, ChevronDown, ChevronUp } from "lucide-react";

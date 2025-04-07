@@ -11,7 +11,7 @@ import {
   CardHeader, 
   CardTitle, 
   CardFooter 
-} from "@/components/ui/card";
+} from "../components/ui/card.tsx";
 import { Button } from "../components/ui/button";
 import { Checkbox } from "../components/ui/checkbox";
 import { Input } from "../components/ui/input";
@@ -21,7 +21,7 @@ import {
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from "@/components/ui/select";
+} from "../components/ui/select.tsx";
 import { 
   Table, 
   TableBody, 
@@ -29,9 +29,9 @@ import {
   TableHead, 
   TableHeader, 
   TableRow 
-} from "@/components/ui/table";
+} from "../components/ui/table.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Bot, StrategyType } from "@/types";
+import { Bot, StrategyType } from "../types/index.ts";
 import {
   Dialog,
   DialogContent,
@@ -39,7 +39,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from "@/components/ui/dialog";
+} from "../components/ui/dialog.tsx";
 import { 
   ArrowRight, 
   Search, 
@@ -74,7 +74,7 @@ import {
   gridChartData, 
   dcaChartData, 
   macdChartData 
-} from "@/lib/chart-data";
+} from "../lib/chart-data.ts";
 import { useToast } from "../hooks/use-toast";
 
 export default function Bots() {

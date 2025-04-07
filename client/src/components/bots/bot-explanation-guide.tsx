@@ -4,7 +4,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "../ui/accordion.tsx";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Brain, TrendingUp, ArrowDownUp, BarChart3, HelpCircle, AlertCircle, Check, Zap } from "lucide-react";
 

@@ -5,7 +5,7 @@ import {
   LineChart,
   ResponsiveContainer
 } from "recharts";
-import { StrategyType, ChartData } from "@/types";
+import { StrategyType, ChartData } from "../../types/index.ts";
 
 type StrategyCardProps = {
   title: string;

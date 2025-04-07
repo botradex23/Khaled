@@ -25,7 +25,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "./dropdown-menu.tsx";
 import { Sheet, SheetContent, SheetTrigger } from "./sheet";
 import { useAuth } from "../../hooks/use-auth";
 import { motion } from 'framer-motion';
@@ -84,10 +84,10 @@ export function PremiumHeader() {
           {/* Logo and brand */}
           <div className="flex items-center gap-2">
             <Link href="/">
-              <a className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 cursor-pointer">
                 <div className="relative w-10 h-10" dangerouslySetInnerHTML={{ __html: generateLogoSVG() }} />
                 <span className="font-bold text-xl tracking-tight text-foreground">CryptoTrade</span>
-              </a>
+              </div>
             </Link>
           </div>
 
@@ -97,7 +97,7 @@ export function PremiumHeader() {
               const isActive = location === item.href;
               return (
                 <Link key={item.href} href={item.href}>
-                  <a className={`relative px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center ${
+                  <div className={`relative px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center cursor-pointer ${
                     isActive 
                       ? 'text-foreground bg-primary/10'
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent'
@@ -113,7 +113,7 @@ export function PremiumHeader() {
                         transition={{ duration: 0.2 }}
                       />
                     )}
-                  </a>
+                  </div>
                 </Link>
               );
             })}
@@ -149,26 +149,26 @@ export function PremiumHeader() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/profile">
-                      <a className="flex items-center cursor-pointer">
+                      <div className="flex items-center cursor-pointer">
                         <User className="mr-2 h-4 w-4" />
                         Profile
-                      </a>
+                      </div>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/settings">
-                      <a className="flex items-center cursor-pointer">
+                      <div className="flex items-center cursor-pointer">
                         <Settings className="mr-2 h-4 w-4" />
                         Settings
-                      </a>
+                      </div>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/security">
-                      <a className="flex items-center cursor-pointer">
+                      <div className="flex items-center cursor-pointer">
                         <Lock className="mr-2 h-4 w-4" />
                         Security
-                      </a>
+                      </div>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -182,15 +182,15 @@ export function PremiumHeader() {
               <div className="flex items-center space-x-2">
                 <Button asChild variant="ghost" size="sm">
                   <Link href="/login">
-                    <a>Log in</a>
+                    <div>Log in</div>
                   </Link>
                 </Button>
                 <Button asChild variant="default" size="sm">
                   <Link href="/register">
-                    <a className="flex items-center">
+                    <div className="flex items-center">
                       Register
                       <ArrowUpRight className="ml-1 h-4 w-4" />
-                    </a>
+                    </div>
                   </Link>
                 </Button>
               </div>
@@ -211,14 +211,14 @@ export function PremiumHeader() {
                     const isActive = location === item.href;
                     return (
                       <Link key={item.href} href={item.href}>
-                        <a className={`flex items-center gap-2 px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                        <div className={`flex items-center gap-2 px-2 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                           isActive 
                             ? 'text-foreground bg-primary/10'
                             : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                         }`}>
                           {item.icon}
                           {item.label}
-                        </a>
+                        </div>
                       </Link>
                     );
                   })}

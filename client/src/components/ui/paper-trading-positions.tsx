@@ -12,7 +12,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "./table.tsx";
 import NewPaperTradeDialog from './new-paper-trade-dialog';
 
 interface PaperTradingPositionsProps {

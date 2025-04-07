@@ -8,7 +8,7 @@ import {
   CardDescription, 
   CardHeader, 
   CardTitle 
-} from "@/components/ui/card";
+} from "../components/ui/card.tsx";
 import { Button } from "../components/ui/button";
 import { PriceChart } from "../components/ui/price-chart";
 import { Badge } from "../components/ui/badge";
@@ -18,7 +18,7 @@ import {
   TabsContent, 
   TabsList, 
   TabsTrigger 
-} from "@/components/ui/tabs";
+} from "../components/ui/tabs.tsx";
 import { Progress } from "../components/ui/progress";
 import { 
   Table,
@@ -27,7 +27,7 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from "@/components/ui/table";
+} from "../components/ui/table.tsx";
 import { AccountBalanceCard } from "../components/ui/account-overview";
 import { MarketTickerCard } from "../components/ui/market-ticker";
 import { 

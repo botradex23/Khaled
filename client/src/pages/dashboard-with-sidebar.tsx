@@ -10,7 +10,7 @@ import {
   CardDescription, 
   CardHeader, 
   CardTitle 
-} from "@/components/ui/card";
+} from "../components/ui/card.tsx";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -26,7 +26,7 @@ import {
   Tooltip,
   Legend
 } from "recharts";
-import { StrategyType, Bot } from "@/types";
+import { StrategyType, Bot } from "../types/index.ts";
 import { performanceChartData } from "../lib/chart-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Button } from "../components/ui/button";
@@ -52,7 +52,7 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from "@/components/ui/alert";
+} from "../components/ui/alert.tsx";
 import {
   Dialog,
   DialogContent,
@@ -60,7 +60,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "../components/ui/dialog.tsx";
 
 export default function Dashboard() {
   const { isAuthenticated, isLoading: authLoading, checkSession, user } = useAuth();

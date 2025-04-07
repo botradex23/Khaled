@@ -5,7 +5,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "./card.tsx";
 import { Skeleton } from "./skeleton";
 import { Badge } from "./badge";
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";

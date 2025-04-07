@@ -1,4 +1,4 @@
-import { ChartData, AssetAllocation } from "@/types";
+import { ChartData, AssetAllocation } from "../types/index.ts";
 
 // Hero chart data
 export const heroChartData: ChartData[] = Array.from({ length: 30 }, (_, i) => ({

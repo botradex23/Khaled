@@ -5,7 +5,7 @@ import {
   CardDescription, 
   CardHeader, 
   CardTitle 
-} from '@/components/ui/card';
+} from "./card.tsx";
 import { 
   Table, 
   TableBody, 
@@ -13,7 +13,7 @@ import {
   TableHead, 
   TableHeader, 
   TableRow 
-} from '@/components/ui/table';
+} from "./table.tsx";
 import { Input } from "./input";
 import { Button } from "./button";
 import { 

@@ -17,7 +17,7 @@ import {
   CardHeader, 
   CardTitle,
   CardFooter
-} from "@/components/ui/card";
+} from "../components/ui/card.tsx";
 import { Button } from "../components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Badge } from "../components/ui/badge";
@@ -31,7 +31,7 @@ import {
   FormItem, 
   FormLabel, 
   FormMessage 
-} from "@/components/ui/form";
+} from "../components/ui/form.tsx";
 import { Input } from "../components/ui/input";
 import { Switch } from "../components/ui/switch";
 import { 
@@ -40,7 +40,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../components/ui/select.tsx";
 import { useToast } from "../hooks/use-toast";
 import { queryClient, apiRequest } from "../lib/queryClient";
 import {
@@ -79,7 +79,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "../components/ui/dialog.tsx";
 import { Alert, AlertTitle } from "../components/ui/alert";
 
 // Define form schema

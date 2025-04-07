@@ -130,11 +130,11 @@ function PaperTradingContent() {
   const [selectedTab, setSelectedTab] = useState('overview');
   
   // Import required components using React.lazy
-  const PaperTradingDashboard = React.lazy(() => import('@/components/ui/paper-trading-dashboard'));
-  const PaperTradingPositions = React.lazy(() => import('@/components/ui/paper-trading-positions'));
-  const PaperTradingHistory = React.lazy(() => import('@/components/ui/paper-trading-history'));
-  const PaperTradingStats = React.lazy(() => import('@/components/ui/paper-trading-stats').then(module => ({ default: module.PaperTradingStats })));
-  const NewTradeDialog = React.lazy(() => import('@/components/ui/new-paper-trade-dialog'));
+  const PaperTradingDashboard = React.lazy(() => import('../components/ui/paper-trading-dashboard'));
+  const PaperTradingPositions = React.lazy(() => import('../components/ui/paper-trading-positions'));
+  const PaperTradingHistory = React.lazy(() => import('../components/ui/paper-trading-history'));
+  const PaperTradingStats = React.lazy(() => import('../components/ui/paper-trading-stats').then(module => ({ default: module.PaperTradingStats })));
+  const NewTradeDialog = React.lazy(() => import('../components/ui/new-paper-trade-dialog'));
 
   // שאילתה לקבלת חשבון ה-Paper Trading
   const {

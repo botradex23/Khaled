@@ -6,7 +6,7 @@ import {
   FormControl,
   FormDescription,
   FormMessage,
-} from "@/components/ui/form";
+} from "../ui/form.tsx";
 import { Slider } from "../ui/slider";
 import { Input } from "../ui/input";
 import { Checkbox } from "../ui/checkbox";
@@ -16,7 +16,7 @@ import {
   CardHeader, 
   CardTitle,
   CardDescription
-} from "@/components/ui/card";
+} from "../ui/card.tsx";
 import { AlertCircle, Info, Shield, DollarSign, TrendingDown } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";

@@ -7,7 +7,7 @@ import {
   CardDescription, 
   CardHeader, 
   CardTitle 
-} from "@/components/ui/card";
+} from "../components/ui/card.tsx";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Checkbox } from "../components/ui/checkbox";
@@ -16,7 +16,7 @@ import {
   TabsContent, 
   TabsList, 
   TabsTrigger 
-} from "@/components/ui/tabs";
+} from "../components/ui/tabs.tsx";
 import { Progress } from "../components/ui/progress";
 import { 
   Table,
@@ -25,7 +25,7 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from "@/components/ui/table";
+} from "../components/ui/table.tsx";
 import { 
   ArrowUpRight, 
   ArrowDownRight, 

@@ -4,7 +4,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "./tooltip.tsx";
 import { Info, HelpCircle } from 'lucide-react';
 import { Button } from "./button";
 

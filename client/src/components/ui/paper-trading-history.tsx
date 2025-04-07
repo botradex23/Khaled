@@ -11,14 +11,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "./table.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "./select.tsx";
 import type { PaperTradingAccount, PaperTradingTrade } from '@shared/schema';
 import { Badge } from "./badge";
 

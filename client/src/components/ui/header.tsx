@@ -6,7 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "./dropdown-menu.tsx";
 import {
   Dialog,
   DialogContent,
@@ -14,10 +14,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "./dialog.tsx";
 import { 
   Input 
-} from "@/components/ui/input";
+} from "./input.tsx";
 import { Label } from "./label";
 import { Switch } from "./switch";
 import { useAuth } from "../../hooks/use-auth";

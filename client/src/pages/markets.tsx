@@ -9,7 +9,7 @@ import {
   CardHeader, 
   CardTitle,
   CardDescription
-} from "@/components/ui/card";
+} from "../components/ui/card.tsx";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Skeleton } from "../components/ui/skeleton";
@@ -20,7 +20,7 @@ import {
   TableHead, 
   TableHeader, 
   TableRow 
-} from "@/components/ui/table";
+} from "../components/ui/table.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import {
   LineChart,

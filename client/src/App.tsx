@@ -1,4 +1,4 @@
-import React from "react";
+// Using implicit React import with JSX transform
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -6,6 +6,7 @@ import { Toaster } from "./components/ui/toaster";
 import { AuthProvider, useAuth } from "./hooks/use-auth";
 import { PortfolioProvider } from "./hooks/use-portfolio-value";
 import MixpanelProvider from "./components/MixpanelProvider";
+import * as React from 'react';
 import NotFound from "./pages/not-found";
 import Home from "./pages/home";
 import Landing from "./pages/landing";

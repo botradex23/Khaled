@@ -3,7 +3,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle 
-} from "@/components/ui/card";
+} from "./card.tsx";
 import { Button } from "./button";
 import { Badge } from "./badge";
 import { 

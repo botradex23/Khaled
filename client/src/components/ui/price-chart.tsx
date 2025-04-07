@@ -5,7 +5,7 @@ import {
   CardDescription, 
   CardHeader, 
   CardTitle 
-} from "@/components/ui/card";
+} from "./card.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 import { Skeleton } from "./skeleton";
 import { RefreshCw, AlertTriangle, Key } from "lucide-react";

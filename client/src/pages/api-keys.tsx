@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "../components/ui/alert-dialog.tsx";
 import { Badge } from "../components/ui/badge";
 // We're using a local version of Layout
 // import Layout from "../components/layout";

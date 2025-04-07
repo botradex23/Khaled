@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
   CardFooter,
-} from "@/components/ui/card";
+} from "./card.tsx";
 import { Skeleton } from "./skeleton";
 import { Progress } from "./progress";
 import { BadgeInfo, Wallet, Lock } from "lucide-react";
@@ -20,7 +20,7 @@ import {
   CryptoPriceData, 
   enrichBalancesWithPrices, 
   calculateTotalValue 
-} from "@/hooks/useAssetPricing";
+} from "../../hooks/useAssetPricing.ts";
 
 export function AccountBalanceCard() {
   // Get authentication status to determine which endpoint to use
