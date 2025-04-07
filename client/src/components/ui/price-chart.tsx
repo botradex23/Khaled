@@ -123,7 +123,7 @@ export function PriceChart({ symbol = "BTCUSDT" }: { symbol?: string }) {
   }, [isAuthenticated, apiKeysData]);
   
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: [`/api/bitget/candles/${symbol}`, interval],
+    queryKey: [`/api/markets/candles/${symbol}`, interval],
     refetchInterval: interval === "1m" ? 30000 : 60000 // More frequent updates for 1m chart
   });
   
@@ -162,7 +162,13 @@ export function PriceChart({ symbol = "BTCUSDT" }: { symbol?: string }) {
         </CardHeader>
         <CardContent>
           <div className="h-[300px] w-full flex flex-col items-center justify-center">
-            <p className="text-muted-foreground mb-4">Could not retrieve chart data from Bitget API</p>
+            <Alert variant="destructive" className="mb-4 max-w-md">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              <AlertTitle>Connection Error</AlertTitle>
+              <AlertDescription>
+                Could not retrieve chart data from Binance or OKX brokers. This may be due to API restrictions in your region.
+              </AlertDescription>
+            </Alert>
             <button 
               onClick={handleRefresh}
               className="px-4 py-2 border rounded-md hover:bg-muted flex items-center gap-2"

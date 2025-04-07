@@ -80,6 +80,16 @@ export interface BrokerOrderBook {
   asks: [string, string][]; // [price, quantity]
 }
 
+// Type definition for candle data
+export interface BrokerCandle {
+  timestamp: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
 // Type definition for live price update via WebSocket
 export interface BrokerLivePriceUpdate {
   symbol: string;
@@ -120,6 +130,7 @@ export interface IBroker {
   get24hrTicker(symbol: string): Promise<Broker24hrTicker | null>;
   getExchangeInfo(symbol?: string): Promise<BrokerExchangeInfo>;
   getOrderBook(symbol: string, limit?: number): Promise<BrokerOrderBook>;
+  getCandles(symbol: string, interval: string, limit?: number): Promise<BrokerCandle[]>;
   
   // Account data methods
   getAccountBalances(): Promise<BrokerBalance[]>;
@@ -170,6 +181,7 @@ export interface IMultiBrokerService {
   get24hrTicker(symbol: string): Promise<Broker24hrTicker | null>;
   getExchangeInfo(symbol?: string): Promise<BrokerExchangeInfo>;
   getOrderBook(symbol: string, limit?: number): Promise<BrokerOrderBook>;
+  getCandles(symbol: string, interval: string, limit?: number): Promise<BrokerCandle[]>;
   
   // Account data methods with fallback
   getAccountBalances(): Promise<BrokerBalance[]>;

@@ -8,7 +8,7 @@ import * as okx from 'okx-api';
 import { BrokerType, IBroker, BrokerTickerPrice, Broker24hrTicker, 
   BrokerBalance, BrokerExchangeInfo, BrokerSymbolInfo, 
   BrokerOrderResult, BrokerOrderBook, BrokerLivePriceUpdate,
-  BrokerApiStatus } from '../brokers/interfaces';
+  BrokerApiStatus, BrokerCandle } from '../brokers/interfaces';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -21,24 +21,25 @@ export class OkxBroker implements IBroker {
   private isWsConnected: boolean;
 
   constructor(testnet: boolean = false) {
-    // Initialize OKX client with type assertion to work around strict typing issues
-    this.client = new okx.RestClient({
-      sandbox: testnet
-    } as any);
-
-    // Set API credentials if available
+    // Get API credentials
     const apiKey = process.env.OKX_API_KEY || '';
     const apiSecret = process.env.OKX_API_SECRET || '';
     const passphrase = process.env.OKX_PASSPHRASE || '';
 
+    // Initialize OKX client with credentials and sandbox setting
+    const options: any = {
+      sandbox: testnet
+    };
+    
+    // Add credentials if available
     if (apiKey && apiSecret && passphrase) {
-      // Use type assertion to work around strict typing issues
-      this.client.setCredentials({
-        apiKey,
-        apiSecret,
-        passphrase
-      } as any);
+      options.apiKey = apiKey;
+      options.apiSecret = apiSecret;
+      options.apiPassphrase = passphrase;
     }
+    
+    // Initialize client with all options at once
+    this.client = new okx.RestClient(options);
 
     // Initialize WebSocket state
     this.wsCallbacks = new Map();
@@ -209,6 +210,45 @@ export class OkxBroker implements IBroker {
     } catch (error) {
       console.error(`OKX getOrderBook error: ${error}`);
       return { lastUpdateId: 0, bids: [], asks: [] };
+    }
+  }
+  
+  async getCandles(symbol: string, interval: string, limit: number = 500): Promise<BrokerCandle[]> {
+    try {
+      const formattedSymbol = this.formatSymbolForExchange(symbol);
+      
+      // Map common interval strings to OKX-specific formats
+      // OKX uses: 1m, 3m, 5m, 15m, 30m, 1H, 2H, 4H, 6H, 12H, 1D, 1W, 1M, 3M, 6M, 1Y
+      const intervalMap: Record<string, string> = {
+        '1m': '1m', '3m': '3m', '5m': '5m', '15m': '15m', '30m': '30m',
+        '1h': '1H', '2h': '2H', '4h': '4H', '6h': '6H', '12h': '12H',
+        '1d': '1D', '1w': '1W', '1M': '1M'
+      };
+      
+      const okxInterval = intervalMap[interval] || '1D'; // Default to 1D if interval not found
+      
+      const response = await this.client.getCandles({
+        instId: formattedSymbol,
+        bar: okxInterval,
+        limit
+      });
+      
+      if (!response || !response.data) {
+        return [];
+      }
+      
+      // OKX candle format: [timestamp, open, high, low, close, volume, volCcy]
+      return response.data.map((candle: any) => ({
+        timestamp: candle[0], // Timestamp
+        open: parseFloat(candle[1]), // Open
+        high: parseFloat(candle[2]), // High
+        low: parseFloat(candle[3]), // Low
+        close: parseFloat(candle[4]), // Close
+        volume: parseFloat(candle[5]) // Volume
+      }));
+    } catch (error) {
+      console.error(`OKX getCandles error: ${error}`);
+      return [];
     }
   }
 
@@ -456,20 +496,20 @@ export class OkxBroker implements IBroker {
     const apiSecret = process.env.OKX_API_SECRET || '';
     const passphrase = process.env.OKX_PASSPHRASE || '';
     
-    // Use type assertion to work around strict typing issues
-    this.wsClient = new okx.WebsocketClient({
+    // Initialize WebSocket client with all options at once
+    const options: any = {
       sandbox: this.isTestnet()
-    } as any);
-
-    // Configure WS client with auth if we have API keys
+    };
+    
+    // Add credentials if available
     if (apiKey && apiSecret && passphrase) {
-      // Use type assertion to work around strict typing issues
-      this.wsClient.setCredentials({
-        apiKey,
-        apiSecret,
-        passphrase
-      } as any);
+      options.apiKey = apiKey;
+      options.apiSecret = apiSecret;
+      options.apiPassphrase = passphrase;
     }
+    
+    // Create WebSocket client
+    this.wsClient = new okx.WebsocketClient(options);
 
     this.wsClient.on('open', () => {
       console.log('OKX WebSocket connected');

@@ -57,6 +57,30 @@ export const MarketPricesTable = () => {
     try {
       setIsLoading(true);
       
+      // First try the multi-broker endpoint that uses fallback
+      console.log('Fetching market data from multi-broker service');
+      try {
+        // Get formatted market data from multi-broker API
+        const marketsResponse = await fetch('/api/market-broker/markets');
+        if (marketsResponse.ok) {
+          const marketsData = await marketsResponse.json();
+          console.log('Successfully fetched market data from multi-broker service', marketsData);
+          
+          if (marketsData.success && Array.isArray(marketsData.data) && marketsData.data.length > 0) {
+            // This endpoint already returns processed data in the correct format
+            setMarketData(marketsData.data);
+            console.log(`Using market data from ${marketsData.source} broker`);
+            setError(null);
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch (multiBrokerError) {
+        console.error('Error using multi-broker data:', multiBrokerError);
+        // Continue to legacy endpoints as fallback
+      }
+      
+      // If multi-broker fails, try the original endpoints
       // Fetch ticker prices
       const tickersResponse = await fetch('/api/binance/market/tickers');
       if (!tickersResponse.ok) throw new Error('Failed to fetch ticker data');
@@ -229,7 +253,7 @@ export const MarketPricesTable = () => {
       <CardHeader className="pb-3">
         <CardTitle className="text-xl font-bold">Market Prices</CardTitle>
         <CardDescription className="text-slate-300">
-          Current prices of cryptocurrencies and tokens on Binance
+          Current prices of cryptocurrencies and tokens from available exchanges
         </CardDescription>
         <div className="flex flex-col md:flex-row justify-between gap-4 mt-3">
           <div className="relative w-full md:w-64">
@@ -306,7 +330,7 @@ export const MarketPricesTable = () => {
           <MarketErrorState 
             onRetry={fetchMarketData}
             title="Unable to load market data"
-            message="There was an error fetching data from Binance. Please check your connection and try again."
+            message="There was an error fetching market data from available exchanges. Please check your connection and try again."
           />
         ) : (
           <div className="overflow-x-auto">

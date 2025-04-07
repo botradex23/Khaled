@@ -54,8 +54,7 @@ interface MarketResponse {
   source: string;
   timestamp: string;
   count: number;
-  data?: MarketData[];
-  prices?: MarketData[];
+  data: MarketData[];
 }
 
 interface MarketData {
@@ -145,22 +144,21 @@ export default function Markets() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCoin, setSelectedCoin] = useState<string | null>(null);
   
-  // Fetch market data from our central market API
+  // Fetch market data from multi-broker service that provides automatic fallback
   const { data: marketsData, isLoading, error, refetch } = useQuery<MarketResponse>({
-    queryKey: ["/api/market/prices"],
+    queryKey: ["/api/market-broker/markets"],
     refetchInterval: 30000 // refresh every 30 seconds
   });
   
   // Fetch market overview with trending coins
   const { data: marketOverview, isLoading: isOverviewLoading } = useQuery<MarketOverviewResponse>({
-    queryKey: ["/api/markets/binance/overview"],
+    queryKey: ["/api/market-broker/markets"],
     refetchInterval: 60000 // refresh every minute
   });
   
   // Format data and add market cap estimates
-  // Check if data exists in marketsData.data or marketsData.prices
-  const sourceData = (marketsData?.data && Array.isArray(marketsData.data)) ? marketsData.data : 
-                    (marketsData?.prices && Array.isArray(marketsData.prices)) ? marketsData.prices : [];
+  // Check if data exists in marketsData.data
+  const sourceData = (marketsData?.data && Array.isArray(marketsData.data)) ? marketsData.data : [];
                     
   const markets = sourceData.length > 0
     ? sourceData.map((market: MarketData): FormattedMarketData => {
@@ -201,9 +199,9 @@ export default function Markets() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Binance Markets</h1>
+              <h1 className="text-3xl font-bold mb-2">Cryptocurrency Markets</h1>
               <p className="text-muted-foreground">
-                Real-time prices, charts and market data from Binance
+                Real-time prices, charts and market data from multiple exchanges
               </p>
             </div>
             <div className="flex flex-col md:flex-row gap-4 items-end mt-4 md:mt-0">
@@ -216,9 +214,9 @@ export default function Markets() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Link href="/binance">
+              <Link href="/markets">
                 <Button variant="secondary" className="w-full md:w-auto">
-                  View All Binance Markets
+                  View All Markets
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -228,9 +226,9 @@ export default function Markets() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card className="md:col-span-2">
               <CardHeader>
-                <CardTitle>Binance Markets Overview</CardTitle>
+                <CardTitle>Markets Overview</CardTitle>
                 <CardDescription className="flex items-center gap-2">
-                  <span>Top trending cryptocurrencies from Binance</span>
+                  <span>Top trending cryptocurrencies from available exchanges</span>
                   {isLoading ? (
                     <span className="text-xs text-muted-foreground flex items-center">
                       <RefreshCw className="h-3 w-3 animate-spin mr-1" />

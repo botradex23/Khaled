@@ -8,7 +8,7 @@
 
 import { 
   BrokerType, IBroker, BrokerTickerPrice, Broker24hrTicker, 
-  BrokerBalance, BrokerExchangeInfo, BrokerOrderBook, 
+  BrokerBalance, BrokerExchangeInfo, BrokerOrderBook, BrokerCandle,
   BrokerOrderResult, BrokerLivePriceUpdate, BrokerApiStatus
 } from './interfaces';
 import { BrokerFactory } from './brokerFactory';
@@ -159,6 +159,14 @@ export class MultiBrokerService implements IBroker {
   
   async getOrderBook(symbol: string, limit: number = 100): Promise<BrokerOrderBook> {
     return this.tryWithFallback<BrokerOrderBook>('getOrderBook', symbol, limit);
+  }
+  
+  async getCandles(symbol: string, interval: string, limit: number = 100): Promise<BrokerCandle[]> {
+    return this.tryWithFallback<BrokerCandle[]>('getCandles', symbol, interval, limit);
+  }
+  
+  getActiveBrokerType(): BrokerType {
+    return this.activeBrokerType;
   }
   
   // Account data methods with fallback

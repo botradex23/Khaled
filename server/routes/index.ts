@@ -6,6 +6,7 @@ import analyticsRoutes from './analytics-routes';      // Import the new analyti
 import authRoutes from './auth-routes';                // Import the new auth routes
 import binanceMarketPrices from './binance-market-prices'; // Import Binance market prices routes
 import marketApiRoutes from './market-api';            // Import market API routes
+import marketBrokerRoutes from './market-broker-routes'; // Import multi-broker market routes
 import { storage } from '../storage';
 
 const router = Router();
@@ -21,5 +22,6 @@ router.use('/api/analytics', analyticsRoutes);         // Analytics routes
 router.use('/api/auth', authRoutes);                   // Authentication routes
 router.use('/api/binance', binanceMarketPrices);       // Binance market prices routes
 router.use('/api/market', marketApiRoutes);            // Market API routes
+router.use('/api/market-broker', marketBrokerRoutes);  // Multi-broker market routes with fallback
 
 export default router;

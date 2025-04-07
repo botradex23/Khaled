@@ -5,11 +5,12 @@
  * using the binance-api-node SDK.
  */
 
+// Import the Binance API client
 import Binance from 'binance-api-node';
 import { BrokerType, IBroker, BrokerTickerPrice, Broker24hrTicker, 
   BrokerBalance, BrokerExchangeInfo, BrokerSymbolInfo, 
   BrokerOrderResult, BrokerOrderBook, BrokerLivePriceUpdate,
-  BrokerApiStatus } from '../brokers/interfaces';
+  BrokerApiStatus, BrokerCandle } from '../brokers/interfaces';
 import dotenv from 'dotenv';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { HttpsProxyAgent } from 'https-proxy-agent';
@@ -232,6 +233,33 @@ export class BinanceBroker implements IBroker {
     } catch (error) {
       console.error(`Binance getOrderBook error: ${error}`);
       return { lastUpdateId: 0, bids: [], asks: [] };
+    }
+  }
+  
+  async getCandles(symbol: string, interval: string, limit: number = 500): Promise<BrokerCandle[]> {
+    try {
+      const formattedSymbol = this.formatSymbolForExchange(symbol);
+      // Map common interval strings to Binance-specific formats if needed
+      // Binance uses: 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M
+      const binanceInterval = interval; // In our case, no mapping needed as we use Binance format
+      
+      const candles = await this.client.candles({
+        symbol: formattedSymbol,
+        interval: binanceInterval,
+        limit
+      });
+      
+      return candles.map((candle: any) => ({
+        timestamp: candle.openTime.toString(),
+        open: parseFloat(candle.open),
+        high: parseFloat(candle.high),
+        low: parseFloat(candle.low),
+        close: parseFloat(candle.close),
+        volume: parseFloat(candle.volume)
+      }));
+    } catch (error) {
+      console.error(`Binance getCandles error: ${error}`);
+      return [];
     }
   }
   
