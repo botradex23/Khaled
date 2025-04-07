@@ -1,5 +1,5 @@
 // Shared schema definitions for the entire application
-import { pgTable, serial, text, boolean, timestamp, integer, json, varchar, decimal } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, boolean, timestamp, integer, json, varchar, decimal, real } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { relations } from 'drizzle-orm';
 import { z } from 'zod';
@@ -190,6 +190,115 @@ export const aiTradingData = pgTable('ai_trading_data', {
   metadata: json('metadata'), // Additional AI-specific data
 });
 
+// XGBoost Hyperparameter Tuning Runs table
+export const xgboostTuningRuns = pgTable('xgboost_tuning_runs', {
+  id: serial('id').primaryKey(),
+  symbol: text('symbol').notNull(),
+  timeframe: text('timeframe').notNull(), // e.g., "1h", "4h", "1d"
+  startedAt: timestamp('started_at').defaultNow(),
+  completedAt: timestamp('completed_at'),
+  status: text('status').notNull().default('running'), // "running", "completed", "failed"
+  optimizationType: text('optimization_type').notNull(), // "grid_search", "bayesian"
+  baselineAccuracy: real('baseline_accuracy'),
+  bestAccuracy: real('best_accuracy'),
+  improvement: real('improvement'),
+  bestParams: json('best_params'),
+  allParams: json('all_params'), // Array of all parameter combinations and their performance
+  resultsUrl: text('results_url'), // URL to visualization or detailed results
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// Market Condition Records table - for tracking and responding to market changes
+export const marketConditions = pgTable('market_conditions', {
+  id: serial('id').primaryKey(),
+  symbol: text('symbol').notNull(),
+  timeframe: text('timeframe').notNull(),
+  timestamp: timestamp('timestamp').defaultNow(),
+  volatility: real('volatility').notNull(), // ATR or similar volatility measure
+  volume: real('volume').notNull(),  // Volume relative to average
+  trendStrength: real('trend_strength').notNull(), // ADX or similar trend strength indicator
+  trendDirection: real('trend_direction').notNull(), // -1 to 1 scale for bearish to bullish
+  rsi: real('rsi'), // RSI value
+  macdHistogram: real('macd_histogram'), // MACD histogram value
+  significantChange: boolean('significant_change').default(false), // Whether a significant market change was detected
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// ML Model Performance Tracking table
+export const mlModelPerformance = pgTable('ml_model_performance', {
+  id: serial('id').primaryKey(),
+  modelId: text('model_id').notNull(), // Unique model identifier (could be a filename)
+  modelName: text('model_name').notNull(), // Human-readable model name
+  modelType: text('model_type').notNull(), // "standard", "balanced", "conservative", "aggressive"
+  symbol: text('symbol').notNull(),
+  timeframe: text('timeframe').notNull(),
+  strategyType: text('strategy_type'), // "conservative", "balanced", "aggressive"
+  startDate: timestamp('start_date').notNull(),
+  endDate: timestamp('end_date').notNull(),
+  accuracy: real('accuracy').notNull(),
+  precision: real('precision').notNull(),
+  recall: real('recall').notNull(),
+  f1Score: real('f1_score').notNull(),
+  pnl: real('pnl').notNull(), // Profit/loss in base currency
+  pnlPercent: real('pnl_percent').notNull(), // Profit/loss as percentage
+  winRate: real('win_rate').notNull(), // Percentage of profitable trades
+  drawdown: real('drawdown').notNull(), // Maximum drawdown
+  winCount: integer('win_count').notNull(),
+  lossCount: integer('loss_count').notNull(),
+  isActive: boolean('is_active').default(true), // Whether this model is currently active
+  isTopPerformer: boolean('is_top_performer').default(false), // Marked as current top performer
+  parameters: json('parameters').notNull(), // Model hyperparameters
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// Admin Feedback on ML Models table
+export const mlAdminFeedback = pgTable('ml_admin_feedback', {
+  id: serial('id').primaryKey(),
+  modelId: text('model_id').notNull(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  feedback: text('feedback').notNull(), // Admin feedback/comments
+  priority: text('priority').notNull().default('medium'), // "low", "medium", "high"
+  status: text('status').notNull().default('pending'), // "pending", "implemented", "rejected"
+  createdAt: timestamp('created_at').defaultNow(),
+  implementedAt: timestamp('implemented_at'),
+});
+
+// Strategy Simulation Results table
+export const strategySimulations = pgTable('strategy_simulations', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  symbol: text('symbol').notNull(),
+  timeframe: text('timeframe').notNull(),
+  strategyType: text('strategy_type').notNull(), // "conservative", "balanced", "aggressive"
+  startDate: timestamp('start_date').notNull(),
+  endDate: timestamp('end_date').notNull(),
+  initialInvestment: real('initial_investment').notNull(),
+  finalBalance: real('final_balance').notNull(),
+  pnl: real('pnl').notNull(),
+  pnlPercent: real('pnl_percent').notNull(),
+  winRate: real('win_rate').notNull(),
+  drawdown: real('drawdown').notNull(),
+  maxDrawdown: real('max_drawdown').notNull(),
+  sharpeRatio: real('sharpe_ratio'),
+  volatility: real('volatility'),
+  tradeCount: integer('trade_count').notNull(),
+  winCount: integer('win_count').notNull(),
+  lossCount: integer('loss_count').notNull(),
+  averageWin: real('average_win').notNull(),
+  averageLoss: real('average_loss').notNull(),
+  largestWin: real('largest_win').notNull(),
+  largestLoss: real('largest_loss').notNull(),
+  modelParameters: json('model_parameters').notNull(), // Strategy parameters used
+  tradesSnapshot: json('trades_snapshot'), // Sample of trades executed
+  chartDataUrl: text('chart_data_url'), // URL to chart data for visualization
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 // Risk settings table - store user's risk management preferences
 export const riskSettings = pgTable('risk_settings', {
   id: serial('id').primaryKey(),
@@ -259,6 +368,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   aiData: many(aiTradingData),
   riskSettings: one(riskSettings),
   conversations: many(conversations),
+  mlFeedback: many(mlAdminFeedback),
 }));
 
 export const userApiKeysRelations = relations(userApiKeys, ({ one }) => ({
@@ -351,6 +461,14 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   }),
 }));
 
+// Relations for ML Optimization tables
+export const mlAdminFeedbackRelations = relations(mlAdminFeedback, ({ one }) => ({
+  user: one(users, {
+    fields: [mlAdminFeedback.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas for validation
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertUserApiKeysSchema = createInsertSchema(userApiKeys).omit({ id: true, createdAt: true, updatedAt: true });
@@ -364,6 +482,13 @@ export const insertRiskSettingsSchema = createInsertSchema(riskSettings).omit({ 
 export const insertTradeLogSchema = createInsertSchema(tradeLogs).omit({ id: true, timestamp: true, created_at: true, updated_at: true });
 export const insertConversationSchema = createInsertSchema(conversations).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
+
+// Insert schemas for ML optimization tables
+export const insertXgboostTuningRunSchema = createInsertSchema(xgboostTuningRuns).omit({ id: true, startedAt: true, completedAt: true, createdAt: true, updatedAt: true });
+export const insertMarketConditionSchema = createInsertSchema(marketConditions).omit({ id: true, timestamp: true, createdAt: true });
+export const insertMlModelPerformanceSchema = createInsertSchema(mlModelPerformance).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertMlAdminFeedbackSchema = createInsertSchema(mlAdminFeedback).omit({ id: true, createdAt: true, implementedAt: true });
+export const insertStrategySimulationSchema = createInsertSchema(strategySimulations).omit({ id: true, createdAt: true, updatedAt: true });
 
 // Type definitions
 export type User = typeof users.$inferSelect;
@@ -401,6 +526,22 @@ export type InsertConversation = z.infer<typeof insertConversationSchema>;
 
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+// ML Optimization Types
+export type XgboostTuningRun = typeof xgboostTuningRuns.$inferSelect;
+export type InsertXgboostTuningRun = z.infer<typeof insertXgboostTuningRunSchema>;
+
+export type MarketCondition = typeof marketConditions.$inferSelect;
+export type InsertMarketCondition = z.infer<typeof insertMarketConditionSchema>;
+
+export type MlModelPerformance = typeof mlModelPerformance.$inferSelect;
+export type InsertMlModelPerformance = z.infer<typeof insertMlModelPerformanceSchema>;
+
+export type MlAdminFeedback = typeof mlAdminFeedback.$inferSelect;
+export type InsertMlAdminFeedback = z.infer<typeof insertMlAdminFeedbackSchema>;
+
+export type StrategySimulation = typeof strategySimulations.$inferSelect;
+export type InsertStrategySimulation = z.infer<typeof insertStrategySimulationSchema>;
 
 // Type for chat messages (used by OpenAI API)
 export type ChatMessage = {

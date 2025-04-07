@@ -18,6 +18,16 @@ import {
   type InsertTradeLog,
   type RiskSettings,
   type InsertRiskSettings,
+  type XgboostTuningRun,
+  type InsertXgboostTuningRun,
+  type MarketCondition,
+  type InsertMarketCondition,
+  type MlModelPerformance,
+  type InsertMlModelPerformance,
+  type MlAdminFeedback,
+  type InsertMlAdminFeedback,
+  type StrategySimulation,
+  type InsertStrategySimulation,
   payments,
   tradeLogs,
   riskSettings
@@ -184,6 +194,41 @@ export interface IStorage {
   getRiskSettingsByUserId(userId: number): Promise<RiskSettings | undefined>;
   createRiskSettings(settings: InsertRiskSettings): Promise<RiskSettings>;
   updateRiskSettings(id: number, updates: Partial<RiskSettings>): Promise<RiskSettings | undefined>;
+  
+  // XGBoost Tuning Run methods
+  createXgboostTuningRun(data: InsertXgboostTuningRun): Promise<XgboostTuningRun>;
+  getXgboostTuningRun(id: number): Promise<XgboostTuningRun | undefined>;
+  getAllXgboostTuningRuns(limit?: number): Promise<XgboostTuningRun[]>;
+  getXgboostTuningRunsBySymbol(symbol: string): Promise<XgboostTuningRun[]>;
+  updateXgboostTuningRun(id: number, updates: Partial<XgboostTuningRun>): Promise<XgboostTuningRun | undefined>;
+  
+  // Market Condition methods
+  createMarketCondition(data: InsertMarketCondition): Promise<MarketCondition>;
+  getMarketCondition(id: number): Promise<MarketCondition | undefined>;
+  getMarketConditionsBySymbol(symbol: string, timeframe: string, limit?: number): Promise<MarketCondition[]>;
+  getLatestMarketCondition(symbol: string, timeframe: string): Promise<MarketCondition | undefined>;
+  
+  // ML Model Performance methods
+  createMlModelPerformance(data: InsertMlModelPerformance): Promise<MlModelPerformance>;
+  getMlModelPerformance(id: number): Promise<MlModelPerformance | undefined>;
+  getMlModelPerformanceByModelId(modelId: string): Promise<MlModelPerformance | undefined>;
+  getAllMlModelPerformance(limit?: number): Promise<MlModelPerformance[]>;
+  getTopPerformingModels(limit?: number): Promise<MlModelPerformance[]>;
+  updateMlModelPerformance(id: number, updates: Partial<MlModelPerformance>): Promise<MlModelPerformance | undefined>;
+  
+  // ML Admin Feedback methods
+  createMlAdminFeedback(data: InsertMlAdminFeedback): Promise<MlAdminFeedback>;
+  getMlAdminFeedback(id: number): Promise<MlAdminFeedback | undefined>;
+  getMlAdminFeedbackByUserId(userId: number): Promise<MlAdminFeedback[]>;
+  getMlAdminFeedbackByModelId(modelId: string): Promise<MlAdminFeedback[]>;
+  updateMlAdminFeedback(id: number, updates: Partial<MlAdminFeedback>): Promise<MlAdminFeedback | undefined>;
+  
+  // Strategy Simulation methods
+  createStrategySimulation(data: InsertStrategySimulation): Promise<StrategySimulation>;
+  getStrategySimulation(id: number): Promise<StrategySimulation | undefined>;
+  getAllStrategySimulations(limit?: number): Promise<StrategySimulation[]>;
+  getStrategySimulationsBySymbol(symbol: string, timeframe?: string): Promise<StrategySimulation[]>;
+  updateStrategySimulation(id: number, updates: Partial<StrategySimulation>): Promise<StrategySimulation | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -196,6 +241,11 @@ export class MemStorage implements IStorage {
   private paperTradingTrades: Map<number, PaperTradingTrade>;
   private tradeLogs: Map<number, TradeLog>;
   private riskSettings: Map<number, RiskSettings>;
+  private xgboostTuningRuns: Map<number, XgboostTuningRun>;
+  private marketConditions: Map<number, MarketCondition>;
+  private mlModelPerformance: Map<number, MlModelPerformance>;
+  private mlAdminFeedback: Map<number, MlAdminFeedback>;
+  private strategySimulations: Map<number, StrategySimulation>;
   
   currentId: number;
   botId: number;
@@ -206,6 +256,11 @@ export class MemStorage implements IStorage {
   riskSettingsId: number;
   paperTradeId: number;
   tradeLogId: number;
+  xgboostTuningRunId: number;
+  marketConditionId: number;
+  mlModelPerformanceId: number;
+  mlAdminFeedbackId: number;
+  strategySimulationId: number;
   
   // Database status flag (always true for memory storage)
   private isConnected: boolean = true;
@@ -220,6 +275,11 @@ export class MemStorage implements IStorage {
     this.paperTradingTrades = new Map();
     this.tradeLogs = new Map();
     this.riskSettings = new Map();
+    this.xgboostTuningRuns = new Map();
+    this.marketConditions = new Map();
+    this.mlModelPerformance = new Map();
+    this.mlAdminFeedback = new Map();
+    this.strategySimulations = new Map();
     
     this.currentId = 1;
     this.botId = 1;
@@ -230,6 +290,11 @@ export class MemStorage implements IStorage {
     this.paperTradeId = 1;
     this.tradeLogId = 1;
     this.riskSettingsId = 1;
+    this.xgboostTuningRunId = 1;
+    this.marketConditionId = 1;
+    this.mlModelPerformanceId = 1;
+    this.mlAdminFeedbackId = 1;
+    this.strategySimulationId = 1;
     
     // Initialize with sample data
     this.initializeData();
@@ -2129,6 +2194,262 @@ export class MemStorage implements IStorage {
     this.riskSettings.set(id, updatedSettings);
     console.log(`Updated risk settings ID ${id} for user ${existingSettings.userId}`);
     return updatedSettings;
+  }
+  
+  // XGBoost Tuning Run methods
+  async createXgboostTuningRun(data: InsertXgboostTuningRun): Promise<XgboostTuningRun> {
+    const id = this.xgboostTuningRunId++;
+    const now = new Date();
+    
+    const tuningRun: XgboostTuningRun = {
+      id,
+      ...data,
+      startedAt: data.startedAt || now,
+      completedAt: data.completedAt || null,
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    this.xgboostTuningRuns.set(id, tuningRun);
+    console.log(`Created XGBoost tuning run ID ${id} for symbol ${data.symbol}`);
+    return tuningRun;
+  }
+  
+  async getXgboostTuningRun(id: number): Promise<XgboostTuningRun | undefined> {
+    return this.xgboostTuningRuns.get(id);
+  }
+  
+  async getAllXgboostTuningRuns(limit?: number): Promise<XgboostTuningRun[]> {
+    const runs = Array.from(this.xgboostTuningRuns.values())
+      .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+    
+    return limit ? runs.slice(0, limit) : runs;
+  }
+  
+  async getXgboostTuningRunsBySymbol(symbol: string): Promise<XgboostTuningRun[]> {
+    return Array.from(this.xgboostTuningRuns.values())
+      .filter(run => run.symbol === symbol)
+      .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  }
+  
+  async updateXgboostTuningRun(id: number, updates: Partial<XgboostTuningRun>): Promise<XgboostTuningRun | undefined> {
+    const existingRun = this.xgboostTuningRuns.get(id);
+    
+    if (!existingRun) {
+      console.log(`XGBoost tuning run with ID ${id} not found`);
+      return undefined;
+    }
+    
+    const updatedRun: XgboostTuningRun = {
+      ...existingRun,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.xgboostTuningRuns.set(id, updatedRun);
+    console.log(`Updated XGBoost tuning run ID ${id}`);
+    return updatedRun;
+  }
+  
+  // Market Condition methods
+  async createMarketCondition(data: InsertMarketCondition): Promise<MarketCondition> {
+    const id = this.marketConditionId++;
+    const now = new Date();
+    
+    const marketCondition: MarketCondition = {
+      id,
+      ...data,
+      timestamp: data.timestamp || now,
+      createdAt: now
+    };
+    
+    this.marketConditions.set(id, marketCondition);
+    console.log(`Created market condition ID ${id} for ${data.symbol} ${data.timeframe}`);
+    return marketCondition;
+  }
+  
+  async getMarketCondition(id: number): Promise<MarketCondition | undefined> {
+    return this.marketConditions.get(id);
+  }
+  
+  async getMarketConditionsBySymbol(symbol: string, timeframe: string, limit?: number): Promise<MarketCondition[]> {
+    const conditions = Array.from(this.marketConditions.values())
+      .filter(condition => condition.symbol === symbol && condition.timeframe === timeframe)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    
+    return limit ? conditions.slice(0, limit) : conditions;
+  }
+  
+  async getLatestMarketCondition(symbol: string, timeframe: string): Promise<MarketCondition | undefined> {
+    const conditions = await this.getMarketConditionsBySymbol(symbol, timeframe, 1);
+    return conditions.length > 0 ? conditions[0] : undefined;
+  }
+  
+  // ML Model Performance methods
+  async createMlModelPerformance(data: InsertMlModelPerformance): Promise<MlModelPerformance> {
+    const id = this.mlModelPerformanceId++;
+    const now = new Date();
+    
+    const modelPerformance: MlModelPerformance = {
+      id,
+      ...data,
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    this.mlModelPerformance.set(id, modelPerformance);
+    console.log(`Created ML model performance record ID ${id} for model ${data.modelId}`);
+    return modelPerformance;
+  }
+  
+  async getMlModelPerformance(id: number): Promise<MlModelPerformance | undefined> {
+    return this.mlModelPerformance.get(id);
+  }
+  
+  async getMlModelPerformanceByModelId(modelId: string): Promise<MlModelPerformance | undefined> {
+    return Array.from(this.mlModelPerformance.values())
+      .find(performance => performance.modelId === modelId);
+  }
+  
+  async getAllMlModelPerformance(limit?: number): Promise<MlModelPerformance[]> {
+    const performances = Array.from(this.mlModelPerformance.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    return limit ? performances.slice(0, limit) : performances;
+  }
+  
+  async getTopPerformingModels(limit: number = 5): Promise<MlModelPerformance[]> {
+    return Array.from(this.mlModelPerformance.values())
+      .sort((a, b) => b.accuracyScore - a.accuracyScore)
+      .slice(0, limit);
+  }
+  
+  async updateMlModelPerformance(id: number, updates: Partial<MlModelPerformance>): Promise<MlModelPerformance | undefined> {
+    const existingPerformance = this.mlModelPerformance.get(id);
+    
+    if (!existingPerformance) {
+      console.log(`ML model performance record with ID ${id} not found`);
+      return undefined;
+    }
+    
+    const updatedPerformance: MlModelPerformance = {
+      ...existingPerformance,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.mlModelPerformance.set(id, updatedPerformance);
+    console.log(`Updated ML model performance record ID ${id}`);
+    return updatedPerformance;
+  }
+  
+  // ML Admin Feedback methods
+  async createMlAdminFeedback(data: InsertMlAdminFeedback): Promise<MlAdminFeedback> {
+    const id = this.mlAdminFeedbackId++;
+    const now = new Date();
+    
+    const feedback: MlAdminFeedback = {
+      id,
+      ...data,
+      createdAt: now,
+      implementedAt: data.implementedAt || null
+    };
+    
+    this.mlAdminFeedback.set(id, feedback);
+    console.log(`Created ML admin feedback ID ${id} from user ${data.userId}`);
+    return feedback;
+  }
+  
+  async getMlAdminFeedback(id: number): Promise<MlAdminFeedback | undefined> {
+    return this.mlAdminFeedback.get(id);
+  }
+  
+  async getMlAdminFeedbackByUserId(userId: number): Promise<MlAdminFeedback[]> {
+    return Array.from(this.mlAdminFeedback.values())
+      .filter(feedback => feedback.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  
+  async getMlAdminFeedbackByModelId(modelId: string): Promise<MlAdminFeedback[]> {
+    return Array.from(this.mlAdminFeedback.values())
+      .filter(feedback => feedback.modelId === modelId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  
+  async updateMlAdminFeedback(id: number, updates: Partial<MlAdminFeedback>): Promise<MlAdminFeedback | undefined> {
+    const existingFeedback = this.mlAdminFeedback.get(id);
+    
+    if (!existingFeedback) {
+      console.log(`ML admin feedback with ID ${id} not found`);
+      return undefined;
+    }
+    
+    const updatedFeedback: MlAdminFeedback = {
+      ...existingFeedback,
+      ...updates
+    };
+    
+    this.mlAdminFeedback.set(id, updatedFeedback);
+    console.log(`Updated ML admin feedback ID ${id}`);
+    return updatedFeedback;
+  }
+  
+  // Strategy Simulation methods
+  async createStrategySimulation(data: InsertStrategySimulation): Promise<StrategySimulation> {
+    const id = this.strategySimulationId++;
+    const now = new Date();
+    
+    const simulation: StrategySimulation = {
+      id,
+      ...data,
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    this.strategySimulations.set(id, simulation);
+    console.log(`Created strategy simulation ID ${id} for ${data.symbol} with strategy ${data.strategyName}`);
+    return simulation;
+  }
+  
+  async getStrategySimulation(id: number): Promise<StrategySimulation | undefined> {
+    return this.strategySimulations.get(id);
+  }
+  
+  async getAllStrategySimulations(limit?: number): Promise<StrategySimulation[]> {
+    const simulations = Array.from(this.strategySimulations.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    return limit ? simulations.slice(0, limit) : simulations;
+  }
+  
+  async getStrategySimulationsBySymbol(symbol: string, timeframe?: string): Promise<StrategySimulation[]> {
+    let simulations = Array.from(this.strategySimulations.values())
+      .filter(simulation => simulation.symbol === symbol);
+    
+    if (timeframe) {
+      simulations = simulations.filter(simulation => simulation.timeframe === timeframe);
+    }
+    
+    return simulations.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  
+  async updateStrategySimulation(id: number, updates: Partial<StrategySimulation>): Promise<StrategySimulation | undefined> {
+    const existingSimulation = this.strategySimulations.get(id);
+    
+    if (!existingSimulation) {
+      console.log(`Strategy simulation with ID ${id} not found`);
+      return undefined;
+    }
+    
+    const updatedSimulation: StrategySimulation = {
+      ...existingSimulation,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.strategySimulations.set(id, updatedSimulation);
+    console.log(`Updated strategy simulation ID ${id}`);
+    return updatedSimulation;
   }
 }
 

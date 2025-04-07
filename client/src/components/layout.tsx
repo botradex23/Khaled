@@ -21,7 +21,9 @@ import {
   ShieldAlert,
   ClipboardList,
   BanknoteIcon, 
-  TrendingUpIcon
+  TrendingUpIcon,
+  Brain,
+  Activity
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -53,11 +55,13 @@ export default function Layout({ children }: LayoutProps) {
     { name: "Home", href: "/", icon: Home },
     { name: "Dashboard", href: "/dashboard", icon: BarChart3, auth: true },
     { name: "AI Trading", href: "/ai-trading", icon: Bot, auth: true },
+    { name: "ML Predictions", href: "/ml-predictions", icon: Brain, auth: true },
+    { name: "ML Optimization", href: "/ml-optimization", icon: Activity, auth: true, isNew: true },
     { name: "Binance Markets", href: "/markets", icon: CandlestickChart, auth: true },
     { name: "All Binance Markets", href: "/binance", icon: BarChart, isNew: true },
     { name: "Live Market", href: "/live-market", icon: LineChart },
     { name: "Bots", href: "/bots", icon: FlaskConical, auth: true },
-    { name: "Trade Logs", href: "/trade-logs", icon: ClipboardList, auth: true, isNew: true },
+    { name: "Trade Logs", href: "/trade-logs", icon: ClipboardList, auth: true },
     { name: "Risk Management", href: "/risk-management", icon: ShieldAlert, auth: true },
     { name: "API Keys", href: "/api-keys", icon: Key, auth: true },
     { name: "Learn", href: "/learn", icon: BookOpen },
@@ -66,7 +70,8 @@ export default function Layout({ children }: LayoutProps) {
   const profileItems = [
     { name: "API Keys", href: "/api-keys", icon: Key },
     { name: "API Status", href: "/api-status", icon: LineChart },
-    { name: "Trade Logs", href: "/trade-logs", icon: ClipboardList, isNew: true },
+    { name: "ML Optimization", href: "/ml-optimization", icon: Activity, isNew: true },
+    { name: "Trade Logs", href: "/trade-logs", icon: ClipboardList },
     { name: "Risk Management", href: "/risk-management", icon: ShieldAlert },
   ];
 

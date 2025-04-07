@@ -9,6 +9,7 @@ import marketsRouter from './routes/markets';
 import marketsCandlesRouter from './routes/markets-candles';
 import aiTradingRouter from './routes/ai-trading';
 import marketBrokerRouter from './routes/market-broker-routes';
+import mlOptimizationRouter from './routes/ml-optimization';
 import additionalRoutes from './routes/index';
 
 const router = express.Router();
@@ -24,6 +25,7 @@ router.use('/api/markets', marketsRouter);
 router.use('/api/markets/candles', marketsCandlesRouter);
 router.use('/api/ai/trading', aiTradingRouter);
 router.use('/api/market-broker', marketBrokerRouter);
+router.use('/api/ml/optimization', mlOptimizationRouter);
 
 // Register additional routes from routes/index.ts
 router.use(additionalRoutes);

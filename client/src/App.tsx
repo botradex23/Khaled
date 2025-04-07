@@ -34,6 +34,7 @@ import Binance from "./pages/binance";
 import LiveMarket from "./pages/live-market";
 import RiskManagement from "./pages/risk-management";
 import MLPredictionsPage from "./pages/ml-predictions";
+import MlOptimizationPage from "./pages/ml-optimization";
 import TradeLogsTestPage from "./pages/trade-logs-test";
 import TradeLogsPage from "./pages/trade-logs";
 import DirectPricesPage from "./pages/DirectPricesPage";
@@ -70,6 +71,7 @@ function Router() {
       <Route path="/bot-demo" component={BotDemo} />
       <Route path="/learn" component={Learn} />
       <Route path="/ml-predictions" component={MLPredictionsPage} />
+      <Route path="/ml-optimization" component={MlOptimizationPage} />
       <Route path="/ai-grid-bot" component={AIGridBot} />
       <Route path="/dca-bot" component={DcaBot} />
       <Route path="/macd-bot" component={MacdBot} />
