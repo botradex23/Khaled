@@ -5,7 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Brain, TrendingUp, ArrowDownUp, BarChart3, HelpCircle, AlertCircle, Check, Zap } from "lucide-react";
 
 interface BotExplanationGuideProps {

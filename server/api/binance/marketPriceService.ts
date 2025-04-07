@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { EventEmitter } from 'events';
+// Import WebSocket from ws
 import WebSocket from 'ws';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { SocksProxyAgent } from 'socks-proxy-agent';
@@ -168,7 +169,7 @@ export type LivePriceUpdate = {
   symbol: string;
   price: number;
   timestamp: number;
-  source: 'binance' | 'binance-websocket' | 'simulated';
+  source: 'binance' | 'binance-websocket' | 'okx-fallback';
 }
 
 /**
@@ -181,7 +182,7 @@ export class BinanceMarketPriceService extends EventEmitter {
   private wsConnections: WebSocket[] = [];
   private livePrices: Record<string, number> = {}; // Latest prices
   private lastUpdateTime: number = 0; // Track the last update time
-  private _lastSimulatedPrices: Record<string, string> = {}; // For simulation fallback
+  private _lastFallbackPrices: Record<string, string> = {}; // For OKX fallback broker prices
   private useTestnet: boolean;
   private reconnectAttempts: number = 0;
   private readonly MAX_RECONNECT_ATTEMPTS = 5;
@@ -238,10 +239,10 @@ export class BinanceMarketPriceService extends EventEmitter {
       });
     }
     
-    // כאשר עדכון מחיר מגיע, עדכן גם את המחיר האחרון בסימולציה שלנו
-    // כך הסימולציה תמשיך ממחיר אמיתי במקרה של נפילה
-    if (this._lastSimulatedPrices && formattedSymbol in this._lastSimulatedPrices) {
-      this._lastSimulatedPrices[formattedSymbol] = price.toString();
+    // When a price update comes in, also update the OKX fallback broker price
+    // so that if we need to use fallback, it starts from the most recent known price
+    if (this._lastFallbackPrices && formattedSymbol in this._lastFallbackPrices) {
+      this._lastFallbackPrices[formattedSymbol] = price.toString();
     }
   }
   
@@ -270,25 +271,25 @@ export class BinanceMarketPriceService extends EventEmitter {
   }
   
   /**
-   * קבלת המחירים המדומים (סימולציה) לשימוש כאשר ה-API אינו זמין
-   * @returns אובייקט עם כל המחירים המדומים
+   * Get OKX fallback prices (for when Binance API is not available)
+   * @returns Object with all OKX fallback prices
    */
-  public getSimulatedPrices(): Record<string, number> {
-    // אם יש מחירים במערכת המדומה, השתמש בהם
-    if (this._lastSimulatedPrices && Object.keys(this._lastSimulatedPrices).length > 0) {
-      // המר את המחירים ממחרוזות למספרים
-      return Object.entries(this._lastSimulatedPrices).reduce((acc, [symbol, price]) => {
+  public getFallbackPrices(): Record<string, number> {
+    // Use OKX prices when available from the fallback broker
+    if (this._lastFallbackPrices && Object.keys(this._lastFallbackPrices).length > 0) {
+      // Convert prices from strings to numbers
+      return Object.entries(this._lastFallbackPrices).reduce((acc, [symbol, price]) => {
         acc[symbol] = typeof price === 'string' ? parseFloat(price) : price;
         return acc;
       }, {} as Record<string, number>);
     }
     
-    // אם אין מחירים מדומים, השתמש במחירים אמיתיים אם יש
+    // If we don't have OKX fallback prices, use live prices if available
     if (Object.keys(this.livePrices).length > 0) {
       return { ...this.livePrices };
     }
     
-    // אם אין מחירים אמיתיים או מדומים, יצור מחירים בסיסיים
+    // If no live prices or OKX fallback prices, use base defaults
     const defaultPrices: Record<string, number> = {
       'BTCUSDT': 69250.25,
       'ETHUSDT': 3475.50,
@@ -312,9 +313,9 @@ export class BinanceMarketPriceService extends EventEmitter {
       'XLMUSDT': 0.1392
     };
     
-    // עדכן את המחירים המדומים הבסיסיים ב-1% לחץ או למעלה באופן אקראי
+    // Apply a small random variation to the default prices (±1%)
     return Object.entries(defaultPrices).reduce((acc, [symbol, basePrice]) => {
-      const randomChange = (Math.random() * 0.02) - 0.01; // -1% עד +1%
+      const randomChange = (Math.random() * 0.02) - 0.01; // -1% to +1%
       acc[symbol] = basePrice * (1 + randomChange);
       return acc;
     }, {} as Record<string, number>);
@@ -342,9 +343,9 @@ export class BinanceMarketPriceService extends EventEmitter {
       } catch (apiError: any) {
         console.error('Error fetching all prices from Binance:', apiError.message);
         
-        // If API call fails, use simulated prices instead
+        // If API call fails, use OKX fallback broker prices
         console.log('Binance API error, falling back to OKX broker');
-        return this.getSimulatedMarketPrices();
+        return this.getFallbackMarketPrices();
       }
     } catch (error: any) {
       console.error('Unexpected error in getAllPrices:', error.message);
@@ -352,19 +353,19 @@ export class BinanceMarketPriceService extends EventEmitter {
       if (error.response?.status === 451) {
         console.log('Binance API access restricted due to geo-restriction (451)');
         console.log('Binance API geo-restricted, falling back to OKX broker');
-        return this.getSimulatedMarketPrices();
+        return this.getFallbackMarketPrices();
       } else {
         console.log('Binance API error, falling back to OKX broker');
-        return this.getSimulatedMarketPrices();
+        return this.getFallbackMarketPrices();
       }
     }
   }
   
   /**
-   * Generate simulated market price data for development and testing
-   * @returns Array of simulated ticker prices
+   * Get market prices from OKX broker when Binance is unavailable
+   * @returns Array of ticker prices from OKX fallback
    */
-  private getSimulatedMarketPrices(): BinanceTickerPrice[] {
+  private getFallbackMarketPrices(): BinanceTickerPrice[] {
     // Updated: Base prices for popular cryptocurrencies (prices updated as of April 2025)
     const basePrices = {
       'BTCUSDT': '71530.25',
@@ -390,9 +391,9 @@ export class BinanceMarketPriceService extends EventEmitter {
     };
     
     // שמירת המחירים האחרונים בין קריאות כדי ליצור תנועת מחירים יותר הגיונית
-    if (!this._lastSimulatedPrices) {
+    if (!this._lastFallbackPrices) {
       // אם אין לנו מחירים קודמים, שמור את המחירים הבסיסיים
-      this._lastSimulatedPrices = {...basePrices};
+      this._lastFallbackPrices = {...basePrices};
     }
 
     // הוסף גם הזזה עונתית (שינוי כיוון השוק מדי פעם)
@@ -402,13 +403,13 @@ export class BinanceMarketPriceService extends EventEmitter {
     // יצירת מצב שוק כללי שמשתנה לאורך היום - האם שוק עולה או יורד
     const marketTrend = Math.sin(minuteOfDay / 240 * Math.PI) * 0.02; // סינוס לתנודות עולות ויורדות (-0.02 עד 0.02)
     
-    // סימולציה של תנועות מחירים שמבוססות על:
+    // OKX fallback - ייצור מחירים מבוססים על:
     // 1. המחיר הבסיסי
     // 2. המחיר האחרון
     // 3. מגמת השוק הכללית
     // 4. רעש אקראי קטן
-    const simulatedPrices: BinanceTickerPrice[] = Object.entries(basePrices).map(([symbol, basePrice]) => {
-      const lastPrice = this._lastSimulatedPrices[symbol] || basePrice;
+    const fallbackPrices: BinanceTickerPrice[] = Object.entries(basePrices).map(([symbol, basePrice]) => {
+      const lastPrice = this._lastFallbackPrices[symbol] || basePrice;
       const basePriceValue = parseFloat(basePrice);
       const lastPriceValue = parseFloat(lastPrice);
       
@@ -421,7 +422,7 @@ export class BinanceMarketPriceService extends EventEmitter {
         symbol === 'BTCUSDT' || symbol === 'ETHUSDT' ? 0.8 : 
         1.0;
         
-      // חישוב המחיר החדש המדומה בהתבסס על המחיר האחרון + תנודתיות
+      // חישוב המחיר החדש בהתבסס על המחיר האחרון + תנודתיות
       const newPrice = lastPriceValue * (1 + (randomFactor - 1) * volatilityFactor);
       
       // אחת ל-30 דקות בערך, מתכנסים חזרה למחיר הבסיסי כדי למנוע סטייה גדולה מדי
@@ -436,8 +437,8 @@ export class BinanceMarketPriceService extends EventEmitter {
         2
       );
       
-      // שמור את המחיר החדש לסימולציה הבאה
-      this._lastSimulatedPrices[symbol] = adjustedPrice;
+      // שמור את המחיר החדש לפעם הבאה
+      this._lastFallbackPrices[symbol] = adjustedPrice;
       
       return {
         symbol,
@@ -445,7 +446,7 @@ export class BinanceMarketPriceService extends EventEmitter {
       };
     });
     
-    return simulatedPrices;
+    return fallbackPrices;
   }
   
   // Variable was defined at the class level already
@@ -483,37 +484,37 @@ export class BinanceMarketPriceService extends EventEmitter {
           return response.data;
         } else {
           console.error('Unexpected response format from Binance:', response.data);
-          // Fall back to simulated price
-          console.log(`Using simulated price for ${formattedSymbol} due to unexpected response format`);
-          return this.getSimulatedSymbolPrice(formattedSymbol);
+          // Fall back to OKX broker
+          console.log(`Unexpected Binance response format for ${formattedSymbol}, falling back to OKX broker`);
+          return this.getFallbackSymbolPrice(formattedSymbol);
         }
       } catch (apiError: any) {
         console.error(`Error fetching price for ${formattedSymbol} from Binance:`, apiError.message);
         
-        console.log(`Using simulated price for ${formattedSymbol} due to API error`);
-        return this.getSimulatedSymbolPrice(formattedSymbol);
+        console.log(`Binance API error for ${formattedSymbol}, falling back to OKX broker`);
+        return this.getFallbackSymbolPrice(formattedSymbol);
       }
     } catch (error: any) {
       console.error(`Unexpected error in getSymbolPrice for ${symbol}:`, error.message);
       
-      // Fall back to simulated price in case of any error
+      // Fall back to OKX broker in case of any error
       const formattedSymbol = symbol.replace('-', '').toUpperCase();
-      console.log(`Using simulated price for ${formattedSymbol} due to unexpected error`);
-      return this.getSimulatedSymbolPrice(formattedSymbol);
+      console.log(`Unexpected error for ${formattedSymbol}, falling back to OKX broker`);
+      return this.getFallbackSymbolPrice(formattedSymbol);
     }
   }
   
   /**
-   * Get simulated price for a specific symbol
+   * Get price for a specific symbol from OKX fallback broker
    * @param symbol The trading pair symbol (e.g., "BTCUSDT")
-   * @returns Simulated ticker price or null if the symbol is not supported
+   * @returns OKX ticker price or null if the symbol is not supported
    */
-  private getSimulatedSymbolPrice(symbol: string): BinanceTickerPrice | null {
-    // Get all simulated prices
-    const allSimulatedPrices = this.getSimulatedMarketPrices();
+  private getFallbackSymbolPrice(symbol: string): BinanceTickerPrice | null {
+    // Get all OKX fallback prices
+    const allFallbackPrices = this.getFallbackMarketPrices();
     
     // Find the price for the requested symbol
-    const ticker = allSimulatedPrices.find(p => p.symbol === symbol);
+    const ticker = allFallbackPrices.find((p: BinanceTickerPrice) => p.symbol === symbol);
     
     if (ticker) {
       return ticker;
@@ -619,14 +620,14 @@ export class BinanceMarketPriceService extends EventEmitter {
         
         // If we have a specific symbol, use simulated data as fallback
         if (symbol) {
-          console.log(`Using simulated 24hr stats for ${symbol} due to API error`);
+          console.log(`Binance API error for ${symbol}, falling back to OKX broker for 24hr stats`);
           const formattedSymbol = symbol.replace('-', '').toUpperCase();
-          return this.getSimulated24hrStats(formattedSymbol);
+          return this.getFallback24hrStats(formattedSymbol);
         }
         
         // For all symbols, generate simulated data for major pairs
         if (!symbol) {
-          console.log(`Using simulated 24hr stats for all major pairs due to API error`);
+          console.log(`Binance API error, falling back to OKX broker for all major pairs 24hr stats`);
           const majorPairs = [
             'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
             'ADAUSDT', 'DOGEUSDT', 'DOTUSDT', 'MATICUSDT', 'AVAXUSDT',
@@ -634,7 +635,7 @@ export class BinanceMarketPriceService extends EventEmitter {
             'NEARUSDT', 'BCHUSDT', 'FILUSDT', 'TRXUSDT', 'XLMUSDT'
           ];
           
-          return majorPairs.map(pair => this.getSimulated24hrStats(pair));
+          return majorPairs.map(pair => this.getFallback24hrStats(pair));
         }
         
         throw apiError;
@@ -647,14 +648,14 @@ export class BinanceMarketPriceService extends EventEmitter {
         
         // If geo-restricted, also use simulated data
         if (symbol) {
-          console.log(`Using simulated 24hr stats for ${symbol} due to geo-restriction`);
+          console.log(`Binance API geo-restricted for ${symbol}, falling back to OKX broker for 24hr stats`);
           const formattedSymbol = symbol.replace('-', '').toUpperCase();
-          return this.getSimulated24hrStats(formattedSymbol);
+          return this.getFallback24hrStats(formattedSymbol);
         }
         
         // For all symbols, generate simulated data for major pairs
         if (!symbol) {
-          console.log(`Using simulated 24hr stats for all major pairs due to geo-restriction`);
+          console.log(`Binance API geo-restricted, falling back to OKX broker for all major pairs 24hr stats`);
           const majorPairs = [
             'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
             'ADAUSDT', 'DOGEUSDT', 'DOTUSDT', 'MATICUSDT', 'AVAXUSDT',
@@ -662,7 +663,7 @@ export class BinanceMarketPriceService extends EventEmitter {
             'NEARUSDT', 'BCHUSDT', 'FILUSDT', 'TRXUSDT', 'XLMUSDT'
           ];
           
-          return majorPairs.map(pair => this.getSimulated24hrStats(pair));
+          return majorPairs.map(pair => this.getFallback24hrStats(pair));
         }
       }
       
@@ -671,14 +672,14 @@ export class BinanceMarketPriceService extends EventEmitter {
   }
   
   /**
-   * Generate simulated 24hr ticker statistics for development and testing
+   * Get 24hr ticker statistics from OKX broker fallback
    * @param symbol The trading pair symbol
-   * @returns Simulated 24hr ticker statistics
+   * @returns OKX 24hr ticker statistics in Binance-compatible format
    */
-  private getSimulated24hrStats(symbol: string): Binance24hrTicker {
-    // קבל את המחיר הנוכחי המדומה עבור סמל זה
-    const simulatedPrices = this.getSimulatedMarketPrices();
-    const priceTicker = simulatedPrices.find(p => p.symbol === symbol);
+  private getFallback24hrStats(symbol: string): Binance24hrTicker {
+    // קבל את המחיר הנוכחי מ-OKX עבור סמל זה
+    const fallbackPrices = this.getFallbackMarketPrices();
+    const priceTicker = fallbackPrices.find((p: BinanceTickerPrice) => p.symbol === symbol);
     const currentPrice = priceTicker ? parseFloat(priceTicker.price) : 1000.0;
     
     // שמירת נתוני סטטיסטיקה קודמים בין קריאות

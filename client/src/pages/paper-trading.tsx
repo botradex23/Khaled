@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from "../hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Loader2, RefreshCw, PlusCircle, BarChart3, LineChart, ArrowUpDown, RefreshCcw } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import PaperTradingDashboard from '../components/ui/paper-trading-dashboard';
@@ -10,8 +10,8 @@ import PaperTradingPositions from '../components/ui/paper-trading-positions';
 import PaperTradingHistory from '../components/ui/paper-trading-history';
 import PaperTradingStats from '../components/ui/paper-trading-stats';
 import NewTradeDialog from './new-paper-trade-dialog';
-import { apiRequest } from '@/lib/queryClient';
-import { useAuth } from '@/hooks/use-auth';
+import { apiRequest } from "../lib/queryClient";
+import { useAuth } from "../hooks/use-auth";
 
 export default function PaperTradingPage() {
   const { user } = useAuth();

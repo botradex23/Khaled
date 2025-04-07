@@ -1,21 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from "../hooks/use-auth";
 import { Redirect } from 'wouter';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
+import { Button } from "../components/ui/button";
+import { Skeleton } from "../components/ui/skeleton";
+import { useToast } from "../hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, AlertTriangle, ExternalLink, RefreshCw, Settings, TrendingUp, ArrowUpDown, ArrowDown, ArrowUp, Filter, RefreshCcw, PlusCircle, LineChart, BarChart3, Loader2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { apiRequest } from '@/lib/queryClient';
-import { useBinanceApiKeys } from '@/hooks/useBinanceApiKeys';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Switch } from "../components/ui/switch";
+import { Badge } from "../components/ui/badge";
+import { apiRequest } from "../lib/queryClient";
+import { useBinanceApiKeys } from "../hooks/useBinanceApiKeys";
 
 // בינתיים נשתמש בסוג זמני עבור מטבעות ויתרות ביננס
 interface BinanceBalance {

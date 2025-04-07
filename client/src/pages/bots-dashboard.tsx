@@ -1,11 +1,11 @@
 import React from "react";
 import { Link } from "wouter";
-import Header from "@/components/ui/header";
-import Footer from "@/components/ui/footer";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import Header from "../components/ui/header";
+import Footer from "../components/ui/footer";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "../components/ui/card";
+import { Button } from "../components/ui/button";
 import { Brain, LineChart, DollarSign, Zap, Bot, Plus, ChevronRight, BadgeInfo } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 export default function BotsDashboard() {
   return (

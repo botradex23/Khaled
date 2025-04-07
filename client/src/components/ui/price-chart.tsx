@@ -6,14 +6,14 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
+import { Skeleton } from "./skeleton";
 import { RefreshCw, AlertTriangle, Key } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useAuth } from "@/hooks/use-auth";
+import { Button } from "./button";
+import { Alert, AlertDescription, AlertTitle } from "./alert";
+import { useAuth } from "../../hooks/use-auth";
 import {
   AreaChart,
   Area,

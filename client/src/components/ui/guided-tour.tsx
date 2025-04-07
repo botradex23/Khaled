@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./dialog";
+import { Button } from "./button";
+import { useToast } from "../../hooks/use-toast";
 import { X, ChevronLeft, ChevronRight, Info, CheckCircle2 } from "lucide-react";
 
 interface TourStep {

@@ -8,14 +8,14 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "./skeleton";
+import { Progress } from "./progress";
 import { BadgeInfo, Wallet, Lock } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/use-auth";
-import { Market, MarketPricesResponse } from "@/types/market";
-import { AccountBalance } from "@/types/balance";
+import { Separator } from "./separator";
+import { Badge } from "./badge";
+import { useAuth } from "../../hooks/use-auth";
+import { Market, MarketPricesResponse } from "../../types/market.ts";
+import { AccountBalance } from "../../types/balance.ts";
 import { 
   CryptoPriceData, 
   enrichBalancesWithPrices, 

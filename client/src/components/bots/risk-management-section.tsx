@@ -7,9 +7,9 @@ import {
   FormDescription,
   FormMessage,
 } from "@/components/ui/form";
-import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "../ui/slider";
+import { Input } from "../ui/input";
+import { Checkbox } from "../ui/checkbox";
 import { 
   Card, 
   CardContent, 
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { AlertCircle, Info, Shield, DollarSign, TrendingDown } from "lucide-react";
 import { useFormContext } from "react-hook-form";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
 interface RiskManagementSectionProps {
   botType: 'ai-grid' | 'dca' | 'macd';

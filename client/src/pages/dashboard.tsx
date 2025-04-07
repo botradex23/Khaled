@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
-import Header from "@/components/ui/header";
-import Footer from "@/components/ui/footer";
-import AppSidebar from "@/components/AppSidebar";
-import { useMixpanel } from "@/components/MixpanelProvider";
+import Header from "../components/ui/header";
+import Footer from "../components/ui/footer";
+import AppSidebar from "../components/AppSidebar";
+import { useMixpanel } from "../components/MixpanelProvider";
 import { 
   Card, 
   CardContent, 
@@ -28,14 +28,14 @@ import {
   Legend
 } from "recharts";
 import { StrategyType, Bot } from "@/types";
-import { performanceChartData } from "@/lib/chart-data";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { TradingHistoryCard } from "@/components/ui/account-overview";
-import { PriceChart } from "@/components/ui/price-chart";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
+import { performanceChartData } from "../lib/chart-data";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Button } from "../components/ui/button";
+import { Skeleton } from "../components/ui/skeleton";
+import { TradingHistoryCard } from "../components/ui/account-overview";
+import { PriceChart } from "../components/ui/price-chart";
+import { useAuth } from "../hooks/use-auth";
+import { useToast } from "../hooks/use-toast";
 import { 
   ArrowRight, 
   ArrowUpRight, 
@@ -65,9 +65,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { MarketPriceWidget } from "@/components/ui/market-price-widget";
-import { MarketPricesTable } from "@/components/ui/market-prices-table";
+import { Badge } from "../components/ui/badge";
+import { MarketPriceWidget } from "../components/ui/market-price-widget";
+import { MarketPricesTable } from "../components/ui/market-prices-table";
 
 export default function Dashboard() {
   const { isAuthenticated, isLoading: authLoading, checkSession, user } = useAuth();

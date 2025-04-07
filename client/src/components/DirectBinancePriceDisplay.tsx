@@ -7,13 +7,13 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import { RefreshCw, AlertCircle, AlertTriangle, MapPin, ChevronDown, ChevronUp } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { directBinanceApi, BinanceTickerPrice, ApiError } from '@/lib/direct-binance-api';
+import { Skeleton } from "./ui/skeleton";
+import { Badge } from "./ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { directBinanceApi, BinanceTickerPrice, ApiError } from "../lib/direct-binance-api";
 
 /**
  * Component for displaying real-time prices directly from Binance API

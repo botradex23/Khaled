@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import Header from "@/components/ui/header";
-import Footer from "@/components/ui/footer";
+import Header from "../components/ui/header";
+import Footer from "../components/ui/footer";
 import { 
   Card, 
   CardContent, 
@@ -10,9 +10,9 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Skeleton } from "../components/ui/skeleton";
 import { 
   Table, 
   TableBody, 
@@ -21,7 +21,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import {
   LineChart,
   Line,
@@ -30,8 +30,8 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
-import { PriceChart } from "@/components/ui/price-chart";
-import { TopMarketTickers, MarketTickerCard } from "@/components/ui/market-ticker";
+import { PriceChart } from "../components/ui/price-chart";
+import { TopMarketTickers, MarketTickerCard } from "../components/ui/market-ticker";
 import { 
   Search, 
   Star, 

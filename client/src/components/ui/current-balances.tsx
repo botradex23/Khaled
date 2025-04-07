@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/hooks/use-auth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
+import { Skeleton } from "./skeleton";
+import { Badge } from "./badge";
+import { useAuth } from "../../hooks/use-auth";
 import { TrendingUp, TrendingDown, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { AssetBalance } from '@/types/portfolio';
+import { Input } from "./input";
+import { AssetBalance } from "../../types/portfolio.ts";
 
 export function CurrentBalances() {
   const { isAuthenticated } = useAuth();

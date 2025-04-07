@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
+import { useToast } from "./use-toast";
+import { useAuth } from "./use-auth";
 
 interface BinanceApiKeysData {
   binanceApiKey: string;

@@ -4,12 +4,12 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuth } from "@/hooks/use-auth";
-import { useMixpanel, MIXPANEL_EVENTS } from "@/components/MixpanelProvider";
-import Header from "@/components/ui/header";
-import Footer from "@/components/ui/footer";
-import BotExplanationGuide from "@/components/bots/bot-explanation-guide";
-import RiskManagementSection from "@/components/bots/risk-management-section";
+import { useAuth } from "../hooks/use-auth";
+import { useMixpanel, MIXPANEL_EVENTS } from "../components/MixpanelProvider";
+import Header from "../components/ui/header";
+import Footer from "../components/ui/footer";
+import BotExplanationGuide from "../components/bots/bot-explanation-guide";
+import RiskManagementSection from "../components/bots/risk-management-section";
 import { 
   Card, 
   CardContent, 
@@ -18,11 +18,11 @@ import {
   CardTitle,
   CardFooter
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "../components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Badge } from "../components/ui/badge";
+import { Progress } from "../components/ui/progress";
+import { Separator } from "../components/ui/separator";
 import { 
   Form, 
   FormControl, 
@@ -32,8 +32,8 @@ import {
   FormLabel, 
   FormMessage 
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { Input } from "../components/ui/input";
+import { Switch } from "../components/ui/switch";
 import { 
   Select,
   SelectContent,
@@ -41,8 +41,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "../hooks/use-toast";
+import { queryClient, apiRequest } from "../lib/queryClient";
 import {
   LineChart,
   Line,
@@ -80,7 +80,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertTitle } from "../components/ui/alert";
 
 // Define form schema
 const botFormSchema = z.object({

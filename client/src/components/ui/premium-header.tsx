@@ -16,8 +16,8 @@ import {
   BookOpen,
   ShieldCheck
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
+import { Button } from "./button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,8 +26,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { useAuth } from '@/hooks/use-auth';
+import { Sheet, SheetContent, SheetTrigger } from "./sheet";
+import { useAuth } from "../../hooks/use-auth";
 import { motion } from 'framer-motion';
 
 const generateLogoSVG = () => {

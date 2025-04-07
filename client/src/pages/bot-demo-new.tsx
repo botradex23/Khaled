@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import Header from "@/components/ui/header";
-import Footer from "@/components/ui/footer";
+import Header from "../components/ui/header";
+import Footer from "../components/ui/footer";
 import { 
   Card, 
   CardContent, 
@@ -9,17 +9,17 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PriceChart } from "@/components/ui/price-chart";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "../components/ui/button";
+import { PriceChart } from "../components/ui/price-chart";
+import { Badge } from "../components/ui/badge";
+import { Checkbox } from "../components/ui/checkbox";
 import { 
   Tabs, 
   TabsContent, 
   TabsList, 
   TabsTrigger 
 } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../components/ui/progress";
 import { 
   Table,
   TableBody,
@@ -28,8 +28,8 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { AccountBalanceCard } from "@/components/ui/account-overview";
-import { MarketTickerCard } from "@/components/ui/market-ticker";
+import { AccountBalanceCard } from "../components/ui/account-overview";
+import { MarketTickerCard } from "../components/ui/market-ticker";
 import { 
   BarChart3, 
   ArrowUpRight, 

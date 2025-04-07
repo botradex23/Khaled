@@ -14,17 +14,17 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Input } from "./input";
+import { Button } from "./button";
 import { 
   ArrowUpDown, 
   Search, 
   TrendingUp, 
   TrendingDown
 } from 'lucide-react';
-import { MarketErrorState } from '@/components/ui/market-error-state';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
+import { MarketErrorState } from "./market-error-state";
+import { Skeleton } from "./skeleton";
+import { Badge } from "./badge";
 
 interface MarketData {
   symbol: string;

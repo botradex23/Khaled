@@ -1,13 +1,13 @@
 import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./card";
+import { Badge } from "./badge";
+import { Skeleton } from "./skeleton";
 import { TrendingUp, TrendingDown, Pause, BarChart3, RefreshCw, BrainCircuit, Clock, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from "./button";
 import { formatDistanceToNow } from 'date-fns';
-import { useMlPrediction, MLPrediction } from '@/hooks/useMlPredictions';
-import { Progress } from '@/components/ui/progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useMlPrediction, MLPrediction } from "../../hooks/useMlPredictions";
+import { Progress } from "./progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip";
 
 interface PredictionCardProps {
   symbol: string;

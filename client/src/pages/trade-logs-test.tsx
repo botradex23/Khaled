@@ -1,6 +1,6 @@
 import React from 'react';
-import Layout from '@/components/layout';
-import TradeLogsTest from '@/components/test/TradeLogsTest';
+import Layout from "../components/layout";
+import TradeLogsTest from "../components/test/TradeLogsTest";
 
 export default function TradeLogsTestPage() {
   return (

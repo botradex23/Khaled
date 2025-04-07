@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { GuidedTour, useGuidedTour } from "@/components/ui/guided-tour";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { FeatureTooltip, PopoverHelpButton } from "@/components/ui/feature-tooltip";
-import { cn } from "@/lib/utils";
-import { PremiumHeader } from "@/components/ui/premium-header";
+import { useAuth } from "../hooks/use-auth";
+import { Button } from "../components/ui/button";
+import { useToast } from "../hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { GuidedTour, useGuidedTour } from "../components/ui/guided-tour";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { FeatureTooltip, PopoverHelpButton } from "../components/ui/feature-tooltip";
+import { cn } from "../lib/utils";
+import { PremiumHeader } from "../components/ui/premium-header";
 import {
   Brain,
   TrendingUp,

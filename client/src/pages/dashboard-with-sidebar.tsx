@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import Header from "@/components/ui/header";
-import Footer from "@/components/ui/footer";
-import AppSidebar from "@/components/AppSidebar";
+import Header from "../components/ui/header";
+import Footer from "../components/ui/footer";
+import AppSidebar from "../components/AppSidebar";
 import { 
   Card, 
   CardContent, 
@@ -27,14 +27,14 @@ import {
   Legend
 } from "recharts";
 import { StrategyType, Bot } from "@/types";
-import { performanceChartData } from "@/lib/chart-data";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AccountBalanceCard, TradingHistoryCard } from "@/components/ui/account-overview";
-import { PriceChart } from "@/components/ui/price-chart";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
+import { performanceChartData } from "../lib/chart-data";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Button } from "../components/ui/button";
+import { Skeleton } from "../components/ui/skeleton";
+import { AccountBalanceCard, TradingHistoryCard } from "../components/ui/account-overview";
+import { PriceChart } from "../components/ui/price-chart";
+import { useAuth } from "../hooks/use-auth";
+import { useToast } from "../hooks/use-toast";
 import { 
   ArrowRight, 
   ArrowUpRight, 

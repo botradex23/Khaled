@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/use-auth';
-import { PremiumHeader } from '@/components/ui/premium-header';
-import { DashboardCard } from '@/components/ui/dashboard-card';
-import { AnimatedChart } from '@/components/ui/animated-chart';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
-import { TradingInsightsSummary } from '@/components/ui/trading-insights-summary';
+import { useAuth } from "../hooks/use-auth";
+import { PremiumHeader } from "../components/ui/premium-header";
+import { DashboardCard } from "../components/ui/dashboard-card";
+import { AnimatedChart } from "../components/ui/animated-chart";
+import { Button } from "../components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { useToast } from "../hooks/use-toast";
+import { Skeleton } from "../components/ui/skeleton";
+import { TradingInsightsSummary } from "../components/ui/trading-insights-summary";
 import {
   ArrowUpRight,
   TrendingUp,

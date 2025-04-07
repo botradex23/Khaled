@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import Header from "@/components/ui/header";
-import Footer from "@/components/ui/footer";
-import { useAuth } from "@/hooks/use-auth";
+import Header from "../components/ui/header";
+import Footer from "../components/ui/footer";
+import { useAuth } from "../hooks/use-auth";
 import { 
   Card, 
   CardContent, 
@@ -12,9 +12,9 @@ import {
   CardTitle, 
   CardFooter 
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
+import { Button } from "../components/ui/button";
+import { Checkbox } from "../components/ui/checkbox";
+import { Input } from "../components/ui/input";
 import { 
   Select, 
   SelectContent, 
@@ -30,7 +30,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Bot, StrategyType } from "@/types";
 import {
   Dialog,
@@ -75,7 +75,7 @@ import {
   dcaChartData, 
   macdChartData 
 } from "@/lib/chart-data";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../hooks/use-toast";
 
 export default function Bots() {
   // State for the filter and search inputs

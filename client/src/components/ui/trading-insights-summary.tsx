@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAiTrading, TradingSignal } from "@/hooks/useAiTrading";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card";
+import { Button } from "./button";
+import { Badge } from "./badge";
+import { Skeleton } from "./skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
+import { useAiTrading, TradingSignal } from "../../hooks/useAiTrading";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import { CheckCircle, XCircle, TrendingUp, TrendingDown, Shuffle, AlertTriangle, RefreshCw, Sparkles } from 'lucide-react';
 
 function calculateTrendStrength(signal: TradingSignal): number {

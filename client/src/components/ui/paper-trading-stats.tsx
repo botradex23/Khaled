@@ -1,6 +1,6 @@
 import React from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./card";
+import { Skeleton } from "./skeleton";
 import { BarChart3, LineChart } from "lucide-react";
 import { PaperTradingAccount } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";

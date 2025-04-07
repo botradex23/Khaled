@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import Layout from "@/components/layout";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { apiRequest } from "../lib/queryClient";
+import Layout from "../components/layout";
+import { useToast } from "../hooks/use-toast";
+import { useAuth } from "../hooks/use-auth";
 import {
   Card,
   CardContent,
@@ -42,19 +42,19 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Slider } from "../components/ui/slider";
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Switch } from "../components/ui/switch";
+import { Badge } from "../components/ui/badge";
+import { Separator } from "../components/ui/separator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";

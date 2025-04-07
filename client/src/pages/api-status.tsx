@@ -1,19 +1,19 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import Header from "@/components/ui/header";
-import Footer from "@/components/ui/footer";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Skeleton } from "../components/ui/skeleton";
+import { Button } from "../components/ui/button";
+import { Switch } from "../components/ui/switch";
+import { useToast } from "../hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
+import Header from "../components/ui/header";
+import Footer from "../components/ui/footer";
 import { useState } from "react";
 import { CheckCircle, XCircle, AlertTriangle, Info, Database, 
          Brain, Bot, PlayCircle, StopCircle, Activity, Zap,
          TrendingUp, Link, Loader2 } from "lucide-react";
 
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest } from "../lib/queryClient";
 
 export default function ApiStatus() {
 

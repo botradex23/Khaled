@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
-import AdminMyAgent from '@/components/AdminMyAgent';
-import { AdminLoginForm } from '@/components/AdminLoginForm';
-import { useAuth } from '@/hooks/use-auth';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import AdminMyAgent from "../components/AdminMyAgent";
+import { AdminLoginForm } from "../components/AdminLoginForm";
+import { useAuth } from "../hooks/use-auth";
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { AlertCircle } from 'lucide-react';
 
 export default function AdminMyAgentPage() {

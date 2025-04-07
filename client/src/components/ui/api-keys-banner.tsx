@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/use-auth';
+import { Button } from "./button";
+import { useAuth } from "../../hooks/use-auth";
 import { AlertTriangle, ChevronRight, Key } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { Alert, AlertDescription, AlertTitle } from "./alert";
+import { apiRequest, queryClient } from "../../lib/queryClient";
 import { useQuery } from '@tanstack/react-query';
 
 export default function ApiKeysBanner() {

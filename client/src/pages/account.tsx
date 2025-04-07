@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
-import Layout from '@/components/layout';
-import { useAuth } from '@/hooks/use-auth';
+import Layout from "../components/layout";
+import { useAuth } from "../hooks/use-auth";
 import { useLocation } from 'wouter';
-import { AccountBalanceCard, TradingHistoryCard } from '@/components/ui/account-overview';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
+import { AccountBalanceCard, TradingHistoryCard } from "../components/ui/account-overview";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Skeleton } from "../components/ui/skeleton";
 import { useQuery } from '@tanstack/react-query';
-import { usePortfolioValue } from '@/hooks/use-portfolio-value';
+import { usePortfolioValue } from "../hooks/use-portfolio-value";
 
 export default function Account() {
   const { isAuthenticated, isLoading } = useAuth();

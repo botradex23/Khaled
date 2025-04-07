@@ -1,11 +1,11 @@
-import Header from "@/components/ui/header";
-import Hero from "@/components/ui/hero";
-import Features from "@/components/ui/features";
-import BotStrategies from "@/components/ui/bot-strategies";
-import PerformanceMetrics from "@/components/ui/performance-metrics";
-import Pricing from "@/components/ui/pricing";
-import RegistrationForm from "@/components/ui/registration-form";
-import Footer from "@/components/ui/footer";
+import Header from "../components/ui/header";
+import Hero from "../components/ui/hero";
+import Features from "../components/ui/features";
+import BotStrategies from "../components/ui/bot-strategies";
+import PerformanceMetrics from "../components/ui/performance-metrics";
+import Pricing from "../components/ui/pricing";
+import RegistrationForm from "../components/ui/registration-form";
+import Footer from "../components/ui/footer";
 
 export default function Home() {
   return (

@@ -4,8 +4,8 @@ import {
   CardHeader,
   CardTitle 
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "./button";
+import { Badge } from "./badge";
 import { 
   Area, 
   AreaChart, 
@@ -17,7 +17,7 @@ import {
   Pie,
   Cell
 } from "recharts";
-import { performanceChartData, assetAllocationData } from "@/lib/chart-data";
+import { performanceChartData, assetAllocationData } from "../../lib/chart-data";
 
 const timeFrames = ["Day", "Week", "Month", "Year"];
 

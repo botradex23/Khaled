@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { MLPredictionsDashboard } from '@/components/ui/ml-predictions-dashboard';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { MLPredictionsDashboard } from "../components/ui/ml-predictions-dashboard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Label } from "../components/ui/label";
+import { Button } from "../components/ui/button";
 import { Info, RefreshCw, Settings, Home, ArrowLeft } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "../components/ui/badge";
 import { useLocation } from 'wouter';
 
 // Simple header component

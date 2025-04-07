@@ -1,8 +1,8 @@
 import React, { Suspense } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
-import { usePortfolioValue } from "@/hooks/use-portfolio-value";
-import { cn } from "@/lib/utils";
+import { useAuth } from "../hooks/use-auth";
+import { usePortfolioValue } from "../hooks/use-portfolio-value";
+import { cn } from "../lib/utils";
 import {
   BarChart,
   BarChart3,
@@ -23,8 +23,8 @@ import {
 } from "lucide-react";
 
 // Import the API Keys Banner
-import ApiKeysBanner from "@/components/ui/api-keys-banner";
-import { Button } from "@/components/ui/button";
+import ApiKeysBanner from "./ui/api-keys-banner";
+import { Button } from "./ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,9 +33,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useIsMobile } from "../hooks/use-mobile";
+import { Skeleton } from "./ui/skeleton";
 
 interface LayoutProps {
   children: React.ReactNode;

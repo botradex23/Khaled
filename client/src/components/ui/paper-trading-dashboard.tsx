@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
+import { Button } from "./button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 import { Loader2, DollarSign, TrendingUp, TrendingDown, BarChart3, LineChart, ArrowUpDown, RefreshCw } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import type { PaperTradingAccount, PaperTradingPosition, PaperTradingTrade } from '@shared/schema';

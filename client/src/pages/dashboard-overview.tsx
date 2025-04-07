@@ -1,10 +1,10 @@
 import React from 'react';
-import Layout from '@/components/layout';
-import { PortfolioCharts } from '@/components/ui/portfolio-charts';
-import { CurrentBalances } from '@/components/ui/current-balances';
-import { useAuth } from '@/hooks/use-auth';
+import Layout from "../components/layout";
+import { PortfolioCharts } from "../components/ui/portfolio-charts";
+import { CurrentBalances } from "../components/ui/current-balances";
+import { useAuth } from "../hooks/use-auth";
 import { useLocation } from 'wouter';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from "../components/ui/skeleton";
 
 export default function DashboardOverview() {
   const { isAuthenticated, isLoading } = useAuth();

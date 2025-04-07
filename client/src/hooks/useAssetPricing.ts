@@ -1,7 +1,7 @@
 // useAssetPricing.ts - A dynamic hook for fetching cryptocurrency prices
 import { useQuery } from '@tanstack/react-query';
-import { AccountBalance } from '@/types/balance';
-import { getQueryFn } from '@/lib/queryClient';
+import { AccountBalance } from "../types/balance.ts";
+import { getQueryFn } from "../lib/queryClient";
 
 // Interface for cryptocurrency price data
 export interface CryptoPriceData {

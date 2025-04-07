@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
+import { Button } from "./button";
 import { Loader2, ArrowDownUp, FileText, RefreshCw } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest } from "../../lib/queryClient";
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { PaperTradingAccount, PaperTradingTrade } from '@shared/schema';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "./badge";
 
 interface PaperTradingHistoryProps {
   account: PaperTradingAccount;

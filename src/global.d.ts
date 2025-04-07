@@ -1,0 +1,1 @@
+../client/src/global.d.ts

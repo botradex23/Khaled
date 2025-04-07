@@ -1,5 +1,5 @@
-import { gridChartData, dcaChartData, macdChartData } from "@/lib/chart-data";
-import StrategyCard from "@/components/ui/strategy-card";
+import { gridChartData, dcaChartData, macdChartData } from "../../lib/chart-data";
+import StrategyCard from "./strategy-card";
 import { Link } from "wouter";
 import { ArrowRight } from "lucide-react";
 

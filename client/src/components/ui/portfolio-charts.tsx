@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
+import { Skeleton } from "./skeleton";
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/use-auth';
-import { PortfolioHistoryItem } from '@/types/portfolio';
+import { useAuth } from "../../hooks/use-auth";
+import { PortfolioHistoryItem } from "../../types/portfolio.ts";
 
 export function PortfolioCharts() {
   const { isAuthenticated } = useAuth();

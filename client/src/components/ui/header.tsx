@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
+import { Button } from "./button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,11 +18,11 @@ import {
 import { 
   Input 
 } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { useAuth } from "@/hooks/use-auth";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useToast } from "@/hooks/use-toast";
+import { Label } from "./label";
+import { Switch } from "./switch";
+import { useAuth } from "../../hooks/use-auth";
+import { useIsMobile } from "../../hooks/use-mobile";
+import { useToast } from "../../hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Menu, 
@@ -42,7 +42,7 @@ import {
   Check,
   BrainCircuit
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "./badge";
 
 export default function Header() {
   const [location] = useLocation();

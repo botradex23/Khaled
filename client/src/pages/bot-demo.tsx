@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import Header from "@/components/ui/header";
-import Footer from "@/components/ui/footer";
+import Header from "../components/ui/header";
+import Footer from "../components/ui/footer";
 import { 
   Card, 
   CardContent, 
@@ -8,16 +8,16 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Checkbox } from "../components/ui/checkbox";
 import { 
   Tabs, 
   TabsContent, 
   TabsList, 
   TabsTrigger 
 } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../components/ui/progress";
 import { 
   Table,
   TableBody,

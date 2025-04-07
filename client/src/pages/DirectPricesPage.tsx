@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'wouter';
-import DirectBinancePriceDisplay from '@/components/DirectBinancePriceDisplay';
-import { Button } from '@/components/ui/button';
+import DirectBinancePriceDisplay from "../components/DirectBinancePriceDisplay";
+import { Button } from "../components/ui/button";
 import { ArrowLeft } from 'lucide-react';
 
 /**

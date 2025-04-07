@@ -1,6 +1,6 @@
 import React from 'react';
-import { MLPredictionCard } from '@/components/ui/ml-prediction-card';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MLPredictionCard } from "./ml-prediction-card";
+import { Card, CardContent, CardHeader, CardTitle } from "./card";
 import { BrainCircuit } from 'lucide-react';
 
 interface MLPredictionsDashboardProps {

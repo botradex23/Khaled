@@ -1,9 +1,9 @@
 import React from 'react';
-import { ConnectivityStatus } from "@/components/connectivity-status";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { TradingInsightsSummaryNew } from "@/components/ui/trading-insights-summary-new";
+import { ConnectivityStatus } from "../components/connectivity-status";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Button } from "../components/ui/button";
+import { TradingInsightsSummaryNew } from "../components/ui/trading-insights-summary-new";
 import { Link } from "wouter";
 import { ArrowLeft, Home, RefreshCw } from "lucide-react";
 

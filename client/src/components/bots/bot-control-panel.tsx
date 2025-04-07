@@ -1,7 +1,7 @@
 import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
+import { useToast } from "../../hooks/use-toast";
+import { Button } from "../ui/button";
 import { Play, Square } from "lucide-react";
 import { Bot } from "./bot-interface-types";
 

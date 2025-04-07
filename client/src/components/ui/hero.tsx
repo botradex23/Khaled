@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { heroChartData } from "@/lib/chart-data";
+import { Button } from "./button";
+import { heroChartData } from "../../lib/chart-data";
 import { Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../../hooks/use-auth";
 import { Key } from "lucide-react";
 import { 
   Area, 

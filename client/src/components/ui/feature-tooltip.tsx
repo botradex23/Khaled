@@ -6,7 +6,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Info, HelpCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from "./button";
 
 interface FeatureTooltipProps {
   title: string;

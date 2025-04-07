@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "../ui/alert";
 import { AlertCircle, CheckCircle, Server, Wifi, WifiOff, Clock, RefreshCw, Activity } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { apiRequest } from '@/lib/queryClient';
+import { Button } from "../ui/button";
+import { Card } from "../ui/card";
+import { apiRequest } from "../../lib/queryClient";
 import { Link } from 'wouter';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 
 /**
  * Component for displaying Binance connection status with detailed information

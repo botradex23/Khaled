@@ -1,9 +1,9 @@
-import { useAiTrading, TradingSignal } from "@/hooks/useAiTrading";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAiTrading, TradingSignal } from "../../hooks/useAiTrading";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
+import { Button } from "./button";
+import { Badge } from "./badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
 import { BrainCircuit, TrendingUp, TrendingDown, Clock, RefreshCw, BarChart3, ArrowRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 

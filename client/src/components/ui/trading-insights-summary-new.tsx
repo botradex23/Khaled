@@ -9,13 +9,13 @@ import {
 } from "@/components/ui/card";
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, AlertCircle, Info, BarChart3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { toast } from "@/hooks/use-toast";
+import { Button } from "./button";
+import { Skeleton } from "./skeleton";
+import { Badge } from "./badge";
+import { toast } from "../../hooks/use-toast";
 
 // Import the trading hook and types
-import { TradingSignal, useAiTrading } from "@/hooks/useAiTrading";
+import { TradingSignal, useAiTrading } from "../../hooks/useAiTrading";
 
 // Utility function to calculate trend strength
 function calculateTrendStrength(signal: TradingSignal): number {

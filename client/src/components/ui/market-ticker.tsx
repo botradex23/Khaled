@@ -6,8 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "./skeleton";
+import { Badge } from "./badge";
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react";
 
 // Type definition
