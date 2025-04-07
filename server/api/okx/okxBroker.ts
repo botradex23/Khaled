@@ -31,15 +31,35 @@ export class OkxBroker implements IBroker {
       sandbox: testnet
     };
     
-    // Add credentials if available
-    if (apiKey && apiSecret && passphrase) {
+    try {
+      // For OKX API, we need to initialize the client regardless of credentials
+      // But we'll mark whether we're using authenticated mode or public-only mode
       options.apiKey = apiKey;
       options.apiSecret = apiSecret;
       options.apiPassphrase = passphrase;
+      
+      // Initialize client
+      this.client = new okx.RestClient(options);
+      
+      if (apiKey && apiSecret && passphrase) {
+        console.log('OKX broker initialized with full API access');
+      } else {
+        console.log('OKX broker initialized in public-only mode (no API credentials found)');
+        // We'll handle authentication errors in each method by checking isConfigured() first
+      }
+    } catch (error) {
+      console.error('Failed to initialize OKX client:', error);
+      // If there's an error creating the client, we still need to create something
+      // so other parts of the code don't break when accessing this.client
+      this.client = { 
+        // Create a minimal mock client that returns empty results for read-only methods
+        getTicker: async () => ({ data: [] }),
+        getTickers: async () => ({ data: [] }),
+        getCandles: async () => ({ data: [] }),
+        getInstruments: async () => ({ data: [] }),
+        getBooks: async () => ({ data: [] })
+      };
     }
-    
-    // Initialize client with all options at once
-    this.client = new okx.RestClient(options);
 
     // Initialize WebSocket state
     this.wsCallbacks = new Map();
@@ -501,15 +521,32 @@ export class OkxBroker implements IBroker {
       sandbox: this.isTestnet()
     };
     
-    // Add credentials if available
-    if (apiKey && apiSecret && passphrase) {
-      options.apiKey = apiKey;
-      options.apiSecret = apiSecret;
-      options.apiPassphrase = passphrase;
+    try {
+      // Add credentials if available
+      if (apiKey && apiSecret && passphrase) {
+        options.apiKey = apiKey;
+        options.apiSecret = apiSecret;
+        options.apiPassphrase = passphrase;
+      }
+      
+      // Create WebSocket client regardless of credentials
+      // The OKX SDK will determine what operations are allowed based on credentials
+      this.wsClient = new okx.WebsocketClient(options);
+      
+      if (apiKey && apiSecret && passphrase) {
+        console.log('OKX WebSocket initialized with full API access');
+      } else {
+        console.log('OKX WebSocket initialized in public-only mode (no API credentials found)');
+      }
+    } catch (error) {
+      console.error('Failed to initialize OKX WebSocket client:', error);
+      // Create a mock WebSocket client that does nothing if real one fails
+      this.wsClient = {
+        on: () => {},
+        subscribe: () => {},
+        unsubscribe: () => {}
+      };
     }
-    
-    // Create WebSocket client
-    this.wsClient = new okx.WebsocketClient(options);
 
     this.wsClient.on('open', () => {
       console.log('OKX WebSocket connected');

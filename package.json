@@ -49,6 +49,7 @@
     "@tanstack/react-query": "^5.60.5",
     "@types/crypto-js": "^4.2.2",
     "axios": "^1.8.4",
+    "binance-api-node": "^0.12.9",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",

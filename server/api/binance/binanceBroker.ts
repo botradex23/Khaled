@@ -5,8 +5,8 @@
  * using the binance-api-node SDK.
  */
 
-// Import the Binance API client
-import Binance from 'binance-api-node';
+// Import the Binance API client properly
+import * as BinanceLib from 'binance-api-node';
 import { BrokerType, IBroker, BrokerTickerPrice, Broker24hrTicker, 
   BrokerBalance, BrokerExchangeInfo, BrokerSymbolInfo, 
   BrokerOrderResult, BrokerOrderBook, BrokerLivePriceUpdate,
@@ -20,270 +20,304 @@ import { URL } from 'url';
 dotenv.config();
 
 /**
- * Creates a proxy agent based on environment settings
+ * Binance Broker class that implements the IBroker interface
  */
-function createProxyAgent() {
-  const useProxy = process.env.USE_PROXY === 'true';
-  
-  if (!useProxy) {
-    return undefined;
-  }
-  
-  const proxyProtocol = process.env.PROXY_PROTOCOL || 'http';
-  const proxyUsername = process.env.PROXY_USERNAME || '';
-  const proxyPassword = process.env.PROXY_PASSWORD || '';
-  const proxyIp = process.env.PROXY_IP || '';
-  const proxyPort = process.env.PROXY_PORT || '';
-  const encodingMethod = process.env.PROXY_ENCODING_METHOD || 'quote_plus';
-  
-  if (!proxyIp || !proxyPort) {
-    console.warn('Proxy IP or Port not configured. Using direct connection.');
-    return undefined;
-  }
-  
-  try {
-    let authPart = '';
-    
-    if (proxyUsername && proxyPassword) {
-      let encodedUsername = proxyUsername;
-      let encodedPassword = proxyPassword;
-      
-      // Apply encoding based on method
-      if (encodingMethod === 'quote') {
-        encodedUsername = encodeURIComponent(proxyUsername);
-        encodedPassword = encodeURIComponent(proxyPassword);
-      } else if (encodingMethod === 'quote_plus') {
-        encodedUsername = new URL(`http://${proxyUsername}`).searchParams.toString().replace('=', '');
-        encodedPassword = new URL(`http://${proxyPassword}`).searchParams.toString().replace('=', '');
-      }
-      
-      authPart = `${encodedUsername}:${encodedPassword}@`;
-    }
-    
-    const proxyUrl = `${proxyProtocol}://${authPart}${proxyIp}:${proxyPort}`;
-    
-    if (proxyProtocol === 'socks4' || proxyProtocol === 'socks5') {
-      return new SocksProxyAgent(proxyUrl);
-    } else {
-      return new HttpsProxyAgent(proxyUrl);
-    }
-  } catch (error) {
-    console.error('Failed to create proxy agent:', error);
-    return undefined;
-  }
-}
-
 export class BinanceBroker implements IBroker {
   private client: any;
-  private wsClient: any;
-  private wsCallbacks: Map<string, ((update: BrokerLivePriceUpdate) => void)[]>;
-  private testnet: boolean;
-  private proxyAgent: any;
+  private testnetMode: boolean;
   
-  constructor(testnet: boolean = false) {
-    // Initialize client with proxy if enabled
-    this.testnet = testnet;
-    this.proxyAgent = createProxyAgent();
-    this.wsCallbacks = new Map();
-    
-    // Create the Binance client with appropriate config
+  constructor(testnetMode: boolean = false) {
+    this.testnetMode = testnetMode;
     this.initializeClient();
   }
   
-  private initializeClient() {
-    const apiKey = process.env.BINANCE_API_KEY || '';
-    const apiSecret = process.env.BINANCE_SECRET_KEY || '';
-    
-    // Configure client options
-    const options: any = {
-      apiKey,
-      apiSecret,
-      httpBase: this.testnet ? 'https://testnet.binance.vision' : undefined,
-      wsBase: this.testnet ? 'wss://testnet.binance.vision/ws' : undefined,
-      httpOptions: this.proxyAgent ? { agent: this.proxyAgent } : undefined
-    };
-    
-    // Create Binance client
-    this.client = Binance(options);
+  /**
+   * Check if this broker is running in testnet mode
+   */
+  isTestnet(): boolean {
+    return this.testnetMode;
   }
   
-  // Broker information methods
+  /**
+   * Check if this broker is configured with API keys
+   */
+  isConfigured(): boolean {
+    return !!process.env.BINANCE_API_KEY && !!process.env.BINANCE_API_SECRET;
+  }
+  
+  /**
+   * Initialize the Binance API client with proper configuration
+   */
+  private initializeClient(): void {
+    // Check if proxy is needed
+    const useProxy = process.env.USE_PROXY === 'true';
+    const options: any = {
+      apiKey: process.env.BINANCE_API_KEY,
+      apiSecret: process.env.BINANCE_API_SECRET,
+      // Use testnet if specified
+      httpBase: this.isTestnet() ? 'https://testnet.binance.vision' : undefined
+    };
+    
+    // Configure proxy if needed
+    if (useProxy) {
+      const proxyUsername = process.env.PROXY_USERNAME;
+      const proxyPassword = process.env.PROXY_PASSWORD;
+      const proxyIP = process.env.PROXY_IP;
+      const proxyPort = process.env.PROXY_PORT;
+      
+      // Construct proxy URL
+      const proxyAuth = proxyUsername && proxyPassword 
+        ? `${encodeURIComponent(proxyUsername)}:${encodeURIComponent(proxyPassword)}@` 
+        : '';
+      const proxyUrl = `http://${proxyAuth}${proxyIP}:${proxyPort}`;
+      
+      // Create proxy agent
+      options.httpAgent = new HttpsProxyAgent(proxyUrl);
+      options.wsAgent = new HttpsProxyAgent(proxyUrl);
+      
+      console.log('Binance broker initialized with HTTP proxy');
+    } else {
+      console.log('Binance broker initialized without proxy');
+    }
+    
+    // Create the client - in ESM modules with this particular package, 
+    // the client factory is under default.default
+    const createBinanceClient = BinanceLib.default.default;
+    if (typeof createBinanceClient !== 'function') {
+      throw new Error('Failed to get Binance client factory function');
+    }
+    this.client = createBinanceClient(options);
+  }
+  
+  /**
+   * Get the broker type (implements IBroker interface)
+   */
   getName(): BrokerType {
     return BrokerType.BINANCE;
   }
   
-  isTestnet(): boolean {
-    return this.testnet;
-  }
-  
-  isConfigured(): boolean {
-    const apiKey = process.env.BINANCE_API_KEY;
-    const apiSecret = process.env.BINANCE_SECRET_KEY;
-    return !!(apiKey && apiSecret);
-  }
-  
+  /**
+   * Check if the broker API is accessible
+   */
   async getApiStatus(): Promise<BrokerApiStatus> {
-    return {
-      hasApiKey: !!process.env.BINANCE_API_KEY,
-      hasSecretKey: !!process.env.BINANCE_SECRET_KEY,
-      testnet: this.testnet,
-      name: BrokerType.BINANCE
-    };
+    try {
+      // Try to get a simple API endpoint to check connectivity
+      if (this.isConfigured()) {
+        await this.client.time();
+      }
+      
+      return { 
+        hasApiKey: !!process.env.BINANCE_API_KEY,
+        hasSecretKey: !!process.env.BINANCE_API_SECRET,
+        testnet: this.isTestnet(),
+        name: BrokerType.BINANCE,
+        active: true
+      };
+    } catch (error: any) {
+      return {
+        hasApiKey: !!process.env.BINANCE_API_KEY,
+        hasSecretKey: !!process.env.BINANCE_API_SECRET,
+        testnet: this.isTestnet(),
+        name: BrokerType.BINANCE,
+        active: false
+      };
+    }
   }
   
-  // Market data methods
+  /**
+   * Get symbol price (implements IBroker interface)
+   */
   async getSymbolPrice(symbol: string): Promise<BrokerTickerPrice | null> {
     try {
-      const formattedSymbol = this.formatSymbolForExchange(symbol);
-      const ticker = await this.client.prices({ symbol: formattedSymbol });
-      
+      const price = await this.client.prices({ symbol });
+      if (!price || !price[symbol]) {
+        return null;
+      }
       return {
-        symbol: this.standardizeSymbol(formattedSymbol),
-        price: String(ticker[formattedSymbol] as any)
+        symbol,
+        price: price[symbol]
       };
-    } catch (error) {
-      console.error(`Binance getSymbolPrice error: ${error}`);
+    } catch (error: any) {
+      console.error(`Error fetching symbol price for ${symbol}:`, error);
       return null;
     }
   }
   
+  /**
+   * Get all prices (implements IBroker interface)
+   */
   async getAllPrices(): Promise<BrokerTickerPrice[]> {
     try {
-      const tickers = await this.client.prices();
-      
-      return Object.entries(tickers).map(([symbol, price]) => ({
-        symbol: this.standardizeSymbol(symbol),
-        price: String(price as any)
+      const allPrices = await this.client.prices();
+      return Object.entries(allPrices).map(([symbol, price]) => ({
+        symbol,
+        price: price as string
       }));
-    } catch (error) {
-      console.error(`Binance getAllPrices error: ${error}`);
+    } catch (error: any) {
+      console.error('Error fetching all prices:', error);
       return [];
     }
   }
   
+  /**
+   * Get 24hr ticker (implements IBroker interface)
+   */
   async get24hrTicker(symbol: string): Promise<Broker24hrTicker | null> {
     try {
-      const formattedSymbol = this.formatSymbolForExchange(symbol);
-      const ticker = await this.client.dailyStats({ symbol: formattedSymbol });
-      
-      return {
-        symbol: this.standardizeSymbol(formattedSymbol),
-        priceChange: ticker.priceChange,
-        priceChangePercent: ticker.priceChangePercent,
-        weightedAvgPrice: ticker.weightedAvgPrice,
-        prevClosePrice: ticker.prevClosePrice,
-        lastPrice: ticker.lastPrice,
-        lastQty: ticker.lastQty,
-        bidPrice: ticker.bidPrice,
-        bidQty: ticker.bidQty,
-        askPrice: ticker.askPrice,
-        askQty: ticker.askQty,
-        openPrice: ticker.openPrice,
-        highPrice: ticker.highPrice,
-        lowPrice: ticker.lowPrice,
-        volume: ticker.volume,
-        quoteVolume: ticker.quoteVolume,
-        openTime: ticker.openTime,
-        closeTime: ticker.closeTime,
-        firstId: ticker.firstId,
-        lastId: ticker.lastId,
-        count: ticker.count
-      };
-    } catch (error) {
-      console.error(`Binance get24hrTicker error: ${error}`);
+      const ticker = await this.client.dailyStats({ symbol });
+      if (!ticker) {
+        return null;
+      }
+      return this.formatTickerData(ticker);
+    } catch (error: any) {
+      console.error(`Error fetching 24hr ticker for ${symbol}:`, error);
       return null;
     }
   }
   
-  async getExchangeInfo(symbol?: string): Promise<BrokerExchangeInfo> {
+  /**
+   * Legacy methods for backwards compatibility
+   */
+  async getTickerPrices(symbol?: string): Promise<BrokerTickerPrice[]> {
     try {
-      const options: any = {};
-      
       if (symbol) {
-        options.symbol = this.formatSymbolForExchange(symbol);
+        const price = await this.getSymbolPrice(symbol);
+        return price ? [price] : [];
+      } else {
+        return await this.getAllPrices();
       }
-      
-      const info = await this.client.exchangeInfo(options);
-      
-      const symbols: BrokerSymbolInfo[] = info.symbols.map((s: any) => ({
-        symbol: this.standardizeSymbol(s.symbol),
-        status: s.status,
-        baseAsset: s.baseAsset,
-        quoteAsset: s.quoteAsset,
-        filters: s.filters
-      }));
-      
-      return { symbols };
-    } catch (error) {
-      console.error(`Binance getExchangeInfo error: ${error}`);
-      return { symbols: [] };
+    } catch (error: any) {
+      console.error('Error fetching ticker prices:', error);
+      return [];
     }
   }
   
-  async getOrderBook(symbol: string, limit: number = 100): Promise<BrokerOrderBook> {
+  /**
+   * Legacy method for backwards compatibility
+   */
+  async get24hrTickers(symbol?: string): Promise<Broker24hrTicker[]> {
     try {
-      const formattedSymbol = this.formatSymbolForExchange(symbol);
-      const book = await this.client.book({ symbol: formattedSymbol, limit });
-      
+      if (symbol) {
+        const ticker = await this.get24hrTicker(symbol);
+        return ticker ? [ticker] : [];
+      } else {
+        const allTickers = await this.client.dailyStats();
+        return allTickers.map((ticker: any) => this.formatTickerData(ticker));
+      }
+    } catch (error: any) {
+      console.error('Error fetching 24hr tickers:', error);
+      return [];
+    }
+  }
+  
+  /**
+   * Get account balances
+   */
+  async getAccountBalances(): Promise<BrokerBalance[]> {
+    try {
+      const accountInfo = await this.client.accountInfo();
+      return accountInfo.balances
+        .filter((balance: any) => 
+          parseFloat(balance.free) > 0 || parseFloat(balance.locked) > 0)
+        .map((balance: any) => ({
+          asset: balance.asset,
+          free: balance.free,
+          locked: balance.locked,
+          total: (parseFloat(balance.free) + parseFloat(balance.locked)).toString()
+        }));
+    } catch (error: any) {
+      console.error('Error fetching balances:', error);
+      return [];
+    }
+  }
+  
+  /**
+   * Legacy method for backwards compatibility
+   */
+  async getBalances(): Promise<BrokerBalance[]> {
+    return this.getAccountBalances();
+  }
+  
+  /**
+   * Get exchange information
+   */
+  async getExchangeInfo(): Promise<BrokerExchangeInfo> {
+    try {
+      const info = await this.client.exchangeInfo();
       return {
-        lastUpdateId: book.lastUpdateId,
-        bids: book.bids,
-        asks: book.asks
+        timezone: info.timezone,
+        serverTime: info.serverTime,
+        symbols: info.symbols.map((symbol: any) => ({
+          symbol: symbol.symbol,
+          status: symbol.status,
+          baseAsset: symbol.baseAsset,
+          quoteAsset: symbol.quoteAsset,
+          baseAssetPrecision: symbol.baseAssetPrecision,
+          quoteAssetPrecision: symbol.quoteAssetPrecision
+        }))
       };
-    } catch (error) {
-      console.error(`Binance getOrderBook error: ${error}`);
-      return { lastUpdateId: 0, bids: [], asks: [] };
+    } catch (error: any) {
+      console.error('Error fetching exchange info:', error);
+      throw error;
     }
   }
   
-  async getCandles(symbol: string, interval: string, limit: number = 500): Promise<BrokerCandle[]> {
+  /**
+   * Get candle data for a symbol
+   */
+  async getCandles(symbol: string, interval: string, limit: number = 100): Promise<BrokerCandle[]> {
     try {
-      const formattedSymbol = this.formatSymbolForExchange(symbol);
-      // Map common interval strings to Binance-specific formats if needed
-      // Binance uses: 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M
-      const binanceInterval = interval; // In our case, no mapping needed as we use Binance format
-      
       const candles = await this.client.candles({
-        symbol: formattedSymbol,
-        interval: binanceInterval,
+        symbol,
+        interval,
         limit
       });
       
       return candles.map((candle: any) => ({
-        timestamp: candle.openTime.toString(),
-        open: parseFloat(candle.open),
-        high: parseFloat(candle.high),
-        low: parseFloat(candle.low),
-        close: parseFloat(candle.close),
-        volume: parseFloat(candle.volume)
+        openTime: candle.openTime,
+        open: candle.open,
+        high: candle.high,
+        low: candle.low,
+        close: candle.close,
+        volume: candle.volume,
+        closeTime: candle.closeTime
       }));
-    } catch (error) {
-      console.error(`Binance getCandles error: ${error}`);
+    } catch (error: any) {
+      console.error(`Error fetching candles for ${symbol}:`, error);
       return [];
     }
   }
   
-  // Account data methods
-  async getAccountBalances(): Promise<BrokerBalance[]> {
-    if (!this.isConfigured()) {
-      return [];
-    }
-
+  /**
+   * Get order book for a symbol
+   */
+  async getOrderBook(symbol: string, limit: number = 100): Promise<BrokerOrderBook> {
     try {
-      const account = await this.client.accountInfo();
-      
-      return account.balances.map((b: any) => ({
-        asset: b.asset,
-        free: b.free,
-        locked: b.locked
-      }));
-    } catch (error) {
-      console.error(`Binance getAccountBalances error: ${error}`);
-      return [];
+      const orderBook = await this.client.book({ symbol, limit });
+      return {
+        lastUpdateId: orderBook.lastUpdateId,
+        bids: orderBook.bids.map((bid: any) => ({
+          price: bid.price,
+          quantity: bid.quantity
+        })),
+        asks: orderBook.asks.map((ask: any) => ({
+          price: ask.price,
+          quantity: ask.quantity
+        }))
+      };
+    } catch (error: any) {
+      console.error('Error fetching order book:', error);
+      return {
+        lastUpdateId: 0,
+        bids: [],
+        asks: []
+      };
     }
   }
   
-  // Order methods
+  /**
+   * Place an order
+   */
   async placeOrder(
     symbol: string,
     side: 'BUY' | 'SELL',
@@ -292,155 +326,168 @@ export class BinanceBroker implements IBroker {
     price?: string,
     timeInForce?: string
   ): Promise<BrokerOrderResult> {
-    if (!this.isConfigured()) {
-      throw new Error('Binance API is not configured with valid credentials');
-    }
-
     try {
-      const formattedSymbol = this.formatSymbolForExchange(symbol);
+      if (!this.isConfigured()) {
+        throw new Error('Binance API keys not configured');
+      }
       
-      const orderOptions: any = {
-        symbol: formattedSymbol,
+      const options: any = {
+        symbol,
         side,
         type,
         quantity
       };
       
-      // Add price for limit orders
-      if (type === 'LIMIT' && price) {
-        orderOptions.price = price;
-        orderOptions.timeInForce = timeInForce || 'GTC';
+      if (type === 'LIMIT') {
+        if (!price) {
+          throw new Error('Price is required for LIMIT orders');
+        }
+        options.price = price;
+        options.timeInForce = timeInForce || 'GTC';
       }
       
-      const order = await this.client.order(orderOptions);
+      const order = await this.client.order(options);
       
       return {
-        symbol: this.standardizeSymbol(order.symbol),
         orderId: order.orderId.toString(),
-        clientOrderId: order.clientOrderId,
-        transactTime: order.transactTime,
-        price: order.price,
-        origQty: order.origQty,
-        executedQty: order.executedQty,
+        symbol: order.symbol,
         status: order.status,
-        timeInForce: order.timeInForce,
+        price: order.price,
+        quantity: order.origQty,
+        side: order.side,
         type: order.type,
-        side: order.side
+        transactionTime: order.transactTime
       };
-    } catch (error) {
-      console.error(`Binance placeOrder error: ${error}`);
+    } catch (error: any) {
+      console.error('Error placing order:', error);
       throw error;
     }
   }
   
+  /**
+   * Cancel an order
+   */
   async cancelOrder(symbol: string, orderId: string): Promise<boolean> {
-    if (!this.isConfigured()) {
-      throw new Error('Binance API is not configured with valid credentials');
-    }
-
     try {
-      const formattedSymbol = this.formatSymbolForExchange(symbol);
+      if (!this.isConfigured()) {
+        throw new Error('Binance API keys not configured');
+      }
       
       await this.client.cancelOrder({
-        symbol: formattedSymbol,
-        orderId: parseInt(orderId, 10)
+        symbol,
+        orderId
       });
       
       return true;
-    } catch (error) {
-      console.error(`Binance cancelOrder error: ${error}`);
+    } catch (error: any) {
+      console.error('Error cancelling order:', error);
       return false;
     }
   }
   
+  /**
+   * Get order details
+   */
   async getOrder(symbol: string, orderId: string): Promise<any> {
-    if (!this.isConfigured()) {
-      throw new Error('Binance API is not configured with valid credentials');
-    }
-
     try {
-      const formattedSymbol = this.formatSymbolForExchange(symbol);
+      if (!this.isConfigured()) {
+        throw new Error('Binance API keys not configured');
+      }
       
-      const order = await this.client.getOrder({
-        symbol: formattedSymbol,
-        orderId: parseInt(orderId, 10)
+      return await this.client.getOrder({
+        symbol,
+        orderId
+      });
+    } catch (error: any) {
+      console.error('Error getting order:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Subscribe to ticker updates
+   */
+  subscribeToTicker(symbols: string[], callback: (update: BrokerLivePriceUpdate) => void): () => void {
+    if (!Array.isArray(symbols) || symbols.length === 0) {
+      console.error('No symbols provided for ticker subscription');
+      return () => {}; // Return empty unsubscribe function
+    }
+    
+    try {
+      // Create a clean WebSocket instance for each subscription
+      const cleanSymbols = symbols.map(s => s.toLowerCase());
+      
+      // Create a single websocket for all symbols
+      const streams = cleanSymbols.map(s => `${s}@ticker`).join('/');
+      const endpoint = `/stream?streams=${streams}`;
+      
+      const ws = this.client.ws.ticker(symbols, ticker => {
+        const update: BrokerLivePriceUpdate = {
+          symbol: ticker.symbol,
+          price: ticker.curDayClose,
+          time: Date.now(),
+          volume: ticker.volume,
+          source: BrokerType.BINANCE
+        };
+        
+        callback(update);
       });
       
-      return {
-        symbol: this.standardizeSymbol(order.symbol),
-        orderId: order.orderId.toString(),
-        clientOrderId: order.clientOrderId,
-        price: order.price,
-        origQty: order.origQty,
-        executedQty: order.executedQty,
-        status: order.status,
-        timeInForce: order.timeInForce,
-        type: order.type,
-        side: order.side,
-        stopPrice: order.stopPrice,
-        icebergQty: order.icebergQty,
-        time: order.time,
-        updateTime: order.updateTime,
-        isWorking: order.isWorking
+      // Return the unsubscribe function
+      return () => {
+        try {
+          if (ws && typeof ws === 'function') {
+            ws();
+            console.log(`Unsubscribed from Binance ticker for symbols: ${symbols.join(', ')}`);
+          }
+        } catch (error) {
+          console.error('Error unsubscribing from Binance ticker:', error);
+        }
       };
     } catch (error) {
-      console.error(`Binance getOrder error: ${error}`);
-      return null;
+      console.error('Error subscribing to Binance ticker:', error);
+      return () => {}; // Return empty unsubscribe function on error
     }
   }
   
-  // WebSocket methods
-  subscribeToTicker(symbols: string[], callback: (update: BrokerLivePriceUpdate) => void): () => void {
-    // Store callbacks for each symbol
-    for (const symbol of symbols) {
-      const formattedSymbol = this.formatSymbolForExchange(symbol).toLowerCase();
-      const callbacks = this.wsCallbacks.get(formattedSymbol) || [];
-      callbacks.push(callback);
-      this.wsCallbacks.set(formattedSymbol, callbacks);
-    }
-    
-    // Create a clean symbol list for subscription
-    const formattedSymbols = symbols.map(s => 
-      this.formatSymbolForExchange(s).toLowerCase()
-    );
-    
-    // Create WebSocket connection
-    const clean = this.client.ws.ticker(formattedSymbols, (ticker: any) => {
-      const symbol = this.standardizeSymbol(ticker.symbol);
-      
-      const update: BrokerLivePriceUpdate = {
-        symbol,
-        price: ticker.curDayClose,
-        timestamp: Date.now()
-      };
-      
-      // Notify all callbacks for this symbol
-      const callbacks = this.wsCallbacks.get(ticker.symbol.toLowerCase()) || [];
-      for (const cb of callbacks) {
-        cb(update);
-      }
-    });
-    
-    // Return cleanup function
-    return () => {
-      clean();
-      
-      // Clear stored callbacks
-      for (const symbol of symbols) {
-        const formattedSymbol = this.formatSymbolForExchange(symbol).toLowerCase();
-        this.wsCallbacks.delete(formattedSymbol);
-      }
-    };
-  }
-  
-  // Symbol format conversion helpers
+  /**
+   * Standardize symbol format
+   */
   standardizeSymbol(symbol: string): string {
-    // Binance format is already our standard format (BTCUSDT)
+    // Binance symbols are already in the format we want (e.g., BTCUSDT)
     return symbol;
   }
   
+  /**
+   * Format symbol for exchange
+   */
   formatSymbolForExchange(symbol: string): string {
-    // Our standard format is already Binance format (BTCUSDT)
+    // No formatting needed for Binance
     return symbol;
+  }
+  
+  /**
+   * Helper method to format ticker data
+   */
+  private formatTickerData(ticker: any): Broker24hrTicker {
+    return {
+      symbol: ticker.symbol,
+      priceChange: ticker.priceChange.toString(),
+      priceChangePercent: ticker.priceChangePercent.toString(),
+      weightedAvgPrice: ticker.weightedAvgPrice.toString(),
+      prevClosePrice: ticker.prevClosePrice.toString(),
+      lastPrice: ticker.lastPrice.toString(),
+      lastQty: ticker.lastQty.toString(),
+      bidPrice: ticker.bidPrice.toString(),
+      askPrice: ticker.askPrice.toString(),
+      openPrice: ticker.openPrice.toString(),
+      highPrice: ticker.highPrice.toString(),
+      lowPrice: ticker.lowPrice.toString(),
+      volume: ticker.volume.toString(),
+      quoteVolume: ticker.quoteVolume.toString(),
+      openTime: ticker.openTime,
+      closeTime: ticker.closeTime,
+      count: ticker.count
+    };
   }
 }
