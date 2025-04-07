@@ -57,13 +57,15 @@ export function setupAuth(app: Express) {
       resave: true, // Force session to be saved back to the store
       saveUninitialized: true, // Save new sessions even if not modified
       rolling: true, // Reset expiration countdown with each request
-      name: 'crypto_trading_sid', // Custom name to avoid default connect.sid
+      name: 'tradeliy_sid', // Custom name to avoid default connect.sid
       cookie: {
-        secure: false, // Don't require HTTPS in development
+        // In production, use secure cookies only if not localhost
+        secure: process.env.NODE_ENV === 'production',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         httpOnly: true,
         sameSite: 'lax', // Better compatibility while still providing CSRF protection
-        path: '/' // Ensure cookie is available for all paths
+        path: '/', // Ensure cookie is available for all paths
+        domain: process.env.COOKIE_DOMAIN || undefined // Allow custom domain for cookies
       }
     })
   );

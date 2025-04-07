@@ -29,7 +29,8 @@ interface GoogleProfile extends Profile {
 // Helper function to dynamically determine callback URL
 const getCallbackUrl = (req?: Request): string => {
   // Get hostname from various sources with fallbacks
-  const defaultHost = '19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev';
+  // Use the actual Replit domain dynamically
+  const defaultHost = process.env.REPLIT_HOSTNAME || process.env.REPL_SLUG || '19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev';
   
   // First priority: Use the hostname from request headers if available
   let host = defaultHost;
@@ -51,19 +52,29 @@ const getCallbackUrl = (req?: Request): string => {
         break;
       }
     }
+    
+    // If host is a simple port number (like '3000'), prefix with localhost
+    if (/^\d+$/.test(host)) {
+      host = `localhost:${host}`;
+    }
   }
   
   // Second priority: Check environment variables specific to Replit
   if (!req || host === defaultHost) {
-    const replitHost = process.env.REPLIT_HOSTNAME || process.env.REPL_SLUG;
-    if (replitHost) {
-      // Handle different Replit domain formats
-      if (replitHost.includes('.replit.dev')) {
-        host = replitHost;
-      } else {
-        // Format if only the slug is available
-        host = `${replitHost}.replit.dev`;
-      }
+    // Try to get Replit specific information
+    const replitId = process.env.REPLIT_ID || process.env.REPL_ID;
+    const replitSlug = process.env.REPL_SLUG;
+    const replitOwner = process.env.REPL_OWNER;
+    
+    if (replitSlug && replitOwner) {
+      // Format for Replit deployment URL
+      host = `${replitSlug}.${replitOwner}.repl.co`;
+    } else if (replitId) {
+      // Try to construct from deployment id
+      host = `${replitId}.id.repl.co`;
+    } else if (replitSlug) {
+      // Fallback to basic replit.dev domain
+      host = `${replitSlug}.replit.dev`;
     }
   }
   
