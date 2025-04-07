@@ -64,6 +64,7 @@
     "express-rate-limit": "^7.5.0",
     "express-session": "^1.18.1",
     "framer-motion": "^12.6.3",
+    "http-proxy-middleware": "^3.0.3",
     "https-proxy-agent": "^7.0.6",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.453.0",
