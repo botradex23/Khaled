@@ -1,0 +1,3 @@
+# Create a new workflow for the simple server
+name: Simple Server
+command: node simple-server.js

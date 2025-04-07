@@ -2,7 +2,7 @@ import { Express, Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 import session from 'express-session';
 import crypto from 'crypto';
-import { setupGoogleAuth } from './google';
+import { setupGoogleAuth, getCallbackUrl } from './google';
 import { setupAppleAuth } from './apple';
 import { setupLocalAuth } from './local';
 import { storage } from '../storage';
@@ -14,6 +14,14 @@ import { User as UserModel } from '@shared/schema';
 
 // Create memory store with session
 const MemoryStoreSession = MemoryStore(session);
+
+// Extend express-session with our custom properties
+declare module 'express-session' {
+  interface SessionData {
+    returnTo?: string;
+    googleCallbackUrl?: string;
+  }
+}
 
 declare global {
   namespace Express {
@@ -87,70 +95,131 @@ export function setupAuth(app: Express) {
   registerAuthRoutes(app);
 }
 
+// getCallbackUrl is now imported at the top of the file
+
 function registerAuthRoutes(app: Express) {
-  // Google Auth
+
+  // Google Auth - Improved route with dynamic callback URL
   app.get(
     '/api/auth/google',
     (req: Request, res: Response, next: NextFunction) => {
+      // Log the authentication attempt
       console.log('Google auth request initiated');
-      console.log('Redirect URI used in callback:', 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback');
-      console.log('Current host:', req.headers.host);
-      console.log('Current protocol:', req.protocol);
+
+      // Get dynamic callback URL based on current request
+      const callbackUrl = getCallbackUrl(req);
+      
+      // Store the returnTo path if provided in query
+      if (req.query.returnTo && typeof req.query.returnTo === 'string') {
+        req.session.returnTo = req.query.returnTo;
+      }
+      
+      // Store the callback URL in session to ensure consistency
+      if (req.session) {
+        req.session.googleCallbackUrl = callbackUrl;
+        req.session.save((err) => {
+          if (err) {
+            console.error('Failed to save session before Google auth:', err);
+          }
+        });
+      }
+      
       next();
     },
-    passport.authenticate('google', { scope: ['profile', 'email'] }),
+    (req: Request, res: Response, next: NextFunction) => {
+      // Configure the Google strategy with our dynamic callback URL
+      const authOptions = {
+        scope: ['profile', 'email'],
+        prompt: 'select_account', // Force account selection even if already logged in
+        callbackURL: req.session?.googleCallbackUrl // Use stored callback URL
+      };
+      
+      // Use passport to initiate Google authentication with dynamic callback
+      console.log('Starting Google authentication with dynamic callback URL:', authOptions.callbackURL);
+      
+      // Directly use the Google strategy with our custom parameters
+      passport.authenticate('google', authOptions)(req, res, next);
+    },
     (err: any, req: Request, res: Response, next: NextFunction) => {
       if (err) {
         console.error('Error during Google auth initialization:', err);
-        return res.redirect('/login?error=google_auth_failed');
+        return res.redirect('/login?error=google_auth_failed&message=' + encodeURIComponent(err.message));
       }
       next();
     }
   );
 
+  // Google Auth Callback - Improved error handling and session management
   app.get(
     '/api/auth/google/callback',
     (req: Request, res: Response, next: NextFunction) => {
-      console.log('Google callback received with query params:', req.query);
-      console.log('Google callback received with headers:', req.headers);
-      console.log('Google callback received with host:', req.headers.host);
+      // Log essential information for debugging
+      console.log('Google callback received with query:', JSON.stringify(req.query));
+      console.log('Google callback received with session ID:', req.sessionID);
+      
+      // Check for explicit error from Google
       if (req.query.error) {
-        console.error('Error returned from Google:', req.query.error);
+        console.error('Error returned from Google OAuth:', req.query.error);
         return res.redirect(`/login?error=${req.query.error}`);
       }
+      
       next();
     },
     (req: Request, res: Response, next: NextFunction) => {
-      passport.authenticate('google', (err: Error | null, user: any, info: any) => {
-        if (err) {
-          console.error('Error during Google authentication:', err);
-          return res.redirect('/login?error=google_auth_failed&message=' + encodeURIComponent(err.message));
-        }
-        
-        if (!user) {
-          console.error('No user returned from Google auth, info:', info);
-          const infoStr = info ? JSON.stringify(info) : 'No info available';
-          console.log('Authentication info details:', infoStr);
-          return res.redirect('/login?error=google_no_user&info=' + encodeURIComponent(infoStr));
-        }
-        
-        req.logIn(user, (loginErr) => {
-          if (loginErr) {
-            console.error('Error during login after Google auth:', loginErr);
-            return res.redirect('/login?error=login_failed&message=' + encodeURIComponent(loginErr.message));
+      // Use custom callback for passport authenticate for better error handling
+      passport.authenticate('google', { failureRedirect: '/login?error=google_auth_failed', session: true }, 
+        (err: Error | null, user: any, info: any) => {
+          // Handle authentication errors
+          if (err) {
+            console.error('Error during Google authentication:', err);
+            return res.redirect('/login?error=google_auth_failed&message=' + encodeURIComponent(err.message || 'Authentication failed'));
           }
           
-          console.log('Google authentication successful, user:', user);
-          
-          // If user has no firstName or lastName, redirect to complete profile page
-          if (!user.firstName || !user.lastName) {
-            return res.redirect('/complete-profile');
+          // Handle missing user
+          if (!user) {
+            console.error('No user returned from Google auth:', info);
+            return res.redirect('/login?error=google_no_user');
           }
           
-          // User profile is complete, redirect to dashboard
-          return res.redirect('/dashboard');
-        });
-      })(req, res, next);
+          // Explicitly log in the user with session support
+          req.logIn(user, { session: true }, (loginErr) => {
+            if (loginErr) {
+              console.error('Error during login after Google auth:', loginErr);
+              return res.redirect('/login?error=login_failed');
+            }
+            
+            console.log('Google authentication successful for user:', user.email);
+            
+            // Ensure session is saved
+            if (req.session) {
+              req.session.save((saveErr) => {
+                if (saveErr) {
+                  console.error('Error saving session after Google login:', saveErr);
+                }
+                
+                // Determine redirect destination
+                let redirectTo = '/dashboard';
+                
+                // If returnTo was stored in session, use that
+                if (req.session.returnTo) {
+                  redirectTo = req.session.returnTo;
+                  delete req.session.returnTo;
+                }
+                
+                // If user profile is incomplete, redirect to complete profile page
+                if (!user.firstName || !user.lastName) {
+                  redirectTo = '/complete-profile?next=' + encodeURIComponent(redirectTo);
+                }
+                
+                return res.redirect(redirectTo);
+              });
+            } else {
+              console.warn('Session not available after Google auth, proceeding without session save');
+              return res.redirect('/dashboard');
+            }
+          });
+        }
+      )(req, res, next);
     }
   );
 
@@ -725,7 +794,10 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
       lastName: 'User',
       defaultBroker: null,
       useTestnet: true,
-      // OKX fields removed
+      // Add required fields to fix TypeScript errors
+      googleId: null,
+      appleId: null,
+      profilePicture: null,
       binanceApiKey: null,
       binanceSecretKey: null,
       binanceAllowedIp: null,  // Add missing property
