@@ -70,6 +70,7 @@
     "memorystore": "^1.6.7",
     "mongoose": "^8.13.2",
     "node-fetch": "^3.3.2",
+    "okx-api": "^2.0.2",
     "passport": "^0.7.0",
     "passport-apple": "^2.0.2",
     "passport-google-oauth20": "^2.0.0",

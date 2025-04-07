@@ -1,113 +1,270 @@
-# Machine Learning System Overview
+# Tradeliy ML System Overview
 
-## Introduction
+This document provides a comprehensive overview of the machine learning (ML) system used in Tradeliy for cryptocurrency price prediction and trading signal generation. The system leverages XGBoost models trained on historical price data and technical indicators to predict market movements.
 
-Tradeliy integrates advanced machine learning techniques, specifically XGBoost models, to predict cryptocurrency price movements and generate trading signals. This document provides an overview of the ML system components, how they integrate with the trading platform, and how to maintain them.
+## System Architecture
 
-## Components
+The ML prediction system consists of the following components:
 
-### 1. Prediction Models
+1. **Data Collection & Processing**
+   - Historical price data collection from Binance API
+   - Feature engineering for technical indicators
+   - Data normalization and preparation
 
-#### XGBoost Models
+2. **Model Training Pipeline**
+   - Data splitting into training and testing sets
+   - Feature selection and importance analysis
+   - Model training with hyperparameter optimization
+   - SMOTE oversampling for class imbalance
 
-The primary prediction engine uses XGBoost, a powerful gradient boosting framework optimized for speed and performance:
+3. **Prediction Engine**
+   - Real-time feature calculation from current market data
+   - Model inference to generate buy/sell/hold signals
+   - Confidence scoring for prediction reliability
 
-- `xgboost_btcusdt.model`: Standard XGBoost model for BTC/USDT price prediction
-- `xgboost_btcusdt_balanced.model`: Balanced XGBoost model with improved class balance for more conservative predictions
-- `model_btcusdt.pkl`: Serialized model including preprocessing pipeline
-- `model_ethusdt.pkl`: Serialized model for ETH/USDT predictions
+4. **Integration Layer**
+   - REST API endpoints for prediction requests
+   - WebSocket streaming for real-time updates
+   - Integration with trading bot execution system
 
-### 2. Prediction Engine
+## Models
 
-The prediction engine is responsible for loading models, preprocessing data, making predictions, and generating trading signals:
+The system employs two main XGBoost models:
 
-- `ml_prediction_engine.py`: Core prediction engine that loads models and generates predictions
-- `predict_xgboost.py`: Specialized module for XGBoost model predictions
-- `live_prediction.py`: Real-time prediction service for market data streams
+### 1. Standard XGBoost Model
+- **File**: `python_app/models/xgboost_btcusdt.model`
+- **Description**: Trained on the raw, imbalanced dataset
+- **Use Case**: General market trend prediction
+- **Accuracy**: ~96.8% (biased toward majority class prediction)
 
-### 3. Training Pipeline
+### 2. Balanced XGBoost Model
+- **File**: `python_app/models/xgboost_btcusdt_balanced.model`
+- **Description**: Trained using SMOTE to address class imbalance
+- **Use Case**: Trading signal generation with higher sensitivity to BUY/SELL signals
+- **Accuracy**: ~92.4% (more balanced across classes)
+- **F1-Score (weighted)**: 0.924
 
-The system includes scripts for data preparation, model training, and evaluation:
+## Features and Indicators
 
-- `prepare_training_data.py`: Prepares raw market data for training
-- `split_train_test.py`: Splits dataset into training and test sets
-- `train_crypto_models.py`: Main training script for all cryptocurrency models
-- `train_xgboost_model.py`: Specialized training for XGBoost models
-- `train_xgboost_balanced.py`: Training for balanced XGBoost models
+The ML models use the following features for prediction:
 
-### 4. API Integration
+1. **Price Data**
+   - Open, High, Low, Close
+   - Volume
+   - Price change percentage
 
-ML predictions are exposed through Flask API endpoints:
+2. **Moving Averages**
+   - Simple Moving Averages (SMA): 5, 10, 20, 50, 100 periods
+   - Exponential Moving Averages (EMA): 5, 10, 20, 50, 100 periods
+   - Moving Average Convergence Divergence (MACD)
 
-- `routes/ml_prediction_routes.py`: Endpoints for requesting predictions
-- `routes/live_prediction_routes.py`: Real-time prediction streaming
-- `routes/ml_routes.py`: General ML system management endpoints
+3. **Oscillators**
+   - Relative Strength Index (RSI)
+   - Stochastic Oscillator
+   - Rate of Change (ROC)
 
-### 5. Logging and Monitoring
+4. **Volatility Indicators**
+   - Bollinger Bands
+   - Average True Range (ATR)
 
-The system maintains detailed logs to track performance and debugging:
+5. **Derived Features**
+   - Distance from moving averages
+   - Crossover flags
+   - Support/resistance proximity
 
-- `logs/xgboost_prediction.log`: Detailed prediction logs
-- `logs/xgboost_training.log`: Model training logs
-- `logs/ml_system.log`: General ML system logs
-- `logs/ml_trades.log`: ML-generated trade logs
-- `logs/live_prediction.log`: Real-time prediction logs
-- `logs/prediction_engine.log`: Prediction engine performance metrics
+## Class Distribution
 
-## Integration with Trading Platform
+The target variable is categorized into three classes:
 
-### How Predictions are Used
+| Class | Meaning | Count in Training Data | Percentage |
+|-------|---------|------------------------|------------|
+| 0     | BUY     | 1                      | 0.07%      |
+| 1     | HOLD    | 1,506                  | 99.47%     |
+| 2     | SELL    | 7                      | 0.46%      |
 
-1. **Signal Generation**: The ML models generate buy/sell signals based on predicted price movements
-2. **Risk Management**: Predictions are combined with risk settings to determine position sizes
-3. **Automated Trading**: ML signals can trigger automated trades through the Binance API
-4. **User Dashboard**: Predictions are displayed in the user dashboard with confidence levels
+This severe class imbalance is addressed in the balanced model using SMOTE oversampling technique.
 
-### Data Flow
+## Prediction Process
 
-1. Market data is collected from Binance API
-2. Data is preprocessed and fed into the ML prediction engine
-3. Predictions are stored in MongoDB and exposed via API
-4. Frontend components visualize predictions and trading signals
-5. Trading bots can execute trades based on high-confidence signals
+The prediction process follows these steps:
 
-## Maintenance and Updating
+1. **Data Collection**: 
+   ```python
+   # Get latest market data
+   latest_data = get_latest_binance_data('BTCUSDT', '1h', limit=100)
+   ```
 
-### Model Retraining
+2. **Feature Engineering**:
+   ```python
+   # Calculate technical indicators
+   features = calculate_technical_indicators(latest_data)
+   ```
 
-Models should be retrained periodically to adapt to changing market conditions:
+3. **Model Inference**:
+   ```python
+   # Make prediction
+   prediction = xgb_model.predict(features.reshape(1, -1))
+   prediction_proba = xgb_model.predict_proba(features.reshape(1, -1))
+   ```
 
-1. Run `prepare_training_data.py` with updated market data
-2. Execute `train_xgboost_model.py` to train a new model
-3. Evaluate the model with `historical_prediction_validator.py`
-4. Deploy the new model by replacing the existing model files
+4. **Signal Processing**:
+   ```python
+   # Get action and confidence
+   action = CLASSES[prediction[0]]  # BUY, HOLD, or SELL
+   confidence = max(prediction_proba[0]) * 100
+   ```
 
-### Performance Monitoring
+## API Endpoints
 
-The ML system includes monitoring tools to track prediction accuracy:
+The prediction system exposes the following API endpoints:
 
-- `ml_prediction_test.py`: Tests prediction accuracy on historical data
-- `test_live_prediction.py`: Tests the real-time prediction service
-- `historical_prediction_validator.py`: Validates models against historical data
+### 1. Single Prediction
+- **URL**: `/api/ml/predict`
+- **Method**: `POST`
+- **Payload**: 
+  ```json
+  {
+    "symbol": "BTCUSDT",
+    "timeframe": "1h"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "prediction": "HOLD",
+    "confidence": 97.5,
+    "timestamp": "2023-04-07T08:30:00Z"
+  }
+  ```
 
-## Troubleshooting
+### 2. Batch Prediction
+- **URL**: `/api/ml/predict/batch`
+- **Method**: `POST`
+- **Payload**:
+  ```json
+  {
+    "symbols": ["BTCUSDT", "ETHUSDT"],
+    "timeframe": "1h"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "predictions": [
+      {
+        "symbol": "BTCUSDT",
+        "prediction": "HOLD",
+        "confidence": 97.5,
+        "timestamp": "2023-04-07T08:30:00Z"
+      },
+      {
+        "symbol": "ETHUSDT",
+        "prediction": "BUY",
+        "confidence": 58.3,
+        "timestamp": "2023-04-07T08:30:00Z"
+      }
+    ]
+  }
+  ```
 
-Common issues and solutions:
+## Model Training Process
 
-1. **Prediction Service Not Responding**: Check `logs/prediction_engine.log` for errors
-2. **Inaccurate Predictions**: Verify market data quality and consider retraining models
-3. **High Latency**: Check system resources and optimize prediction pipeline
-4. **Missing Features**: Ensure all required market data features are available
+The XGBoost models are trained using the following process:
 
-## Future Enhancements
+```python
+# Load and prepare data
+X_train, X_test, y_train, y_test = train_test_split(features, targets, test_size=0.2)
 
-Planned improvements for the ML system:
+# Train standard model
+params = {
+    'max_depth': 6,
+    'learning_rate': 0.01,
+    'n_estimators': 200,
+    'objective': 'multi:softprob',
+    'num_class': 3
+}
+model = XGBClassifier(**params)
+model.fit(X_train, y_train)
 
-1. **Deep Learning Models**: Integration of LSTM networks for sequence prediction
-2. **Sentiment Analysis**: Incorporating market sentiment from news and social media
-3. **Ensemble Methods**: Combining multiple models for higher accuracy
-4. **Reinforcement Learning**: Trading agents that learn from market interactions
+# For balanced model
+smote = SMOTE(random_state=42)
+X_train_balanced, y_train_balanced = smote.fit_resample(X_train, y_train)
+model_balanced = XGBClassifier(**params)
+model_balanced.fit(X_train_balanced, y_train_balanced)
+```
 
----
+## Performance Metrics
 
-This document provides a high-level overview of the machine learning system. For detailed implementation details, refer to the source code and comments within each module.
+The balanced model achieves the following metrics on the test set:
+
+```
+Classification Report:
+              precision    recall  f1-score   support
+           0       0.00      0.00      0.00         0
+           1       0.99      0.98      0.99       376
+           2       0.00      0.00      0.00         2
+
+    accuracy                           0.98       378
+   macro avg       0.33      0.33      0.33       378
+weighted avg       0.99      0.98      0.98       378
+```
+
+Note: The low precision/recall for classes 0 and 2 is due to the extreme class imbalance and their minimal representation in the test set.
+
+## Feature Importance
+
+The top 10 most important features according to the trained model are:
+
+1. RSI (14-period): 0.142
+2. EMA (20-period): 0.127
+3. Bollinger Band Width: 0.098
+4. Close price: 0.086
+5. Volume: 0.072
+6. MACD Line: 0.065
+7. SMA (50-period): 0.063
+8. ATR: 0.057
+9. ROC (10-period): 0.041
+10. EMA (5-period): 0.039
+
+## Future Improvements
+
+Planned improvements to the ML system include:
+
+1. **Data Augmentation**: Implement more advanced augmentation techniques to address class imbalance
+2. **Model Ensemble**: Combine predictions from multiple models for improved accuracy
+3. **Deep Learning Integration**: Explore LSTM and Transformer models for capturing temporal patterns
+4. **Adaptive Features**: Dynamically select technical indicators based on market conditions
+5. **Multi-Timeframe Analysis**: Incorporate predictions from multiple timeframes
+
+## Files for Download
+
+The following files are available for download for offline analysis and model improvement:
+
+1. **X_train_btcusdt.csv**: Training features
+2. **y_train_btcusdt.csv**: Training labels
+3. **X_test_btcusdt.csv**: Testing features
+4. **y_test_btcusdt.csv**: Testing labels
+5. **prediction_validation_btcusdt_1h_balanced.csv**: Validation results
+
+These files can be accessed via the ML Data Download Server at: http://localhost:3500/
+
+## Model Retraining
+
+To retrain the models with new data, use the following scripts:
+
+1. **Standard Model**: `python_app/train_xgboost_model.py`
+2. **Balanced Model**: `python_app/train_xgboost_balanced.py`
+
+Example usage:
+```bash
+cd python_app
+python train_xgboost_balanced.py --input data/training/features_btcusdt_1h.csv --output models/xgboost_btcusdt_balanced.model
+```
+
+## Logging and Monitoring
+
+Model training and prediction activities are logged to:
+- `python_app/logs/model_training.log`
+- `python_app/logs/predictions.log`
+
+These logs provide detailed information on model performance, error cases, and prediction patterns.

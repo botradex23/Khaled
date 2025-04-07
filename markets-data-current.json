@@ -1,1 +1,102 @@
-{"message":"Repl not found","name":"NotFoundError","status":404}
+{
+  "BTCUSDT": {
+    "price": "51450.23",
+    "priceChange": "1250.45",
+    "volume": "12500.75"
+  },
+  "ETHUSDT": {
+    "price": "3120.85",
+    "priceChange": "75.43",
+    "volume": "31450.78"
+  },
+  "BNBUSDT": {
+    "price": "523.45",
+    "priceChange": "11.25",
+    "volume": "4500.65"
+  },
+  "ADAUSDT": {
+    "price": "0.58",
+    "priceChange": "0.02",
+    "volume": "15600.34"
+  },
+  "DOGEUSDT": {
+    "price": "0.17",
+    "priceChange": "0.01",
+    "volume": "45320.87"
+  },
+  "XRPUSDT": {
+    "price": "0.59",
+    "priceChange": "0.03",
+    "volume": "18750.45"
+  },
+  "SOLUSDT": {
+    "price": "165.25",
+    "priceChange": "7.65",
+    "volume": "9850.25"
+  },
+  "DOTUSDT": {
+    "price": "7.35",
+    "priceChange": "0.25",
+    "volume": "6520.45"
+  },
+  "AVAXUSDT": {
+    "price": "35.45",
+    "priceChange": "1.25",
+    "volume": "5430.75"
+  },
+  "SHIBUSDT": {
+    "price": "0.000025",
+    "priceChange": "0.000002",
+    "volume": "125680.45"
+  },
+  "MATICUSDT": {
+    "price": "0.85",
+    "priceChange": "0.03",
+    "volume": "14520.35"
+  },
+  "LINKUSDT": {
+    "price": "14.75",
+    "priceChange": "0.45",
+    "volume": "7520.65"
+  },
+  "TRXUSDT": {
+    "price": "0.12",
+    "priceChange": "0.01",
+    "volume": "35420.45"
+  },
+  "UNIUSDT": {
+    "price": "7.85",
+    "priceChange": "0.25",
+    "volume": "6240.35"
+  },
+  "VETUSDT": {
+    "price": "0.031",
+    "priceChange": "0.002",
+    "volume": "42550.65"
+  },
+  "ATOMUSDT": {
+    "price": "8.65",
+    "priceChange": "0.35",
+    "volume": "4250.75"
+  },
+  "LTCUSDT": {
+    "price": "78.45",
+    "priceChange": "2.25",
+    "volume": "5860.35"
+  },
+  "ALGOUSDT": {
+    "price": "0.18",
+    "priceChange": "0.01",
+    "volume": "8750.45"
+  },
+  "NEARUSDT": {
+    "price": "3.25",
+    "priceChange": "0.15",
+    "volume": "6540.25"
+  },
+  "ICPUSDT": {
+    "price": "8.45",
+    "priceChange": "0.35",
+    "volume": "3120.65"
+  }
+}
