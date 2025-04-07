@@ -1,3 +1,4 @@
+import React from "react";
 import { Button } from "./button";
 import { heroChartData } from "../../lib/chart-data";
 import { Link } from "wouter";

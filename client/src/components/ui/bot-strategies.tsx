@@ -1,3 +1,4 @@
+import React from "react";
 import { gridChartData, dcaChartData, macdChartData } from "../../lib/chart-data";
 import StrategyCard from "./strategy-card";
 import { Link } from "wouter";

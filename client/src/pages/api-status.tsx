@@ -8,7 +8,7 @@ import { useToast } from "../hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
 import Header from "../components/ui/header";
 import Footer from "../components/ui/footer";
-import { useState } from "react";
+import React, { useState } from "react";
 import { CheckCircle, XCircle, AlertTriangle, Info, Database, 
          Brain, Bot, PlayCircle, StopCircle, Activity, Zap,
          TrendingUp, Link, Loader2 } from "lucide-react";

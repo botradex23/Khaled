@@ -1,3 +1,4 @@
+import React from "react";
 import { Check, X } from "lucide-react";
 import { Button } from "./button";
 

@@ -1,3 +1,4 @@
+import React from "react";
 import { useAiTrading, TradingSignal } from "../../hooks/useAiTrading";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
 import { Button } from "./button";

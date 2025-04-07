@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Server Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .test-button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f5f5f5;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tradeliy Server Test</h1>
+  
+  <div>
+    <button class="test-button" onclick="testHealth()">Test Health Endpoint</button>
+    <button class="test-button" onclick="testRoot()">Test Root Endpoint</button>
+    <button class="test-button" onclick="testMainJs()">Test Main.tsx</button>
+  </div>
+  
+  <div class="result" id="result">
+    <p>Click a button to run a test...</p>
+  </div>
+  
+  <script>
+    async function testHealth() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<p>Testing /api/health endpoint...</p>';
+      
+      try {
+        const response = await fetch('/api/health');
+        const data = await response.json();
+        
+        resultDiv.innerHTML = `
+          <h3>Health Check Result:</h3>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+          <p>Status: ${response.status} ${response.statusText}</p>
+        `;
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <h3>Error:</h3>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+    
+    async function testRoot() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<p>Testing / endpoint...</p>';
+      
+      try {
+        const response = await fetch('/');
+        const text = await response.text();
+        const preview = text.substring(0, 500) + '...';
+        
+        resultDiv.innerHTML = `
+          <h3>Root Endpoint Result:</h3>
+          <p>Status: ${response.status} ${response.statusText}</p>
+          <p>Content Type: ${response.headers.get('content-type')}</p>
+          <p>Preview (first 500 chars):</p>
+          <pre>${preview}</pre>
+        `;
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <h3>Error:</h3>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+    
+    async function testMainJs() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<p>Testing /src/main.tsx endpoint...</p>';
+      
+      try {
+        const response = await fetch('/src/main.tsx');
+        let content = 'Binary content (not displayed)';
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('text')) {
+          content = await response.text();
+          content = content.substring(0, 500) + '...';
+        }
+        
+        resultDiv.innerHTML = `
+          <h3>Main.tsx Result:</h3>
+          <p>Status: ${response.status} ${response.statusText}</p>
+          <p>Content Type: ${contentType}</p>
+          <p>Preview (first 500 chars):</p>
+          <pre>${content}</pre>
+        `;
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <h3>Error:</h3>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>

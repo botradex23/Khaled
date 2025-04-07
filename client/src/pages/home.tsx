@@ -1,3 +1,4 @@
+import React from "react";
 import Header from "../components/ui/header";
 import Hero from "../components/ui/hero";
 import Features from "../components/ui/features";

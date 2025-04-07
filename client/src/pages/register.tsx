@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useLocation } from "wouter";
 import Header from "../components/ui/header";
 import Footer from "../components/ui/footer";

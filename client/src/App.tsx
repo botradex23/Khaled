@@ -1,3 +1,4 @@
+import React from "react";
 // Using implicit React import with JSX transform
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";

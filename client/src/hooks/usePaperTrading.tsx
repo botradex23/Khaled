@@ -1,3 +1,4 @@
+import React from "react";
 import { useQuery, useMutation, QueryClient } from "@tanstack/react-query";
 import { PaperTradingAccount, PaperTradingPosition, PaperTradingTrade } from "@shared/schema";
 import { useToast } from "./use-toast";
