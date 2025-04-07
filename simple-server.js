@@ -1,69 +1,53 @@
-// Simple Express Server for Testing Replit Webview
+// simple-server.js - A simplified server that ensures ports are properly exposed
 import express from 'express';
+import http from 'http';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
+// Get directory path for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Create Express app
 const app = express();
-const port = 8000; // Using port 8000 instead of 5000
 
-// Basic HTML response
-app.get('/', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Simple Server Test</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
-        .card { background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1 { color: #1a73e8; }
-      </style>
-    </head>
-    <body>
-      <h1>Simple Server Test</h1>
-      <div class="card">
-        <h2>Server Info</h2>
-        <p>Server is running properly!</p>
-        <p>Current time: ${new Date().toLocaleString()}</p>
-        <p>Path: ${req.path}</p>
-        <p>Headers: <pre>${JSON.stringify(req.headers, null, 2)}</pre></p>
-      </div>
+// Use environment port or fallback to 3000 (different from main server to avoid conflicts)
+const port = process.env.PORT || 3000;
 
-      <div class="card">
-        <h2>API Test</h2>
-        <button onclick="testApi()">Test API Connection</button>
-        <div id="apiResult" style="margin-top: 10px;"></div>
-      </div>
+// Basic middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-      <script>
-        async function testApi() {
-          try {
-            const response = await fetch('/api/test');
-            const data = await response.json();
-            document.getElementById('apiResult').innerHTML = 
-              '<pre style="background:#eee;padding:10px;border-radius:4px;">' + 
-              JSON.stringify(data, null, 2) + 
-              '</pre>';
-          } catch (error) {
-            document.getElementById('apiResult').innerHTML = 
-              '<div style="color:red">Error: ' + error.message + '</div>';
-          }
-        }
-      </script>
-    </body>
-    </html>
-  `);
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Simple API test endpoint
-app.get('/api/test', (req, res) => {
-  res.json({
-    success: true,
-    message: 'API is working properly',
-    time: new Date().toISOString()
-  });
+// Proxy all other API requests to the main server
+app.use('/api', createProxyMiddleware({
+  target: 'http://localhost:5000',
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api': '/api' // Keep the /api prefix
+  },
+  logLevel: 'debug'
+}));
+
+// Serve static client files from the client directory
+app.use(express.static(path.join(__dirname, 'client')));
+
+// Fallback route - serve index.html for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client', 'index.html'));
 });
+
+// Create HTTP server
+const server = http.createServer(app);
 
 // Start the server
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Simple test server running at http://0.0.0.0:${port}`);
-  console.log(`Server should be accessible via Replit webview`);
+server.listen(port, '0.0.0.0', () => {
+  console.log(`Simple server is running on http://0.0.0.0:${port}`);
+  console.log(`Access the app at http://0.0.0.0:${port}`);
+  console.log(`API health check: http://0.0.0.0:${port}/api/health`);
 });

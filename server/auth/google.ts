@@ -17,10 +17,15 @@ interface GoogleProfile {
 
 // Initialize Google OAuth strategy
 export const setupGoogleAuth = () => {
+  // Get the hostname from environment variable or default to replit domain
+  const callbackHost = process.env.REPLIT_HOSTNAME || '19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev';
+  const callbackUrl = `https://${callbackHost}/api/auth/google/callback`;
+  
   console.log('Setting up Google OAuth with:');
   console.log(`Client ID: ${process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0, 10) + '...' : 'not set'}`);
   console.log(`Client Secret: ${process.env.GOOGLE_CLIENT_SECRET ? 'set (hidden)' : 'not set'}`);
-  console.log('Callback URL: https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback');
+  console.log(`Callback URL: ${callbackUrl}`);
+  
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
     console.warn('Google OAuth credentials not configured - auth will be disabled');
     return;
@@ -30,9 +35,9 @@ export const setupGoogleAuth = () => {
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback',
-        scope: ['profile', 'email']
-        // proxy option removed due to TypeScript compatibility issues
+        callbackURL: callbackUrl,
+        scope: ['profile', 'email'],
+        proxy: true // Enable proxy support to handle Replit proxy
       },
       async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: (error: Error | null, user?: User) => void) => {
         try {
@@ -57,6 +62,7 @@ export const setupGoogleAuth = () => {
 
           // No existing user found, create a new one
           if (email) {
+            // Use type assertion to allow googleId and profilePicture fields
             const newUser = await storage.createUser({
               username: profile.displayName || `user_${profile.id}`,
               email: email,
@@ -64,7 +70,7 @@ export const setupGoogleAuth = () => {
               lastName: profile.name?.familyName || '',
               googleId: profile.id,
               profilePicture: profile.photos?.[0]?.value
-            });
+            } as any);
 
             return done(null, newUser);
           } else {

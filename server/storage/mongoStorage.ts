@@ -361,7 +361,7 @@ export class MongoDBStorage implements IStorage {
       console.log(`📝 User creation details: email=${user.email}, username=${user.username}, isAdmin=${!!user.isAdmin}`);
       
       // Create the full user object with required fields
-      const fullUser: User = {
+      const fullUser: any = {
         id: Date.now(),
         username: user.username,
         email: user.email,
@@ -370,7 +370,15 @@ export class MongoDBStorage implements IStorage {
         lastName: user.lastName || null,
         defaultBroker: user.defaultBroker || null,
         useTestnet: user.useTestnet !== undefined ? user.useTestnet : true,
-        isAdmin: user.isAdmin || false, // Include isAdmin field 
+        isAdmin: user.isAdmin || false, // Include isAdmin field
+        isSuperAdmin: user.isSuperAdmin || false, // Include super admin field
+        
+        // OAuth fields
+        googleId: (user as any).googleId || null,
+        appleId: (user as any).appleId || null,
+        profilePicture: (user as any).profilePicture || null,
+        
+        // API keys
         okxApiKey: user.okxApiKey || null,
         okxSecretKey: user.okxSecretKey || null,
         okxPassphrase: user.okxPassphrase || null,

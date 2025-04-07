@@ -52,6 +52,11 @@ export const users = pgTable('users', {
   isAdmin: boolean('is_admin').default(false), // Admin user with elevated permissions
   isSuperAdmin: boolean('is_super_admin').default(false), // Super admin flag for full access to admin-my-agent
   
+  // OAuth fields
+  googleId: text('google_id'),
+  appleId: text('apple_id'),
+  profilePicture: text('profile_picture'),
+  
   // Binance API Keys  
   binanceApiKey: text('binance_api_key'),
   binanceSecretKey: text('binance_secret_key'),

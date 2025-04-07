@@ -6,6 +6,7 @@ declare module 'passport-google-oauth20' {
     clientSecret: string;
     callbackURL: string;
     scope?: string[];
+    proxy?: boolean;
   }
 
   export interface Profile {
