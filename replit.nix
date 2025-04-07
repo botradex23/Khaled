@@ -1,5 +1,6 @@
 { pkgs }: {
   deps = [
+    pkgs.unzip
     pkgs.zip
     pkgs.nodejs_20
     pkgs.nodePackages.npm   # מוסיף את הפקודה npm כדי שתעבוד כמו שצריך

@@ -19,8 +19,11 @@ import {
   Wallet,
   DollarSign,
   ShieldAlert,
-  ClipboardList
+  ClipboardList,
+  BanknoteIcon, 
+  TrendingUpIcon
 } from "lucide-react";
+import { ThemeToggle } from "./theme-toggle";
 
 // Import the API Keys Banner
 import ApiKeysBanner from "./ui/api-keys-banner";
@@ -113,8 +116,8 @@ export default function Layout({ children }: LayoutProps) {
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center">
             <Link href="/" className="flex items-center font-bold text-2xl mr-6">
-              <CandlestickChart className="h-6 w-6 mr-2" />
-              <span className="text-primary">Tradex</span>
+              <CandlestickChart className="h-6 w-6 mr-2 text-secondary" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary font-heading font-bold">Tradeliy</span>
             </Link>
             
             {!isMobile && (
@@ -169,6 +172,11 @@ export default function Layout({ children }: LayoutProps) {
                 )}
               </div>
             )}
+            
+            {/* Theme Toggle */}
+            <div className="mr-2">
+              <ThemeToggle />
+            </div>
             
             {isAuthenticated ? (
               <DropdownMenu>
@@ -279,22 +287,26 @@ export default function Layout({ children }: LayoutProps) {
       {/* Footer */}
       <footer className="border-t py-6 bg-muted/50">
         <div className="container flex flex-col md:flex-row items-center justify-between">
-          <div className="mb-4 md:mb-0">
+          <div className="mb-4 md:mb-0 flex items-center">
+            <CandlestickChart className="h-4 w-4 mr-2 text-secondary" />
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} Tradex. All rights reserved.
+              &copy; {new Date().getFullYear()} <span className="font-medium text-primary">Tradeliy</span>. All rights reserved.
             </p>
           </div>
-          <div className="flex space-x-4">
-            <Link href="/terms">
-              <span className="text-sm text-muted-foreground hover:text-foreground">
-                Terms
-              </span>
-            </Link>
-            <Link href="/privacy">
-              <span className="text-sm text-muted-foreground hover:text-foreground">
-                Privacy
-              </span>
-            </Link>
+          <div className="flex items-center space-x-6">
+            <ThemeToggle />
+            <div className="flex space-x-4">
+              <Link href="/terms">
+                <span className="text-sm text-muted-foreground hover:text-foreground">
+                  Terms
+                </span>
+              </Link>
+              <Link href="/privacy">
+                <span className="text-sm text-muted-foreground hover:text-foreground">
+                  Privacy
+                </span>
+              </Link>
+            </div>
           </div>
         </div>
       </footer>

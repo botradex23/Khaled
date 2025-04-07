@@ -4,6 +4,10 @@ export default {
   darkMode: ["class"],
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
+    fontFamily: {
+      sans: ['Inter', 'Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      heading: ['Poppins', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+    },
     extend: {
       borderRadius: {
         lg: "var(--radius)",
@@ -11,6 +15,32 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       colors: {
+        gold: {
+          DEFAULT: "#D4AF37",
+          50: "#F9F4E3",
+          100: "#F5EAC7",
+          200: "#EED68F",
+          300: "#E6C257",
+          400: "#DEAD1F",
+          500: "#D4AF37", // Main gold
+          600: "#A88A29",
+          700: "#7C661E",
+          800: "#504014",
+          900: "#241D09",
+        },
+        silver: {
+          DEFAULT: "#C0C0C0",
+          50: "#FFFFFF",
+          100: "#F5F5F5",
+          200: "#E0E0E0",
+          300: "#CCCCCC",
+          400: "#C0C0C0", // Main silver
+          500: "#A9A9A9",
+          600: "#898989",
+          700: "#696969",
+          800: "#484848",
+          900: "#282828",
+        },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {

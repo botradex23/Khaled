@@ -1,0 +1,53 @@
+
+⸻
+
+‏Task Title: XGBoost Optimization & Strategy Impact System
+
+‏Objective:
+‏Enhance the AI trading system using advanced XGBoost tuning and live feedback loop. The system will continuously optimize model parameters based on market performance, and provide strategic insights to the admin.
+
+⸻
+
+‏Core Components:
+‏	1.	Dynamic Hyperparameter Tuner
+‏	•	Implement Grid Search or Bayesian Optimization to fine-tune:
+‏	•	max_depth, n_estimators, learning_rate, subsample, colsample_bytree
+‏	•	Store all runs in a new MongoDB collection xgboost_tuning_runs
+‏	2.	Market-Condition-Based Re-Training
+‏	•	Automatically detect changes in volatility, volume, or trend direction using technical indicators (like ATR, RSI).
+‏	•	Trigger a model retraining process if conditions deviate significantly.
+‏	3.	Strategy Simulation & Comparison
+‏	•	Simulate different model outputs using historical data:
+‏	•	Conservative (low risk)
+‏	•	Aggressive (high return)
+‏	•	Balanced
+‏	•	Compare the profit, drawdown, and win rate of each simulation
+‏	•	Display them in the dashboard for human selection
+‏	4.	Live Model Evaluation Tracker
+‏	•	Create a dashboard table showing:
+‏	•	Model parameters
+‏	•	Accuracy and PnL over the past 7 days
+‏	•	Retrain date and performance delta
+‏	•	Highlight underperforming models
+‏	5.	Auto Deployment of Best Performer
+‏	•	Automatically switch to the top-performing model every X days
+‏	•	Keep backup and logs of all previous models
+‏	6.	Feedback to AI Agent
+‏	•	Allow admin to write feedback (e.g. “too many SELL signals this week”)
+‏	•	Agent updates future training priorities accordingly
+
+⸻
+
+‏Tech Stack
+‏	•	Python: XGBoost, Optuna/Scikit-Optimize
+‏	•	TypeScript: Express backend triggering Python subprocesses
+‏	•	MongoDB: Storing tuning history and strategy outcomes
+‏	•	Frontend: Admin panel built with React & Vite
+
+⸻
+
+‏Expected Result
+
+‏A high-level, automated decision-making layer on top of XGBoost that ensures the AI adapts to market changes and evolves without constant manual retraining.
+
+⸻
