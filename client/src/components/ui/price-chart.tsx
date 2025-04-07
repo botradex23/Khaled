@@ -183,36 +183,38 @@ export function PriceChart({ symbol = "BTCUSDT" }: { symbol?: string }) {
   }
   
   // Format the data for the chart
-  const chartData = (data as CandleData[]).map(candle => {
-    // Handle timestamp: it can be either ISO string or numeric timestamp
-    let timestampValue: number;
-    try {
-      // First try: check if it's an ISO string
-      if (typeof candle.timestamp === 'string' && candle.timestamp.includes('T')) {
-        timestampValue = new Date(candle.timestamp).getTime();
-      } else {
-        // Otherwise it might be a numeric string
-        timestampValue = typeof candle.timestamp === 'string' ? 
-          parseInt(candle.timestamp) : candle.timestamp;
-      }
-      
-      // If we got an invalid timestamp, log and use current time
-      if (isNaN(timestampValue)) {
-        console.error("Invalid timestamp encountered:", candle.timestamp);
-        timestampValue = Date.now();
-      }
-    } catch (error) {
-      console.error("Error processing timestamp:", error, candle);
-      timestampValue = Date.now();
-    }
-    
-    return {
-      time: formatTimestamp(candle.timestamp, interval),
-      price: candle.close,
-      timestamp: timestampValue
-    };
-  })
-  .sort((a, b) => a.timestamp - b.timestamp);
+  // Ensure data is an array before mapping
+  const chartData = Array.isArray(data) && data.length > 0 
+    ? data.map(candle => {
+        // Handle timestamp: it can be either ISO string or numeric timestamp
+        let timestampValue: number;
+        try {
+          // First try: check if it's an ISO string
+          if (typeof candle.timestamp === 'string' && candle.timestamp.includes('T')) {
+            timestampValue = new Date(candle.timestamp).getTime();
+          } else {
+            // Otherwise it might be a numeric string
+            timestampValue = typeof candle.timestamp === 'string' ? 
+              parseInt(candle.timestamp) : candle.timestamp;
+          }
+          
+          // If we got an invalid timestamp, log and use current time
+          if (isNaN(timestampValue)) {
+            console.error("Invalid timestamp encountered:", candle.timestamp);
+            timestampValue = Date.now();
+          }
+        } catch (error) {
+          console.error("Error processing timestamp:", error, candle);
+          timestampValue = Date.now();
+        }
+        
+        return {
+          time: formatTimestamp(candle.timestamp, interval),
+          price: candle.close,
+          timestamp: timestampValue
+        };
+      }).sort((a, b) => a.timestamp - b.timestamp)
+    : []; // Return empty array if data is not valid
   
   // Calculate price change
   const firstPrice = chartData[0]?.price || 0;

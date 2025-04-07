@@ -19,6 +19,31 @@ export const MarketPriceWidget = ({ symbol, name }: MarketPriceWidgetProps) => {
       try {
         setLoading(true);
         
+        // First try the multi-broker service (which handles broker fallbacks)
+        try {
+          // Fetch ticker prices from multi-broker service
+          const tickerResponse = await fetch(`/api/market-broker/ticker/${symbol}`);
+          
+          if (tickerResponse.ok) {
+            const tickerData = await tickerResponse.json();
+            
+            if (tickerData && tickerData.price) {
+              setPrice(parseFloat(tickerData.price).toFixed(2));
+              // If we have change24h data
+              if (tickerData.change24h !== undefined) {
+                setChange(parseFloat(tickerData.change24h));
+              }
+              setError(null);
+              setLoading(false);
+              return; // Success, so exit early
+            }
+          }
+        } catch (brokerError) {
+          console.log('Multi-broker service failed, falling back to direct Binance API');
+          // Continue to legacy routes if multi-broker failed
+        }
+        
+        // Legacy routes (fallback)
         // Fetch ticker prices
         const tickerResponse = await fetch('/api/binance/market/tickers');
         const tickerData = await tickerResponse.json();
@@ -28,12 +53,20 @@ export const MarketPriceWidget = ({ symbol, name }: MarketPriceWidgetProps) => {
         const market24hrData = await market24hrResponse.json();
         
         // Find the matching ticker for this symbol
-        const ticker = tickerData.find((t: any) => t.symbol === symbol);
-        const marketData = market24hrData.find((m: any) => m.symbol === symbol);
+        const ticker = Array.isArray(tickerData) ? 
+          tickerData.find((t: any) => t.symbol === symbol) : null;
         
-        if (ticker && marketData) {
+        const marketData = Array.isArray(market24hrData) ? 
+          market24hrData.find((m: any) => m.symbol === symbol) : null;
+        
+        if (ticker && ticker.price) {
           setPrice(parseFloat(ticker.price).toFixed(2));
-          setChange(parseFloat(marketData.priceChangePercent));
+          
+          // Only set change if we have valid market data
+          if (marketData && marketData.priceChangePercent) {
+            setChange(parseFloat(marketData.priceChangePercent));
+          }
+          
           setError(null);
         } else {
           setError('Symbol not found');
