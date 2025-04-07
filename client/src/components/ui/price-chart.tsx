@@ -1,3 +1,5 @@
+import React from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Card, 
@@ -9,7 +11,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 import { Skeleton } from "./skeleton";
 import { RefreshCw, AlertTriangle, Key } from "lucide-react";
-import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "./button";
 import { Alert, AlertDescription, AlertTitle } from "./alert";
@@ -294,7 +295,7 @@ export function PriceChart({ symbol = "BTCUSDT" }: { symbol?: string }) {
                 />
                 <YAxis 
                   domain={['auto', 'auto']}
-                  tickFormatter={(value) => `$${value.toLocaleString()}`}
+                  tickFormatter={(value: number) => `$${value.toLocaleString()}`}
                   tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 12 }}

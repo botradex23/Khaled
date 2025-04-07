@@ -1,3 +1,4 @@
+import React from "react";
 import { Link } from "wouter";
 import { Twitter, MessageCircle, Send, Youtube } from "lucide-react";
 
