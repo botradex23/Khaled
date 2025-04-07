@@ -20,6 +20,7 @@ declare module 'express-session' {
   interface SessionData {
     returnTo?: string;
     googleCallbackUrl?: string;
+    googleAuthState?: string;
   }
 }
 
@@ -108,44 +109,72 @@ function registerAuthRoutes(app: Express) {
       // Log the authentication attempt
       console.log('Google auth request initiated');
 
-      // Get dynamic callback URL based on current request
-      const callbackUrl = getCallbackUrl(req);
+      // Generate a unique state parameter to prevent CSRF
+      const state = crypto.randomBytes(16).toString('hex');
+      
+      // Use fixed callback URL for our current Replit environment
+      const fixedCallbackUrl = 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback';
+      
+      // Log all headers for debugging
+      console.log('Request headers:', req.headers);
+      console.log('Request host:', req.get('host'));
+      console.log('Request protocol:', req.protocol);
+      console.log('Full request URL:', `${req.protocol}://${req.get('host')}${req.originalUrl}`);
+      console.log('IMPORTANT: Using fixed callback URL:', fixedCallbackUrl);
       
       // Store the returnTo path if provided in query
       if (req.query.returnTo && typeof req.query.returnTo === 'string') {
         req.session.returnTo = req.query.returnTo;
       }
       
-      // Store the callback URL in session to ensure consistency
+      // Store the callback URL and state in session to ensure consistency
       if (req.session) {
-        req.session.googleCallbackUrl = callbackUrl;
+        req.session.googleCallbackUrl = fixedCallbackUrl;
+        req.session.googleAuthState = state;
         req.session.save((err) => {
           if (err) {
             console.error('Failed to save session before Google auth:', err);
+          } else {
+            console.log('Session saved with googleCallbackUrl:', fixedCallbackUrl);
+            console.log('Session saved with state:', state);
           }
         });
+      } else {
+        console.error('No session object available for Google auth!');
       }
       
       next();
     },
     (req: Request, res: Response, next: NextFunction) => {
-      // Configure the Google strategy with our dynamic callback URL
+      // Use fixed callback URL for our current Replit environment
+      const fixedCallbackUrl = 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback';
+      
+      // Configure the Google strategy with our fixed callback URL
       const authOptions = {
         scope: ['profile', 'email'],
         prompt: 'select_account', // Force account selection even if already logged in
-        callbackURL: req.session?.googleCallbackUrl // Use stored callback URL
+        callbackURL: fixedCallbackUrl, // Use our fixed callback URL
+        state: req.session?.googleAuthState, // Use stored state parameter
+        accessType: 'offline', // Request a refresh token
+        includeGrantedScopes: true // Include any previously granted scopes
       };
       
-      // Use passport to initiate Google authentication with dynamic callback
-      console.log('Starting Google authentication with dynamic callback URL:', authOptions.callbackURL);
+      // Use passport to initiate Google authentication with fixed callback
+      console.log('Starting Google authentication with FIXED callback URL:', authOptions.callbackURL);
+      console.log('Google authentication state:', authOptions.state);
       
-      // Directly use the Google strategy with our custom parameters
-      passport.authenticate('google', authOptions)(req, res, next);
+      try {
+        // Directly use the Google strategy with our custom parameters
+        passport.authenticate('google', authOptions)(req, res, next);
+      } catch (err) {
+        console.error('Error during passport.authenticate for Google:', err);
+        return res.redirect('/login?error=google_auth_error&message=' + encodeURIComponent('Authentication initialization failed'));
+      }
     },
     (err: any, req: Request, res: Response, next: NextFunction) => {
       if (err) {
         console.error('Error during Google auth initialization:', err);
-        return res.redirect('/login?error=google_auth_failed&message=' + encodeURIComponent(err.message));
+        return res.redirect('/login?error=google_auth_failed&message=' + encodeURIComponent(err.message || 'Unknown error'));
       }
       next();
     }
@@ -158,70 +187,114 @@ function registerAuthRoutes(app: Express) {
       // Log essential information for debugging
       console.log('Google callback received with query:', JSON.stringify(req.query));
       console.log('Google callback received with session ID:', req.sessionID);
+      console.log('Google callback headers:', req.headers);
+      console.log('Google callback original URL:', req.originalUrl);
       
       // Check for explicit error from Google
       if (req.query.error) {
         console.error('Error returned from Google OAuth:', req.query.error);
-        return res.redirect(`/login?error=${req.query.error}`);
+        return res.redirect(`/login?error=${req.query.error}&error_description=${encodeURIComponent(req.query.error_description as string || '')}`);
+      }
+      
+      // Verify state parameter if provided to prevent CSRF
+      if (req.query.state && req.session?.googleAuthState) {
+        console.log('Verifying state parameter. Received:', req.query.state, 'Expected:', req.session.googleAuthState);
+        
+        if (req.query.state !== req.session.googleAuthState) {
+          console.error('State parameter mismatch - possible CSRF attempt');
+          return res.redirect('/login?error=state_mismatch&message=' + encodeURIComponent('Invalid session state. Please try again.'));
+        } else {
+          console.log('State parameter verified successfully');
+        }
+      } else {
+        console.log('State parameter or session googleAuthState missing:', {
+          queryState: req.query.state,
+          sessionState: req.session?.googleAuthState
+        });
       }
       
       next();
     },
     (req: Request, res: Response, next: NextFunction) => {
+      // Use the fixed callback URL for our current Replit environment
+      const fixedCallbackUrl = 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback';
+      
+      // Options for the passport authenticate call with fixed URL
+      const authOptions = {
+        failureRedirect: '/login?error=google_auth_failed',
+        session: true,
+        callbackURL: fixedCallbackUrl
+      };
+      
+      console.log('Using FIXED callback URL for verification:', authOptions.callbackURL);
+      
+      // Store the callback URL in session for consistency
+      if (req.session) {
+        req.session.googleCallbackUrl = fixedCallbackUrl;
+      }
+      
       // Use custom callback for passport authenticate for better error handling
-      passport.authenticate('google', { failureRedirect: '/login?error=google_auth_failed', session: true }, 
-        (err: Error | null, user: any, info: any) => {
-          // Handle authentication errors
-          if (err) {
-            console.error('Error during Google authentication:', err);
-            return res.redirect('/login?error=google_auth_failed&message=' + encodeURIComponent(err.message || 'Authentication failed'));
-          }
-          
-          // Handle missing user
-          if (!user) {
-            console.error('No user returned from Google auth:', info);
-            return res.redirect('/login?error=google_no_user');
-          }
-          
-          // Explicitly log in the user with session support
-          req.logIn(user, { session: true }, (loginErr) => {
-            if (loginErr) {
-              console.error('Error during login after Google auth:', loginErr);
-              return res.redirect('/login?error=login_failed');
+      try {
+        passport.authenticate('google', authOptions, 
+          (err: Error | null, user: any, info: any) => {
+            // Handle authentication errors
+            if (err) {
+              console.error('Error during Google authentication:', err);
+              return res.redirect('/login?error=google_auth_failed&message=' + encodeURIComponent(err.message || 'Authentication failed'));
             }
             
-            console.log('Google authentication successful for user:', user.email);
-            
-            // Ensure session is saved
-            if (req.session) {
-              req.session.save((saveErr) => {
-                if (saveErr) {
-                  console.error('Error saving session after Google login:', saveErr);
-                }
-                
-                // Determine redirect destination
-                let redirectTo = '/dashboard';
-                
-                // If returnTo was stored in session, use that
-                if (req.session.returnTo) {
-                  redirectTo = req.session.returnTo;
-                  delete req.session.returnTo;
-                }
-                
-                // If user profile is incomplete, redirect to complete profile page
-                if (!user.firstName || !user.lastName) {
-                  redirectTo = '/complete-profile?next=' + encodeURIComponent(redirectTo);
-                }
-                
-                return res.redirect(redirectTo);
-              });
-            } else {
-              console.warn('Session not available after Google auth, proceeding without session save');
-              return res.redirect('/dashboard');
+            // Handle missing user
+            if (!user) {
+              console.error('No user returned from Google auth:', info);
+              return res.redirect('/login?error=google_no_user&message=' + encodeURIComponent(info?.message || 'No user returned from Google'));
             }
-          });
-        }
-      )(req, res, next);
+            
+            // Explicitly log in the user with session support
+            req.logIn(user, { session: true }, (loginErr) => {
+              if (loginErr) {
+                console.error('Error during login after Google auth:', loginErr);
+                return res.redirect('/login?error=login_failed&message=' + encodeURIComponent(loginErr.message || 'Login error'));
+              }
+              
+              console.log('Google authentication successful for user:', user.email);
+              
+              // Ensure session is saved
+              if (req.session) {
+                req.session.save((saveErr) => {
+                  if (saveErr) {
+                    console.error('Error saving session after Google login:', saveErr);
+                  } else {
+                    console.log('Session saved successfully after Google login');
+                  }
+                  
+                  // Determine redirect destination
+                  let redirectTo = '/dashboard';
+                  
+                  // If returnTo was stored in session, use that
+                  if (req.session.returnTo) {
+                    redirectTo = req.session.returnTo;
+                    delete req.session.returnTo;
+                  }
+                  
+                  // If user profile is incomplete, redirect to complete profile page
+                  if (!user.firstName || !user.lastName) {
+                    redirectTo = '/complete-profile?next=' + encodeURIComponent(redirectTo);
+                  }
+                  
+                  console.log('Redirecting after successful Google auth to:', redirectTo);
+                  return res.redirect(redirectTo);
+                });
+              } else {
+                console.warn('Session not available after Google auth, proceeding without session save');
+                return res.redirect('/dashboard');
+              }
+            });
+          }
+        )(req, res, next);
+      } catch (callbackError) {
+        console.error('Exception in Google auth callback processing:', callbackError);
+        return res.redirect('/login?error=google_auth_callback_error&message=' + encodeURIComponent('Internal auth processing error'));
+      }
     }
   );
 

@@ -21,9 +21,9 @@ export async function apiRequest<T = any>(
   // Determine if we're in Replit environment
   const isReplit = typeof window !== 'undefined' && window.location.hostname.includes('.replit.dev');
   
-  // In Replit we need to use the full URL including origin with port 5000
+  // In Replit we need to use the full URL including origin with correct port
   const fullUrl = isReplit && url.startsWith('/api') 
-    ? `${window.location.origin.replace(/:\d+$/, '')}:5000${url}`
+    ? `${window.location.origin}${url}`
     : url;
     
   console.log(`API Request to: ${fullUrl} (original URL: ${url})`);
@@ -60,9 +60,9 @@ export const getQueryFn: <T>(options: {
     // Get the URL from the query key
     const url = queryKey[0] as string;
     
-    // In Replit we need to use the full URL including origin with port 5000
+    // In Replit we need to use the full URL including origin with correct port
     const fullUrl = isReplit && url.startsWith('/api') 
-      ? `${window.location.origin.replace(/:\d+$/, '')}:5000${url}`
+      ? `${window.location.origin}${url}`
       : url;
       
     console.log(`Query fetch to: ${fullUrl} (original URL: ${url})`);

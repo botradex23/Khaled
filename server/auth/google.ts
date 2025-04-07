@@ -28,8 +28,18 @@ interface GoogleProfile extends Profile {
 
 // Helper function to dynamically determine callback URL
 const getCallbackUrl = (req?: Request): string => {
+  // Hard-coded callback URL specifically for our current Replit environment
+  const fixedCallbackUrl = 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback';
+  
+  console.log('Using fixed Replit domain callback URL:', fixedCallbackUrl);
+  
+  // Override environment variable with our fixed callback URL
+  process.env.GOOGLE_CALLBACK_URL = fixedCallbackUrl;
+  
+  // Generate a list of possible callback URLs based on Replit domains (for debugging only)
+  const possibleCallbackUrls: string[] = [];
+  
   // Get hostname from various sources with fallbacks
-  // Use the actual Replit domain dynamically
   const defaultHost = process.env.REPLIT_HOSTNAME || process.env.REPL_SLUG || '19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev';
   
   // First priority: Use the hostname from request headers if available
@@ -59,41 +69,44 @@ const getCallbackUrl = (req?: Request): string => {
     }
   }
   
-  // Second priority: Check environment variables specific to Replit
-  if (!req || host === defaultHost) {
-    // Try to get Replit specific information
-    const replitId = process.env.REPLIT_ID || process.env.REPL_ID;
-    const replitSlug = process.env.REPL_SLUG;
-    const replitOwner = process.env.REPL_OWNER;
-    
-    if (replitSlug && replitOwner) {
-      // Format for Replit deployment URL
-      host = `${replitSlug}.${replitOwner}.repl.co`;
-    } else if (replitId) {
-      // Try to construct from deployment id
-      host = `${replitId}.id.repl.co`;
-    } else if (replitSlug) {
-      // Fallback to basic replit.dev domain
-      host = `${replitSlug}.replit.dev`;
-    }
+  // Generate additional possible Replit domains for debugging only
+  const replitId = process.env.REPLIT_ID || process.env.REPL_ID;
+  const replitSlug = process.env.REPL_SLUG;
+  const replitOwner = process.env.REPL_OWNER;
+  
+  // Add all possible domain variations to our list
+  if (replitSlug && replitOwner) {
+    possibleCallbackUrls.push(`https://${replitSlug}.${replitOwner}.repl.co/api/auth/google/callback`);
   }
   
-  // Determine protocol (prefer HTTPS for OAuth security)
-  // For Replit, HTTPS is almost always correct for external URLs
-  let protocol = 'https';
-  
-  // Special case: If this is running on localhost, use HTTP
-  if (host.includes('localhost') || host.includes('127.0.0.1')) {
-    protocol = 'http';
+  if (replitId) {
+    possibleCallbackUrls.push(`https://${replitId}.id.repl.co/api/auth/google/callback`);
   }
   
-  // Construct and return full callback URL
-  const callbackUrl = `${protocol}://${host}/api/auth/google/callback`;
-  console.log('Redirect URI computed for callback:', callbackUrl);
+  if (replitSlug) {
+    possibleCallbackUrls.push(`https://${replitSlug}.replit.dev/api/auth/google/callback`);
+  }
+  
+  // Add current host callback URL
+  const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? 'http' : 'https';
+  const mainCallbackUrl = `${protocol}://${host}/api/auth/google/callback`;
+  
+  // Add the main callback URL at the beginning of the list for prioritization
+  possibleCallbackUrls.unshift(mainCallbackUrl);
+  
+  // Hard-coded fallbacks for cases where headers might not contain correct information
+  possibleCallbackUrls.push('https://tradeliy.replit.app/api/auth/google/callback');
+  possibleCallbackUrls.push('https://workspace.kbesan066.repl.co/api/auth/google/callback');
+  possibleCallbackUrls.push('https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback');
+  
+  // Log all possible callback URLs for debugging
+  console.log('All possible Google callback URLs:', possibleCallbackUrls);
   console.log('Current host:', host);
   console.log('Current protocol detected:', protocol);
+  console.log('IMPORTANT: Overriding with fixed callback URL:', fixedCallbackUrl);
   
-  return callbackUrl;
+  // Always return our fixed callback URL
+  return fixedCallbackUrl;
 };
 
 // Initialize Google OAuth strategy
