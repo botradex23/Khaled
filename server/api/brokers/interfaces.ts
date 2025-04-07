@@ -90,8 +90,7 @@ export interface BrokerLivePriceUpdate {
 // Enum for broker types
 export enum BrokerType {
   BINANCE = 'binance',
-  OKX = 'okx',
-  SIMULATED = 'simulated'
+  OKX = 'okx'
 }
 
 // Interface for broker API status

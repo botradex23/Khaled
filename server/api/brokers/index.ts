@@ -19,7 +19,7 @@ import { BrokerType, IMultiBrokerService } from './interfaces';
 import { MultiBrokerService } from './multiBrokerService';
 
 // Create service instance with Binance as primary and OKX as fallback
-const brokerService = new MultiBrokerService(BrokerType.BINANCE, BrokerType.OKX);
+const brokerService = new MultiBrokerService([BrokerType.BINANCE, BrokerType.OKX]);
 
 // Export singleton instance
 export { brokerService };

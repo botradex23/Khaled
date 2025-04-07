@@ -21,18 +21,24 @@ export class OkxBroker implements IBroker {
   private isWsConnected: boolean;
 
   constructor(testnet: boolean = false) {
-    // Initialize OKX client with API keys
+    // Initialize OKX client with type assertion to work around strict typing issues
+    this.client = new okx.RestClient({
+      sandbox: testnet
+    } as any);
+
+    // Set API credentials if available
     const apiKey = process.env.OKX_API_KEY || '';
     const apiSecret = process.env.OKX_API_SECRET || '';
     const passphrase = process.env.OKX_PASSPHRASE || '';
 
-    // Create REST API client
-    this.client = new okx.RestClient({
-      apiKey,
-      apiSecret,
-      passphrase,
-      sandbox: testnet
-    });
+    if (apiKey && apiSecret && passphrase) {
+      // Use type assertion to work around strict typing issues
+      this.client.setCredentials({
+        apiKey,
+        apiSecret,
+        passphrase
+      } as any);
+    }
 
     // Initialize WebSocket state
     this.wsCallbacks = new Map();
@@ -68,7 +74,7 @@ export class OkxBroker implements IBroker {
   async getSymbolPrice(symbol: string): Promise<BrokerTickerPrice | null> {
     try {
       const formattedSymbol = this.formatSymbolForExchange(symbol);
-      const response = await this.client.market.getTicker(formattedSymbol);
+      const response = await this.client.getTicker({ instId: formattedSymbol });
       
       if (!response || !response.data || !response.data[0]) {
         return null;
@@ -86,7 +92,7 @@ export class OkxBroker implements IBroker {
 
   async getAllPrices(): Promise<BrokerTickerPrice[]> {
     try {
-      const response = await this.client.market.getTickers('SPOT');
+      const response = await this.client.getTickers({ instType: 'SPOT' });
       
       if (!response || !response.data) {
         return [];
@@ -105,7 +111,7 @@ export class OkxBroker implements IBroker {
   async get24hrTicker(symbol: string): Promise<Broker24hrTicker | null> {
     try {
       const formattedSymbol = this.formatSymbolForExchange(symbol);
-      const response = await this.client.market.getTicker(formattedSymbol);
+      const response = await this.client.getTicker({ instId: formattedSymbol });
       
       if (!response || !response.data || !response.data[0]) {
         return null;
@@ -114,9 +120,10 @@ export class OkxBroker implements IBroker {
       const ticker = response.data[0];
       
       // Get 24hr candlestick for additional data
-      const candleResponse = await this.client.market.getCandles(formattedSymbol, {
-        bar: '1D',
-        limit: '1'
+      const candleResponse = await this.client.getCandles({
+        instId: formattedSymbol, 
+        bar: '1D', 
+        limit: 1
       });
       
       const candle = candleResponse.data && candleResponse.data[0] ? candleResponse.data[0] : null;
@@ -153,7 +160,7 @@ export class OkxBroker implements IBroker {
   async getExchangeInfo(symbol?: string): Promise<BrokerExchangeInfo> {
     try {
       // Get all instruments for SPOT
-      const response = await this.client.public.getInstruments('SPOT');
+      const response = await this.client.getInstruments({ instType: 'SPOT' });
       
       if (!response || !response.data) {
         return { symbols: [] };
@@ -170,7 +177,7 @@ export class OkxBroker implements IBroker {
       // Filter by symbol if provided
       if (symbol) {
         const standardizedSymbol = this.standardizeSymbol(symbol);
-        symbols = symbols.filter(s => s.symbol === standardizedSymbol);
+        symbols = symbols.filter((s: BrokerSymbolInfo) => s.symbol === standardizedSymbol);
       }
 
       return { symbols };
@@ -183,7 +190,10 @@ export class OkxBroker implements IBroker {
   async getOrderBook(symbol: string, limit: number = 100): Promise<BrokerOrderBook> {
     try {
       const formattedSymbol = this.formatSymbolForExchange(symbol);
-      const response = await this.client.market.getBooks(formattedSymbol, { sz: limit.toString() });
+      const response = await this.client.getBooks({ 
+        instId: formattedSymbol, 
+        sz: limit 
+      });
       
       if (!response || !response.data || !response.data[0]) {
         return { lastUpdateId: 0, bids: [], asks: [] };
@@ -209,7 +219,7 @@ export class OkxBroker implements IBroker {
     }
 
     try {
-      const response = await this.client.account.getBalance();
+      const response = await this.client.getBalance();
       
       if (!response || !response.data || !response.data[0] || !response.data[0].details) {
         return [];
@@ -258,7 +268,7 @@ export class OkxBroker implements IBroker {
         orderParams.px = price;
       }
       
-      const response = await this.client.trade.placeOrder(orderParams);
+      const response = await this.client.submitOrder(orderParams);
       
       if (!response || !response.data || !response.data[0]) {
         throw new Error('Failed to place order on OKX');
@@ -266,7 +276,10 @@ export class OkxBroker implements IBroker {
       
       // Get order details
       const orderId = response.data[0].ordId;
-      const orderDetails = await this.client.trade.getOrder(formattedSymbol, orderId);
+      const orderDetails = await this.client.getOrderDetails({
+        instId: formattedSymbol,
+        ordId: orderId
+      });
       
       if (!orderDetails || !orderDetails.data || !orderDetails.data[0]) {
         throw new Error('Failed to get order details from OKX');
@@ -300,7 +313,10 @@ export class OkxBroker implements IBroker {
 
     try {
       const formattedSymbol = this.formatSymbolForExchange(symbol);
-      const response = await this.client.trade.cancelOrder(formattedSymbol, orderId);
+      const response = await this.client.cancelOrder({
+        instId: formattedSymbol,
+        ordId: orderId
+      });
       
       if (!response || !response.data || !response.data[0]) {
         return false;
@@ -320,7 +336,10 @@ export class OkxBroker implements IBroker {
 
     try {
       const formattedSymbol = this.formatSymbolForExchange(symbol);
-      const response = await this.client.trade.getOrder(formattedSymbol, orderId);
+      const response = await this.client.getOrderDetails({
+        instId: formattedSymbol,
+        ordId: orderId
+      });
       
       if (!response || !response.data || !response.data[0]) {
         return null;
@@ -437,13 +456,20 @@ export class OkxBroker implements IBroker {
     const apiSecret = process.env.OKX_API_SECRET || '';
     const passphrase = process.env.OKX_PASSPHRASE || '';
     
+    // Use type assertion to work around strict typing issues
     this.wsClient = new okx.WebsocketClient({
-      apiKey,
-      apiSecret, 
-      passphrase,
-      useServerTime: true,
       sandbox: this.isTestnet()
-    });
+    } as any);
+
+    // Configure WS client with auth if we have API keys
+    if (apiKey && apiSecret && passphrase) {
+      // Use type assertion to work around strict typing issues
+      this.wsClient.setCredentials({
+        apiKey,
+        apiSecret,
+        passphrase
+      } as any);
+    }
 
     this.wsClient.on('open', () => {
       console.log('OKX WebSocket connected');
@@ -460,23 +486,28 @@ export class OkxBroker implements IBroker {
       }
     });
 
-    this.wsClient.on('update', (data: any) => {
-      if (data.arg && data.arg.channel === 'tickers' && data.data && data.data.length > 0) {
-        const ticker = data.data[0];
-        const symbol = data.arg.instId;
-        const standardSymbol = this.standardizeSymbol(symbol);
-        
-        const update: BrokerLivePriceUpdate = {
-          symbol: standardSymbol,
-          price: ticker.last,
-          timestamp: parseInt(ticker.ts, 10)
-        };
-        
-        // Notify all callbacks for this symbol
-        const callbacks = this.wsCallbacks.get(symbol) || [];
-        for (const callback of callbacks) {
-          callback(update);
+    this.wsClient.on('message', (data: any) => {
+      try {
+        // Handle ticker updates
+        if (data?.data && data?.arg?.channel === 'tickers' && data.data.length > 0) {
+          const ticker = data.data[0];
+          const symbol = data.arg.instId;
+          const standardSymbol = this.standardizeSymbol(symbol);
+          
+          const update: BrokerLivePriceUpdate = {
+            symbol: standardSymbol,
+            price: ticker.last,
+            timestamp: parseInt(ticker.ts, 10)
+          };
+          
+          // Notify all callbacks for this symbol
+          const callbacks = this.wsCallbacks.get(symbol) || [];
+          for (const callback of callbacks) {
+            callback(update);
+          }
         }
+      } catch (error) {
+        console.error('Error processing OKX WebSocket message:', error);
       }
     });
 

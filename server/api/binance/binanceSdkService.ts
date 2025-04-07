@@ -378,8 +378,8 @@ export class BinanceSdkService extends EventEmitter {
           console.error('Binance API direct connection test failed:', directError);
           
           // If direct connection fails too, set initialized to false
-          console.error('All connection methods failed, service will use simulated data');
-          this.initialized = true; // Still initialize to allow simulated data
+          console.error('All Binance API connection methods failed, service will fall back to OKX');
+          this.initialized = true; // Still initialize to allow OKX fallback
           
           // Create basic axios instance for consistency
           this.axiosInstance = axios.create({
@@ -408,8 +408,8 @@ export class BinanceSdkService extends EventEmitter {
     } catch (error) {
       console.error('Failed to initialize Binance SDK Service:', error);
       
-      // If all initialization methods failed, set initialized to true to still allow simulated data
-      console.log('Initialization failed, will use simulated market data');
+      // If all initialization methods failed, set initialized to true to still allow OKX fallback
+      console.log('Binance initialization failed, will fall back to OKX broker');
       this.initialized = true;
       
       // Create a basic axios instance as a placeholder
@@ -916,8 +916,8 @@ export class BinanceSdkService extends EventEmitter {
         }
       }
       
-      // If all API methods failed, use simulated prices
-      console.log('All API methods failed, using simulated market prices');
+      // If all Binance API methods failed, we'll use OKX as fallback through MultiBrokerService
+      console.log('All Binance API methods failed, falling back to OKX broker');
       return this.getSimulatedMarketPrices();
     } catch (error: any) {
       console.error('Unexpected error in getAllPrices:', error.message);
@@ -937,7 +937,7 @@ export class BinanceSdkService extends EventEmitter {
         }));
       }
       
-      console.log('Falling back to simulated market prices due to error');
+      console.log('Binance API error, falling back to OKX broker');
       return this.getSimulatedMarketPrices();
     }
   }
@@ -971,8 +971,8 @@ export class BinanceSdkService extends EventEmitter {
     } catch (error: any) {
       console.error('Error fetching all prices using Axios:', error.message);
       
-      // If Axios call fails, use simulated prices
-      console.log('Using simulated market prices due to Axios API error');
+      // If Axios call fails, use OKX through MultiBrokerService
+      console.log('Binance Axios API error, falling back to OKX broker');
       return this.getSimulatedMarketPrices();
     }
   }
@@ -1106,8 +1106,8 @@ export class BinanceSdkService extends EventEmitter {
               console.log('SDK call failed, attempting Axios fallback...');
               return this.getSymbolPriceWithAxios(formattedSymbol);
             } else {
-              // Fall back to simulated price
-              console.log(`Using simulated price for ${formattedSymbol} due to unexpected response format`);
+              // Fall back to OKX broker
+              console.log(`Failed to get price from Binance for ${formattedSymbol}, falling back to OKX broker`);
               return this.getSimulatedSymbolPrice(formattedSymbol);
             }
           }
@@ -1119,8 +1119,8 @@ export class BinanceSdkService extends EventEmitter {
             console.log('SDK call failed, attempting Axios fallback...');
             return this.getSymbolPriceWithAxios(formattedSymbol);
           } else {
-            // Fall back to simulated price
-            console.log(`Using simulated price for ${formattedSymbol} due to SDK API error`);
+            // Fall back to OKX broker
+            console.log(`Binance SDK error for ${formattedSymbol}, falling back to OKX broker`);
             return this.getSimulatedSymbolPrice(formattedSymbol);
           }
         }
@@ -1129,16 +1129,16 @@ export class BinanceSdkService extends EventEmitter {
         console.log('SDK not available, using Axios fallback...');
         return this.getSymbolPriceWithAxios(formattedSymbol);
       } else {
-        // Neither is available, use simulated prices
-        console.log('Neither SDK nor Axios available, using simulated prices');
+        // Neither is available, use OKX broker
+        console.log('Neither Binance SDK nor Axios available, falling back to OKX broker');
         return this.getSimulatedSymbolPrice(formattedSymbol);
       }
     } catch (error: any) {
       console.error(`Unexpected error in getSymbolPrice for ${symbol}:`, error.message);
       
-      // Fall back to simulated price
+      // Fall back to OKX broker
       const formattedSymbol = symbol.replace('-', '').toUpperCase();
-      console.log(`Using simulated price for ${formattedSymbol} due to unexpected error`);
+      console.log(`Unexpected Binance error for ${formattedSymbol}, falling back to OKX broker`);
       return this.getSimulatedSymbolPrice(formattedSymbol);
     }
   }

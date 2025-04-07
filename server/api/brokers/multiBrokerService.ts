@@ -2,8 +2,8 @@
  * Multi-Broker Service
  * 
  * This service manages multiple brokers and provides automatic fallback between them.
- * The primary strategy is to use Binance as the first choice, then OKX as fallback,
- * and finally the simulated broker when real exchange connections are unavailable.
+ * The primary strategy is to use Binance as the first choice, then OKX as fallback
+ * when Binance is unavailable due to geo-restrictions or API issues.
  */
 
 import { 
@@ -21,7 +21,7 @@ export class MultiBrokerService implements IBroker {
   private activeBrokerType: BrokerType;
   private cleanupFunctions: Map<string, () => void> = new Map();
   
-  constructor(priorityOrder: BrokerType[] = [BrokerType.BINANCE, BrokerType.OKX, BrokerType.SIMULATED]) {
+  constructor(priorityOrder: BrokerType[] = [BrokerType.BINANCE, BrokerType.OKX]) {
     // Initialize the broker factory
     this.factory = new BrokerFactory();
     
@@ -45,7 +45,7 @@ export class MultiBrokerService implements IBroker {
       }
     }
     
-    // If no configured broker found, use the last one (should be simulated)
+    // If no configured broker found, use the last one (OKX)
     return this.brokers.length - 1;
   }
   

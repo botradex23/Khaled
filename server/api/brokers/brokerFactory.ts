@@ -8,7 +8,6 @@
 import { BrokerType, IBroker, IBrokerFactory } from './interfaces';
 import { OkxBroker } from '../okx/okxBroker';
 import { BinanceBroker } from '../binance/binanceBroker';
-import { SimulatedBroker } from '../simulated/simulatedBroker';
 
 /**
  * Broker Factory Implementation
@@ -40,10 +39,6 @@ export class BrokerFactory implements IBrokerFactory {
         
       case BrokerType.OKX:
         broker = new OkxBroker(config?.testnet || false);
-        break;
-        
-      case BrokerType.SIMULATED:
-        broker = new SimulatedBroker();
         break;
         
       default:

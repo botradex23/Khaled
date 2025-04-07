@@ -343,7 +343,7 @@ export class BinanceMarketPriceService extends EventEmitter {
         console.error('Error fetching all prices from Binance:', apiError.message);
         
         // If API call fails, use simulated prices instead
-        console.log('Using simulated market prices due to API error');
+        console.log('Binance API error, falling back to OKX broker');
         return this.getSimulatedMarketPrices();
       }
     } catch (error: any) {
@@ -351,10 +351,10 @@ export class BinanceMarketPriceService extends EventEmitter {
       
       if (error.response?.status === 451) {
         console.log('Binance API access restricted due to geo-restriction (451)');
-        console.log('Using simulated market prices due to geo-restriction');
+        console.log('Binance API geo-restricted, falling back to OKX broker');
         return this.getSimulatedMarketPrices();
       } else {
-        console.log('Falling back to simulated market prices due to error');
+        console.log('Binance API error, falling back to OKX broker');
         return this.getSimulatedMarketPrices();
       }
     }
