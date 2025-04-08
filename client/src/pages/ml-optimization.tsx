@@ -37,27 +37,47 @@ import { queryClient, apiRequest } from '@/lib/queryClient';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-// Lazy load heavy components to improve startup performance
-const ChartComponents = lazy(() => import('recharts'));
+// Lazy load chart components more granularly to improve startup performance
+const CartesianGrid = lazy(() => import('recharts').then(mod => ({ default: mod.CartesianGrid })));
+const XAxis = lazy(() => import('recharts').then(mod => ({ default: mod.XAxis })));
+const YAxis = lazy(() => import('recharts').then(mod => ({ default: mod.YAxis })));
+const Tooltip = lazy(() => import('recharts').then(mod => ({ default: mod.Tooltip })));
+const Legend = lazy(() => import('recharts').then(mod => ({ default: mod.Legend })));
+const Bar = lazy(() => import('recharts').then(mod => ({ default: mod.Bar })));
+const Line = lazy(() => import('recharts').then(mod => ({ default: mod.Line })));
+const BarChart = lazy(() => import('recharts').then(mod => ({ default: mod.BarChart })));
+const LineChart = lazy(() => import('recharts').then(mod => ({ default: mod.LineChart })));
+const ResponsiveContainer = lazy(() => import('recharts').then(mod => ({ default: mod.ResponsiveContainer })));
 
-// Create individual chart components
+// Create individual chart components with suspense
 const LazyBarChart = (props: any) => (
   <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-    <ChartComponents.BarChart {...props} />
+    <BarChart {...props} />
   </Suspense>
 );
 
 const LazyLineChart = (props: any) => (
   <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-    <ChartComponents.LineChart {...props} />
+    <LineChart {...props} />
   </Suspense>
 );
 
 const LazyResponsiveContainer = (props: any) => (
   <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-    <ChartComponents.ResponsiveContainer {...props} />
+    <ResponsiveContainer {...props} />
   </Suspense>
 );
+
+// Create a component wrapper for chart elements
+const ChartComponents = {
+  CartesianGrid: (props: any) => <Suspense fallback={<div />}><CartesianGrid {...props} /></Suspense>,
+  XAxis: (props: any) => <Suspense fallback={<div />}><XAxis {...props} /></Suspense>,
+  YAxis: (props: any) => <Suspense fallback={<div />}><YAxis {...props} /></Suspense>,
+  Tooltip: (props: any) => <Suspense fallback={<div />}><Tooltip {...props} /></Suspense>,
+  Legend: (props: any) => <Suspense fallback={<div />}><Legend {...props} /></Suspense>,
+  Bar: (props: any) => <Suspense fallback={<div />}><Bar {...props} /></Suspense>,
+  Line: (props: any) => <Suspense fallback={<div />}><Line {...props} /></Suspense>
+};
 
 export default function MlOptimizationPage() {
   const [selectedSymbol, setSelectedSymbol] = useState('BTC/USDT');
@@ -660,19 +680,19 @@ export default function MlOptimizationPage() {
               ) : (marketConditionsData?.data && (marketConditionsData.data as any[]).length > 0) ? (
                 <>
                   <div className="mb-6">
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={marketConditionsChartData.slice(-30)}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="volatility" stroke="#8884d8" name="Volatility" />
-                        <Line type="monotone" dataKey="volume" stroke="#82ca9d" name="Volume (M)" />
-                        <Line type="monotone" dataKey="trendStrength" stroke="#ffc658" name="Trend Strength" />
-                        <Line type="monotone" dataKey="trendDirection" stroke="#ff8042" name="Trend Direction" />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    <LazyResponsiveContainer width="100%" height={300}>
+                      <LazyLineChart data={marketConditionsChartData.slice(-30)}>
+                        <ChartComponents.CartesianGrid strokeDasharray="3 3" />
+                        <ChartComponents.XAxis dataKey="date" />
+                        <ChartComponents.YAxis />
+                        <ChartComponents.Tooltip />
+                        <ChartComponents.Legend />
+                        <ChartComponents.Line type="monotone" dataKey="volatility" stroke="#8884d8" name="Volatility" />
+                        <ChartComponents.Line type="monotone" dataKey="volume" stroke="#82ca9d" name="Volume (M)" />
+                        <ChartComponents.Line type="monotone" dataKey="trendStrength" stroke="#ffc658" name="Trend Strength" />
+                        <ChartComponents.Line type="monotone" dataKey="trendDirection" stroke="#ff8042" name="Trend Direction" />
+                      </LazyLineChart>
+                    </LazyResponsiveContainer>
                   </div>
                   
                   <Table>

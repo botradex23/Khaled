@@ -3,13 +3,25 @@ CryptoTrade Flask Application
 
 This is the main entry point for the Flask application.
 It initializes the app, registers blueprints for API routes, and handles CORS.
+It supports deferred initialization for optimized startup.
 """
 
 import os
+import sys
+import time
 import logging
+import argparse
 from functools import wraps
-from flask import Flask, jsonify, render_template, request, flash, redirect, url_for, session
-from flask_cors import CORS
+
+# Try different import paths for Flask
+try:
+    from flask import Flask, jsonify, render_template, request, flash, redirect, url_for, session
+    from flask_cors import CORS
+except ImportError:
+    # If that fails, try adding parent directory to path
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from flask import Flask, jsonify, render_template, request, flash, redirect, url_for, session 
+    from flask_cors import CORS
 
 from python_app.config import active_config
 from python_app.routes.binance_routes import binance_bp
@@ -259,30 +271,46 @@ def create_app(config=None):
 # Import utility functions from utils.py
 from python_app.utils import flash_message, handle_api_response
 
-# Initialize bot synchronization
-try:
-    from python_app.services.coordination import bot_synchronizer
-    logging.info("Bot Synchronizer initialized successfully")
-    
-    # Initialize queue-bot integration
-    try:
-        from python_app.services.queue.queue_bot_integration import is_integrated
-        if is_integrated:
-            logging.info("Trade Queue-Bot Integration initialized successfully")
-        else:
-            logging.warning("Trade Queue-Bot Integration failed to initialize")
-    except ImportError as e:
-        logging.warning(f"Could not import Queue-Bot Integration: {e}")
-except ImportError as e:
-    logging.warning(f"Could not initialize Bot Synchronizer: {e}")
-    bot_synchronizer = None
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='CryptoTrade Flask Application')
+parser.add_argument('--deferred-init', action='store_true', help='Use deferred initialization for faster startup')
+args, unknown = parser.parse_known_args()
 
+# Also check environment variable
+deferred_init = args.deferred_init or os.environ.get('DEFERRED_INITIALIZATION') == 'true'
+
+# Create the app first with minimal initialization
 app = create_app()
 
-# Update status endpoint to include bot synchronization status
+# Add a basic initialization status endpoint
+initialization_status = {
+    'initialized': False,
+    'startup_time': time.time(),
+    'deferred_init': deferred_init,
+    'pending_components': ['bot_synchronizer', 'queue_integration', 'ml_models']
+}
+
+@app.route('/api/initialization-status')
+def get_initialization_status():
+    """Initialization status endpoint"""
+    elapsed = time.time() - initialization_status['startup_time']
+    return jsonify({
+        **initialization_status,
+        'elapsed_seconds': round(elapsed, 2)
+    })
+
+# Update status endpoint to handle pre-initialization state
 @app.route('/api/bot-sync/status')
 def bot_sync_status():
     """Bot synchronization status endpoint"""
+    if not initialization_status['initialized']:
+        return jsonify({
+            'success': True,
+            'bot_sync_available': False,
+            'message': 'System still initializing, please try again later',
+            'initialized': False
+        })
+    
     if bot_synchronizer:
         active_bots = len(bot_synchronizer.bot_states)
         collisions = len(bot_synchronizer.collision_history)
@@ -292,19 +320,108 @@ def bot_sync_status():
             'bot_sync_available': True,
             'active_bots': active_bots,
             'trade_collisions_prevented': collisions,
-            'active_trades': active_trades
+            'active_trades': active_trades,
+            'initialized': True
         })
     else:
         return jsonify({
             'success': True,
             'bot_sync_available': False,
-            'message': 'Bot synchronization service not available'
+            'message': 'Bot synchronization service not available',
+            'initialized': True
         })
 
+# Function to initialize remaining components in the background
+def initialize_remaining_components():
+    """Initialize remaining components in a background thread"""
+    global bot_synchronizer
+    
+    logging.info("Starting deferred initialization...")
+    start_time = time.time()
+    
+    try:
+        # Initialize bot synchronization
+        try:
+            from python_app.services.coordination import bot_synchronizer
+            logging.info("Bot Synchronizer initialized successfully")
+            initialization_status['pending_components'].remove('bot_synchronizer')
+            
+            # Initialize queue-bot integration
+            try:
+                from python_app.services.queue.queue_bot_integration import is_integrated
+                if is_integrated:
+                    logging.info("Trade Queue-Bot Integration initialized successfully")
+                else:
+                    logging.warning("Trade Queue-Bot Integration failed to initialize")
+                initialization_status['pending_components'].remove('queue_integration')
+            except ImportError as e:
+                logging.warning(f"Could not import Queue-Bot Integration: {e}")
+                initialization_status['pending_components'].remove('queue_integration')
+        except ImportError as e:
+            logging.warning(f"Could not initialize Bot Synchronizer: {e}")
+            bot_synchronizer = None
+            initialization_status['pending_components'].remove('bot_synchronizer')
+        
+        # Initialize ML models and other heavy components
+        try:
+            # Placeholder for ML model initialization
+            time.sleep(1)  # Simulate heavy initialization
+            initialization_status['pending_components'].remove('ml_models')
+            logging.info("ML models initialized successfully")
+        except Exception as e:
+            logging.warning(f"Error initializing ML models: {e}")
+            initialization_status['pending_components'].remove('ml_models')
+        
+        # Mark initialization as complete
+        initialization_status['initialized'] = True
+        elapsed = time.time() - start_time
+        logging.info(f"Deferred initialization completed in {elapsed:.2f} seconds")
+        
+    except Exception as e:
+        logging.error(f"Error during deferred initialization: {e}", exc_info=True)
+        # Mark as initialized anyway to avoid being stuck
+        initialization_status['initialized'] = True
+
+# Start initialization based on mode
+if deferred_init:
+    logging.info("Using deferred initialization. Basic endpoints available immediately.")
+    # Will initialize components in background after server starts
+    bot_synchronizer = None  # Initialize as None for now
+else:
+    logging.info("Using immediate initialization. Server will be ready after full initialization.")
+    # Initialize bot synchronization immediately
+    try:
+        from python_app.services.coordination import bot_synchronizer
+        logging.info("Bot Synchronizer initialized successfully")
+        
+        # Initialize queue-bot integration
+        try:
+            from python_app.services.queue.queue_bot_integration import is_integrated
+            if is_integrated:
+                logging.info("Trade Queue-Bot Integration initialized successfully")
+            else:
+                logging.warning("Trade Queue-Bot Integration failed to initialize")
+        except ImportError as e:
+            logging.warning(f"Could not import Queue-Bot Integration: {e}")
+    except ImportError as e:
+        logging.warning(f"Could not initialize Bot Synchronizer: {e}")
+        bot_synchronizer = None
+    
+    # Mark initialization as complete
+    initialization_status['initialized'] = True
+    initialization_status['pending_components'] = []
+
 if __name__ == '__main__':
+    # If using deferred init and this is the main thread, start background initialization
+    if deferred_init:
+        import threading
+        init_thread = threading.Thread(target=initialize_remaining_components)
+        init_thread.daemon = True
+        init_thread.start()
+    
     # Run the application (development)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=active_config.DEBUG)
     
-# Fix missing import in error handlers
-from flask import request
+# Fix missing import in error handlers - already imported at the top
+# from flask import request

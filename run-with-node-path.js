@@ -4,81 +4,69 @@
  */
 
 import { spawn } from 'child_process';
-import { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { config } from 'dotenv';
+import { dirname, resolve } from 'path';
 import fs from 'fs';
-import path from 'path';
+import dotenv from 'dotenv';
 
-// Load environment variables from .env file
-config();
+// Load environment variables
+dotenv.config();
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+// Determine whether to use optimized startup
+const USE_OPTIMIZED = true;
 
-console.log('Starting server with custom Node.js path...');
-console.log('Loading environment variables...');
+// Get current directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-// Set the PATH environment variable to include the correct Node.js path
-process.env.PATH = '/nix/store/hdq16s6vq9smhmcyl4ipmwfp9f2558rc-nodejs-20.10.0/bin:' + process.env.PATH;
+// Get Node.js path (required for correct module resolution)
+const nodePath = process.execPath;
 
-// Verify MongoDB URI is available
-if (!process.env.MONGO_URI && !process.env.MONGODB_URI) {
-  console.log('MongoDB URI not found in environment. Reading from .env file directly...');
-  try {
-    const envPath = path.join(__dirname, '.env');
-    const envContent = fs.readFileSync(envPath, 'utf8');
-    const mongoUriMatch = envContent.match(/MONGO_URI=(.+)/);
-    if (mongoUriMatch && mongoUriMatch[1]) {
-      process.env.MONGO_URI = mongoUriMatch[1].trim();
-      console.log('Successfully loaded MONGO_URI from .env file');
-    } else {
-      console.error('Could not find MONGO_URI in .env file');
-    }
-  } catch (err) {
-    console.error('Error reading .env file:', err);
-  }
-}
+// Prepare command arguments
+const scriptToRun = USE_OPTIMIZED 
+  ? resolve(__dirname, 'server', 'optimized-startup.ts')
+  : resolve(__dirname, 'server', 'index.ts');
 
-// Verify DATABASE_URL is available
-if (!process.env.DATABASE_URL) {
-  console.log('DATABASE_URL not found in environment. Reading from .env file directly...');
-  try {
-    const envPath = path.join(__dirname, '.env');
-    const envContent = fs.readFileSync(envPath, 'utf8');
-    const databaseUrlMatch = envContent.match(/DATABASE_URL=(.+)/);
-    if (databaseUrlMatch && databaseUrlMatch[1]) {
-      process.env.DATABASE_URL = databaseUrlMatch[1].trim();
-      console.log('Successfully loaded DATABASE_URL from .env file');
-    } else {
-      console.error('Could not find DATABASE_URL in .env file');
-    }
-  } catch (err) {
-    console.error('Error reading .env file:', err);
-  }
-}
+// Use tsx to run TypeScript file
+const tsxPath = resolve(__dirname, 'node_modules', '.bin', 'tsx');
 
-// Try to construct DATABASE_URL from PostgreSQL environment variables if not available
-if (!process.env.DATABASE_URL && process.env.PGHOST && process.env.PGPORT && process.env.PGUSER && process.env.PGPASSWORD && process.env.PGDATABASE) {
-  process.env.DATABASE_URL = `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}`;
-  console.log('Constructed DATABASE_URL from PostgreSQL environment variables');
-}
+console.log(`Starting server with optimized=${USE_OPTIMIZED}...`);
+console.log(`Node.js path: ${nodePath}`);
+console.log(`Script to run: ${scriptToRun}`);
 
-// Log environment variables (without showing secret values)
-console.log('Environment variables available:');
-const envKeys = Object.keys(process.env).sort();
-console.log(envKeys.join(', '));
-
-// Run the dev command which is "tsx server/index.ts"
-const server = spawn('npm', ['run', 'dev'], {
+// Spawn the server process
+const serverProcess = spawn(tsxPath, [scriptToRun], {
   stdio: 'inherit',
-  shell: true,
-  env: process.env
+  env: {
+    ...process.env,
+    NODE_PATH: resolve(__dirname, 'node_modules')
+  }
 });
 
-server.on('error', (err) => {
-  console.error('Failed to start server:', err);
-});
-
-server.on('close', (code) => {
+// Handle process events
+serverProcess.on('close', (code) => {
   console.log(`Server process exited with code ${code}`);
+  process.exit(code || 0);
+});
+
+serverProcess.on('error', (err) => {
+  console.error('Failed to start server process:', err);
+  process.exit(1);
+});
+
+// Save the process ID to a file for potential cleanup later
+fs.writeFileSync(
+  resolve(__dirname, USE_OPTIMIZED ? 'optimized-server.pid' : 'server.pid'), 
+  String(serverProcess.pid)
+);
+
+// Handle termination signals
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down server...');
+  serverProcess.kill('SIGINT');
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down server...');
+  serverProcess.kill('SIGTERM');
 });
