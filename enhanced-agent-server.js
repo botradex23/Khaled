@@ -211,10 +211,7 @@ async function handleRequest(req, res) {
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error validating OpenAI key:', error);
-      sendJsonResponse(res, {
-        success: false,
-        message: 'OpenAI API key validation failed',
+      console.error('Error validating OpenAI key: process.env.KEY || ""OpenAI API key validation failed',
         error: error.message,
         timestamp: new Date().toISOString()
       });

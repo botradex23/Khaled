@@ -1,0 +1,171 @@
+{
+  "fixAttempts": 30,
+  "successfulFixes": 4,
+  "skippedFiles": 21,
+  "errorFiles": 0,
+  "flaggedForReview": 5,
+  "issueResults": {
+    "Hardcoded credentials": [
+      {
+        "file": "agent-terminal-server.js",
+        "status": "fixed",
+        "reason": "Fixed Hardcoded credentials"
+      },
+      {
+        "file": "server/storage.ts",
+        "status": "fixed",
+        "reason": "Fixed Hardcoded credentials"
+      },
+      {
+        "file": "enhanced-agent-server.js",
+        "status": "fixed",
+        "reason": "Fixed Hardcoded credentials"
+      },
+      {
+        "file": "client/src/@components/ui/market-prices-table.tsx",
+        "status": "fixed",
+        "reason": "Fixed Hardcoded credentials"
+      },
+      {
+        "file": "client/src/components/ui/market-prices-table.tsx",
+        "status": "skipped",
+        "reason": "No matching patterns found"
+      }
+    ],
+    "Logging sensitive information": [
+      {
+        "file": "agent-terminal-server.js",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "server/storage.ts",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "binance-test.js",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "client/src/pages/dashboard-with-sidebar.tsx",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "src/pages/dashboard-with-sidebar.tsx",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      }
+    ],
+    "Only logging errors without handling": [
+      {
+        "file": "agent-file-listing.js",
+        "status": "flagged",
+        "reason": "Needs manual review"
+      },
+      {
+        "file": "agent-enhanced-examples.js",
+        "status": "flagged",
+        "reason": "Needs manual review"
+      },
+      {
+        "file": "agent-terminal-server.js",
+        "status": "flagged",
+        "reason": "Needs manual review"
+      },
+      {
+        "file": "stop-agent-server.js",
+        "status": "flagged",
+        "reason": "Needs manual review"
+      },
+      {
+        "file": "test-agent-fs-capabilities.js",
+        "status": "flagged",
+        "reason": "Needs manual review"
+      }
+    ],
+    "WebSocket connection": [
+      {
+        "file": "server/api/binance/marketPriceService.ts",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "server/api/binance/binanceSdkService.ts",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "temp/improvedMarketPriceService.ts",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "server/api/binance/websocketService.ts",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "check_websocket_proxies.js",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      }
+    ],
+    "Hardcoded timeout": [
+      {
+        "file": "run-enhanced-agent.js",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "server/api/okx/okxBroker.ts",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "replit-server.js",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "client/src/pages/register.tsx",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "src/pages/register.tsx",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      }
+    ],
+    "Rethrowing errors without processing": [
+      {
+        "file": "migrate_ml_tables.js",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "client/src/pages/api-keys.tsx",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "src/pages/api-keys.tsx",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "server/api/binance/binanceSdkService.ts",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      },
+      {
+        "file": "client/src/@lib/direct-binance-api.ts",
+        "status": "skipped",
+        "reason": "No fix strategy available"
+      }
+    ]
+  }
+}
