@@ -137,9 +137,39 @@ async function getChatCompletion(prompt, systemPrompt = 'You are a helpful AI as
   try {
     logInfo(`Making chat completion request with prompt: ${prompt.substring(0, 50)}...`);
     
-    // Set a timeout for the OpenAI request
+    // Enhance system prompt with domain-specific knowledge if not already provided
+    let enhancedSystemPrompt = systemPrompt;
+    
+    // If no custom system prompt is provided, use an enhanced one for the trading platform
+    if (systemPrompt === 'You are a helpful AI assistant.') {
+      enhancedSystemPrompt = `You are an expert cryptocurrency trading assistant for the Tradeliy platform.
+      
+You specialize in:
+1. Cryptocurrency trading strategies and market analysis
+2. Technical indicators and chart patterns
+3. Machine learning models for price prediction
+4. Trading automation and bot configuration
+5. Crypto exchange APIs and integration
+6. Risk management and portfolio optimization
+7. Market data analysis and visualization
+8. Binance and OKX exchange features
+
+Tradeliy platform features:
+- Advanced AI-driven price prediction models using XGBoost and neural networks
+- Dual-broker architecture supporting Binance (primary) and OKX (fallback)
+- Paper trading capabilities for strategy testing
+- Automated trading bots with customizable parameters
+- Real-time market data visualization
+- Machine learning model performance tracking
+- User permission management system
+- Multi-currency support with comprehensive internationalization
+
+Always provide accurate, helpful information about cryptocurrency trading and the Tradeliy platform features.`;
+    }
+    
+    // Set a timeout for the OpenAI request (extended to 30 seconds for more complex responses)
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('OpenAI API request timed out after 10 seconds')), 10000);
+      setTimeout(() => reject(new Error('OpenAI API request timed out after 30 seconds')), 30000);
     });
     
     // Create the actual API request
@@ -148,7 +178,7 @@ async function getChatCompletion(prompt, systemPrompt = 'You are a helpful AI as
       messages: [
         {
           role: "system",
-          content: systemPrompt
+          content: enhancedSystemPrompt
         },
         {
           role: "user",
@@ -156,7 +186,7 @@ async function getChatCompletion(prompt, systemPrompt = 'You are a helpful AI as
         }
       ],
       temperature: 0.7,
-      max_tokens: 500
+      max_tokens: 800 // Increased token limit for more comprehensive responses
     });
     
     // Race between the timeout and the API request
@@ -183,20 +213,56 @@ async function getChatCompletion(prompt, systemPrompt = 'You are a helpful AI as
  */
 async function executeAgentTask(prompt, systemPrompt) {
   try {
+    // If no custom system prompt is provided, use a specialized one for the platform
+    const defaultSystemPrompt = `You are an expert cryptocurrency trading assistant and system agent for the Tradeliy platform.
+
+You specialize in:
+1. Cryptocurrency trading strategies and market analysis
+2. Technical indicators and chart patterns
+3. Machine learning models for price prediction
+4. Trading automation and bot configuration
+5. Crypto exchange APIs and integration
+6. Risk management and portfolio optimization
+7. Market data analysis and visualization
+8. System administration and debugging
+
+Tradeliy platform features:
+- Advanced AI-driven price prediction models using XGBoost and neural networks
+- Dual-broker architecture supporting Binance (primary) and OKX (fallback)
+- Paper trading capabilities for strategy testing
+- Automated trading bots with customizable parameters
+- Real-time market data visualization
+- Machine learning model performance tracking
+- User permission management system
+- Multi-currency support with comprehensive internationalization
+
+Always provide accurate, helpful information about cryptocurrency trading and the Tradeliy platform's features and systems.`;
+
+    // Use the provided system prompt or our default if none was provided
+    const baseSystemPrompt = systemPrompt || defaultSystemPrompt;
+    
     if (!fileUtils) {
       // If file utils not available, just do a regular chat completion
-      return await getChatCompletion(prompt, systemPrompt);
+      return await getChatCompletion(prompt, baseSystemPrompt);
     }
     
     // Enhanced system prompt that mentions file operation capabilities
-    const enhancedSystemPrompt = `${systemPrompt}
-You have access to the file system. You can perform the following operations:
-- Read files
-- List files in directories
-- Find files containing specific text
-- Search for files by patterns
+    const enhancedSystemPrompt = `${baseSystemPrompt}
 
-When referring to files, please use relative paths or provide clear file names.`;
+You have access to the file system. You can perform the following operations:
+- Read files using readFile(path)
+- List files in directories using listFiles(directory)
+- List files recursively using listFilesRecursive(directory, options)
+- Find files containing specific text using findFilesContainingText(text, options)
+
+When referring to files, use relative paths from the project root or provide clear file names.
+To examine code, first search for relevant files that might contain the information you need.
+Key directories:
+- /server - Server-side code including API routes and services
+- /client - Frontend React application
+- /shared - Shared code and schemas used by both client and server
+- /ml_models - Machine learning model definitions and utilities
+- /python_app - Python-based ML prediction and data processing systems`;
     
     // Get initial chat completion
     const completion = await getChatCompletion(prompt, enhancedSystemPrompt);
@@ -206,8 +272,8 @@ When referring to files, please use relative paths or provide clear file names.`
     }
     
     // Process file operations if needed in a follow-up step
-    // This is just a placeholder - a real implementation would parse the completion
-    // for file operation requests and execute them
+    // TODO: In a future implementation, we would parse the response for file operation
+    // requests and execute them automatically, then generate a follow-up response
     
     return completion;
   } catch (error) {

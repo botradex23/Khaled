@@ -22,6 +22,11 @@ async function proxyToAgentServer(req: express.Request, res: express.Response, e
     const targetUrl = `${AGENT_SERVER_URL}/agent-api${endpoint}`;
     log(`Proxying request to ${targetUrl}`);
     
+    // Add detailed logging for debugging
+    if (['POST', 'PUT'].includes(req.method) && req.body) {
+      log(`Request body: ${JSON.stringify(req.body)}`, 'INFO');
+    }
+    
     // Prepare request options
     const options: any = {
       method: req.method,
@@ -36,8 +41,26 @@ async function proxyToAgentServer(req: express.Request, res: express.Response, e
     }
     
     // Forward request to agent server
+    log(`Sending ${req.method} request to ${targetUrl}`, 'INFO');
     const response = await fetch(targetUrl, options);
-    const data = await response.json();
+    
+    // Log response status
+    log(`Got response with status ${response.status}`, 'INFO');
+    
+    // Try to parse the response as JSON
+    let data;
+    try {
+      const text = await response.text();
+      log(`Response text: ${text.substring(0, 200)}${text.length > 200 ? '...' : ''}`, 'INFO');
+      data = text ? JSON.parse(text) : {};
+    } catch (parseError: any) {
+      log(`Error parsing JSON response: ${parseError.message}`, 'ERROR');
+      return res.status(500).json({
+        success: false,
+        message: 'Error parsing response from agent server',
+        error: parseError.message
+      });
+    }
     
     // Return response from agent server
     return res.status(response.status).json(data);
