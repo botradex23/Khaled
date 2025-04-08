@@ -9,7 +9,7 @@ module.exports = {
       max_restarts: 10,
       env: {
         NODE_ENV: 'production',
-        AGENT_PORT: 5021
+        AGENT_PORT: 3021
       },
       time: true,
       error_file: 'logs/agent-server-error.log',

@@ -19,6 +19,7 @@ import userTradingRouter from './api/user-trading';
 import authRoutes from './routes/auth-routes';
 import { setupAuth } from './auth';
 import http from 'http';
+import { initializeAgentProxy } from './agent-proxy';
 
 // Setup __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -88,7 +89,7 @@ const startViteServer = async () => {
     
     // Start the server
     const PORT = process.env.PORT || 5000;
-    server.listen(PORT, '0.0.0.0', () => {
+    server.listen(Number(PORT), '0.0.0.0', () => {
       log(`Server is running on 0.0.0.0:${PORT}`);
       
       // Wait a few seconds before initializing heavy systems
@@ -103,6 +104,30 @@ const startViteServer = async () => {
             log(`Global system initialization error: ${err.message}`);
             log('Server will continue running with limited functionality');
           });
+          
+          // Initialize agent integration
+          try {
+            // Initialize the agent proxy to the standalone server
+            log('Initializing OpenAI Agent proxy...');
+            initializeAgentProxy(app, 3021);
+            log('OpenAI Agent proxy initialized successfully');
+            
+            // Legacy agent integration attempt
+            try {
+              // Using any type to avoid TS errors with dynamic import
+              const agentIntegration = await import('./agent-integration.js') as any;
+              log('Initializing legacy OpenAI Agent integration...');
+              
+              await agentIntegration.initializeAgentIntegration(app);
+              log('Legacy OpenAI Agent integration initialized successfully');
+            } catch (legacyErr: any) {
+              log(`Legacy OpenAI Agent integration not available: ${legacyErr.message}`);
+              log('Using standalone agent server only');
+            }
+          } catch (agentErr: any) {
+            log(`OpenAI Agent integration error: ${agentErr.message}`);
+            log('Server will continue running without agent functionality');
+          }
         } catch (err: any) {
           log(`Error during delayed initialization: ${err.message}`);
         }

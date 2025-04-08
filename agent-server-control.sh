@@ -5,7 +5,7 @@
 
 # Configuration
 AGENT_SERVER_FILE="agent-terminal-server.js"
-AGENT_SERVER_PORT=5021  # Using a higher port to avoid conflicts with other services
+AGENT_SERVER_PORT=3021  # Changed to port 3021 to avoid potential conflicts
 AGENT_SERVER_LOG="logs/agent-server.log"
 AGENT_SERVER_PID="agent-terminal-server.pid"
 

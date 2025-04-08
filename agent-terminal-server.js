@@ -42,8 +42,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Configuration
-const PORT = process.env.AGENT_PORT || 3021; // Changed to port 3021 to avoid potential conflicts
+const PORT = process.env.AGENT_PORT || 5000; // Use the same port as the main app but with different route
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const AGENT_API_BASE = '/agent-api'; // Base path for agent API endpoints
 
 // Enhanced logging for debugging
 function logInfo(message) {
@@ -336,8 +337,14 @@ async function handleRequest(req, res) {
     return;
   }
   
+  // Check if the path starts with our API base
+  const isAgentApi = url.pathname.startsWith(AGENT_API_BASE);
+  const apiPath = isAgentApi ? url.pathname.substring(AGENT_API_BASE.length) : url.pathname;
+  
+  // For backward compatibility, also allow the original paths
+  
   // Health check endpoint - useful for verifying the server is running
-  if (method === 'GET' && url.pathname === '/health') {
+  if (method === 'GET' && (apiPath === '/health' || url.pathname === '/health')) {
     sendJsonResponse(res, { 
       status: 'ok', 
       server: 'Agent Terminal Server',
@@ -347,7 +354,7 @@ async function handleRequest(req, res) {
   }
   
   // Verify OpenAI API key
-  if (method === 'GET' && url.pathname === '/verify-openai-key') {
+  if (method === 'GET' && (apiPath === '/verify-openai-key' || url.pathname === '/verify-openai-key')) {
     try {
       if (!OPENAI_API_KEY) {
         sendJsonResponse(res, {
