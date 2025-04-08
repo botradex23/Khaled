@@ -1,5 +1,6 @@
 { pkgs }: {
   deps = [
+    pkgs.iproute2
     pkgs.pm2
     pkgs.unzip
     pkgs.zip

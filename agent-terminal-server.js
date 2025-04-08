@@ -42,7 +42,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Configuration
-const PORT = process.env.AGENT_PORT || 5021; // Using port 5021 to avoid conflicts with other services
+const PORT = process.env.AGENT_PORT || 3021; // Changed to port 3021 to avoid potential conflicts
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 // Enhanced logging for debugging
@@ -1021,6 +1021,21 @@ server.on('error', (error) => {
 });
 
 // In Replit environment, listen on 0.0.0.0 to make the server accessible
+// Adding debug log before starting server
+logInfo(`Attempting to bind agent server to 0.0.0.0:${PORT}`);
+
+// Add error handling for the server
+server.on('error', (err) => {
+  logError(`Server failed to start: ${err.message}`, err);
+  if (err.code === 'EADDRINUSE') {
+    logError(`Port ${PORT} is already in use. Please try a different port.`);
+  } else if (err.code === 'EACCES') {
+    logError(`Permission denied to bind to port ${PORT}. Try using a port > 1024.`);
+  }
+  // Exit with error
+  process.exit(1);
+});
+
 server.listen(PORT, '0.0.0.0', () => {
   logInfo(`\n====================================================`);
   logInfo(`🤖 Agent Terminal Server running on port ${PORT}`);
