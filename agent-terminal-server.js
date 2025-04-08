@@ -41,8 +41,38 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Configuration
-const PORT = process.env.AGENT_PORT || 5002;
+const PORT = process.env.AGENT_PORT || 5021; // Using port 5021 to avoid conflicts with other services
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+// Enhanced logging for debugging
+function logInfo(message) {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [INFO] ${message}`);
+}
+
+function logError(message, error) {
+  const timestamp = new Date().toISOString();
+  console.error(`[${timestamp}] [ERROR] ${message}`, error);
+}
+
+// Helper function to save the PID
+function savePidToFile() {
+  try {
+    fs.writeFileSync('agent-terminal-server.pid', process.pid.toString());
+    logInfo(`PID ${process.pid} saved to file`);
+  } catch (error) {
+    logError('Failed to save PID to file', error);
+  }
+}
+
+// Log startup information
+logInfo(`Starting agent-terminal-server with NODE_ENV=${process.env.NODE_ENV}`);
+logInfo(`Server will listen on port ${PORT}`);
+if (OPENAI_API_KEY) {
+  logInfo('OPENAI_API_KEY is configured');
+} else {
+  logError('OPENAI_API_KEY is not configured. Many endpoints will not work.');
+}
 
 // Helper function to read the request body as JSON
 function readRequestBody(req) {
@@ -981,12 +1011,32 @@ async function handleRequest(req, res) {
 // Create and start the server
 const server = http.createServer(handleRequest);
 
+// Add error handling for the server
+server.on('error', (error) => {
+  logError(`Server error: ${error.message}`, error);
+  
+  // Check if the port is already in use
+  if (error.code === 'EADDRINUSE') {
+    logError(`Port ${PORT} is already in use. Trying to recover...`, null);
+    
+    // Try again with a different port after a small delay
+    setTimeout(() => {
+      logInfo(`Attempting to restart on port ${PORT+1}`);
+      server.listen(PORT+1, '0.0.0.0');
+    }, 1000);
+  }
+});
+
 // In Replit environment, listen on 0.0.0.0 to make the server accessible
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n====================================================`);
-  console.log(`🤖 Agent Terminal Server running on port ${PORT}`);
-  console.log(`====================================================`);
-  console.log(`\nAvailable endpoints:`);
+  logInfo(`\n====================================================`);
+  logInfo(`🤖 Agent Terminal Server running on port ${PORT}`);
+  logInfo(`====================================================`);
+  
+  // Save the PID to the file
+  savePidToFile();
+  
+  logInfo(`\nAvailable endpoints:`);
   console.log(`  GET  /health - Check if server is running`);
   console.log(`  GET  /verify-openai-key - Verify OpenAI API key`);
   console.log(`  GET  /read-file?path=<filepath> - Read a file (curl friendly)`);

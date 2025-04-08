@@ -1,5 +1,6 @@
 { pkgs }: {
   deps = [
+    pkgs.pm2
     pkgs.unzip
     pkgs.zip
     pkgs.nodejs_20

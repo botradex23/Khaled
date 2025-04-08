@@ -1,0 +1,19 @@
+[Unit]
+Description=AI Agent Terminal Server
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/tradeliy
+ExecStart=/usr/bin/node /opt/tradeliy/agent-terminal-server.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=agent-server
+Environment=NODE_ENV=production
+Environment=PORT=5002
+
+[Install]
+WantedBy=multi-user.target
