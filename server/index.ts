@@ -41,6 +41,19 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+// Middleware to parse JSON and URL-encoded request bodies - ensure these run BEFORE auth
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Add middleware to debug body parsing
+app.use((req, res, next) => {
+  if (req.method === 'POST' && req.body === undefined) {
+    console.warn('⚠️ Warning: Request body is empty for POST request to:', req.originalUrl);
+    console.warn('Request headers:', req.headers);
+  }
+  next();
+});
+
 // Configure session middleware
 app.use(
   session({
@@ -56,10 +69,6 @@ app.use(
 
 // Setup authentication with passport
 setupAuth(app);
-
-// Middleware to parse JSON and URL-encoded request bodies
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // New API routes for the global market (no auth required)
 app.use('/api/global-market', globalMarketRouter);
@@ -79,8 +88,8 @@ const startViteServer = async () => {
     
     // Start the server
     const PORT = process.env.PORT || 5000;
-    server.listen(PORT, () => {
-      log(`Server is running on port ${PORT}`);
+    server.listen(PORT, '0.0.0.0', () => {
+      log(`Server is running on 0.0.0.0:${PORT}`);
       
       // Wait a few seconds before initializing heavy systems
       setTimeout(async () => {

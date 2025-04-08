@@ -1,0 +1,15 @@
+{
+  "id": "BNBUSDT_1d",
+  "symbol": "BNBUSDT",
+  "timeframe": "1d",
+  "lastTrainingTime": 1744113430893,
+  "accuracy": 0.7713474325425693,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

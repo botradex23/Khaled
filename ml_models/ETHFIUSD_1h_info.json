@@ -1,0 +1,15 @@
+{
+  "id": "ETHFIUSD_1h",
+  "symbol": "ETHFIUSD",
+  "timeframe": "1h",
+  "lastTrainingTime": 1744113388712,
+  "accuracy": 0.6146679667224937,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

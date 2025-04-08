@@ -1,0 +1,15 @@
+{
+  "id": "STETHUSDT_4h",
+  "symbol": "STETHUSDT",
+  "timeframe": "4h",
+  "lastTrainingTime": 1744113488845,
+  "accuracy": 0.7978264509120742,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

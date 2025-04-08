@@ -1,0 +1,15 @@
+{
+  "id": "SOLUSD_1d",
+  "symbol": "SOLUSD",
+  "timeframe": "1d",
+  "lastTrainingTime": 1744113525738,
+  "accuracy": 0.6711038558003071,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

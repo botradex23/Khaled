@@ -458,7 +458,8 @@ function registerAuthRoutes(app: Express) {
 
   // Local authentication routes
   app.post('/api/auth/login', (req: Request, res: Response, next: NextFunction) => {
-    console.log('Login attempt received for email:', req.body.email);
+    // Safely log email if it exists
+    console.log('Login attempt received for email:', req.body?.email || 'unknown');
     
     // Add additional security logging
     console.log('Login request headers:', {
@@ -467,6 +468,11 @@ function registerAuthRoutes(app: Express) {
       referer: req.headers.referer,
       userAgent: req.headers['user-agent']
     });
+    
+    // Check if body exists
+    if (!req.body) {
+      return res.status(400).json({ success: false, message: 'Missing request body' });
+    }
     
     passport.authenticate('local', (err: Error | null, user: any, info: any) => {
       if (err) {
@@ -629,7 +635,12 @@ function registerAuthRoutes(app: Express) {
   
   // Endpoint to login as admin (temporary approach until proper UI is built)
   app.post('/api/auth/login-as-admin', (req: Request, res: Response, next: NextFunction) => {
-    const { email, password } = req.body;
+    // Check if body exists before destructuring
+    if (!req.body) {
+      return res.status(400).json({ success: false, message: 'Missing request body' });
+    }
+    
+    const { email, password } = req.body || {};
     
     // Check if using default admin credentials when no email/password provided
     if (!email && !password) {

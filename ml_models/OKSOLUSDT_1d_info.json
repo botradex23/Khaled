@@ -1,0 +1,15 @@
+{
+  "id": "OKSOLUSDT_1d",
+  "symbol": "OKSOLUSDT",
+  "timeframe": "1d",
+  "lastTrainingTime": 1744113557384,
+  "accuracy": 0.7380334724986967,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

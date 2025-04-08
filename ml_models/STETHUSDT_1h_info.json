@@ -1,0 +1,15 @@
+{
+  "id": "STETHUSDT_1h",
+  "symbol": "STETHUSDT",
+  "timeframe": "1h",
+  "lastTrainingTime": 1744113483583,
+  "accuracy": 0.7343073959215053,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

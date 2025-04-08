@@ -1,0 +1,15 @@
+{
+  "id": "SOLUSDC_1h",
+  "symbol": "SOLUSDC",
+  "timeframe": "1h",
+  "lastTrainingTime": 1744113404565,
+  "accuracy": 0.6835646254476987,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

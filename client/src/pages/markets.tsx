@@ -52,16 +52,18 @@ import {
 interface MarketResponse {
   success: boolean;
   source: string;
-  timestamp: string;
-  count: number;
+  timestamp: string | number;
+  count?: number;
   data: MarketData[];
 }
 
 interface MarketData {
   symbol: string;
   price: number;
-  source: string;
-  timestamp: string;
+  exchange: string;
+  timestamp: string | number;
+  volume24h: number;
+  change24h: number;
 }
 
 interface FormattedMarketData {
@@ -144,15 +146,15 @@ export default function Markets() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCoin, setSelectedCoin] = useState<string | null>(null);
   
-  // Fetch market data from multi-broker service that provides automatic fallback
+  // Fetch market data from global market API (no API keys required)
   const { data: marketsData, isLoading, error, refetch } = useQuery<MarketResponse>({
-    queryKey: ["/api/market-broker/markets"],
-    refetchInterval: 30000 // refresh every 30 seconds
+    queryKey: ["/api/global-market/prices"],
+    refetchInterval: 15000 // refresh every 15 seconds
   });
   
   // Fetch market overview with trending coins
   const { data: marketOverview, isLoading: isOverviewLoading } = useQuery<MarketOverviewResponse>({
-    queryKey: ["/api/market-broker/markets"],
+    queryKey: ["/api/global-market/status"],
     refetchInterval: 60000 // refresh every minute
   });
   
@@ -163,18 +165,27 @@ export default function Markets() {
   const markets = sourceData.length > 0
     ? sourceData.map((market: MarketData): FormattedMarketData => {
         // Extract base symbol (BTC from BTCUSDT)
-        const symbol = market.symbol.endsWith('USDT') 
-          ? market.symbol.slice(0, -4) 
-          : market.symbol;
+        let baseSymbol = '';
+        if (market.symbol.endsWith('USDT')) {
+          baseSymbol = market.symbol.slice(0, -4);
+        } else if (market.symbol.endsWith('USDC')) {
+          baseSymbol = market.symbol.slice(0, -4);
+        } else if (market.symbol.endsWith('BUSD')) {
+          baseSymbol = market.symbol.slice(0, -4);
+        } else if (market.symbol.endsWith('USD')) {
+          baseSymbol = market.symbol.slice(0, -3);
+        } else {
+          baseSymbol = market.symbol;
+        }
           
         return {
           symbol: market.symbol,
-          baseSymbol: symbol,
-          name: coinNames[symbol] || symbol,
+          baseSymbol: baseSymbol,
+          name: coinNames[baseSymbol] || baseSymbol,
           price: market.price,
-          change24h: 0, // Will be replaced with real data in future
-          marketCap: (marketCapEstimates[symbol] || 1) * 1_000_000_000,
-          source: market.source || 'binance'
+          change24h: market.change24h || 0, // Use actual change data from API if available
+          marketCap: (marketCapEstimates[baseSymbol] || 1) * 1_000_000_000,
+          source: market.exchange || 'okx' // Use exchange from API if available
         };
       }) 
     : [];

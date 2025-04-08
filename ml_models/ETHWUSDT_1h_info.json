@@ -1,0 +1,15 @@
+{
+  "id": "ETHWUSDT_1h",
+  "symbol": "ETHWUSDT",
+  "timeframe": "1h",
+  "lastTrainingTime": 1744113530994,
+  "accuracy": 0.6639590942300119,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

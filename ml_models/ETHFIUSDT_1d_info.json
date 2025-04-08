@@ -1,0 +1,15 @@
+{
+  "id": "ETHFIUSDT_1d",
+  "symbol": "ETHFIUSDT",
+  "timeframe": "1d",
+  "lastTrainingTime": 1744113446729,
+  "accuracy": 0.635377707569992,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}
