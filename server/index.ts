@@ -17,6 +17,7 @@ import { log, setupVite } from './vite';
 import globalMarketRouter from './api/global-market';
 import userTradingRouter from './api/user-trading';
 import authRoutes from './routes/auth-routes';
+import agentRoutes from './routes/agent-routes';
 import { setupAuth } from './auth';
 import http from 'http';
 import { initializeAgentProxy } from './agent-proxy';
