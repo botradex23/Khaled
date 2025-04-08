@@ -71,7 +71,7 @@ Here are some examples of what you can ask the agent to do:
 
 - "Fix the API connection error in the Binance service"
 - "Debug the server timeout issue in the startup process"
-- "Optimize the database query that's causing slowdowns"
+- "Optimize the database query that is causing slowdowns"
 - "Resolve the permission issues in the admin dashboard"
 
 ## Running the Agent Server
@@ -128,3 +128,83 @@ If you encounter issues with the agent:
 3. Ensure you're using the correct authentication header
 4. Restart the agent server if it becomes unresponsive
 5. Check the server logs for detailed error messages
+
+## Enhanced Autonomous Features
+
+The agent now has several new enhanced autonomous capabilities that make it even more powerful as a central controller for your project:
+
+### Autonomous File Modification
+
+The agent can now intelligently modify files without requiring exact instructions:
+
+- **Automatic File Analysis**: The agent can analyze any file in the project to understand its structure, purpose, and relationships with other files.
+
+- **Smart Code Modification**: Using the `modifyFile` action, the agent can take a high-level instruction and intelligently modify an existing file while preserving its structure and style.
+
+- **Bug Detection and Fixing**: The `analyzeAndFix` feature allows the agent to automatically identify and fix issues in code, improving quality without requiring explicit instructions.
+
+- **Context-Aware Generation**: When generating new files, the agent analyzes related files to ensure consistent style, naming conventions and architecture.
+
+### Example Usage of Advanced Features
+
+#### Modifying an Existing File
+
+```javascript
+// Modify an existing file with intelligent context awareness
+fetch('http://localhost:5002/agent-file-operation', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Test-Admin': 'true'
+  },
+  body: JSON.stringify({
+    action: 'modifyFile',
+    filePath: './server/routes.js',
+    prompt: 'Add a new route to handle user preferences. It should allow users to get and update their notification settings.'
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+#### Analyzing and Fixing a File
+
+```javascript
+// Automatically find and fix issues in a file
+fetch('http://localhost:5002/agent-file-operation', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Test-Admin': 'true'
+  },
+  body: JSON.stringify({
+    action: 'analyzeAndFix',
+    filePath: './client/src/components/TradingView.tsx',
+    prompt: 'The chart sometimes fails to update when new data arrives. Please analyze the code and fix any potential race conditions or update issues.'
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+### Direct Task Execution
+
+The agent can now execute complex tasks that span multiple files and parts of the system:
+
+```javascript
+// Execute a complex task that requires understanding multiple files
+fetch('http://localhost:5002/agent-task', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Test-Admin': 'true'
+  },
+  body: JSON.stringify({
+    prompt: 'Our MongoDB connection sometimes times out during peak load. Analyze our database connection code across the project and implement robust connection pooling with proper error handling and reconnection logic.'
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+By combining these enhanced autonomous capabilities, the agent can now function as a true central controller for your project, handling complex tasks that previously required detailed human guidance.

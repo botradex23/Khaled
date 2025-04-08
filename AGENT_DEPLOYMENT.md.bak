@@ -32,7 +32,7 @@ node start-agent-server.js
 node stop-agent-server.js
 ```
 
-### 3. Integrated with Main Application
+### 2. Integrated with Main Application
 
 The agent can be integrated directly into the main Express application by importing the agent functionality:
 
@@ -121,18 +121,6 @@ When updating the agent system:
 3. Run tests to verify functionality
 4. Start the new agent server
 5. Verify all endpoints are working
-
-## Advanced Autonomous Capabilities
-
-The enhanced agent version supports these additional capabilities:
-
-1. **Recursive File Traversal**: Ability to navigate the entire project directory structure
-2. **Smart Code Modification**: Modifying existing files while preserving code style and structure
-3. **Context-Aware Generation**: Creating new files with awareness of project conventions
-4. **Automated Debugging**: Finding and fixing issues across multiple files
-5. **Cross-File Analysis**: Understanding dependencies and relationships between files
-
-These advanced capabilities make the agent much more effective as a centralized automation controller for your project.
 
 ## Documentation
 

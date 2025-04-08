@@ -621,10 +621,18 @@ async function handleRequest(req, res) {
       }
       
       const systemPrompt = body.systemPrompt || 
-        'You are an AI assistant with the ability to perform file operations across the workspace. ' +
-        'You can read, write, modify, and delete files as requested. ' +
-        'You can also search for files by name pattern or content, and list files recursively. ' +
-        'Always consider the entire workspace and help the user locate relevant files.';
+        'You are an advanced AI assistant with complete autonomy and full access to the entire project workspace. ' +
+        'You can browse directories, read any file, search for content across the codebase, and modify files as needed. ' +
+        'Your capabilities include: ' +
+        '1. Recursive file traversal and directory listing with depth control ' +
+        '2. Finding files by name patterns using glob syntax ' +
+        '3. Searching for files containing specific text or code patterns ' +
+        '4. Getting detailed file metadata to understand file relationships ' +
+        '5. Reading, writing, and modifying files across the entire project ' +
+        '6. Analyzing code to find and fix problems without needing exact file paths ' +
+        'You should autonomously navigate the file system to find relevant information and solve problems. ' +
+        'When asked to investigate or fix issues, take initiative to locate the appropriate files using your search capabilities. ' +
+        'Always consider the entire workspace context and provide solutions that address the root cause of problems.';
       
       console.log(`Executing agent task with prompt: ${body.prompt.substring(0, 50)}...`);
       
@@ -842,8 +850,8 @@ async function handleRequest(req, res) {
           
           // First generate content with the agent
           const generatedContent = await getChatCompletion(
-            `${prompt}\nGenerate content for the file ${filePath}.`,
-            'You are an AI assistant that can generate file content based on requirements.'
+            `${prompt}\nGenerate content for the file ${filePath}. Use your full autonomy and workspace access capabilities to ensure this content fits properly in the project structure and follows the project's coding style and conventions.`,
+            'You are an advanced AI assistant with complete autonomy and full access to the entire project workspace. You can analyze existing files to determine the appropriate style, structure, and conventions to follow when generating new content.'
           );
           
           // Then write the generated content to the file
@@ -853,6 +861,82 @@ async function handleRequest(req, res) {
             success: true, 
             message: `Content generated and written to ${filePath} successfully`,
             content: generatedContent
+          };
+          break;
+          
+        case 'modifyFile':
+          if (!prompt) {
+            sendJsonResponse(res, {
+              success: false,
+              message: 'Missing required parameter: prompt'
+            }, 400);
+            return;
+          }
+          
+          // First check if the file exists
+          if (!fileExists(filePath)) {
+            sendJsonResponse(res, {
+              success: false,
+              message: `File ${filePath} does not exist`
+            }, 400);
+            return;
+          }
+          
+          // Read the current content
+          const currentContent = readFile(filePath);
+          
+          // Ask the agent to modify the content
+          const modifiedContent = await getChatCompletion(
+            `${prompt}\n\nHere is the current content of ${filePath}:\n\n${currentContent}\n\nPlease provide the complete modified version of this file. Return the entire file content with your changes integrated.`,
+            'You are an advanced AI assistant with complete autonomy and full access to the entire project workspace. You can analyze and modify code to implement requested changes, fix issues, or add features. Be careful to maintain the correct syntax and structure of the file, and ensure your changes are consistent with the existing codebase. Return the COMPLETE file content, not just the changes.'
+          );
+          
+          // Write the modified content back to the file
+          writeFile(filePath, modifiedContent);
+          
+          result = { 
+            success: true, 
+            message: `File ${filePath} modified successfully`,
+            originalContent: currentContent,
+            modifiedContent: modifiedContent
+          };
+          break;
+          
+        case 'analyzeAndFix':
+          if (!prompt) {
+            sendJsonResponse(res, {
+              success: false,
+              message: 'Missing required parameter: prompt'
+            }, 400);
+            return;
+          }
+          
+          // First check if the file exists
+          if (!fileExists(filePath)) {
+            sendJsonResponse(res, {
+              success: false,
+              message: `File ${filePath} does not exist`
+            }, 400);
+            return;
+          }
+          
+          // Read the current content
+          const fileToFix = readFile(filePath);
+          
+          // Ask the agent to analyze and fix the file
+          const fixedContent = await getChatCompletion(
+            `${prompt}\n\nHere is the content of ${filePath} that needs to be analyzed and fixed:\n\n${fileToFix}\n\nPlease analyze the code for issues, bugs, or improvements, and provide the complete fixed version of the file. Return the entire file content with your fixes integrated.`,
+            'You are an advanced AI assistant with debugging and code analysis capabilities. You can identify and fix issues like syntax errors, logical bugs, performance problems, or best practice violations. Make your fixes while maintaining the original functionality. Return the COMPLETE fixed file content.'
+          );
+          
+          // Write the fixed content back to the file
+          writeFile(filePath, fixedContent);
+          
+          result = { 
+            success: true, 
+            message: `File ${filePath} analyzed and fixed successfully`,
+            originalContent: fileToFix,
+            fixedContent: fixedContent
           };
           break;
           
@@ -912,6 +996,12 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`  - find-by-pattern: Find files matching glob patterns`);
   console.log(`  - find-by-content: Find files containing specific text`);
   console.log(`  - metadata: Get detailed file metadata`);
+  console.log(`\nAutonomous Agent File Operations (via /agent-file-operation):`);
+  console.log(`  - readFile: Read a file with agent assistance`);
+  console.log(`  - writeFile: Write content to a file`);
+  console.log(`  - generateAndWrite: Generate new file content based on requirements`);
+  console.log(`  - modifyFile: Intelligently modify an existing file based on instructions`);
+  console.log(`  - analyzeAndFix: Find and fix bugs, issues or improvements in a file`);
   console.log(`\nAuthentication: Include 'X-Test-Admin: true' header in all requests`);
   console.log(`====================================================\n`);
 });
