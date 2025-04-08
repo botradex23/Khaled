@@ -212,6 +212,7 @@ export interface IStorage {
   createMlModelPerformance(data: InsertMlModelPerformance): Promise<MlModelPerformance>;
   getMlModelPerformance(id: number): Promise<MlModelPerformance | undefined>;
   getMlModelPerformanceByModelId(modelId: string): Promise<MlModelPerformance | undefined>;
+  getMlModelPerformanceBySymbol(symbol: string): Promise<MlModelPerformance[]>;
   getAllMlModelPerformance(limit?: number): Promise<MlModelPerformance[]>;
   getTopPerformingModels(limit?: number): Promise<MlModelPerformance[]>;
   updateMlModelPerformance(id: number, updates: Partial<MlModelPerformance>): Promise<MlModelPerformance | undefined>;
@@ -2309,6 +2310,13 @@ export class MemStorage implements IStorage {
   async getMlModelPerformanceByModelId(modelId: string): Promise<MlModelPerformance | undefined> {
     return Array.from(this.mlModelPerformance.values())
       .find(performance => performance.modelId === modelId);
+  }
+  
+  async getMlModelPerformanceBySymbol(symbol: string): Promise<MlModelPerformance[]> {
+    const normalizedSymbol = symbol.replace('/', '').toLowerCase();
+    return Array.from(this.mlModelPerformance.values())
+      .filter(performance => performance.symbol.toLowerCase() === normalizedSymbol)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
   
   async getAllMlModelPerformance(limit?: number): Promise<MlModelPerformance[]> {

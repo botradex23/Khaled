@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
   Select, 
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from '../components/ui/select';
-import { Badge } from '../components/ui/badge';
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -18,25 +18,54 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../components/ui/table';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from 'recharts';
+} from '@/components/ui/table';
+// Lazy load recharts components to improve initial load time
 import { Loader2, ArrowUpRight, BarChart3, LineChart as LineChartIcon, ArrowUpDown } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+// Lazy load heavy components to improve startup performance
+const ChartComponents = lazy(() => import('recharts'));
+
+// Create individual chart components
+const LazyBarChart = (props: any) => (
+  <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+    <ChartComponents.BarChart {...props} />
+  </Suspense>
+);
+
+const LazyLineChart = (props: any) => (
+  <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+    <ChartComponents.LineChart {...props} />
+  </Suspense>
+);
+
+const LazyResponsiveContainer = (props: any) => (
+  <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+    <ChartComponents.ResponsiveContainer {...props} />
+  </Suspense>
+);
 
 export default function MlOptimizationPage() {
   const [selectedSymbol, setSelectedSymbol] = useState('BTC/USDT');
   const [selectedTimeframe, setSelectedTimeframe] = useState('1h');
+  const [showDialog, setShowDialog] = useState(false);
+  const [optimizationType, setOptimizationType] = useState('all');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
   
   // Define the data types
   interface TuningRun {
@@ -79,6 +108,8 @@ export default function MlOptimizationPage() {
 
   interface MarketConditionData {
     id: number;
+    symbol: string;
+    timeframe: string;
     timestamp: string;
     volatility: number;
     volume: number;
@@ -185,6 +216,53 @@ export default function MlOptimizationPage() {
     trendStrength: condition.trendStrength,
     trendDirection: condition.trendDirection,
   })) || [];
+  
+  // Function to open the optimization dialog
+  const showOptimizationDialog = () => {
+    setShowDialog(true);
+  };
+  
+  // Function to handle the optimization request
+  const handleStartOptimization = async () => {
+    try {
+      setIsSubmitting(true);
+      
+      const response = await apiRequest('/api/ml/optimization/start-optimization', 'POST', {
+        symbol: selectedSymbol,
+        timeframe: selectedTimeframe,
+        optimizationType: optimizationType
+      });
+      
+      if (response.success) {
+        toast({
+          title: 'Optimization Started',
+          description: `XGBoost optimization process started for ${selectedSymbol} on ${selectedTimeframe} timeframe.`,
+          variant: 'default',
+        });
+        
+        // Refresh the tuning runs data
+        queryClient.invalidateQueries({ queryKey: ['/api/ml/optimization/tuning-runs'] });
+        
+        // Close the dialog
+        setShowDialog(false);
+      } else {
+        toast({
+          title: 'Error',
+          description: response.message || 'Failed to start optimization',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+      console.error('Error starting optimization:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="container mx-auto py-6">
@@ -220,7 +298,7 @@ export default function MlOptimizationPage() {
           </Select>
         </div>
         
-        <Button>
+        <Button onClick={() => showOptimizationDialog()}>
           Start New Optimization
         </Button>
       </div>
@@ -310,18 +388,18 @@ export default function MlOptimizationPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : performanceChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={performanceChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="accuracy" fill="#8884d8" name="Accuracy %" />
-                      <Bar dataKey="precision" fill="#82ca9d" name="Precision %" />
-                      <Bar dataKey="recall" fill="#ffc658" name="Recall %" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <LazyResponsiveContainer width="100%" height={300}>
+                    <LazyBarChart data={performanceChartData}>
+                      <ChartComponents.CartesianGrid strokeDasharray="3 3" />
+                      <ChartComponents.XAxis dataKey="name" />
+                      <ChartComponents.YAxis />
+                      <ChartComponents.Tooltip />
+                      <ChartComponents.Legend />
+                      <ChartComponents.Bar dataKey="accuracy" fill="#8884d8" name="Accuracy %" />
+                      <ChartComponents.Bar dataKey="precision" fill="#82ca9d" name="Precision %" />
+                      <ChartComponents.Bar dataKey="recall" fill="#ffc658" name="Recall %" />
+                    </LazyBarChart>
+                  </LazyResponsiveContainer>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
                     <p>No model performance data available</p>
@@ -344,17 +422,17 @@ export default function MlOptimizationPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : marketConditionsChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={marketConditionsChartData.slice(-10)}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="volatility" stroke="#8884d8" name="Volatility" />
-                      <Line type="monotone" dataKey="trendStrength" stroke="#82ca9d" name="Trend Strength" />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <LazyResponsiveContainer width="100%" height={300}>
+                    <LazyLineChart data={marketConditionsChartData.slice(-10)}>
+                      <ChartComponents.CartesianGrid strokeDasharray="3 3" />
+                      <ChartComponents.XAxis dataKey="date" />
+                      <ChartComponents.YAxis />
+                      <ChartComponents.Tooltip />
+                      <ChartComponents.Legend />
+                      <ChartComponents.Line type="monotone" dataKey="volatility" stroke="#8884d8" name="Volatility" />
+                      <ChartComponents.Line type="monotone" dataKey="trendStrength" stroke="#82ca9d" name="Trend Strength" />
+                    </LazyLineChart>
+                  </LazyResponsiveContainer>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
                     <p>No market conditions data available</p>
@@ -377,7 +455,7 @@ export default function MlOptimizationPage() {
                 <div className="flex items-center justify-center h-64">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : tuningRunsData?.data?.length > 0 ? (
+              ) : (tuningRunsData?.data && (tuningRunsData.data as any[]).length > 0) ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -392,7 +470,7 @@ export default function MlOptimizationPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {tuningRunsData.data.map((run) => (
+                    {tuningRunsData?.data?.map((run) => (
                       <TableRow key={run.id}>
                         <TableCell>{run.id}</TableCell>
                         <TableCell>{run.symbol}</TableCell>
@@ -439,21 +517,21 @@ export default function MlOptimizationPage() {
                 <div className="flex items-center justify-center h-64">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : topModelsData?.data?.length > 0 ? (
+              ) : (topModelsData?.data && (topModelsData.data as any[]).length > 0) ? (
                 <>
                   <div className="mb-6">
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={performanceChartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="accuracy" fill="#8884d8" name="Accuracy %" />
-                        <Bar dataKey="precision" fill="#82ca9d" name="Precision %" />
-                        <Bar dataKey="f1Score" fill="#ffc658" name="F1 Score %" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <LazyResponsiveContainer width="100%" height={300}>
+                      <LazyBarChart data={performanceChartData}>
+                        <ChartComponents.CartesianGrid strokeDasharray="3 3" />
+                        <ChartComponents.XAxis dataKey="name" />
+                        <ChartComponents.YAxis />
+                        <ChartComponents.Tooltip />
+                        <ChartComponents.Legend />
+                        <ChartComponents.Bar dataKey="accuracy" fill="#8884d8" name="Accuracy %" />
+                        <ChartComponents.Bar dataKey="precision" fill="#82ca9d" name="Precision %" />
+                        <ChartComponents.Bar dataKey="f1Score" fill="#ffc658" name="F1 Score %" />
+                      </LazyBarChart>
+                    </LazyResponsiveContainer>
                   </div>
                   
                   <Table>
@@ -470,7 +548,7 @@ export default function MlOptimizationPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {topModelsData.data.map((model) => (
+                      {topModelsData?.data?.map((model) => (
                         <TableRow key={model.id}>
                           <TableCell>{model.modelName}</TableCell>
                           <TableCell>{model.modelType}</TableCell>
@@ -506,21 +584,21 @@ export default function MlOptimizationPage() {
                 <div className="flex items-center justify-center h-64">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : simulationsData?.data?.length > 0 ? (
+              ) : (simulationsData?.data && (simulationsData.data as any[]).length > 0) ? (
                 <>
                   <div className="mb-6">
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={simulationChartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="pnl" fill="#8884d8" name="PnL" />
-                        <Bar dataKey="winRate" fill="#82ca9d" name="Win Rate %" />
-                        <Bar dataKey="drawdown" fill="#ff8042" name="Max Drawdown %" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <LazyResponsiveContainer width="100%" height={300}>
+                      <LazyBarChart data={simulationChartData}>
+                        <ChartComponents.CartesianGrid strokeDasharray="3 3" />
+                        <ChartComponents.XAxis dataKey="name" />
+                        <ChartComponents.YAxis />
+                        <ChartComponents.Tooltip />
+                        <ChartComponents.Legend />
+                        <ChartComponents.Bar dataKey="pnl" fill="#8884d8" name="PnL" />
+                        <ChartComponents.Bar dataKey="winRate" fill="#82ca9d" name="Win Rate %" />
+                        <ChartComponents.Bar dataKey="drawdown" fill="#ff8042" name="Max Drawdown %" />
+                      </LazyBarChart>
+                    </LazyResponsiveContainer>
                   </div>
                   
                   <Table>
@@ -538,7 +616,7 @@ export default function MlOptimizationPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {simulationsData.data.map((sim) => (
+                      {simulationsData?.data?.map((sim) => (
                         <TableRow key={sim.id}>
                           <TableCell>{sim.name}</TableCell>
                           <TableCell>{sim.symbol}</TableCell>
@@ -579,7 +657,7 @@ export default function MlOptimizationPage() {
                 <div className="flex items-center justify-center h-64">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : marketConditionsData?.data?.length > 0 ? (
+              ) : (marketConditionsData?.data && (marketConditionsData.data as any[]).length > 0) ? (
                 <>
                   <div className="mb-6">
                     <ResponsiveContainer width="100%" height={300}>
@@ -616,7 +694,7 @@ export default function MlOptimizationPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {marketConditionsData.data.slice(0, 10).map((condition) => (
+                      {marketConditionsData?.data?.slice(0, 10).map((condition) => (
                         <TableRow key={condition.id}>
                           <TableCell>{formatDate(condition.timestamp)}</TableCell>
                           <TableCell>{condition.symbol}</TableCell>
@@ -644,6 +722,76 @@ export default function MlOptimizationPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Optimization Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Start XGBoost Optimization</DialogTitle>
+            <DialogDescription>
+              Configure the optimization process for {selectedSymbol} on {selectedTimeframe} timeframe.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base">Optimization Type</Label>
+                <RadioGroup
+                  value={optimizationType}
+                  onValueChange={setOptimizationType}
+                  className="flex flex-col space-y-2 mt-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="all" id="all" />
+                    <Label htmlFor="all" className="font-normal">All Methods (Grid Search, Random Search, Bayesian)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="grid_search" id="grid_search" />
+                    <Label htmlFor="grid_search" className="font-normal">Grid Search Only</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="random_search" id="random_search" />
+                    <Label htmlFor="random_search" className="font-normal">Random Search Only</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="bayesian" id="bayesian" />
+                    <Label htmlFor="bayesian" className="font-normal">Bayesian Optimization Only</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              
+              <div className="bg-muted p-3 rounded-md text-sm text-muted-foreground">
+                <p className="mb-2">Optimization run information:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Symbol: {selectedSymbol}</li>
+                  <li>Timeframe: {selectedTimeframe}</li>
+                  <li>Method: {optimizationType === 'all' ? 'All methods' : 
+                      optimizationType === 'grid_search' ? 'Grid Search' :
+                      optimizationType === 'random_search' ? 'Random Search' : 'Bayesian Optimization'}</li>
+                </ul>
+                <p className="mt-2 text-xs">This process will train multiple models with different hyperparameters and may take several minutes to complete.</p>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex space-x-2 justify-end">
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleStartOptimization} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Starting...
+                </>
+              ) : (
+                'Start Optimization'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

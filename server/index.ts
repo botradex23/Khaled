@@ -142,6 +142,12 @@ if (isDev) {
 server.listen(port, "0.0.0.0", () => {
   log(`Server is running on port ${port} in ${isProduction ? 'production' : 'development'} mode`);
   
+  // Log detailed environment and startup info
+  console.log('Detailed environment information:');
+  console.log('- NODE_ENV:', process.env.NODE_ENV);
+  console.log('- PORT:', port);
+  console.log('- Memory usage:', process.memoryUsage());
+  
   // Log useful access URLs
   const localUrl = `http://localhost:${port}`;
   const networkUrl = `http://0.0.0.0:${port}`;
