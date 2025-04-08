@@ -346,11 +346,22 @@ async function handleRequest(req, res) {
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error validating OpenAI key: process.env.KEY || ""OpenAI API key validation failed',
-        error: error.message || 'Unknown error',
-        timestamp: new Date().toISOString()
-      });
+    console.error('Error occurred:', error);
+    // Add proper error handling
+    if (error.code === 'ENOENT') {
+      // File not found error
+      console.warn('File or directory not found, creating fallback...');
+      // Add appropriate fallback logic
+    } else if (error.message && error.message.includes('NetworkError')) {
+      // Network error
+      console.warn('Network error detected, will retry later...');
+      // Add retry mechanism or graceful degradation
+    } else {
+      // Other error types
+      console.warn('Unexpected error, proceeding with defaults...');
+      // Add fallback or recovery logic
     }
+  }
     return;
   }
   

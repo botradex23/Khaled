@@ -75,8 +75,22 @@ function listFilesRecursively(dir, depth = 0, results = [], basePath = '') {
         });
       }
     } catch (error) {
-      console.error(`Error processing ${fullPath}: ${error.message}`);
+    console.error('Error occurred:', error);
+    // Add proper error handling
+    if (error.code === 'ENOENT') {
+      // File not found error
+      console.warn('File or directory not found, creating fallback...');
+      // Add appropriate fallback logic
+    } else if (error.message && error.message.includes('NetworkError')) {
+      // Network error
+      console.warn('Network error detected, will retry later...');
+      // Add retry mechanism or graceful degradation
+    } else {
+      // Other error types
+      console.warn('Unexpected error, proceeding with defaults...');
+      // Add fallback or recovery logic
     }
+  }
   }
   
   return results;

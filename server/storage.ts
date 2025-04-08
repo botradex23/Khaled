@@ -833,13 +833,20 @@ export class MemStorage implements IStorage {
         apiKey = decrypt(apiKey);
         console.log(`  Decrypted Binance API key, new length: ${apiKey.length}`);
       } catch (error) {
-        console.error("Error decrypting Binance API key: process.env.KEY || ""s encrypted
+        console.error("Error decrypting Binance API key:", error);
+      }
+    }
     if (secretKey && isEncrypted(secretKey)) {
       try {
         secretKey = decrypt(secretKey);
         console.log(`  Decrypted Binance Secret key, new length: ${secretKey.length}`);
       } catch (error) {
-        console.error("Error decrypting Binance Secret key: process.env.KEY || ""s no meaningful value (null, undefined, or empty string)
+        console.error("Error decrypting Binance Secret key:", error);
+      }
+    }
+    
+    // Create response object
+    const apiKeyResponse = {
       // This ensures consistent return types and makes client-side checks more reliable
       binanceApiKey: !apiKey || (typeof apiKey === 'string' && apiKey.trim() === '') ? null : apiKey,
       binanceSecretKey: !secretKey || (typeof secretKey === 'string' && secretKey.trim() === '') ? null : secretKey,
@@ -1023,7 +1030,9 @@ export class MemStorage implements IStorage {
           apiKey = null;
         }
       } catch (error) {
-        console.error("Error decrypting API key: process.env.KEY || ""s encrypted
+        console.error("Error decrypting API key:", error);
+      }
+    }
     if (secretKey && isEncrypted(secretKey)) {
       try {
         const decryptedSecretKey = decrypt(secretKey);
@@ -1040,12 +1049,15 @@ export class MemStorage implements IStorage {
           secretKey = null;
         }
       } catch (error) {
-        console.error("Error decrypting Secret key: process.env.KEY || ""=== ENCRYPTION KEY MISMATCH DETECTED ===");
-      console.warn("The server's encryption keys have changed since the API keys were stored.");
-      console.warn("To fix this:");
-      console.warn("1. Set ENCRYPTION_KEY and ENCRYPTION_IV as permanent environment variables");
-      console.warn("2. Users will need to re-enter their API keys");
-      console.warn("===========================================");
+        console.error("Error decrypting Secret key:", error);
+        console.warn("=== ENCRYPTION KEY MISMATCH DETECTED ===");
+        console.warn("The server's encryption keys have changed since the API keys were stored.");
+        console.warn("To fix this:");
+        console.warn("1. Set ENCRYPTION_KEY and ENCRYPTION_IV as permanent environment variables");
+        console.warn("2. Users will need to re-enter their API keys");
+        console.warn("===========================================");
+      
+      }
       
       // If decryption failed, try to get the keys from MongoDB
       console.log("Attempting to get Binance API keys from MongoDB after failed decryption...");
