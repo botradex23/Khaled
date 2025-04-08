@@ -43,12 +43,27 @@ router.get('/prices', (req, res) => {
   try {
     const prices = globalMarketData.getMarketPrices();
     
+    // Allow filtering by specific currency type
+    const currencyType = req.query.currency?.toString().toLowerCase();
+    let filteredPrices = prices;
+    
+    if (currencyType) {
+      filteredPrices = prices.filter(price => {
+        if (currencyType === 'usdt') return price.symbol.endsWith('USDT');
+        if (currencyType === 'usdc') return price.symbol.endsWith('USDC');
+        if (currencyType === 'busd') return price.symbol.endsWith('BUSD');
+        return true;
+      });
+    }
+    
     res.json({
       success: true,
-      count: prices.length,
-      data: prices
+      count: filteredPrices.length,
+      data: filteredPrices,
+      source: globalMarketData.getStatus().primaryExchange,
+      timestamp: Date.now()
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({
       success: false,
       message: 'Error getting market prices',

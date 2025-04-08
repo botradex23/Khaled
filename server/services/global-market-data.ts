@@ -16,6 +16,10 @@ interface MarketPrice {
   symbol: string;
   price: number;
   timestamp: number;
+  exchange: SupportedExchange;
+  volume24h?: number;
+  change24h?: number;
+  marketCap?: number;
 }
 
 interface CandleData {
@@ -27,6 +31,7 @@ interface CandleData {
   volume: number;
   timestamp: number;
   interval: string;
+  exchange?: SupportedExchange;
 }
 
 class GlobalMarketDataService {
@@ -181,16 +186,27 @@ class GlobalMarketDataService {
           dataMapper = (data: any[]) => data.map(item => ({
             symbol: item.symbol,
             price: parseFloat(item.price),
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            exchange: 'binance' as SupportedExchange
           }));
           break;
         case 'okx':
           url = 'https://www.okx.com/api/v5/market/tickers?instType=SPOT';
-          dataMapper = (data: any) => data.data.map(item => ({
-            symbol: item.instId.replace('-', ''),
-            price: parseFloat(item.last),
-            timestamp: Date.now()
-          }));
+          dataMapper = (data: any) => data.data.map((item: any) => {
+            // Convert OKX format (BTC-USDT) to standard format (BTCUSDT)
+            const symbol = item.instId.replace('-', '');
+            return {
+              symbol: symbol,
+              price: parseFloat(item.last),
+              timestamp: Date.now(),
+              exchange: 'okx' as SupportedExchange,
+              // Add additional data that might be useful for UI
+              volume24h: parseFloat(item.vol24h || '0'),
+              change24h: parseFloat(item.sodUtc0 || '0') > 0 
+                ? ((parseFloat(item.last) - parseFloat(item.sodUtc0)) / parseFloat(item.sodUtc0)) * 100 
+                : 0
+            };
+          });
           break;
         default:
           return false;
@@ -201,12 +217,21 @@ class GlobalMarketDataService {
       if (response.status === 200) {
         const prices = dataMapper(response.data);
         
+        // Filter out non-USDT pairs to focus on major trading pairs
+        // But include other stablecoins like BUSD, USDC as well
+        const filteredPrices = prices.filter(price => {
+          return price.symbol.endsWith('USDT') || 
+                 price.symbol.endsWith('BUSD') || 
+                 price.symbol.endsWith('USDC') ||
+                 price.symbol.endsWith('USD');
+        });
+        
         // Update market prices
-        prices.forEach(price => {
+        filteredPrices.forEach(price => {
           this.marketPrices[price.symbol] = price;
         });
         
-        log(`Updated ${prices.length} market prices from ${exchange}`);
+        log(`Updated ${filteredPrices.length} market prices from ${exchange}`);
         return true;
       }
       
@@ -284,21 +309,51 @@ class GlobalMarketDataService {
             close: parseFloat(item[4]),
             volume: parseFloat(item[5]),
             timestamp: item[0],
-            interval
+            interval,
+            exchange: 'binance' as SupportedExchange
           }));
           break;
         case 'okx':
-          url = `https://www.okx.com/api/v5/market/candles?instId=${symbol.slice(0, -4)}-${symbol.slice(-4)}&bar=${interval}&limit=${limit}`;
-          dataMapper = (data: any) => data.data.map(item => ({
-            symbol,
-            open: parseFloat(item[1]),
-            high: parseFloat(item[2]),
-            low: parseFloat(item[3]),
-            close: parseFloat(item[4]),
-            volume: parseFloat(item[5]),
-            timestamp: parseInt(item[0]),
-            interval
-          }));
+          // Handle different symbol format for OKX (BTC-USDT instead of BTCUSDT)
+          let instId: string;
+          if (symbol.endsWith('USDT')) {
+            instId = `${symbol.slice(0, -4)}-${symbol.slice(-4)}`;
+          } else if (symbol.endsWith('USDC')) {
+            instId = `${symbol.slice(0, -4)}-${symbol.slice(-4)}`;
+          } else if (symbol.endsWith('BUSD')) {
+            instId = `${symbol.slice(0, -4)}-${symbol.slice(-4)}`;
+          } else if (symbol.endsWith('USD')) {
+            instId = `${symbol.slice(0, -3)}-${symbol.slice(-3)}`;
+          } else {
+            // Default fallback
+            instId = symbol;
+          }
+          
+          // Adjust interval format for OKX
+          let okxInterval = interval;
+          if (interval === '1d') okxInterval = '1D';
+          if (interval === '4h') okxInterval = '4H';
+          if (interval === '1h') okxInterval = '1H';
+          
+          url = `https://www.okx.com/api/v5/market/candles?instId=${instId}&bar=${okxInterval}&limit=${limit}`;
+          dataMapper = (data: any) => {
+            // Check if we have valid data
+            if (!data.data || !Array.isArray(data.data)) {
+              return [];
+            }
+            
+            return data.data.map((item: any) => ({
+              symbol,
+              open: parseFloat(item[1]),
+              high: parseFloat(item[2]),
+              low: parseFloat(item[3]),
+              close: parseFloat(item[4]),
+              volume: parseFloat(item[5]),
+              timestamp: parseInt(item[0]),
+              interval,
+              exchange: 'okx' as SupportedExchange
+            }));
+          };
           break;
         default:
           return [];
@@ -311,7 +366,7 @@ class GlobalMarketDataService {
       }
       
       return [];
-    } catch (error) {
+    } catch (error: any) {
       log(`Error fetching candles from ${exchange}: ${error.message}`);
       return [];
     }

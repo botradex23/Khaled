@@ -157,12 +157,18 @@ class MLPredictionService {
    * Queue models for training
    */
   private queueModelsForTraining(): void {
-    // If no models, create initial models for common symbols
-    if (Object.keys(this.models).length === 0) {
-      const commonSymbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'ADAUSDT'];
+    // Get all available market prices to create models for all trading pairs
+    const marketPrices = globalMarketData.getMarketPrices();
+    const availableSymbols = marketPrices.map(price => price.symbol);
+    
+    // If we have market data, but no models, create models for all available symbols
+    if (Object.keys(this.models).length === 0 && availableSymbols.length > 0) {
+      // Focus on major coins plus some promising altcoins
+      // Filter to keep only USD-paired coins (already filtered in market data service)
       const timeframes = ['1h', '4h', '1d'];
       
-      commonSymbols.forEach(symbol => {
+      // Create a model for each symbol and timeframe
+      availableSymbols.forEach(symbol => {
         timeframes.forEach(timeframe => {
           const modelId = `${symbol}_${timeframe}`;
           this.models[modelId] = {
@@ -171,15 +177,42 @@ class MLPredictionService {
             timeframe,
             lastTrainingTime: 0,
             accuracy: 0,
-            features: ['price', 'volume', 'rsi', 'macd']
+            features: ['price', 'volume', 'rsi', 'macd', 'ema', 'sma']
           };
           
-          // Add to training queue
-          this.modelTrainingQueue.push(modelId);
+          // Add to training queue - but limit initial queue to prevent overload
+          // We'll train the rest over time as the system runs
+          if (
+            symbol.includes('BTC') || 
+            symbol.includes('ETH') || 
+            symbol.includes('SOL') || 
+            symbol.includes('BNB') || 
+            symbol.includes('ADA') ||
+            symbol.includes('DOT') ||
+            symbol.includes('XRP')
+          ) {
+            this.modelTrainingQueue.push(modelId);
+          }
         });
       });
       
-      log(`Created ${this.modelTrainingQueue.length} initial models and queued for training`);
+      log(`Created ${Object.keys(this.models).length} models for all trading pairs`);
+      log(`Queued ${this.modelTrainingQueue.length} high-priority models for immediate training`);
+      
+      // Schedule the rest of the models for training later
+      setTimeout(() => {
+        const remainingModels = Object.keys(this.models).filter(id => !this.modelTrainingQueue.includes(id));
+        
+        // Add 10 more models to the queue every hour
+        const batchSize = 10;
+        for (let i = 0; i < remainingModels.length; i += batchSize) {
+          const batch = remainingModels.slice(i, i + batchSize);
+          setTimeout(() => {
+            this.modelTrainingQueue.push(...batch);
+            log(`Added batch of ${batch.length} models to training queue`);
+          }, (i / batchSize) * 60 * 60 * 1000); // Schedule each batch 1 hour apart
+        }
+      }, 30 * 60 * 1000); // Start scheduling remaining models after 30 minutes
     } else {
       // Check existing models and queue those that need retraining
       const now = Date.now();
@@ -188,12 +221,45 @@ class MLPredictionService {
       Object.values(this.models).forEach(model => {
         // Retrain if model is older than 1 day or has zero accuracy
         if (now - model.lastTrainingTime > oneDay || model.accuracy === 0) {
-          this.modelTrainingQueue.push(model.id);
+          // Only queue if we don't already have too many models in the queue
+          if (!this.modelTrainingQueue.includes(model.id) && this.modelTrainingQueue.length < 50) {
+            this.modelTrainingQueue.push(model.id);
+          }
         }
       });
       
+      // Check for new symbols we might need to add models for
+      availableSymbols.forEach(symbol => {
+        const timeframes = ['1h', '4h', '1d'];
+        timeframes.forEach(timeframe => {
+          const modelId = `${symbol}_${timeframe}`;
+          if (!this.models[modelId]) {
+            // Create new model for this symbol
+            this.models[modelId] = {
+              id: modelId,
+              symbol,
+              timeframe,
+              lastTrainingTime: 0,
+              accuracy: 0,
+              features: ['price', 'volume', 'rsi', 'macd', 'ema', 'sma']
+            };
+            
+            // Add to training queue if it's a major coin
+            if (
+              symbol.includes('BTC') || 
+              symbol.includes('ETH') || 
+              symbol.includes('SOL') || 
+              symbol.includes('BNB') ||
+              symbol.includes('ADA')
+            ) {
+              this.modelTrainingQueue.push(modelId);
+            }
+          }
+        });
+      });
+      
       if (this.modelTrainingQueue.length > 0) {
-        log(`Queued ${this.modelTrainingQueue.length} models for retraining`);
+        log(`Queued ${this.modelTrainingQueue.length} models for training/retraining`);
       }
     }
   }

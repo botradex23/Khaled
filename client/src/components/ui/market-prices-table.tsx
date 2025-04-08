@@ -57,7 +57,39 @@ export const MarketPricesTable = () => {
     try {
       setIsLoading(true);
       
-      // First try the multi-broker endpoint that uses fallback
+      // First try the global market data API (no API keys required)
+      console.log('Fetching market data from global market service');
+      try {
+        // Get formatted market data from global market API
+        const globalMarketsResponse = await fetch('/api/global-market/prices');
+        if (globalMarketsResponse.ok) {
+          const globalMarketsData = await globalMarketsResponse.json();
+          console.log('Successfully fetched market data from global market service', globalMarketsData);
+          
+          if (globalMarketsData.success && Array.isArray(globalMarketsData.data) && globalMarketsData.data.length > 0) {
+            // Process data into our expected format
+            const processedData = globalMarketsData.data.map(item => ({
+              symbol: item.symbol,
+              price: item.price,
+              change24h: item.change24h || 0,
+              volume24h: item.volume24h || 0,
+              high24h: item.price * 1.05, // Fallback if high not provided
+              low24h: item.price * 0.95,  // Fallback if low not provided
+            }));
+            
+            setMarketData(processedData);
+            console.log(`Using global market data from ${globalMarketsData.count} trading pairs`);
+            setError(null);
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch (globalMarketError) {
+        console.error('Error using global market data:', globalMarketError);
+        // Continue to multi-broker endpoint as fallback
+      }
+      
+      // Then try the multi-broker endpoint
       console.log('Fetching market data from multi-broker service');
       try {
         // Get formatted market data from multi-broker API
@@ -193,8 +225,20 @@ export const MarketPricesTable = () => {
       }
       
       filteredData = filteredData.filter(market => {
-        // Extract base currency for category matching (e.g., BTC from BTCUSDT)
-        const baseCurrency = market.symbol.replace('USDT', '');
+        // Extract base currency for category matching, handling different quote currencies
+        let baseCurrency = market.symbol;
+        
+        // Remove any quote currency suffix
+        if (market.symbol.endsWith('USDT')) {
+          baseCurrency = market.symbol.replace('USDT', '');
+        } else if (market.symbol.endsWith('BUSD')) {
+          baseCurrency = market.symbol.replace('BUSD', '');
+        } else if (market.symbol.endsWith('USDC')) {
+          baseCurrency = market.symbol.replace('USDC', '');
+        } else if (market.symbol.endsWith('USD')) {
+          baseCurrency = market.symbol.replace('USD', '');
+        }
+        
         return categoryList.includes(baseCurrency);
       });
     }
@@ -210,8 +254,8 @@ export const MarketPricesTable = () => {
       return 0;
     });
     
-    // Limit to 10 records for dashboard display
-    return filteredData.slice(0, 10);
+    // Take top 20 records to show more trading pairs
+    return filteredData.slice(0, 20);
   };
   
   const filteredAndSortedData = getFilteredAndSortedData();
