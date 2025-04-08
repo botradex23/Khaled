@@ -230,6 +230,10 @@ export interface IStorage {
   getAllStrategySimulations(limit?: number): Promise<StrategySimulation[]>;
   getStrategySimulationsBySymbol(symbol: string, timeframe?: string): Promise<StrategySimulation[]>;
   updateStrategySimulation(id: number, updates: Partial<StrategySimulation>): Promise<StrategySimulation | undefined>;
+  
+  // Market Condition Monitoring and Retraining methods
+  createRetrainingEvent(data: InsertRetrainingEvent): Promise<RetrainingEvent>;
+  getRetrainingEvents(symbol: string, timeframe: string, limit?: number): Promise<RetrainingEvent[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -2458,6 +2462,33 @@ export class MemStorage implements IStorage {
     this.strategySimulations.set(id, updatedSimulation);
     console.log(`Updated strategy simulation ID ${id}`);
     return updatedSimulation;
+  }
+  
+  // Retraining Events methods
+  private retrainingEvents: Map<number, RetrainingEvent> = new Map();
+  private retrainingEventId: number = 1;
+  
+  async createRetrainingEvent(data: InsertRetrainingEvent): Promise<RetrainingEvent> {
+    const id = this.retrainingEventId++;
+    const now = new Date();
+    
+    const event: RetrainingEvent = {
+      id,
+      ...data,
+      createdAt: now
+    };
+    
+    this.retrainingEvents.set(id, event);
+    console.log(`Created retraining event ID ${id} for ${data.symbol} with method ${data.retrainingMethod}`);
+    return event;
+  }
+  
+  async getRetrainingEvents(symbol: string, timeframe: string, limit?: number): Promise<RetrainingEvent[]> {
+    let events = Array.from(this.retrainingEvents.values())
+      .filter(event => event.symbol === symbol && event.timeframe === timeframe)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    return limit ? events.slice(0, limit) : events;
   }
 }
 

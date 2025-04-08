@@ -1,6 +1,14 @@
 import express from 'express';
 import { storage } from '../storage';
-import { insertXgboostTuningRunSchema, insertMarketConditionSchema, insertMlModelPerformanceSchema, insertMlAdminFeedbackSchema, insertStrategySimulationSchema } from '@shared/schema';
+import { 
+  insertXgboostTuningRunSchema, 
+  insertMarketConditionSchema, 
+  insertMlModelPerformanceSchema, 
+  insertMlAdminFeedbackSchema, 
+  insertStrategySimulationSchema,
+  insertRetrainingEventSchema,
+  MarketConditionChangeType
+} from '@shared/schema';
 import { z } from 'zod';
 import axios from 'axios';
 
@@ -8,6 +16,18 @@ const router = express.Router();
 
 // Python service URL for ML optimization
 const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:5001';
+
+// Track adaptive tuning processes
+const adaptiveTuningProcesses: Record<string, any> = {};
+
+// Track market monitor status
+const marketMonitor = {
+  running: false,
+  startedAt: '',
+  monitoredAssets: [],
+  lastCheck: '',
+  significantChanges: {} as Record<string, Array<MarketConditionChangeType>>,
+};
 
 // Get all XGBoost tuning runs
 router.get('/tuning-runs', async (req, res) => {
@@ -583,6 +603,692 @@ router.get('/compare-optimization/:symbol/:timeframe', async (req, res) => {
     }
   } catch (error) {
     console.error('Error comparing optimization methods:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Start adaptive hyperparameter tuning
+router.post('/adaptive-tuning/start', async (req, res) => {
+  try {
+    const { symbol, timeframe } = req.body;
+    
+    if (!symbol || !timeframe) {
+      return res.status(400).json({
+        success: false,
+        error: 'Symbol and timeframe are required'
+      });
+    }
+    
+    // Normalize symbol format
+    const normalizedSymbol = symbol.replace('/', '').toLowerCase();
+    
+    // Check if adaptive tuning is already running for this symbol/timeframe
+    const processKey = `${normalizedSymbol}_${timeframe}_adaptive`;
+    if (adaptiveTuningProcesses[processKey] && adaptiveTuningProcesses[processKey].status === 'running') {
+      return res.json({
+        success: false,
+        error: `Adaptive tuning already running for ${symbol} on ${timeframe} timeframe`
+      });
+    }
+    
+    // Track the process
+    adaptiveTuningProcesses[processKey] = {
+      symbol: normalizedSymbol,
+      timeframe,
+      status: 'running',
+      startedAt: new Date().toISOString()
+    };
+    
+    // Send request to Python service
+    try {
+      const pythonResponse = await axios.post(`${pythonServiceUrl}/api/ml/optimization/adaptive-tuning/start`, {
+        symbol: normalizedSymbol,
+        timeframe
+      });
+      
+      res.json({
+        success: true,
+        message: `Adaptive tuning started for ${symbol} on ${timeframe} timeframe`,
+        processKey,
+        ...pythonResponse.data
+      });
+    } catch (pythonError) {
+      console.error('Error from Python service:', pythonError);
+      
+      // Update process status
+      adaptiveTuningProcesses[processKey].status = 'failed';
+      adaptiveTuningProcesses[processKey].error = pythonError.message;
+      adaptiveTuningProcesses[processKey].completedAt = new Date().toISOString();
+      
+      res.json({
+        success: false,
+        message: 'Failed to start adaptive tuning',
+        error: pythonError.message
+      });
+    }
+  } catch (error) {
+    console.error('Error starting adaptive tuning:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get adaptive tuning status
+router.get('/adaptive-tuning/status', async (req, res) => {
+  try {
+    // Try to get status from Python service
+    try {
+      const pythonResponse = await axios.get(`${pythonServiceUrl}/api/ml/optimization/adaptive-tuning/status`);
+      
+      res.json({
+        success: true,
+        ...pythonResponse.data,
+        localProcesses: adaptiveTuningProcesses
+      });
+    } catch (pythonError) {
+      console.error('Error getting adaptive tuning status from Python service:', pythonError);
+      
+      // Return local process tracking info
+      res.json({
+        success: true,
+        message: 'Python service unavailable, showing local process tracking only',
+        activeProcesses: adaptiveTuningProcesses
+      });
+    }
+  } catch (error) {
+    console.error('Error getting adaptive tuning status:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Check if adaptive tuning is needed
+router.get('/adaptive-tuning/check-needed/:symbol/:timeframe', async (req, res) => {
+  try {
+    const { symbol, timeframe } = req.params;
+    
+    // Normalize symbol format
+    const normalizedSymbol = symbol.replace('/', '').toLowerCase();
+    
+    // Try to check with Python service
+    try {
+      const pythonResponse = await axios.get(
+        `${pythonServiceUrl}/api/ml/optimization/adaptive-tuning/check-needed/${normalizedSymbol}/${timeframe}`
+      );
+      
+      res.json({
+        success: true,
+        ...pythonResponse.data
+      });
+    } catch (pythonError) {
+      console.error('Error checking if adaptive tuning is needed:', pythonError);
+      
+      // Fall back to basic heuristic check
+      // Get latest model performance
+      const performances = await storage.getMlModelPerformanceBySymbol(normalizedSymbol);
+      
+      // Sort by creation date (newest first)
+      performances.sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      
+      // Get latest market conditions
+      const marketConditions = await storage.getMarketConditionsBySymbol(normalizedSymbol, timeframe, 2);
+      
+      // Check if performance is degrading or market conditions changing
+      let adaptationNeeded = false;
+      let reason = 'No adaptation needed';
+      
+      if (performances.length >= 2) {
+        const latest = performances[0];
+        const previous = performances[1];
+        
+        // Calculate performance change
+        const f1Change = previous.f1Score > 0 
+          ? (latest.f1Score - previous.f1Score) / previous.f1Score 
+          : 0;
+          
+        if (f1Change < -0.05) {  // 5% degradation
+          adaptationNeeded = true;
+          reason = `Performance degraded by ${Math.abs(f1Change * 100).toFixed(1)}%`;
+        }
+      }
+      
+      if (marketConditions.length >= 2) {
+        const latest = marketConditions[0];
+        const previous = marketConditions[1];
+        
+        // Check for significant market condition changes
+        const volatilityChange = Math.abs(latest.volatility - previous.volatility);
+        const trendChange = latest.trendDirection !== previous.trendDirection;
+        
+        if (volatilityChange > 0.2 || trendChange) {
+          adaptationNeeded = true;
+          reason = 'Significant market condition changes detected';
+        }
+      }
+      
+      res.json({
+        success: true,
+        adaptationNeeded,
+        reason,
+        data: {
+          recentPerformance: performances.slice(0, 2),
+          marketConditions: marketConditions
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error checking if adaptive tuning is needed:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get adaptive tuning history
+router.get('/adaptive-tuning/history/:symbol/:timeframe', async (req, res) => {
+  try {
+    const { symbol, timeframe } = req.params;
+    
+    // Normalize symbol format
+    const normalizedSymbol = symbol.replace('/', '').toLowerCase();
+    
+    // Try to get history from Python service
+    try {
+      const pythonResponse = await axios.get(
+        `${pythonServiceUrl}/api/ml/optimization/adaptive-tuning/history/${normalizedSymbol}/${timeframe}`
+      );
+      
+      res.json({
+        success: true,
+        ...pythonResponse.data
+      });
+    } catch (pythonError) {
+      console.error('Error getting adaptive tuning history:', pythonError);
+      
+      // Fallback to looking at model performance records for adapted models
+      const performances = await storage.getMlModelPerformanceBySymbol(normalizedSymbol);
+      
+      // Filter for adapted models
+      const adaptedModels = performances.filter(model => 
+        model.modelType.includes('adapted') && model.timeframe === timeframe
+      );
+      
+      // Sort by creation date (newest first)
+      adaptedModels.sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      
+      res.json({
+        success: true,
+        message: 'Python service unavailable, showing model performance records only',
+        data: adaptedModels
+      });
+    }
+  } catch (error) {
+    console.error('Error getting adaptive tuning history:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Start market condition monitoring
+router.post('/market-monitor/start', async (req, res) => {
+  try {
+    const { assets, config } = req.body;
+    
+    // Check if already tracking as running
+    if (marketMonitor.running) {
+      return res.status(409).json({
+        success: false,
+        error: 'Market condition monitor is already running'
+      });
+    }
+    
+    // Try to start via Python service
+    try {
+      const pythonResponse = await axios.post(`${pythonServiceUrl}/api/ml/optimization/market-monitor/start`, {
+        assets,
+        config
+      });
+      
+      // Update local tracking state
+      marketMonitor.running = true;
+      marketMonitor.startedAt = new Date().toISOString();
+      marketMonitor.monitoredAssets = assets || [];
+      
+      res.json({
+        success: true,
+        message: 'Market condition monitor started',
+        ...pythonResponse.data
+      });
+    } catch (pythonError) {
+      console.error('Error starting market condition monitor via Python service:', pythonError);
+      
+      res.status(500).json({
+        success: false,
+        error: 'Failed to start market condition monitor'
+      });
+    }
+  } catch (error) {
+    console.error('Error starting market condition monitor:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Stop market condition monitoring
+router.post('/market-monitor/stop', async (req, res) => {
+  try {
+    // Check if already stopped
+    if (!marketMonitor.running) {
+      return res.status(400).json({
+        success: false,
+        error: 'Market condition monitor is not running'
+      });
+    }
+    
+    // Try to stop via Python service
+    try {
+      const pythonResponse = await axios.post(`${pythonServiceUrl}/api/ml/optimization/market-monitor/stop`);
+      
+      // Update local tracking state
+      marketMonitor.running = false;
+      
+      res.json({
+        success: true,
+        message: 'Market condition monitor stopped',
+        ...pythonResponse.data
+      });
+    } catch (pythonError) {
+      console.error('Error stopping market condition monitor via Python service:', pythonError);
+      
+      // Even if Python service fails, update our local state
+      marketMonitor.running = false;
+      
+      res.json({
+        success: true,
+        message: 'Market condition monitor marked as stopped (Python service error)',
+        error: pythonError instanceof Error ? pythonError.message : 'Unknown error'
+      });
+    }
+  } catch (error) {
+    console.error('Error stopping market condition monitor:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get market monitor status
+router.get('/market-monitor/status', async (req, res) => {
+  try {
+    // Try to get status from Python service
+    try {
+      const pythonResponse = await axios.get(`${pythonServiceUrl}/api/ml/optimization/market-monitor/status`);
+      
+      // Update our local state with the Python service state
+      if (pythonResponse.data.success) {
+        marketMonitor.running = pythonResponse.data.running;
+        marketMonitor.monitoredAssets = pythonResponse.data.monitored_assets || [];
+        
+        // If available, update significant changes
+        if (pythonResponse.data.condition_changes) {
+          marketMonitor.significantChanges = pythonResponse.data.condition_changes;
+        }
+      }
+      
+      res.json({
+        success: true,
+        ...pythonResponse.data,
+        localTracking: marketMonitor
+      });
+    } catch (pythonError) {
+      console.error('Error getting market monitor status from Python service:', pythonError);
+      
+      // Return our local tracking info
+      res.json({
+        success: true,
+        message: 'Python service unavailable, showing local tracking only',
+        running: marketMonitor.running,
+        monitoredAssets: marketMonitor.monitoredAssets,
+        startedAt: marketMonitor.startedAt,
+        lastCheck: marketMonitor.lastCheck,
+        significantChanges: marketMonitor.significantChanges
+      });
+    }
+  } catch (error) {
+    console.error('Error getting market monitor status:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Add asset to monitor
+router.post('/market-monitor/assets', async (req, res) => {
+  try {
+    const { symbol, timeframe } = req.body;
+    
+    if (!symbol) {
+      return res.status(400).json({
+        success: false,
+        error: 'Symbol is required'
+      });
+    }
+    
+    // Normalize symbol format
+    const normalizedSymbol = symbol.replace('/', '').toLowerCase();
+    const normalizedTimeframe = timeframe || '1h';
+    
+    // Try to add asset via Python service
+    try {
+      const pythonResponse = await axios.post(`${pythonServiceUrl}/api/ml/optimization/market-monitor/assets`, {
+        symbol: normalizedSymbol,
+        timeframe: normalizedTimeframe
+      });
+      
+      // Update our local state
+      const assetExists = marketMonitor.monitoredAssets.some(a => 
+        a.symbol === normalizedSymbol && a.timeframe === normalizedTimeframe
+      );
+      
+      if (!assetExists) {
+        marketMonitor.monitoredAssets.push({
+          symbol: normalizedSymbol,
+          timeframe: normalizedTimeframe
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: `Added ${normalizedSymbol} ${normalizedTimeframe} to monitored assets`,
+        ...pythonResponse.data
+      });
+    } catch (pythonError) {
+      console.error('Error adding asset to monitor via Python service:', pythonError);
+      
+      res.status(500).json({
+        success: false,
+        error: 'Failed to add asset to monitor'
+      });
+    }
+  } catch (error) {
+    console.error('Error adding asset to monitor:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Remove asset from monitoring
+router.delete('/market-monitor/assets/:symbol/:timeframe', async (req, res) => {
+  try {
+    const { symbol, timeframe } = req.params;
+    
+    // Normalize symbol format
+    const normalizedSymbol = symbol.replace('/', '').toLowerCase();
+    
+    // Try to remove asset via Python service
+    try {
+      const pythonResponse = await axios.delete(
+        `${pythonServiceUrl}/api/ml/optimization/market-monitor/assets/${normalizedSymbol}/${timeframe}`
+      );
+      
+      // Update our local state
+      marketMonitor.monitoredAssets = marketMonitor.monitoredAssets.filter(a => 
+        !(a.symbol === normalizedSymbol && a.timeframe === timeframe)
+      );
+      
+      res.json({
+        success: true,
+        message: `Removed ${normalizedSymbol} ${timeframe} from monitored assets`,
+        ...pythonResponse.data
+      });
+    } catch (pythonError) {
+      console.error('Error removing asset from monitor via Python service:', pythonError);
+      
+      // Even if Python service fails, update our local state
+      marketMonitor.monitoredAssets = marketMonitor.monitoredAssets.filter(a => 
+        !(a.symbol === normalizedSymbol && a.timeframe === timeframe)
+      );
+      
+      res.json({
+        success: true,
+        message: `Removed ${normalizedSymbol} ${timeframe} from local tracking (Python service error)`,
+        error: pythonError instanceof Error ? pythonError.message : 'Unknown error'
+      });
+    }
+  } catch (error) {
+    console.error('Error removing asset from monitor:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Manually check market conditions
+router.post('/market-monitor/check', async (req, res) => {
+  try {
+    // Try to check via Python service
+    try {
+      const pythonResponse = await axios.post(`${pythonServiceUrl}/api/ml/optimization/market-monitor/check`);
+      
+      // Update last check time
+      marketMonitor.lastCheck = new Date().toISOString();
+      
+      // If there are significant changes, update our tracking
+      if (pythonResponse.data.success && pythonResponse.data.results) {
+        // Extract significant changes
+        const results = pythonResponse.data.results.results || [];
+        const significantChanges = results.filter(r => r.retraining_needed);
+        
+        // Update local tracking
+        significantChanges.forEach(change => {
+          const assetKey = `${change.symbol}_${change.timeframe}`;
+          
+          if (!marketMonitor.significantChanges[assetKey]) {
+            marketMonitor.significantChanges[assetKey] = [];
+          }
+          
+          marketMonitor.significantChanges[assetKey].push({
+            timestamp: change.timestamp,
+            reason: change.reason,
+            conditionChanges: change.condition_changes,
+            currentConditions: change.current_conditions
+          });
+          
+          // Keep only the latest 10 changes
+          if (marketMonitor.significantChanges[assetKey].length > 10) {
+            marketMonitor.significantChanges[assetKey] = 
+              marketMonitor.significantChanges[assetKey].slice(-10);
+          }
+        });
+      }
+      
+      res.json({
+        success: true,
+        ...pythonResponse.data,
+        localTracking: {
+          lastCheck: marketMonitor.lastCheck,
+          significantChanges: marketMonitor.significantChanges
+        }
+      });
+    } catch (pythonError) {
+      console.error('Error checking market conditions via Python service:', pythonError);
+      
+      res.status(500).json({
+        success: false,
+        error: 'Failed to check market conditions'
+      });
+    }
+  } catch (error) {
+    console.error('Error checking market conditions:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Get retraining events for a symbol and timeframe
+router.get('/retraining-events/:symbol/:timeframe', async (req, res) => {
+  try {
+    const { symbol, timeframe } = req.params;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+    
+    // Normalize the symbol format to match storage format
+    const normalizedSymbol = symbol.replace('/', '').toLowerCase();
+    
+    let events = [];
+    
+    // First try to get from database
+    try {
+      events = await storage.getRetrainingEvents(normalizedSymbol, timeframe, limit);
+    } catch (dbError) {
+      console.error('Error fetching retraining events from database:', dbError);
+      events = [];
+    }
+    
+    // Then try to get from Python service and merge results
+    try {
+      const pythonResponse = await axios.get(
+        `${pythonServiceUrl}/api/ml/optimization/retraining-events/${normalizedSymbol}/${timeframe}`,
+        { params: { limit } }
+      );
+      
+      // Merge results from Python service with database results
+      // This assumes Python service returns { success: true, events: [...] }
+      if (pythonResponse.data.success && pythonResponse.data.events) {
+        // We might get duplicates between DB and Python service, so let's handle that
+        // by using a Map with eventId as the key
+        const eventMap = new Map();
+        
+        // Add Python events
+        pythonResponse.data.events.forEach((event: any) => {
+          eventMap.set(event.id || event.eventId, event);
+        });
+        
+        // Add DB events, overwriting Python events with the same ID
+        events.forEach(event => {
+          eventMap.set(event.id, event);
+        });
+        
+        // Convert back to array
+        events = Array.from(eventMap.values());
+      }
+    } catch (pythonError) {
+      console.error('Error fetching retraining events from Python service:', pythonError);
+      // Continue with database results only
+    }
+    
+    res.json({
+      success: true,
+      count: events.length,
+      events: events
+    });
+  } catch (error) {
+    console.error('Error fetching retraining events:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Record retraining event
+router.post('/retraining-events', async (req, res) => {
+  try {
+    const { symbol, timeframe, method, market_conditions, result } = req.body;
+    
+    if (!symbol || !timeframe || !method) {
+      return res.status(400).json({
+        success: false,
+        error: 'Symbol, timeframe, and method are required'
+      });
+    }
+    
+    // Try to record via Python service
+    try {
+      const pythonResponse = await axios.post(`${pythonServiceUrl}/api/ml/optimization/retraining-events`, req.body);
+      
+      // Also store in our database
+      try {
+        // Convert the data to match our schema
+        const retrainingEvent = await storage.createRetrainingEvent({
+          symbol: symbol.replace('/', '').toLowerCase(),
+          timeframe,
+          retrainingMethod: method,
+          marketConditions: JSON.stringify(market_conditions || {}),
+          result: JSON.stringify(result || {}),
+          createdAt: new Date()
+        });
+        
+        res.json({
+          success: true,
+          message: 'Retraining event recorded',
+          eventId: retrainingEvent.id,
+          ...pythonResponse.data
+        });
+      } catch (dbError) {
+        console.error('Error storing retraining event in database:', dbError);
+        
+        res.json({
+          success: true,
+          message: 'Retraining event recorded in Python service only',
+          pythonServiceResponse: pythonResponse.data,
+          dbError: dbError instanceof Error ? dbError.message : 'Unknown error'
+        });
+      }
+    } catch (pythonError) {
+      console.error('Error recording retraining event via Python service:', pythonError);
+      
+      // Try to store in our database anyway
+      try {
+        // Convert the data to match our schema
+        const retrainingEvent = await storage.createRetrainingEvent({
+          symbol: symbol.replace('/', '').toLowerCase(),
+          timeframe,
+          retrainingMethod: method,
+          marketConditions: JSON.stringify(market_conditions || {}),
+          result: JSON.stringify(result || {}),
+          createdAt: new Date()
+        });
+        
+        res.json({
+          success: true,
+          message: 'Retraining event recorded in database only',
+          eventId: retrainingEvent.id,
+          pythonServiceError: pythonError instanceof Error ? pythonError.message : 'Unknown error'
+        });
+      } catch (dbError) {
+        console.error('Error storing retraining event in database:', dbError);
+        
+        res.status(500).json({
+          success: false,
+          error: 'Failed to record retraining event'
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error recording retraining event:', error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

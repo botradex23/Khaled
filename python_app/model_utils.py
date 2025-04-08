@@ -248,6 +248,113 @@ def plot_confusion_matrix(cm: np.ndarray, class_names: List[str],
     
     plt.close()
 
+def load_model_with_metadata(model_dir: str, model_name_prefix: str, with_model: bool = True) -> Dict[str, Any]:
+    """
+    Load a model and its metadata by name prefix
+    
+    This function finds the model file and its metadata based on a name prefix,
+    which is useful for adaptive tuning and model deployment workflows.
+    
+    Args:
+        model_dir: Directory containing models
+        model_name_prefix: Prefix of the model name (e.g. 'xgboost_btcusdt_1h_bayesian')
+        with_model: Whether to load the actual model object (may be memory intensive)
+        
+    Returns:
+        Dictionary containing model info and metadata
+    """
+    # Find all matching files
+    metadata_files = []
+    model_files = []
+    
+    if os.path.exists(model_dir):
+        for filename in os.listdir(model_dir):
+            if filename.startswith(model_name_prefix):
+                if filename.endswith('_metadata.json'):
+                    metadata_files.append(filename)
+                elif filename.endswith('.model'):
+                    model_files.append(filename)
+    
+    if not metadata_files:
+        logger.warning(f"No metadata files found for {model_name_prefix}")
+        return {}
+    
+    # Sort by most recent (assuming timestamp in filename)
+    metadata_files.sort(reverse=True)
+    model_files.sort(reverse=True)
+    
+    # Load metadata
+    metadata_path = os.path.join(model_dir, metadata_files[0])
+    with open(metadata_path, 'r') as f:
+        metadata = json.load(f)
+    
+    result = {
+        'metadata': metadata,
+        'metadata_path': metadata_path,
+        'params': metadata.get('params', {}),
+        'performance': metadata.get('performance', {}),
+        'training_date': metadata.get('training_date', ''),
+        'symbol': metadata.get('symbol', ''),
+        'timeframe': metadata.get('timeframe', '')
+    }
+    
+    # Load model if requested
+    if with_model and model_files:
+        model_path = os.path.join(model_dir, model_files[0])
+        try:
+            model = xgb.XGBClassifier()
+            model.load_model(model_path)
+            result['model'] = model
+            result['model_path'] = model_path
+        except Exception as e:
+            logger.error(f"Error loading model: {str(e)}")
+    
+    return result
+
+def find_best_model(model_dir: str, symbol: str, timeframe: str) -> Dict[str, Any]:
+    """
+    Find the best performing model for a specific symbol and timeframe
+    
+    Args:
+        model_dir: Directory containing models
+        symbol: Trading pair symbol
+        timeframe: Timeframe
+        
+    Returns:
+        Dictionary with the best model info
+    """
+    # Normalize inputs
+    symbol = symbol.replace('/', '').lower()
+    
+    # Prefixes to search for
+    prefixes = [
+        f'xgboost_{symbol}_{timeframe}_bayesian',
+        f'xgboost_{symbol}_{timeframe}_random_search',
+        f'xgboost_{symbol}_{timeframe}_grid_search',
+        f'xgboost_{symbol}_{timeframe}_adapted',
+        f'xgboost_{symbol}_{timeframe}_baseline'
+    ]
+    
+    best_model = None
+    best_f1 = -1
+    
+    # Search for each prefix
+    for prefix in prefixes:
+        model_info = load_model_with_metadata(model_dir, prefix, with_model=False)
+        if model_info and 'performance' in model_info:
+            f1_score = model_info['performance'].get('f1_score', 0)
+            if f1_score > best_f1:
+                best_f1 = f1_score
+                best_model = model_info
+                best_model['prefix'] = prefix
+    
+    if best_model:
+        logger.info(f"Found best model for {symbol} {timeframe}: {best_model['prefix']} with F1 score {best_f1}")
+    else:
+        logger.warning(f"No models found for {symbol} {timeframe}")
+        
+    return best_model or {}
+
 def plot_feature_importance(model: xgb.XGBClassifier, feature_names: List[str], 
                           title: str = "Feature Importance",
                           save_path: Optional[str] = None) -> None:

@@ -266,6 +266,17 @@ export const mlAdminFeedback = pgTable('ml_admin_feedback', {
   implementedAt: timestamp('implemented_at'),
 });
 
+// Retraining Events table
+export const retrainingEvents = pgTable('retraining_events', {
+  id: serial('id').primaryKey(),
+  symbol: text('symbol').notNull(),
+  timeframe: text('timeframe').notNull(),
+  retrainingMethod: text('retraining_method').notNull(),
+  marketConditions: json('market_conditions'),
+  result: json('result'),
+  createdAt: timestamp('created_at').defaultNow()
+});
+
 // Strategy Simulation Results table
 export const strategySimulations = pgTable('strategy_simulations', {
   id: serial('id').primaryKey(),
@@ -489,6 +500,7 @@ export const insertMarketConditionSchema = createInsertSchema(marketConditions).
 export const insertMlModelPerformanceSchema = createInsertSchema(mlModelPerformance).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertMlAdminFeedbackSchema = createInsertSchema(mlAdminFeedback).omit({ id: true, createdAt: true, implementedAt: true });
 export const insertStrategySimulationSchema = createInsertSchema(strategySimulations).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertRetrainingEventSchema = createInsertSchema(retrainingEvents).omit({ id: true, createdAt: true });
 
 // Type definitions
 export type User = typeof users.$inferSelect;
@@ -542,6 +554,29 @@ export type InsertMlAdminFeedback = z.infer<typeof insertMlAdminFeedbackSchema>;
 
 export type StrategySimulation = typeof strategySimulations.$inferSelect;
 export type InsertStrategySimulation = z.infer<typeof insertStrategySimulationSchema>;
+
+export type RetrainingEvent = typeof retrainingEvents.$inferSelect;
+export type InsertRetrainingEvent = z.infer<typeof insertRetrainingEventSchema>;
+
+// Type for market condition change tracking
+export type MarketConditionChangeType = {
+  timestamp: string;
+  reason: string;
+  conditionChanges: {
+    volatility?: { changed: boolean; magnitude: number };
+    volume?: { changed: boolean; magnitude: number };
+    trend?: { changed: boolean; details: any };
+  };
+  currentConditions: {
+    symbol?: string;
+    timeframe?: string;
+    timestamp?: string;
+    volatility?: number;
+    volume?: number;
+    trendDirection?: number;
+    trendStrength?: number;
+  };
+};
 
 // Type for chat messages (used by OpenAI API)
 export type ChatMessage = {
