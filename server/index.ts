@@ -81,6 +81,9 @@ app.use('/api/user-trading', userTradingRouter);
 // Auth routes for registration, login, etc.
 app.use('/api/auth', authRoutes);
 
+// Agent routes for OpenAI agent integration
+app.use('/api/agent-v2', agentRoutes);
+
 // Initialize Vite after server is created
 const startViteServer = async () => {
   try {

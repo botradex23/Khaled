@@ -40,7 +40,8 @@ import TradeLogsPage from "./pages/trade-logs";
 import DirectPricesPage from "./pages/DirectPricesPage";
 import AdminMyAgentPage from "./pages/admin-my-agent";
 import { DiagnosticPage } from "./pages/DiagnosticPage";
-import ChatWithAgentPage from "./pages/ChatWithAgent"; // NEW LINE
+import ChatWithAgentPage from "./pages/ChatWithAgent";
+import AgentV2Page from "./pages/agent-v2";
 
 function Router() {
   const { isAuthenticated, needsProfileCompletion, isLoading } = useAuth();
@@ -86,7 +87,8 @@ function Router() {
       <Route path="/direct-prices" component={DirectPricesPage} />
       <Route path="/admin-my-agent" component={AdminMyAgentPage} />
       <Route path="/diagnostics" component={DiagnosticPage} />
-      <Route path="/chat-agent" component={ChatWithAgentPage} /> {/* NEW LINE */}
+      <Route path="/chat-agent" component={ChatWithAgentPage} />
+      <Route path="/agent-v2" component={AgentV2Page} />
       <Route component={NotFound} />
     </Switch>
   );
