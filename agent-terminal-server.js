@@ -1,15 +1,17 @@
 /**
  * Agent Terminal Server
  * 
- * This is a simple HTTP server optimized for terminal access that allows direct interaction 
- * with the OpenAI agent and file operations via cURL commands.
+ * This is a HTTP server optimized for autonomous agent access that allows direct interaction 
+ * with the OpenAI agent and comprehensive file operations across the workspace.
  * 
  * Features:
- * - File read/write/append operations
+ * - Full workspace file traversal and operations
+ * - Recursive file listing and searching
+ * - Content-based file search (find files containing text)
+ * - Pattern-based file search (glob patterns)
  * - Simple authentication via X-Test-Admin header
  * - Chat completion with OpenAI
- * - File operations via direct endpoints
- * - Ability to execute specific agent tasks with file access
+ * - Enhanced agent task execution with automatic file access
  */
 
 import http from 'http';
@@ -23,8 +25,12 @@ import {
   appendFile, 
   deleteFile, 
   listFiles, 
+  listFilesRecursive,
   fileExists,
-  ensureDirectoryExists
+  ensureDirectoryExists,
+  findFilesByPattern,
+  findFilesContainingText,
+  getFileMetadata
 } from './agent-file-utils.js';
 
 // Load environment variables
@@ -187,6 +193,20 @@ async function executeFileOperation(operation, params) {
         files: listFiles(params.directory),
         timestamp: new Date().toISOString()
       };
+      
+    case 'list-recursive':
+      return { 
+        success: true, 
+        files: listFilesRecursive(
+          params.directory, 
+          {
+            maxDepth: params.maxDepth || -1,
+            exclude: params.exclude || ['node_modules', '.git', 'dist'],
+            include: params.include || null
+          }
+        ),
+        timestamp: new Date().toISOString()
+      };
     
     case 'exists':
       return { 
@@ -200,6 +220,41 @@ async function executeFileOperation(operation, params) {
       return { 
         success: true, 
         message: `Directory ${params.directoryPath} created or already exists`,
+        timestamp: new Date().toISOString()
+      };
+      
+    case 'metadata':
+      return {
+        success: true,
+        metadata: getFileMetadata(params.filePath),
+        timestamp: new Date().toISOString()
+      };
+      
+    case 'find-by-pattern':
+      const patternResults = await findFilesByPattern(
+        params.pattern, 
+        params.startDir || process.cwd()
+      );
+      return {
+        success: true,
+        files: patternResults,
+        count: patternResults.length,
+        timestamp: new Date().toISOString()
+      };
+      
+    case 'find-by-content':
+      const contentResults = await findFilesContainingText(
+        params.text,
+        {
+          startDir: params.startDir || process.cwd(),
+          extensions: params.extensions || [],
+          caseSensitive: params.caseSensitive || false
+        }
+      );
+      return {
+        success: true,
+        files: contentResults,
+        count: contentResults.length,
         timestamp: new Date().toISOString()
       };
     
@@ -566,8 +621,10 @@ async function handleRequest(req, res) {
       }
       
       const systemPrompt = body.systemPrompt || 
-        'You are an AI assistant with the ability to perform file operations. ' +
-        'You can read, write, modify, and delete files as requested.';
+        'You are an AI assistant with the ability to perform file operations across the workspace. ' +
+        'You can read, write, modify, and delete files as requested. ' +
+        'You can also search for files by name pattern or content, and list files recursively. ' +
+        'Always consider the entire workspace and help the user locate relevant files.';
       
       console.log(`Executing agent task with prompt: ${body.prompt.substring(0, 50)}...`);
       
@@ -575,6 +632,149 @@ async function handleRequest(req, res) {
       sendJsonResponse(res, result);
     } catch (error) {
       console.error('Error in agent task endpoint:', error);
+      sendJsonResponse(res, {
+        success: false,
+        message: error.message,
+        timestamp: new Date().toISOString()
+      }, 500);
+    }
+    return;
+  }
+  
+  // Find files by pattern endpoint
+  if (method === 'POST' && url.pathname === '/search/files') {
+    if (!isAuthenticated(req)) {
+      sendJsonResponse(res, {
+        success: false,
+        message: 'Authentication required. Please include X-Test-Admin: true header.'
+      }, 401);
+      return;
+    }
+    
+    try {
+      const body = await readRequestBody(req);
+      const { pattern, startDir } = body;
+      
+      if (!pattern) {
+        sendJsonResponse(res, {
+          success: false,
+          message: 'Missing required parameter: pattern'
+        }, 400);
+        return;
+      }
+      
+      console.log(`Searching for files with pattern: ${pattern}`);
+      
+      const results = await findFilesByPattern(pattern, startDir || process.cwd());
+      
+      sendJsonResponse(res, {
+        success: true,
+        files: results,
+        count: results.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error searching for files:', error);
+      sendJsonResponse(res, {
+        success: false,
+        message: error.message,
+        timestamp: new Date().toISOString()
+      }, 500);
+    }
+    return;
+  }
+  
+  // Find files containing text endpoint
+  if (method === 'POST' && url.pathname === '/search/content') {
+    if (!isAuthenticated(req)) {
+      sendJsonResponse(res, {
+        success: false,
+        message: 'Authentication required. Please include X-Test-Admin: true header.'
+      }, 401);
+      return;
+    }
+    
+    try {
+      const body = await readRequestBody(req);
+      const { text, startDir, extensions, caseSensitive } = body;
+      
+      if (!text) {
+        sendJsonResponse(res, {
+          success: false,
+          message: 'Missing required parameter: text'
+        }, 400);
+        return;
+      }
+      
+      console.log(`Searching for files containing text: ${text}`);
+      
+      const results = await findFilesContainingText(
+        text,
+        {
+          startDir: startDir || process.cwd(),
+          extensions: extensions || [],
+          caseSensitive: caseSensitive || false
+        }
+      );
+      
+      sendJsonResponse(res, {
+        success: true,
+        files: results,
+        count: results.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error searching file content:', error);
+      sendJsonResponse(res, {
+        success: false,
+        message: error.message,
+        timestamp: new Date().toISOString()
+      }, 500);
+    }
+    return;
+  }
+  
+  // List files recursively endpoint
+  if (method === 'POST' && url.pathname === '/list-recursive') {
+    if (!isAuthenticated(req)) {
+      sendJsonResponse(res, {
+        success: false,
+        message: 'Authentication required. Please include X-Test-Admin: true header.'
+      }, 401);
+      return;
+    }
+    
+    try {
+      const body = await readRequestBody(req);
+      const { directory, maxDepth, exclude, include } = body;
+      
+      if (!directory) {
+        sendJsonResponse(res, {
+          success: false,
+          message: 'Missing required parameter: directory'
+        }, 400);
+        return;
+      }
+      
+      console.log(`Listing files recursively in directory: ${directory}`);
+      
+      const files = listFilesRecursive(
+        directory, 
+        {
+          maxDepth: maxDepth || -1,
+          exclude: exclude || ['node_modules', '.git', 'dist'],
+          include: include || null
+        }
+      );
+      
+      sendJsonResponse(res, {
+        success: true,
+        files,
+        count: files.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error listing files recursively:', error);
       sendJsonResponse(res, {
         success: false,
         message: error.message,
@@ -698,11 +898,20 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`  GET  /health - Check if server is running`);
   console.log(`  GET  /verify-openai-key - Verify OpenAI API key`);
   console.log(`  GET  /read-file?path=<filepath> - Read a file (curl friendly)`);
-  console.log(`  POST /file-op - Execute file operations`);
+  console.log(`  POST /file-op - Execute file operations (read,write,append,delete,list,exists,mkdir)`);
   console.log(`  POST /create-test-file - Create a test file`);
   console.log(`  POST /agent-chat - Chat with the agent`);
-  console.log(`  POST /agent-task - Execute an agent task`);
+  console.log(`  POST /agent-task - Execute an agent task with full workspace access`);
   console.log(`  POST /agent-file-operation - Perform file operations with agent assistance`);
+  console.log(`\nAdvanced File Operations:`);
+  console.log(`  POST /search/files - Find files by name pattern`);
+  console.log(`  POST /search/content - Find files containing specific text`);
+  console.log(`  POST /list-recursive - List files recursively with filtering options`);
+  console.log(`\nEnhanced File Operations via /file-op endpoint:`);
+  console.log(`  - list-recursive: Recursive directory listing with depth control`);
+  console.log(`  - find-by-pattern: Find files matching glob patterns`);
+  console.log(`  - find-by-content: Find files containing specific text`);
+  console.log(`  - metadata: Get detailed file metadata`);
   console.log(`\nAuthentication: Include 'X-Test-Admin: true' header in all requests`);
   console.log(`====================================================\n`);
 });
