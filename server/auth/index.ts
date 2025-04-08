@@ -45,8 +45,12 @@ export function setupAuth(app: Express) {
     checkPeriod: 86400000, // prune expired entries every 24h
     ttl: 7 * 24 * 60 * 60 * 1000, // 7 days default TTL
     stale: false, // Don't check for stale right away
+    // Reduced logging to prevent console spam
     dispose: (key, value) => {
-      console.log(`Session expired and pruned: ${key.substring(0, 8)}...`);
+      // Only log session disposal at debug level
+      if (process.env.DEBUG_SESSION === 'true') {
+        console.log(`Session expired and pruned: ${key.substring(0, 8)}...`);
+      }
     }
   });
   

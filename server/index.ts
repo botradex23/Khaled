@@ -138,8 +138,22 @@ if (isDev) {
   log("Static file serving configured for production");
 }
 
-// Start server
+// Start server with faster timeout for Replit environment
+// This is important to ensure the server starts within Replit's workflow timeout
+const serverStartTimeout = setTimeout(() => {
+  log('WARNING: Server start timeout reached. Forcing port to listen...');
+  try {
+    server.close();
+    server.listen(port, "0.0.0.0", () => {
+      log(`Server forced to listen on port ${port} after timeout`);
+    });
+  } catch (err) {
+    log(`Failed to force server start: ${err.message}`);
+  }
+}, 10000); // 10 second timeout
+
 server.listen(port, "0.0.0.0", () => {
+  clearTimeout(serverStartTimeout);
   log(`Server is running on port ${port} in ${isProduction ? 'production' : 'development'} mode`);
   
   // Log detailed environment and startup info

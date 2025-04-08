@@ -38,7 +38,7 @@ interface MarketData {
 export const MarketPricesTable = () => {
   // Table configuration state
   const [sortConfig, setSortConfig] = useState<{ key: keyof MarketData; direction: 'asc' | 'desc' }>({
-    key: process.env.KEY || "",
+    key: 'symbol' as keyof MarketData,
     direction: 'asc',
   });
   const [searchQuery, setSearchQuery] = useState<string>('');
