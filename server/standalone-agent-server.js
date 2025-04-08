@@ -79,24 +79,54 @@ async function makeOpenAIRequest(endpoint, data) {
       throw new Error('OPENAI_API_KEY is not set in environment variables');
     }
     
-    const response = await fetch(`https://api.openai.com/v1/${endpoint}`, {
+    // Log the first 5 characters of the API key for debugging
+    const apiKeyPreview = apiKey.substring(0, 5) + '...';
+    logInfo(`Making OpenAI API request to ${endpoint} with API key starting with ${apiKeyPreview}`);
+    
+    // Set up fetch options with a timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
+    const fetchOptions = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
-      body: JSON.stringify(data)
-    });
+      body: JSON.stringify(data),
+      signal: controller.signal
+    };
+    
+    // Log the request data (with sensitive info redacted)
+    const redactedData = { ...data };
+    if (redactedData.model) {
+      logInfo(`Using model: ${redactedData.model}`);
+    }
+    
+    // Make the actual fetch request
+    const response = await fetch(`https://api.openai.com/v1/${endpoint}`, fetchOptions);
+    clearTimeout(timeoutId); // Clear the timeout if request completes before timeout
     
     if (!response.ok) {
       const errorText = await response.text();
+      logError(`OpenAI API Error (${response.status})`, errorText);
       throw new Error(`OpenAI API Error (${response.status}): ${errorText}`);
     }
     
+    logInfo(`OpenAI API request to ${endpoint} successful`);
     return await response.json();
   } catch (error) {
-    logError('OpenAI API request failed', error);
-    throw error;
+    // Check for specific errors
+    if (error.name === 'AbortError') {
+      logError('OpenAI API request timed out after 15 seconds', error);
+      throw new Error('OpenAI API request timed out after 15 seconds. Please try again.');
+    } else if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
+      logError('OpenAI API network error', error);
+      throw new Error(`Network error connecting to OpenAI: ${error.message}`);
+    } else {
+      logError('OpenAI API request failed', error);
+      throw error;
+    }
   }
 }
 
@@ -105,8 +135,16 @@ async function makeOpenAIRequest(endpoint, data) {
  */
 async function getChatCompletion(prompt, systemPrompt = 'You are a helpful AI assistant.') {
   try {
-    const response = await makeOpenAIRequest('chat/completions', {
-      model: "gpt-4o",
+    logInfo(`Making chat completion request with prompt: ${prompt.substring(0, 50)}...`);
+    
+    // Set a timeout for the OpenAI request
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('OpenAI API request timed out after 10 seconds')), 10000);
+    });
+    
+    // Create the actual API request
+    const apiRequestPromise = makeOpenAIRequest('chat/completions', {
+      model: "gpt-3.5-turbo", // Fallback to a faster model
       messages: [
         {
           role: "system",
@@ -121,12 +159,17 @@ async function getChatCompletion(prompt, systemPrompt = 'You are a helpful AI as
       max_tokens: 500
     });
     
+    // Race between the timeout and the API request
+    const response = await Promise.race([apiRequestPromise, timeoutPromise]);
+    
+    logInfo('Chat completion successful');
     return {
       success: true,
       message: response.choices[0].message.content,
       full_response: response
     };
   } catch (error) {
+    logError('Error getting chat completion', error);
     return {
       success: false,
       message: `Error getting chat completion: ${error.message}`,
