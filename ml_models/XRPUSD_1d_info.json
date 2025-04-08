@@ -1,0 +1,15 @@
+{
+  "id": "XRPUSD_1d",
+  "symbol": "XRPUSD",
+  "timeframe": "1d",
+  "lastTrainingTime": 1744112452554,
+  "accuracy": 0.7918508118243376,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

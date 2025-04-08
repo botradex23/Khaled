@@ -1,0 +1,15 @@
+{
+  "id": "BTCUSDC_1d",
+  "symbol": "BTCUSDC",
+  "timeframe": "1d",
+  "lastTrainingTime": 1744112548114,
+  "accuracy": 0.6890836026447527,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

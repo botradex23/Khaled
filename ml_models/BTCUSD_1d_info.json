@@ -1,0 +1,15 @@
+{
+  "id": "BTCUSD_1d",
+  "symbol": "BTCUSD",
+  "timeframe": "1d",
+  "lastTrainingTime": 1744112611765,
+  "accuracy": 0.7805256004117859,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

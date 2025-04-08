@@ -67,31 +67,26 @@ class GlobalMarketDataService {
     try {
       log('Initializing Global Market Data Service');
       
-      // Try connecting to exchanges to determine which one to use as primary
-      const binanceAvailable = await this.testExchangeAvailability('binance');
-      const okxAvailable = await this.testExchangeAvailability('okx');
-
-      if (binanceAvailable) {
-        this.primaryExchange = 'binance';
-        this.fallbackExchange = 'okx';
-        log('Using Binance as primary exchange for market data');
-      } else if (okxAvailable) {
-        this.primaryExchange = 'okx';
-        this.fallbackExchange = 'binance';
-        log('Using OKX as primary exchange for market data');
-      } else {
-        log('WARNING: Both primary and fallback exchanges unavailable. Using cached data if available.');
-      }
-
-      // Start data collection
-      await this.refreshMarketData();
-      this.startDataCollection();
+      // Always use OKX as primary exchange since Binance is consistently returning 451 errors
+      this.primaryExchange = 'okx';
+      this.fallbackExchange = 'binance';
+      log('Using OKX as primary exchange for market data due to Binance geo-restrictions');
       
+      // Start with a single data refresh
+      await this.refreshMarketData();
+      
+      // Mark as initialized to allow server to start
       this.isInitialized = true;
       log('Global Market Data Service initialized successfully');
-    } catch (error) {
+      
+      // Delay periodic data collection to prevent slowing down server startup
+      setTimeout(() => {
+        this.startDataCollection();
+      }, 15000);
+    } catch (error: any) {
       log(`Error initializing Global Market Data Service: ${error.message}`);
-      throw error;
+      // Don't throw error, set initialized status anyway to prevent startup failure
+      this.isInitialized = true;
     }
   }
 

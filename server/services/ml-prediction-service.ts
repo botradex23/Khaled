@@ -278,11 +278,50 @@ class MLPredictionService {
       this.updatePredictions();
     }, 5 * 60 * 1000);
     
-    // Start initial training and prediction
+    // Delay initial training to prevent server startup timeout
+    // Allow the server to start first, then begin ML operations
     setTimeout(() => {
-      this.processTrainingQueue();
-      this.updatePredictions();
-    }, 5000);
+      // Start with a small batch of predictions (don't process all at once)
+      this.updatePredictionsForTopCoins();
+      
+      // Then start training with a longer delay
+      setTimeout(() => {
+        this.processTrainingQueue();
+      }, 25000);
+    }, 20000);
+  }
+  
+  /**
+   * Update predictions only for top coins to avoid server timeout during startup
+   */
+  private async updatePredictionsForTopCoins(): Promise<void> {
+    try {
+      log('Updating predictions for top coins only');
+      
+      // Get only the highest priority coins to avoid timeout during startup
+      const topCoins = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'ADAUSDT'];
+      const timeframes = ['1h', '4h', '1d'];
+      
+      for (const symbol of topCoins) {
+        for (const timeframe of timeframes) {
+          const modelId = `${symbol}_${timeframe}`;
+          const model = this.models[modelId];
+          
+          if (model) {
+            await this.generateSimplePrediction(model);
+          }
+        }
+      }
+      
+      log(`Generated initial predictions for top coins`);
+      
+      // Schedule the full prediction update with a delay
+      setTimeout(() => {
+        this.updatePredictions();
+      }, 30000);
+    } catch (error: any) {
+      log(`Error updating top coin predictions: ${error.message}`);
+    }
   }
 
   /**

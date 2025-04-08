@@ -1,0 +1,50 @@
+express] Insufficient data for training model STETHUSD_1d
+11:40:41 AM [express] Training model XRPUSD_1h
+11:40:41 AM [express] Python ML API is not available
+11:40:41 AM [express] Python API unavailable for training model XRPUSD_1h
+11:40:46 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:40:46 AM [express] Training model XRPUSD_4h
+11:40:47 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:40:47 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:40:47 AM [express] Python ML API is not available
+11:40:47 AM [express] Python API unavailable for training model XRPUSD_4h
+11:40:52 AM [express] Training model XRPUSD_1d
+11:40:52 AM [express] Python ML API is not available
+11:40:52 AM [express] Python API unavailable for training model XRPUSD_1d
+11:40:57 AM [express] Training model BNBUSD_1h
+11:40:57 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:40:57 AM [express] Insufficient data for training model BNBUSD_1h
+11:41:02 AM [express] Training model BNBUSD_4h
+11:41:03 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:41:03 AM [express] Insufficient data for training model BNBUSD_4h
+11:41:08 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:41:08 AM [express] Training model BNBUSD_1d
+11:41:08 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:41:08 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:41:08 AM [express] Insufficient data for training model BNBUSD_1d
+11:41:08 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:41:13 AM [express] Training model WBTCUSDC_1h
+11:41:13 AM [express] Python ML API is not available
+11:41:13 AM [express] Python API unavailable for training model WBTCUSDC_1h
+11:41:17 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:41:17 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:41:18 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:41:18 AM [express] Training model WBTCUSDC_4h
+11:41:19 AM [express] Python ML API is not available
+11:41:19 AM [express] Python API unavailable for training model WBTCUSDC_4h
+11:41:20 AM [express] Updated 671 market prices from okx
+11:41:24 AM [express] Training model WBTCUSDC_1d
+11:41:24 AM [express] Python ML API is not available
+11:41:24 AM [express] Python API unavailable for training model WBTCUSDC_1d
+11:41:29 AM [express] Training model WBTCUSDT_1h
+11:41:29 AM [express] Python ML API is not available
+11:41:29 AM [express] Python API unavailable for training model WBTCUSDT_1h
+11:41:34 AM [express] Training model WBTCUSDT_4h
+11:41:35 AM [express] Python ML API is not available
+11:41:35 AM [express] Python API unavailable for training model WBTCUSDT_4h
+11:41:40 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:41:40 AM [express] Training model WBTCUSDT_1d
+11:41:40 AM [express] Error fetching candles from binance: Request failed with status code 451
+11:41:40 AM [express] Python ML API is not available
+11:41:40 AM [express] Python API unavailable for training model WBTCUSDT_1d
+11:41:40 AM [express] Error fetching candles from binance: Request failed with status code 451

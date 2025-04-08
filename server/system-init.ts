@@ -12,34 +12,49 @@ import { mlPredictionService } from './services/ml-prediction-service';
 
 /**
  * Initialize global system components
+ * Optimized to prevent server startup timeout
  */
 export async function initializeGlobalSystem(): Promise<void> {
   try {
     log('Initializing global system components...');
     
-    // Step 1: Initialize global market data service
+    // Step 1: Initialize global market data service with promise
     log('Initializing Global Market Data Service...');
-    await globalMarketData.initialize();
-    log('Global Market Data Service initialized successfully');
+    const marketDataPromise = globalMarketData.initialize();
     
-    // Step 2: Initialize ML prediction service
-    log('Initializing ML Prediction Service...');
-    await mlPredictionService.initialize();
-    log('ML Prediction Service initialized successfully');
+    // Don't wait for completion - we'll let it continue in the background
+    // This allows the server to start up faster
+    marketDataPromise.catch((error: any) => {
+      log(`Background market data initialization error: ${error.message}`);
+    });
     
-    // Log system status
-    const marketDataStatus = globalMarketData.getStatus();
-    const mlStatus = mlPredictionService.getStatus();
+    // Step 2: Initialize ML prediction service with delay and without waiting
+    setTimeout(() => {
+      log('Initializing ML Prediction Service...');
+      mlPredictionService.initialize().catch((error: any) => {
+        log(`Background ML prediction initialization error: ${error.message}`);
+      });
+    }, 10000);
     
-    log(`Global Market Data Status: Using ${marketDataStatus.primaryExchange} as primary exchange`);
-    log(`ML Prediction Status: ${mlStatus.totalModels} models loaded`);
+    // Even though services are still initializing in the background,
+    // let the system startup process continue
+    log('Global system components initialization started - continuing server startup');
     
-    log('Global system components initialized successfully');
-  } catch (error) {
+    // Delay logging system status until a bit later
+    setTimeout(() => {
+      try {
+        const marketDataStatus = globalMarketData.getStatus();
+        const mlStatus = mlPredictionService.getStatus();
+        
+        log(`Global Market Data Status: Using ${marketDataStatus.primaryExchange} as primary exchange`);
+        log(`ML Prediction Status: ${mlStatus.totalModels} models loaded`);
+      } catch (err: any) {
+        log(`Error getting system status: ${err.message}`);
+      }
+    }, 20000);
+  } catch (error: any) {
     log(`Error initializing global system: ${error.message}`);
-    
-    // Still continue even if there are errors
-    // This allows the system to at least partially function
+    // Continue anyway to allow server to start
   }
 }
 

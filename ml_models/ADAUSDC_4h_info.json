@@ -1,0 +1,15 @@
+{
+  "id": "ADAUSDC_4h",
+  "symbol": "ADAUSDC",
+  "timeframe": "4h",
+  "lastTrainingTime": 1744112574590,
+  "accuracy": 0.6669265713103129,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

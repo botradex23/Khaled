@@ -1,0 +1,15 @@
+{
+  "id": "BETHUSDT_4h",
+  "symbol": "BETHUSDT",
+  "timeframe": "4h",
+  "lastTrainingTime": 1744113054061,
+  "accuracy": 0.7768117524416263,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

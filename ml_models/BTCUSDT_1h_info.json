@@ -1,0 +1,15 @@
+{
+  "id": "BTCUSDT_1h",
+  "symbol": "BTCUSDT",
+  "timeframe": "1h",
+  "lastTrainingTime": 1744112553373,
+  "accuracy": 0.7953626407028962,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

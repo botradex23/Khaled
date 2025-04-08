@@ -1,0 +1,15 @@
+{
+  "id": "ETHUSD_1d",
+  "symbol": "ETHUSD",
+  "timeframe": "1d",
+  "lastTrainingTime": 1744112913538,
+  "accuracy": 0.6838658443875189,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "RADARUSD_4h",
+  "symbol": "RADARUSD",
+  "timeframe": "4h",
+  "lastTrainingTime": 1744113022368,
+  "accuracy": 0.7727395091794856,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

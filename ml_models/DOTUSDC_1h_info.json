@@ -1,0 +1,15 @@
+{
+  "id": "DOTUSDC_1h",
+  "symbol": "DOTUSDC",
+  "timeframe": "1h",
+  "lastTrainingTime": 1744112521811,
+  "accuracy": 0.7639167887928356,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

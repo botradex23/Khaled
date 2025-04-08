@@ -1,0 +1,15 @@
+{
+  "id": "WBTCUSDC_1h",
+  "symbol": "WBTCUSDC",
+  "timeframe": "1h",
+  "lastTrainingTime": 1744112474018,
+  "accuracy": 0.7882391669312507,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

@@ -3,6 +3,8 @@
  * 
  * This is the main entry point for the Express server.
  * It initializes the server and middleware, sets up routes, and starts listening.
+ * 
+ * To prevent startup timeout, heavy initialization is delayed until after server is running.
  */
 
 import express from 'express';
@@ -11,10 +13,12 @@ import passport from 'passport';
 import MemoryStore from 'memorystore';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { log } from './vite';
+import { log, setupVite } from './vite';
 import globalMarketRouter from './api/global-market';
 import userTradingRouter from './api/user-trading';
-import { initializeGlobalSystem } from './system-init';
+import authRoutes from './routes/auth-routes';
+import { setupAuth } from './auth';
+import http from 'http';
 
 // Setup __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -24,11 +28,17 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const MemoryStoreSession = MemoryStore(session);
 
-// Initialize global system components (ML, market data, etc.)
-// This runs 24/7 without requiring user API keys
-initializeGlobalSystem().catch(err => {
-  log(`Failed to initialize global system: ${err.message}`);
-  log('Continuing with server initialization...');
+// Create HTTP server
+const server = http.createServer(app);
+
+// Add status endpoint first to ensure quick startup
+app.get('/api/status', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    message: 'Server is running. Global systems will initialize shortly.',
+    version: '1.0.0'
+  });
 });
 
 // Configure session middleware
@@ -44,9 +54,8 @@ app.use(
   })
 );
 
-// Basic passport configuration
-app.use(passport.initialize());
-app.use(passport.session());
+// Setup authentication with passport
+setupAuth(app);
 
 // Middleware to parse JSON and URL-encoded request bodies
 app.use(express.json());
@@ -58,5 +67,46 @@ app.use('/api/global-market', globalMarketRouter);
 // New API routes for user trading (auth required)
 app.use('/api/user-trading', userTradingRouter);
 
-// Export app for use in vite.ts
+// Auth routes for registration, login, etc.
+app.use('/api/auth', authRoutes);
+
+// Initialize Vite after server is created
+const startViteServer = async () => {
+  try {
+    // Setup Vite in middleware mode
+    await setupVite(app, server);
+    log('Vite middleware setup complete');
+    
+    // Start the server
+    const PORT = process.env.PORT || 5000;
+    server.listen(PORT, () => {
+      log(`Server is running on port ${PORT}`);
+      
+      // Wait a few seconds before initializing heavy systems
+      setTimeout(async () => {
+        try {
+          // Dynamically import to allow server to start first
+          const { initializeGlobalSystem } = await import('./system-init');
+          log('Beginning delayed global system initialization');
+          
+          // Initialize global system in the background
+          initializeGlobalSystem().catch((err: Error) => {
+            log(`Global system initialization error: ${err.message}`);
+            log('Server will continue running with limited functionality');
+          });
+        } catch (err: any) {
+          log(`Error during delayed initialization: ${err.message}`);
+        }
+      }, 5000); // Wait 5 seconds after server starts
+    });
+  } catch (err: any) {
+    log(`Error setting up Vite: ${err.message}`);
+    process.exit(1);
+  }
+};
+
+// Start the server with Vite integration
+startViteServer();
+
+// Export app for potential use elsewhere
 export { app };

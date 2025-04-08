@@ -1,0 +1,15 @@
+{
+  "id": "ETHUSDC_1d",
+  "symbol": "ETHUSDC",
+  "timeframe": "1d",
+  "lastTrainingTime": 1744113075153,
+  "accuracy": 0.7971621985405224,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

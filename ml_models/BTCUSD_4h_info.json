@@ -1,0 +1,15 @@
+{
+  "id": "BTCUSD_4h",
+  "symbol": "BTCUSD",
+  "timeframe": "4h",
+  "lastTrainingTime": 1744112606471,
+  "accuracy": 0.725552222622216,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}

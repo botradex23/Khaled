@@ -1,0 +1,15 @@
+{
+  "id": "SOLUSDT_4h",
+  "symbol": "SOLUSDT",
+  "timeframe": "4h",
+  "lastTrainingTime": 1744113117561,
+  "accuracy": 0.66878161761797,
+  "features": [
+    "price",
+    "volume",
+    "rsi",
+    "macd",
+    "ema",
+    "sma"
+  ]
+}
