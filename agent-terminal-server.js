@@ -15,6 +15,7 @@
  */
 
 import http from 'http';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { parse as parseUrl } from 'url';
@@ -376,22 +377,14 @@ async function handleRequest(req, res) {
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-    console.error('Error occurred:', error);
-    // Add proper error handling
-    if (error.code === 'ENOENT') {
-      // File not found error
-      console.warn('File or directory not found, creating fallback...');
-      // Add appropriate fallback logic
-    } else if (error.message && error.message.includes('NetworkError')) {
-      // Network error
-      console.warn('Network error detected, will retry later...');
-      // Add retry mechanism or graceful degradation
-    } else {
-      // Other error types
-      console.warn('Unexpected error, proceeding with defaults...');
-      // Add fallback or recovery logic
+      console.error('Error occurred:', error);
+      sendJsonResponse(res, {
+        success: false,
+        message: `OpenAI API key verification failed: ${error.message || 'Unknown error'}`,
+        error: error.code || 'unknown_error',
+        timestamp: new Date().toISOString()
+      }, 500);
     }
-  }
     return;
   }
   
