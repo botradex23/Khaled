@@ -1,184 +1,62 @@
-// server/index.ts
+/**
+ * Server Entry Point
+ * 
+ * This is the main entry point for the Express server.
+ * It initializes the server and middleware, sets up routes, and starts listening.
+ */
 
-import express from "express";
-import http from "http";
-import { log, serveStatic } from "./vite";
-import routes from "./routes";
-import { setupVite } from "./vite";
-import { setupAuth } from "./auth";
-import path from "path";
-import { fileURLToPath } from "url";
-import session from "express-session";
-import dotenv from "dotenv";
+import express from 'express';
+import session from 'express-session';
+import passport from 'passport';
+import MemoryStore from 'memorystore';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { log } from './vite';
+import globalMarketRouter from './api/global-market';
+import userTradingRouter from './api/user-trading';
+import { initializeGlobalSystem } from './system-init';
 
-// Load environment variables from .env
-dotenv.config();
-
-// Get directory path for ES modules
+// Setup __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Create Express app
 const app = express();
+const MemoryStoreSession = MemoryStore(session);
 
-// Use environment port or fallback to 5000
-// Replit often uses port 3000 for web apps
-const port = parseInt(process.env.PORT || "5000", 10);
-
-// Detect environment
-const isProduction = process.env.NODE_ENV === "production";
-const isDev = !isProduction;
-const isReplit = process.env.REPL_ID || process.env.REPLIT_ID || process.env.REPLIT;
-
-// Allow configurable trusted proxies
-const trustedProxies = (process.env.TRUSTED_PROXIES || '').split(',').filter(Boolean);
-if (isReplit) {
-  // Configure to trust Replit proxies
-  app.set('trust proxy', true);
-} else if (trustedProxies.length) {
-  app.set('trust proxy', trustedProxies);
-}
-
-// Enhanced logging for deployment diagnostics
-log(`Starting server in ${isProduction ? 'production' : 'development'} mode`);
-if (isReplit) {
-  log('Running in Replit environment');
-  log(`Replit ID: ${process.env.REPL_ID || process.env.REPLIT_ID || 'unknown'}`);
-  log(`Replit Slug: ${process.env.REPL_SLUG || 'unknown'}`);
-  log(`Replit Owner: ${process.env.REPL_OWNER || 'unknown'}`);
-}
-
-// CORS configuration for development
-if (isDev) {
-  app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
-    
-    // Preflight
-    if (req.method === 'OPTIONS') {
-      return res.sendStatus(200);
-    }
-    next();
-  });
-}
-
-// Middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Initialize authentication (includes session configuration)
-setupAuth(app);
-
-// Routes
-app.use(routes);
-
-// Enhanced health check with useful diagnostic info
-app.get("/api/health", (req, res) => {
-  res.json({ 
-    status: "ok", 
-    timestamp: new Date().toISOString(),
-    env: isDev ? 'development' : 'production',
-    node_version: process.version,
-    memory_usage: process.memoryUsage(),
-    uptime: process.uptime(),
-    isReplit: !!isReplit,
-    host: req.get('host'),
-    headers: {
-      'x-forwarded-for': req.get('x-forwarded-for'),
-      'x-forwarded-host': req.get('x-forwarded-host'),
-      'user-agent': req.get('user-agent')
-    }
-  });
+// Initialize global system components (ML, market data, etc.)
+// This runs 24/7 without requiring user API keys
+initializeGlobalSystem().catch(err => {
+  log(`Failed to initialize global system: ${err.message}`);
+  log('Continuing with server initialization...');
 });
 
-// Server with improved error handling
-const server = http.createServer(app);
-server.timeout = 60000; // 60 second timeout
+// Configure session middleware
+app.use(
+  session({
+    cookie: { maxAge: 86400000 }, // 24 hours
+    store: new MemoryStoreSession({
+      checkPeriod: 86400000 // Prune expired entries every 24h
+    }),
+    resave: false,
+    saveUninitialized: false,
+    secret: process.env.SESSION_SECRET || 'keyboard cat'
+  })
+);
 
-// Handle server errors
-server.on('error', (error) => {
-  log(`Server error: ${error.message}`);
-  // Try to restart on port binding errors after a delay
-  if ((error as any).code === 'EADDRINUSE') {
-    log(`Port ${port} is in use, retrying in 5 seconds...`);
-    setTimeout(() => {
-      server.close();
-      server.listen(port, "0.0.0.0");
-    }, 5000);
-  }
-});
+// Basic passport configuration
+app.use(passport.initialize());
+app.use(passport.session());
 
-// Serve frontend based on environment
-if (isDev) {
-  // Development: use Vite middleware
-  setupVite(app, server)
-    .then(() => log("Vite middleware setup complete"))
-    .catch((err) => {
-      log(`Vite middleware setup failed: ${err.message}`);
-      log("Starting without Vite middleware, only API routes will function");
-    });
-} else {
-  // Production: serve static files from dist/public directory
-  const distPath = path.resolve(__dirname, '..', 'dist', 'public');
-  app.use(express.static(distPath, {
-    maxAge: '1d', // Cache static assets for 1 day
-    etag: true,
-    index: false, // Don't automatically serve index.html, we'll handle that below
-  }));
+// Middleware to parse JSON and URL-encoded request bodies
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-  // Serve index.html for all non-API routes (SPA fallback)
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) {
-      return next();
-    }
-    res.sendFile(path.join(distPath, 'index.html'), { maxAge: '0' }); // Don't cache index.html
-  });
+// New API routes for the global market (no auth required)
+app.use('/api/global-market', globalMarketRouter);
 
-  log("Static file serving configured for production");
-}
+// New API routes for user trading (auth required)
+app.use('/api/user-trading', userTradingRouter);
 
-// Start server with faster timeout for Replit environment
-// This is important to ensure the server starts within Replit's workflow timeout
-const serverStartTimeout = setTimeout(() => {
-  log('WARNING: Server start timeout reached. Forcing port to listen...');
-  try {
-    server.close();
-    server.listen(port, "0.0.0.0", () => {
-      log(`Server forced to listen on port ${port} after timeout`);
-    });
-  } catch (err) {
-    log(`Failed to force server start: ${err.message}`);
-  }
-}, 10000); // 10 second timeout
-
-server.listen(port, "0.0.0.0", () => {
-  clearTimeout(serverStartTimeout);
-  log(`Server is running on port ${port} in ${isProduction ? 'production' : 'development'} mode`);
-  
-  // Log detailed environment and startup info
-  console.log('Detailed environment information:');
-  console.log('- NODE_ENV:', process.env.NODE_ENV);
-  console.log('- PORT:', port);
-  console.log('- Memory usage:', process.memoryUsage());
-  
-  // Log useful access URLs
-  const localUrl = `http://localhost:${port}`;
-  const networkUrl = `http://0.0.0.0:${port}`;
-  
-  log(`Local access URL: ${localUrl}`);
-  
-  if (isReplit) {
-    // For Replit, we want to show the Replit URL
-    const replSlug = process.env.REPL_SLUG;
-    const replOwner = process.env.REPL_OWNER;
-    if (replSlug && replOwner) {
-      const replitUrl = `https://${replSlug}.${replOwner}.repl.co`;
-      log(`Replit application URL: ${replitUrl}`);
-    } else {
-      log(`Replit application URL: Check the 'Webview' tab in your Replit window`);
-    }
-  } else {
-    log(`Network access URL: ${networkUrl}`);
-  }
-});
+// Export app for use in vite.ts
+export { app };
