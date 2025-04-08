@@ -30,6 +30,18 @@ from python_app.routes.ml_prediction_routes import ml_prediction_bp, register_ro
 from python_app.routes.live_prediction_routes import live_prediction_bp, register_routes as register_live_prediction_routes
 # Import our new direct binance prices blueprint
 from python_app.routes.direct_binance_prices import direct_binance_prices_bp
+# Import ML optimization routes
+try:
+    from python_app.routes.ml_optimization_routes import ml_optimization_bp
+except ImportError:
+    logging.warning("Could not import ML Optimization blueprint. ML optimization will be limited.")
+    ml_optimization_bp = None
+# Import strategy simulation routes
+try:
+    from python_app.routes.strategy_simulation_routes import strategy_simulation_bp
+except ImportError:
+    logging.warning("Could not import Strategy Simulation blueprint. Strategy simulation will not be available.")
+    strategy_simulation_bp = None
 # Import the trade logs blueprint
 try:
     from python_app.routes.trade_logs_routes import trade_logs_bp
@@ -99,6 +111,16 @@ def create_app(config=None):
     app.register_blueprint(ml_prediction_bp)
     app.register_blueprint(direct_binance_prices_bp)
     logging.info("Direct Binance Prices blueprint registered successfully")
+    
+    # Register ML optimization blueprint if available
+    if ml_optimization_bp:
+        app.register_blueprint(ml_optimization_bp)
+        logging.info("ML Optimization blueprint registered successfully")
+        
+    # Register strategy simulation blueprint if available
+    if strategy_simulation_bp:
+        app.register_blueprint(strategy_simulation_bp)
+        logging.info("Strategy Simulation blueprint registered successfully")
     
     # Register trade logs blueprint if available
     if trade_logs_bp:
@@ -212,7 +234,9 @@ def create_app(config=None):
                 'ai_signals': True,
                 'trading': True,
                 'api_keys': True,
-                'trade_logs': bool(trade_logs_bp)
+                'trade_logs': bool(trade_logs_bp),
+                'ml_optimization': bool(ml_optimization_bp),
+                'strategy_simulation': bool(strategy_simulation_bp)
             }
         })
     

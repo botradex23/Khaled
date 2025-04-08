@@ -389,6 +389,271 @@ router.post('/strategy-simulations', async (req, res) => {
   }
 });
 
+// Proxy route to run a strategy simulation
+router.post('/strategy-simulation/run', async (req, res) => {
+  try {
+    const { symbol, timeframe, strategyConfig, startDate, endDate } = req.body;
+    
+    if (!symbol || !timeframe || !strategyConfig || !startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required parameters (symbol, timeframe, strategyConfig, startDate, endDate)'
+      });
+    }
+    
+    // Forward the request to the Python ML service
+    console.log(`Running strategy simulation for ${symbol} on ${timeframe} timeframe`);
+    
+    try {
+      const pythonResponse = await axios.post(`${pythonServiceUrl}/api/strategy-simulation/run`, {
+        symbol,
+        timeframe,
+        strategyConfig,
+        startDate,
+        endDate
+      });
+      
+      // If simulation was successful, also save it to our database
+      if (pythonResponse.data.success && pythonResponse.data.data) {
+        const simulationData = pythonResponse.data.data;
+        
+        try {
+          await storage.createStrategySimulation({
+            name: `${simulationData.strategyType} strategy for ${symbol} (${timeframe})`,
+            description: `Simulation from ${startDate} to ${endDate}`,
+            symbol,
+            timeframe,
+            strategyType: simulationData.strategyType,
+            startDate: new Date(startDate),
+            endDate: new Date(endDate),
+            initialInvestment: simulationData.initialInvestment,
+            finalBalance: simulationData.finalBalance,
+            pnl: simulationData.pnl,
+            pnlPercent: simulationData.pnlPercent,
+            winRate: simulationData.winRate,
+            drawdown: simulationData.drawdown,
+            maxDrawdown: simulationData.maxDrawdown,
+            sharpeRatio: simulationData.sharpeRatio || 0,
+            volatility: simulationData.volatility || 0,
+            tradeCount: simulationData.tradeCount,
+            winCount: simulationData.winCount,
+            lossCount: simulationData.lossCount,
+            averageWin: simulationData.averageWin,
+            averageLoss: simulationData.averageLoss,
+            largestWin: simulationData.largestWin,
+            largestLoss: simulationData.largestLoss,
+            modelParameters: simulationData.modelParameters,
+            tradesSnapshot: simulationData.trades,
+            chartDataUrl: simulationData.chartUrl
+          });
+        } catch (dbError) {
+          // Log the error but don't fail the whole request
+          console.error('Failed to save simulation to database:', dbError);
+        }
+      }
+      
+      res.json(pythonResponse.data);
+    } catch (pythonError) {
+      console.error('Error from Python service:', pythonError);
+      res.status(500).json({
+        success: false,
+        error: pythonError.response?.data?.error || 'Error running strategy simulation'
+      });
+    }
+  } catch (error) {
+    console.error('Error running strategy simulation:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Proxy route to compare strategy types
+router.post('/strategy-simulation/compare', async (req, res) => {
+  try {
+    const { symbol, timeframe, startDate, endDate } = req.body;
+    
+    if (!symbol || !timeframe || !startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required parameters (symbol, timeframe, startDate, endDate)'
+      });
+    }
+    
+    // Forward the request to the Python ML service
+    console.log(`Comparing strategies for ${symbol} on ${timeframe} timeframe (${startDate} to ${endDate})`);
+    
+    try {
+      const pythonResponse = await axios.post(`${pythonServiceUrl}/api/strategy-simulation/compare`, {
+        symbol,
+        timeframe,
+        startDate,
+        endDate
+      });
+      
+      // If successful, also store a reference in the database for future retrieval
+      if (pythonResponse.data.success && pythonResponse.data.data) {
+        try {
+          const comparisonResult = pythonResponse.data.data;
+          
+          // For each strategy in the comparison, create a simulation record
+          for (const [strategyType, strategyData] of Object.entries(comparisonResult.strategies)) {
+            await storage.createStrategySimulation({
+              name: `${comparisonResult.symbol}_${comparisonResult.timeframe}_${strategyType}_comparison`,
+              description: `Comparison of ${strategyType} strategy on ${comparisonResult.symbol}`,
+              symbol: comparisonResult.symbol,
+              timeframe: comparisonResult.timeframe,
+              strategyType: strategyType,
+              startDate: new Date(comparisonResult.startDate),
+              endDate: new Date(comparisonResult.endDate),
+              initialInvestment: 10000, // Assuming standard initial investment
+              finalBalance: 10000 + (strategyData as any).pnl,
+              pnl: (strategyData as any).pnl,
+              pnlPercent: (strategyData as any).pnlPercent,
+              winRate: (strategyData as any).winRate,
+              drawdown: 0, // This might not be in the response
+              maxDrawdown: (strategyData as any).maxDrawdown,
+              sharpeRatio: (strategyData as any).sharpeRatio || 0,
+              volatility: 0, // This might not be in the response
+              tradeCount: (strategyData as any).tradeCount,
+              winCount: Math.floor((strategyData as any).tradeCount * (strategyData as any).winRate),
+              lossCount: Math.floor((strategyData as any).tradeCount * (1 - (strategyData as any).winRate)),
+              averageWin: 0, // These might not be in the response
+              averageLoss: 0,
+              largestWin: 0,
+              largestLoss: 0,
+              modelParameters: {}, // This would need to come from the response
+              chartDataUrl: (strategyData as any).chartDataUrl
+            });
+          }
+          
+          console.log(`Saved comparison results to database for ${symbol} on ${timeframe}`);
+        } catch (dbError) {
+          // Just log the error but still return the results to the client
+          console.error('Failed to save comparison results to database:', dbError);
+        }
+      }
+      
+      res.json(pythonResponse.data);
+    } catch (pythonError) {
+      console.error('Error from Python service:', pythonError);
+      res.status(500).json({
+        success: false,
+        error: pythonError.response?.data?.error || 'Error comparing strategies'
+      });
+    }
+  } catch (error) {
+    console.error('Error comparing strategies:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Proxy route to get historical data for strategy simulation
+router.get('/strategy-simulation/historical-data/:symbol/:timeframe', async (req, res) => {
+  try {
+    const { symbol, timeframe } = req.params;
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required query parameters (startDate, endDate)'
+      });
+    }
+    
+    // Forward the request to the Python ML service
+    console.log(`Getting historical data for ${symbol} on ${timeframe} timeframe`);
+    
+    try {
+      const pythonResponse = await axios.get(
+        `${pythonServiceUrl}/api/strategy-simulation/historical-data/${symbol}/${timeframe}`,
+        {
+          params: {
+            startDate,
+            endDate
+          }
+        }
+      );
+      
+      res.json(pythonResponse.data);
+    } catch (pythonError) {
+      console.error('Error from Python service:', pythonError);
+      res.status(500).json({
+        success: false,
+        error: pythonError.response?.data?.error || 'Error getting historical data'
+      });
+    }
+  } catch (error) {
+    console.error('Error getting historical data:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Proxy route to get default parameters for strategy simulation
+router.get('/strategy-simulation/default-parameters', async (req, res) => {
+  try {
+    // Forward the request to the Python ML service
+    console.log('Getting default parameters for strategy simulation');
+    
+    try {
+      const pythonResponse = await axios.get(
+        `${pythonServiceUrl}/api/strategy-simulation/default-parameters`
+      );
+      
+      res.json(pythonResponse.data);
+    } catch (pythonError) {
+      console.error('Error from Python service:', pythonError);
+      
+      // If Python service is unavailable, return hardcoded defaults
+      res.json({
+        success: true,
+        data: {
+          conservative: {
+            strategyType: 'conservative',
+            initialInvestment: 10000.0,
+            tradeSizePercent: 7.0,
+            stopLossPercent: 1.5,
+            takeProfitPercent: 3.0,
+            leverage: 1.0,
+            confidenceThreshold: 0.65
+          },
+          balanced: {
+            strategyType: 'balanced',
+            initialInvestment: 10000.0,
+            tradeSizePercent: 10.0,
+            stopLossPercent: 2.0,
+            takeProfitPercent: 3.0,
+            leverage: 1.0,
+            confidenceThreshold: 0.6
+          },
+          aggressive: {
+            strategyType: 'aggressive',
+            initialInvestment: 10000.0,
+            tradeSizePercent: 15.0,
+            stopLossPercent: 3.0,
+            takeProfitPercent: 2.5,
+            leverage: 2.0,
+            confidenceThreshold: 0.55
+          }
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error getting default parameters:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Start a new XGBoost optimization process
 router.post('/start-optimization', async (req, res) => {
   try {

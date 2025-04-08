@@ -1,16 +1,16 @@
 import { useState, lazy, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
 import { 
   Select, 
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+} from '../components/ui/select';
+import { Badge } from '../components/ui/badge';
 import {
   Table,
   TableBody,
@@ -18,11 +18,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '../components/ui/table';
 // Lazy load recharts components to improve initial load time
 import { Loader2, ArrowUpRight, BarChart3, LineChart as LineChartIcon, ArrowUpDown } from 'lucide-react';
 import { format } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '../hooks/use-toast';
 import {
   Dialog,
   DialogClose,
@@ -32,10 +32,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { queryClient, apiRequest } from '@/lib/queryClient';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+} from '../components/ui/dialog';
+import { queryClient, apiRequest } from '../lib/queryClient';
+import { Label } from '../components/ui/label';
+import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
+import { StrategySimulationComparison } from '../components/ui/strategy-simulation-comparison';
 
 // Lazy load chart components more granularly to improve startup performance
 const CartesianGrid = lazy(() => import('recharts').then(mod => ({ default: mod.CartesianGrid })));
@@ -594,75 +595,89 @@ export default function MlOptimizationPage() {
         
         {/* Strategy Simulations Tab */}
         <TabsContent value="strategy-simulations">
-          <Card>
-            <CardHeader>
-              <CardTitle>Strategy Backtesting Results</CardTitle>
-              <CardDescription>Performance metrics for trading strategies</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isSimulationsLoading ? (
-                <div className="flex items-center justify-center h-64">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : (simulationsData?.data && (simulationsData.data as any[]).length > 0) ? (
-                <>
-                  <div className="mb-6">
-                    <LazyResponsiveContainer width="100%" height={300}>
-                      <LazyBarChart data={simulationChartData}>
-                        <ChartComponents.CartesianGrid strokeDasharray="3 3" />
-                        <ChartComponents.XAxis dataKey="name" />
-                        <ChartComponents.YAxis />
-                        <ChartComponents.Tooltip />
-                        <ChartComponents.Legend />
-                        <ChartComponents.Bar dataKey="pnl" fill="#8884d8" name="PnL" />
-                        <ChartComponents.Bar dataKey="winRate" fill="#82ca9d" name="Win Rate %" />
-                        <ChartComponents.Bar dataKey="drawdown" fill="#ff8042" name="Max Drawdown %" />
-                      </LazyBarChart>
-                    </LazyResponsiveContainer>
+          <div className="space-y-6">
+            {/* Existing Strategy Simulations Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Strategy Backtesting Results</CardTitle>
+                <CardDescription>Performance metrics for trading strategies</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isSimulationsLoading ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
-                  
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Strategy Name</TableHead>
-                        <TableHead>Symbol</TableHead>
-                        <TableHead>Timeframe</TableHead>
-                        <TableHead>Period</TableHead>
-                        <TableHead>PnL</TableHead>
-                        <TableHead>PnL %</TableHead>
-                        <TableHead>Win Rate</TableHead>
-                        <TableHead>Trade Count</TableHead>
-                        <TableHead>Drawdown</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {simulationsData?.data?.map((sim) => (
-                        <TableRow key={sim.id}>
-                          <TableCell>{sim.name}</TableCell>
-                          <TableCell>{sim.symbol}</TableCell>
-                          <TableCell>{sim.timeframe}</TableCell>
-                          <TableCell>
-                            {formatDate(sim.startDate).split(',')[0]} - {formatDate(sim.endDate).split(',')[0]}
-                          </TableCell>
-                          <TableCell>${sim.pnl}</TableCell>
-                          <TableCell>{(parseFloat(sim.pnlPercent as any) * 100).toFixed(2)}%</TableCell>
-                          <TableCell>{(sim.winRate * 100).toFixed(2)}%</TableCell>
-                          <TableCell>{sim.totalTrades}</TableCell>
-                          <TableCell className="text-red-500">
-                            {(Math.abs(sim.drawdown) * 100).toFixed(2)}%
-                          </TableCell>
+                ) : (simulationsData?.data && (simulationsData.data as any[]).length > 0) ? (
+                  <>
+                    <div className="mb-6">
+                      <LazyResponsiveContainer width="100%" height={300}>
+                        <LazyBarChart data={simulationChartData}>
+                          <ChartComponents.CartesianGrid strokeDasharray="3 3" />
+                          <ChartComponents.XAxis dataKey="name" />
+                          <ChartComponents.YAxis />
+                          <ChartComponents.Tooltip />
+                          <ChartComponents.Legend />
+                          <ChartComponents.Bar dataKey="pnl" fill="#8884d8" name="PnL" />
+                          <ChartComponents.Bar dataKey="winRate" fill="#82ca9d" name="Win Rate %" />
+                          <ChartComponents.Bar dataKey="drawdown" fill="#ff8042" name="Max Drawdown %" />
+                        </LazyBarChart>
+                      </LazyResponsiveContainer>
+                    </div>
+                    
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Strategy Name</TableHead>
+                          <TableHead>Symbol</TableHead>
+                          <TableHead>Timeframe</TableHead>
+                          <TableHead>Period</TableHead>
+                          <TableHead>PnL</TableHead>
+                          <TableHead>PnL %</TableHead>
+                          <TableHead>Win Rate</TableHead>
+                          <TableHead>Trade Count</TableHead>
+                          <TableHead>Drawdown</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-                  <p>No strategy simulation data available</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {simulationsData?.data?.map((sim) => (
+                          <TableRow key={sim.id}>
+                            <TableCell>{sim.name}</TableCell>
+                            <TableCell>{sim.symbol}</TableCell>
+                            <TableCell>{sim.timeframe}</TableCell>
+                            <TableCell>
+                              {formatDate(sim.startDate).split(',')[0]} - {formatDate(sim.endDate).split(',')[0]}
+                            </TableCell>
+                            <TableCell>${sim.pnl}</TableCell>
+                            <TableCell>{(parseFloat(sim.pnlPercent as any) * 100).toFixed(2)}%</TableCell>
+                            <TableCell>{(sim.winRate * 100).toFixed(2)}%</TableCell>
+                            <TableCell>{sim.totalTrades}</TableCell>
+                            <TableCell className="text-red-500">
+                              {(Math.abs(sim.drawdown) * 100).toFixed(2)}%
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                    <p>No strategy simulation data available</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          
+            {/* New Strategy Comparison Component */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Strategy Type Comparison</CardTitle>
+                <CardDescription>Compare different strategy types on the same market data</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StrategySimulationComparison />
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
         
         {/* Market Conditions Tab */}
