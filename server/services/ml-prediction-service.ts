@@ -145,8 +145,13 @@ class MLPredictionService {
    */
   private async isPythonApiAvailable(): Promise<boolean> {
     try {
-      const response = await axios.get(`${this.pythonApiUrl}/api/health`, { timeout: 3000 });
-      return response.status === 200;
+      const response = await axios.get(`${this.pythonApiUrl}/api/status`, { timeout: 3000 });
+      log(`Python ML API status check: ${response.status}`);
+      if (response.status === 200) {
+        log('Python ML API is available');
+        return true;
+      }
+      return false;
     } catch (error) {
       log('Python ML API is not available');
       return false;

@@ -35,15 +35,9 @@ const BINANCE_TEST_URL = 'https://testnet.binance.vision';
 const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws';
 const BINANCE_TEST_WS_URL = 'wss://testnet.binance.vision/ws';
 
-// Proxy configuration - load from environment variables for security
-const USE_PROXY = false; // Disable proxy to use direct connection
-const PROXY_USERNAME = process.env.PROXY_USERNAME || "xzwdlrlk"; // Fallback to current working proxy
-const PROXY_PASSWORD = process.env.PROXY_PASSWORD || "yrv2cpbyo1oa";
-const PROXY_IP = process.env.PROXY_IP || '45.151.162.198'; // Try a different proxy from the list
-const PROXY_PORT = process.env.PROXY_PORT || '6600'; // Matching port for the new proxy
-const PROXY_PROTOCOL = process.env.PROXY_PROTOCOL || 'http';
-const PROXY_ENCODING_METHOD = process.env.PROXY_ENCODING_METHOD || 'quote'; // Try 'quote' encoding method
-const FALLBACK_TO_DIRECT = true; // Always fall back to direct connection
+// No proxy configuration - we are using direct connection only
+const USE_PROXY = false; // Permanently disable proxy to use direct connection only
+const FALLBACK_TO_DIRECT = true; // Always fall back to direct connection if any issues
 
 // Interface for real-time price updates
 export interface LivePriceUpdate {
@@ -85,101 +79,27 @@ export interface Binance24hrTicker {
 }
 
 /**
- * Create a properly configured Axios instance with proxy support
+ * Create a properly configured Axios instance with direct connection
  * @param baseUrl Base URL for the Binance API
  * @returns Configured Axios instance for Binance API access
  */
 function createAxiosInstance(baseUrl: string): AxiosInstance {
   try {
-    if (USE_PROXY && PROXY_IP && PROXY_PORT) {
-      console.log(`Using proxy connection to Binance API via ${PROXY_IP}:${PROXY_PORT}`);
-      
-      try {
-        // Create proxy URL based on authentication requirements
-        let proxyUrl = '';
-        if (PROXY_USERNAME && PROXY_PASSWORD) {
-          // Apply URL encoding based on the method specified
-          let encodedUsername = PROXY_USERNAME;
-          let encodedPassword = PROXY_PASSWORD;
-
-          // Encode credentials based on encoding method
-          if (PROXY_ENCODING_METHOD === 'none') {
-            // No encoding
-          } else if (PROXY_ENCODING_METHOD === 'quote') {
-            encodedUsername = encodeURIComponent(PROXY_USERNAME);
-            encodedPassword = encodeURIComponent(PROXY_PASSWORD);
-          } else { // Default to quote_plus
-            encodedUsername = encodeURIComponent(PROXY_USERNAME).replace(/%20/g, '+');
-            encodedPassword = encodeURIComponent(PROXY_PASSWORD).replace(/%20/g, '+');
-          }
-
-          proxyUrl = `${PROXY_PROTOCOL}://${encodedUsername}:${encodedPassword}@${PROXY_IP}:${PROXY_PORT}`;
-          console.log(`Configured authenticated proxy for Binance API via ${PROXY_IP}:${PROXY_PORT}`);
-        } else {
-          proxyUrl = `${PROXY_PROTOCOL}://${PROXY_IP}:${PROXY_PORT}`;
-          console.log(`Configured unauthenticated proxy for Binance API via ${PROXY_IP}:${PROXY_PORT}`);
-        }
-
-        // Create proxy agent
-        const proxyAgent = PROXY_PROTOCOL.includes('socks') 
-          ? new SocksProxyAgent(proxyUrl)
-          : new HttpsProxyAgent(proxyUrl);
-
-        // Set environment variables for global proxy configuration
-        process.env.HTTP_PROXY = proxyUrl;
-        process.env.HTTPS_PROXY = proxyUrl;
-          
-        // Configure axios with proper headers and proxy
-        return axios.create({
-          baseURL: baseUrl,
-          timeout: 15000, // 15 second timeout for slower proxy connections
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept': 'application/json',
-            'X-MBX-APIKEY': process.env.BINANCE_API_KEY || '' // Add API key if available
-          },
-          // Direct proxy configuration
-          proxy: {
-            host: PROXY_IP,
-            port: parseInt(PROXY_PORT, 10),
-            auth: {
-              username: PROXY_USERNAME,
-              password: PROXY_PASSWORD
-            },
-            protocol: PROXY_PROTOCOL
-          },
-          // Also pass httpsAgent for HTTPS requests
-          httpsAgent: proxyAgent,
-          // Enhanced error handling
-          validateStatus: (status) => {
-            return (status >= 200 && status < 300) || status === 429; // Handle rate limiting
-          }
-        });
-      } catch (error) {
-        console.error('Failed to create proxy-enabled axios instance:', error);
-        if (!FALLBACK_TO_DIRECT) {
-          throw new Error('Proxy configuration failed and fallback is disabled');
-        }
-        console.log('Falling back to direct connection...');
-        return axios.create({
-          baseURL: baseUrl,
-          timeout: 10000,
-          headers: {
-            'X-MBX-APIKEY': process.env.BINANCE_API_KEY || ''
-          }
-        });
+    console.log('Using direct connection to Binance API (all proxies disabled)');
+    return axios.create({
+      baseURL: baseUrl,
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept': 'application/json',
+        'X-MBX-APIKEY': process.env.BINANCE_API_KEY || '' // Add API key if available
+      },
+      // Enhanced error handling
+      validateStatus: (status) => {
+        return (status >= 200 && status < 300) || status === 429; // Handle rate limiting
       }
-    } else {
-      console.log('Using direct connection to Binance API (proxy disabled)');
-      return axios.create({
-        baseURL: baseUrl,
-        timeout: 10000,
-        headers: {
-          'X-MBX-APIKEY': process.env.BINANCE_API_KEY || ''
-        }
-      });
-    }
+    });
   } catch (error) {
     console.error('Failed to create axios instance:', error);
     // Return a basic axios instance as fallback
@@ -191,7 +111,7 @@ function createAxiosInstance(baseUrl: string): AxiosInstance {
 }
 
 /**
- * Create a properly configured Binance API client with proxy support
+ * Create a properly configured Binance API client using direct connection
  * @param useTestnet Whether to use the Binance testnet
  * @returns Configured Binance API client or null if SDK is not available
  */
@@ -203,64 +123,7 @@ async function createBinanceClient(useTestnet: boolean = false): Promise<any> {
       return null;
     }
     
-    console.log('Creating Binance client using official SDK...');
-
-    // Create proxy agent for Binance API client
-    let proxyAgent: Agent | null = null;
-    
-    // Configure proxy if enabled
-    if (USE_PROXY && PROXY_IP && PROXY_PORT) {
-      console.log(`Using proxy connection to Binance API via ${PROXY_IP}:${PROXY_PORT}`);
-
-      try {
-        // Create proxy URL based on authentication requirements
-        let proxyUrl = '';
-        if (PROXY_USERNAME && PROXY_PASSWORD) {
-          // Apply URL encoding based on the method specified
-          let username = PROXY_USERNAME;
-          let password = PROXY_PASSWORD;
-
-          // Encode credentials based on encoding method
-          if (PROXY_ENCODING_METHOD === 'none') {
-            // No encoding
-          } else if (PROXY_ENCODING_METHOD === 'quote') {
-            username = encodeURIComponent(PROXY_USERNAME);
-            password = encodeURIComponent(PROXY_PASSWORD);
-          } else { // Default to quote_plus
-            username = encodeURIComponent(PROXY_USERNAME).replace(/%20/g, '+');
-            password = encodeURIComponent(PROXY_PASSWORD).replace(/%20/g, '+');
-          }
-
-          proxyUrl = `${PROXY_PROTOCOL}://${username}:${password}@${PROXY_IP}:${PROXY_PORT}`;
-          console.log(`Configured authenticated proxy for Binance API via ${PROXY_IP}:${PROXY_PORT}`);
-        } else {
-          proxyUrl = `${PROXY_PROTOCOL}://${PROXY_IP}:${PROXY_PORT}`;
-          console.log(`Configured unauthenticated proxy for Binance API via ${PROXY_IP}:${PROXY_PORT}`);
-        }
-
-        // Create the appropriate proxy agent based on protocol
-        if (PROXY_PROTOCOL.includes('socks')) {
-          proxyAgent = new SocksProxyAgent(proxyUrl);
-          console.log('Using SOCKS proxy agent');
-        } else {
-          proxyAgent = new HttpsProxyAgent(proxyUrl);
-          console.log('Using HTTPS proxy agent');
-        }
-        
-        // Set environment variables for global proxy configuration
-        process.env.HTTP_PROXY = proxyUrl;
-        process.env.HTTPS_PROXY = proxyUrl;
-      } catch (error) {
-        console.error('Failed to configure proxy for Binance API:', error);
-        if (!FALLBACK_TO_DIRECT) {
-          throw new Error('Proxy configuration failed and fallback is disabled');
-        }
-        console.log('Falling back to direct connection...');
-        proxyAgent = null;
-      }
-    } else {
-      console.log('Using direct connection to Binance API (proxy disabled)');
-    }
+    console.log('Creating Binance client using official SDK with direct connection...');
 
     // Configure options for Binance client
     const options: any = {
@@ -269,14 +132,11 @@ async function createBinanceClient(useTestnet: boolean = false): Promise<any> {
       httpBase: useTestnet ? BINANCE_TEST_URL : BINANCE_BASE_URL,
       wsBase: useTestnet ? BINANCE_TEST_WS_URL : BINANCE_WS_URL,
       httpOptions: {
-        timeout: 15000, // 15 second timeout for slower proxy connections
-        keepAlive: true,
-        agent: proxyAgent
+        timeout: 15000,
+        keepAlive: true
       },
       useServerTime: true, // Sync with server time to avoid timestamp errors
       recvWindow: 60000, // 60-second window
-      // Use 'strict' error handling to prevent silent failures in production
-      strictSSL: false, // Disable SSL verification for proxy connections
     };
 
     // Create the Binance client with the configured options
@@ -290,9 +150,6 @@ async function createBinanceClient(useTestnet: boolean = false): Promise<any> {
       return client;
     } catch (pingError) {
       console.error('Binance API ping failed:', pingError);
-      if (!FALLBACK_TO_DIRECT) {
-        throw new Error('Binance API connection test failed and fallback is disabled');
-      }
       console.warn('Falling back to Axios implementation due to Binance SDK connection failure');
       return null;
     }

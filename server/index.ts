@@ -21,6 +21,7 @@ import agentRoutes from './routes/agent-routes';
 import { setupAuth } from './auth';
 import http from 'http';
 import { initializeAgentProxy } from './agent-proxy';
+import { startServices } from './start-services';
 
 // Setup __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -87,6 +88,10 @@ app.use('/api/agent-v2', agentRoutes);
 // Initialize Vite after server is created
 const startViteServer = async () => {
   try {
+    // Start required services before setting up Vite
+    log('Starting required services (Python ML API)...');
+    await startServices();
+    
     // Setup Vite in middleware mode
     await setupVite(app, server);
     log('Vite middleware setup complete');
