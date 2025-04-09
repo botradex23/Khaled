@@ -18,6 +18,7 @@ import globalMarketRouter from './api/global-market';
 import userTradingRouter from './api/user-trading';
 import authRoutes from './routes/auth-routes';
 import agentRoutes from './routes/agent-routes';
+import pythonApiRouter from './routes/python-api-proxy';
 import { setupAuth } from './auth';
 import http from 'http';
 import { initializeAgentProxy } from './agent-proxy';
@@ -84,6 +85,9 @@ app.use('/api/auth', authRoutes);
 
 // Agent routes for OpenAI agent integration
 app.use('/api/agent-v2', agentRoutes);
+
+// Python API proxy routes
+app.use('/api/python', pythonApiRouter);
 
 // Initialize Vite after server is created
 const startViteServer = async () => {

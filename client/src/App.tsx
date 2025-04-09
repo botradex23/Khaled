@@ -42,6 +42,7 @@ import AdminMyAgentPage from "./pages/admin-my-agent";
 import { DiagnosticPage } from "./pages/DiagnosticPage";
 import ChatWithAgentPage from "./pages/ChatWithAgent";
 import AgentV2Page from "./pages/agent-v2";
+import ApiDocsPage from "./pages/api-docs";
 
 function Router() {
   const { isAuthenticated, needsProfileCompletion, isLoading } = useAuth();
@@ -89,6 +90,7 @@ function Router() {
       <Route path="/diagnostics" component={DiagnosticPage} />
       <Route path="/chat-agent" component={ChatWithAgentPage} />
       <Route path="/agent-v2" component={AgentV2Page} />
+      <Route path="/api-docs" component={ApiDocsPage} />
       <Route component={NotFound} />
     </Switch>
   );

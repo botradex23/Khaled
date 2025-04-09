@@ -40,7 +40,9 @@ import {
   Save,
   Loader2,
   Check,
-  BrainCircuit
+  BrainCircuit,
+  FileJson,
+  Code
 } from "lucide-react";
 import { Badge } from "./badge";
 
@@ -168,6 +170,7 @@ export default function Header() {
     { to: "/ml-predictions", label: "ML Predictions", icon: <BrainCircuit className="h-4 w-4 mr-2" /> },
     { to: "/learn", label: "Learn", icon: <BookOpen className="h-4 w-4 mr-2" /> },
     { to: "/api-status", label: "API Status", icon: <Activity className="h-4 w-4 mr-2" /> },
+    { to: "/api-docs", label: "API Docs", icon: <Code className="h-4 w-4 mr-2" /> },
     { to: "/binance", label: "Binance", icon: <ExternalLink className="h-4 w-4 mr-2" /> },
     { to: "/diagnostics", label: "Diagnostics", icon: <Settings className="h-4 w-4 mr-2" /> },
   ];
