@@ -271,6 +271,19 @@ export default function Login() {
               <Button
                 variant="default"
                 className="w-1/2 bg-red-600 hover:bg-red-700 text-white"
+                onClick={() => {
+                  // Direct link to the fix-admin-login route
+                  window.location.href = "/api/auth/fix-admin-login";
+                }}
+              >
+                כניסת מנהל מהירה
+              </Button>
+            </div>
+            
+            <div className="mt-4 flex gap-4">
+              <Button
+                variant="default"
+                className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
                 onClick={async () => {
                   try {
                     setIsLoading(true);

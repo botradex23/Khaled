@@ -24,7 +24,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkSession = async () => {
     try {
       setIsLoading(true);
-      const response = await apiRequest("GET", "/api/auth/user");
+      
+      // Check for admin authentication cookie
+      const isAdminAuthenticated = document.cookie.includes('admin_authenticated=true');
+      const hasAdminHeader = localStorage.getItem('x-test-admin') === 'true';
+      
+      // If we have admin authentication, set headers for all future API requests
+      if (isAdminAuthenticated || hasAdminHeader) {
+        // Just set localStorage for now - no need to modify queryClient options
+        localStorage.setItem('x-test-admin', 'true');
+      }
+      
+      const response = await apiRequest("GET", "/api/auth/user", null, isAdminAuthenticated || hasAdminHeader ? {
+        headers: {
+          'X-Test-Admin': 'true'
+        }
+      } : undefined);
       
       if (response && response.isAuthenticated && response.user) {
         // User is authenticated according to server
@@ -39,6 +54,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         localStorage.setItem("user", JSON.stringify(response.user));
+      } else if (hasAdminHeader || isAdminAuthenticated) {
+        // Try to get admin from localStorage if server session failed
+        const adminUser = localStorage.getItem('admin-user');
+        if (adminUser) {
+          const parsedUser = JSON.parse(adminUser);
+          setUser(parsedUser);
+          setIsAuthenticated(true);
+          setNeedsProfileCompletion(false);
+        } else {
+          // Try to create admin user through login
+          try {
+            const adminLoginResponse = await apiRequest("POST", "/api/auth/login-as-admin");
+            if (adminLoginResponse && adminLoginResponse.success && adminLoginResponse.user) {
+              setUser(adminLoginResponse.user);
+              setIsAuthenticated(true);
+              setNeedsProfileCompletion(false);
+              localStorage.setItem("user", JSON.stringify(adminLoginResponse.user));
+              localStorage.setItem("admin-user", JSON.stringify(adminLoginResponse.user));
+            }
+          } catch (adminErr) {
+            console.error("Failed to get admin user:", adminErr);
+          }
+        }
       } else {
         // Not authenticated according to server
         setUser(null);

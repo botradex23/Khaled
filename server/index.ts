@@ -17,11 +17,12 @@ import { log, setupVite } from './vite';
 import globalMarketRouter from './api/global-market';
 import userTradingRouter from './api/user-trading';
 import authRoutes from './routes/auth-routes';
-import agentRoutes from './routes/agent-routes';
+import testAuthRoutes from './routes/test-auth';
+import legacyAgentRoutes from './routes/agent-routes';
+import integratedAgentRoutes from './routes/integrated-agent-routes';
 import pythonApiRouter from './routes/python-api-proxy';
 import { setupAuth } from './auth';
 import http from 'http';
-import { initializeAgentProxy } from './agent-proxy';
 import { startServices } from './start-services';
 
 // Setup __dirname equivalent for ES modules
@@ -83,8 +84,14 @@ app.use('/api/user-trading', userTradingRouter);
 // Auth routes for registration, login, etc.
 app.use('/api/auth', authRoutes);
 
-// Agent routes for OpenAI agent integration
-app.use('/api/agent-v2', agentRoutes);
+// Test auth routes for development and testing
+app.use('/api/auth', testAuthRoutes);
+
+// Legacy Agent routes for OpenAI agent integration
+app.use('/api/agent-legacy', legacyAgentRoutes);
+
+// New integrated Agent routes for direct access
+app.use('/api/agent', integratedAgentRoutes);
 
 // Python API proxy routes
 app.use('/api/python', pythonApiRouter);
@@ -118,28 +125,42 @@ const startViteServer = async () => {
             log('Server will continue running with limited functionality');
           });
           
-          // Initialize agent integration
+          // Initialize integrated agent services
           try {
-            // Initialize the agent proxy to the standalone server
-            log('Initializing OpenAI Agent proxy...');
-            initializeAgentProxy(app, 3021);
-            log('OpenAI Agent proxy initialized successfully');
+            log('Initializing integrated OpenAI Agent services...');
             
-            // Legacy agent integration attempt
+            // Verify OpenAI API key
             try {
-              // Using any type to avoid TS errors with dynamic import
-              const agentIntegration = await import('./agent-integration.js') as any;
-              log('Initializing legacy OpenAI Agent integration...');
+              const { default: agentController } = await import('./agent/index');
+              const keyStatus = await agentController.verifyOpenAIKey();
               
-              await agentIntegration.initializeAgentIntegration(app);
-              log('Legacy OpenAI Agent integration initialized successfully');
+              if (keyStatus.success) {
+                log('OpenAI API key is valid, Agent services are fully operational');
+              } else {
+                log(`OpenAI API key verification failed: ${keyStatus.message}`);
+                log('Agent services will function with limited capabilities');
+              }
+              
+              log('Integrated OpenAI Agent services initialized successfully');
+            } catch (verifyErr: any) {
+              log(`Error verifying OpenAI API key: ${verifyErr.message}`);
+              log('Agent services will function with limited capabilities');
+            }
+            
+            // For backward compatibility, still try to load the legacy agent if needed
+            try {
+              // Load the agent proxy for legacy support (will be deprecated)
+              const { initializeAgentProxy } = await import('./agent-proxy');
+              log('Initializing legacy agent proxy for backward compatibility...');
+              initializeAgentProxy(app, 3021);
+              log('Legacy agent proxy initialized for backward compatibility');
             } catch (legacyErr: any) {
-              log(`Legacy OpenAI Agent integration not available: ${legacyErr.message}`);
-              log('Using standalone agent server only');
+              log(`Legacy agent proxy not loaded: ${legacyErr.message}`);
+              log('Using integrated agent services only');
             }
           } catch (agentErr: any) {
-            log(`OpenAI Agent integration error: ${agentErr.message}`);
-            log('Server will continue running without agent functionality');
+            log(`Error initializing Agent services: ${agentErr.message}`);
+            log('Server will continue running with limited agent functionality');
           }
         } catch (err: any) {
           log(`Error during delayed initialization: ${err.message}`);
