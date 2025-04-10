@@ -1,30 +1,14 @@
-/**
- * Agent Controller
- * 
- * This module provides a central controller for the Agent functionality.
- * It integrates the OpenAI service and file service into a single interface.
- */
-
-import openaiService from './openai-service';
+import * as openaiService from './openai-service';
 import fileService from './file-service';
 
-/**
- * Log information message
- */
 function logInfo(message: string): void {
   console.log(`[Agent Controller] ${message}`);
 }
 
-/**
- * Log error message
- */
 function logError(message: string, error?: any): void {
   console.error(`[Agent Controller] ERROR: ${message}`, error);
 }
 
-/**
- * Get health status of the agent services
- */
 export function getAgentStatus(): any {
   try {
     return {
@@ -45,9 +29,6 @@ export function getAgentStatus(): any {
   }
 }
 
-/**
- * Get a chat completion from OpenAI
- */
 export async function getAgentChatResponse(prompt: string, systemPrompt?: string): Promise<any> {
   try {
     logInfo(`Getting chat response for prompt: ${prompt.substring(0, 50)}...`);
@@ -63,9 +44,6 @@ export async function getAgentChatResponse(prompt: string, systemPrompt?: string
   }
 }
 
-/**
- * Execute a complex agent task with file operations
- */
 export async function executeAgentTask(prompt: string, systemPrompt?: string): Promise<any> {
   try {
     logInfo(`Executing agent task for prompt: ${prompt.substring(0, 50)}...`);
@@ -81,16 +59,11 @@ export async function executeAgentTask(prompt: string, systemPrompt?: string): P
   }
 }
 
-/**
- * Execute a file operation
- */
 export async function executeFileOperation(operation: string, params: any): Promise<any> {
   try {
     logInfo(`Executing file operation: ${operation}`);
-    
-    // Execute the requested operation based on which one it is
+
     let result: any;
-    
     switch (operation) {
       case 'readFile':
         result = fileService.readFile(params.path);
@@ -107,10 +80,16 @@ export async function executeFileOperation(operation: string, params: any): Prom
       case 'fileExists':
         result = fileService.fileExists(params.filePath);
         break;
+      case 'suggestCodeChanges':
+        result = await openaiService.suggestCodeChanges(params.task, params.filePath);
+        break;
+      case 'applyChangesToFile':
+        result = await openaiService.applySuggestedChanges(params.filePath, params.task);
+        break;
       default:
         throw new Error(`Unsupported file operation: ${operation}`);
     }
-    
+
     return {
       success: true,
       result
@@ -125,9 +104,21 @@ export async function executeFileOperation(operation: string, params: any): Prom
   }
 }
 
-/**
- * Verify that the OpenAI API key is valid
- */
+export async function analyzeEntireProject(task: string): Promise<any> {
+  try {
+    logInfo(`Analyzing entire project for task: ${task}`);
+    const result = await openaiService.analyzeEntireProject(process.cwd(), task);
+    return result;
+  } catch (error: any) {
+    logError('Error analyzing entire project', error);
+    return {
+      success: false,
+      message: `Error: ${error.message}`,
+      error: error.message
+    };
+  }
+}
+
 export async function verifyOpenAIKey(): Promise<any> {
   try {
     logInfo('Verifying OpenAI API key');
@@ -148,5 +139,6 @@ export default {
   getAgentChatResponse,
   executeAgentTask,
   executeFileOperation,
+  analyzeEntireProject,
   verifyOpenAIKey
 };

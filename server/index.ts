@@ -131,17 +131,36 @@ const startViteServer = async () => {
             
             // Verify OpenAI API key
             try {
-              const { default: agentController } = await import('./agent/index');
-              const keyStatus = await agentController.verifyOpenAIKey();
-              
-              if (keyStatus.success) {
-                log('OpenAI API key is valid, Agent services are fully operational');
-              } else {
-                log(`OpenAI API key verification failed: ${keyStatus.message}`);
-                log('Agent services will function with limited capabilities');
+              // Try the new modular structure first
+              try {
+                const { agentController } = await import('../src/agent');
+                const keyStatus = await agentController.verifyOpenAIKey();
+                
+                if (keyStatus.success) {
+                  log('OpenAI API key is valid, Agent services are fully operational');
+                } else {
+                  log(`OpenAI API key verification failed: ${keyStatus.message}`);
+                  log('Agent services will function with limited capabilities');
+                }
+                
+                log('Integrated OpenAI Agent services initialized successfully');
+              } catch (modularErr: any) {
+                // Fall back to original structure
+                log(`Error loading modular agent: ${modularErr.message}`);
+                log('Falling back to original agent implementation');
+                
+                const { default: agentController } = await import('./agent/index');
+                const keyStatus = await agentController.verifyOpenAIKey();
+                
+                if (keyStatus.success) {
+                  log('OpenAI API key is valid, Agent services are fully operational');
+                } else {
+                  log(`OpenAI API key verification failed: ${keyStatus.message}`);
+                  log('Agent services will function with limited capabilities');
+                }
+                
+                log('Integrated OpenAI Agent services initialized successfully');
               }
-              
-              log('Integrated OpenAI Agent services initialized successfully');
             } catch (verifyErr: any) {
               log(`Error verifying OpenAI API key: ${verifyErr.message}`);
               log('Agent services will function with limited capabilities');

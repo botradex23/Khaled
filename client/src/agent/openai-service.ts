@@ -315,3 +315,65 @@ export async function applySuggestedChanges(filePath: string, task: string): Pro
     return { success: false, message: error.message };
   }
 }
+export async function smartAnalyzeAndEdit(task: string): Promise<{ success: boolean; filePath?: string; newContent?: string; message: string }> {
+  try {
+    const supportedExtensions = ['.ts', '.tsx', '.js', '.json'];
+
+    async function listFilesRecursive(dir: string): Promise<string[]> {
+      const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+      const files = await Promise.all(entries.map(async (entry) => {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) return listFilesRecursive(fullPath);
+        else if (supportedExtensions.includes(path.extname(entry.name))) return [fullPath];
+        else return [];
+      }));
+      return files.flat();
+    }
+
+    const allFiles = await listFilesRecursive(path.resolve('src'));
+
+    const fileListText = allFiles.map((f, i) => `${i + 1}. ${f}`).join('\n');
+    const prompt = `
+You are a smart AI developer agent.
+
+Your task: "${task}"
+
+Here is a list of all code files in the project:
+${fileListText}
+
+From this list, choose ONLY ONE file that is the MOST relevant for solving this task.
+Return ONLY the exact file path as it appears in the list above. Do not explain.
+    `;
+
+    const chosenPath = await getChatCompletion(prompt, 'You are a file selector AI that chooses the most relevant file for a task.');
+    if (!chosenPath || typeof chosenPath !== 'string') {
+      return { success: false, message: 'Could not determine target file' };
+    }
+
+    const cleanPath = chosenPath.trim().split('\n')[0].trim();
+    const fileContent = await fs.promises.readFile(cleanPath, 'utf-8');
+
+    const editPrompt = `
+Your task: "${task}"
+
+Here is the current content of the file "${cleanPath}":
+\`\`\`
+${fileContent}
+\`\`\`
+
+Now modify this code to achieve the task. Return ONLY the updated code, without explanations.
+    `;
+
+    const newContent = await getChatCompletion(editPrompt, 'You are a senior developer AI. Modify the code as requested.');
+
+    if (!newContent || typeof newContent !== 'string') {
+      return { success: false, message: 'OpenAI failed to generate modified code' };
+    }
+
+    await fs.promises.writeFile(cleanPath, newContent, 'utf-8');
+    return { success: true, filePath: cleanPath, newContent, message: 'File updated successfully' };
+
+  } catch (err: any) {
+    return { success: false, message: `Error: ${err.message}` };
+  }
+}
