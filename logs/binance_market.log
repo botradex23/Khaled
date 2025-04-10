@@ -21936,3 +21936,124 @@ RuntimeError: The session is unavailable because no secret key was set.  Set the
 2025-04-10 14:58:17,266 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 14:58:17] "GET /api/status HTTP/1.1" 200 -
 2025-04-10 15:02:27,267 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:02:27] "GET /api/status HTTP/1.1" 200 -
 2025-04-10 15:07:27,269 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:07:27] "GET /api/status HTTP/1.1" 200 -
+2025-04-10 15:12:27,267 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:12:27] "GET /api/status HTTP/1.1" 200 -
+2025-04-10 15:17:27,267 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:17:27] "GET /api/status HTTP/1.1" 200 -
+2025-04-10 15:22:27,267 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:22:27] "GET /api/status HTTP/1.1" 200 -
+2025-04-10 15:24:09,568 - binance_market - WARNING - Direct connection test failed: (451, 0, "Service unavailable from a restricted location according to 'b. Eligibility' in https://www.binance.com/en/terms. Please contact customer service if you believe you received this message in error.", {'Server': 'CloudFront', 'Date': 'Thu, 10 Apr 2025 15:24:09 GMT', 'Content-Length': '224', 'Connection': 'keep-alive', 'Content-Type': 'application/json', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 a450e0b351a4029873d490939b4bf594.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'ORD56-P2', 'X-Amz-Cf-Id': 'PZMuiTIueHRRISZrhNaJkqRjpudZUGrA5XaUKx5VUcX7O5ge8y4wOw=='}, None)
+2025-04-10 15:24:09,568 - binance_market - WARNING - Returning unconfigured client anyway - operations may fail
+2025-04-10 15:24:09,568 - binance_market - INFO - Binance Market Service initialized in PRODUCTION mode
+2025-04-10 15:24:09,573 - binance_trading - INFO - Binance Trading Service initialized in PRODUCTION mode with PAPER TRADING
+2025-04-10 15:24:09,583 - trade_queue - INFO - Trade Execution Queue initialized
+2025-04-10 15:24:09,585 - telegram_notifier - WARNING - Telegram library not available - notifications will be disabled
+2025-04-10 15:24:09,586 - binance_service_manager - INFO - Initializing Binance services
+2025-04-10 15:24:09,586 - binance_service_manager - INFO - Binance Market Service initialized
+2025-04-10 15:24:09,586 - binance_service_manager - INFO - Binance Trading Service initialized
+2025-04-10 15:24:09,586 - trade_queue - INFO - Trade execution queue callbacks configured
+2025-04-10 15:24:09,587 - trade_queue - INFO - Trade queue processor thread started
+2025-04-10 15:24:09,587 - trade_queue - INFO - Trade execution queue processor started
+2025-04-10 15:24:09,587 - binance_trade_queue - INFO - Binance Trade Queue Service initialized
+2025-04-10 15:24:09,588 - binance_service_manager - INFO - Binance Trade Queue Service initialized and connected to Trading Service
+2025-04-10 15:24:09,921 - root - INFO - Configuring Binance SDK - Base URL: production
+2025-04-10 15:24:09,921 - root - INFO - API Key available: True
+2025-04-10 15:24:09,921 - root - INFO - Direct SDK integration enabled
+2025-04-10 15:24:10,513 - root - INFO - Initializing XGBoost predictor with model directory: /home/runner/workspace/python_app/models
+2025-04-10 15:24:10,514 - root - INFO - Initializing XGBoost predictor with model directory: /home/runner/workspace/python_app/models
+2025-04-10 15:24:11,121 - root - WARNING - Could not import Strategy Simulation blueprint. Strategy simulation will not be available.
+2025-04-10 15:24:11,123 - trade_logs_routes - ERROR - Failed to import trade logger - trade log routes will not function correctly
+2025-04-10 15:24:11,123 - root - INFO - Logging initialized successfully with both console and file handlers
+2025-04-10 15:24:11,139 - root - INFO - Direct Binance Prices blueprint registered successfully
+2025-04-10 15:24:11,147 - root - INFO - ML Optimization blueprint registered successfully
+2025-04-10 15:24:11,151 - root - INFO - Trade Logs blueprint registered successfully
+2025-04-10 15:24:11,152 - root - INFO - AI Signals blueprint registered successfully
+2025-04-10 15:24:11,162 - python_app.services.api_key_service - INFO - Successfully initialized encryption for API key storage with hardcoded key
+2025-04-10 15:24:11,163 - python_app.services.api_key_service - INFO - API Key Service initialized with 0 user keys
+2025-04-10 15:24:11,165 - root - INFO - Trading blueprint registered successfully
+2025-04-10 15:24:11,169 - root - INFO - API Keys blueprint registered successfully
+2025-04-10 15:24:11,177 - root - INFO - Using immediate initialization. Server will be ready after full initialization.
+2025-04-10 15:24:11,178 - bot_synchronizer - INFO - Bot Synchronizer initialized
+2025-04-10 15:24:11,178 - root - INFO - Bot Synchronizer initialized successfully
+2025-04-10 15:24:11,179 - queue_bot_integration - INFO - Successfully integrated trade queue with bot synchronization
+2025-04-10 15:24:11,179 - root - INFO - Trade Queue-Bot Integration initialized successfully
+2025-04-10 15:24:11,179 - python_flask_service - INFO - Starting Flask service on port 5001 in production mode
+2025-04-10 15:24:11,179 - python_flask_service - INFO - Debug mode: False
+2025-04-10 15:24:11,193 - root - INFO - Direct Binance Prices blueprint registered successfully
+2025-04-10 15:24:11,201 - root - INFO - ML Optimization blueprint registered successfully
+2025-04-10 15:24:11,205 - root - INFO - Trade Logs blueprint registered successfully
+2025-04-10 15:24:11,206 - root - INFO - AI Signals blueprint registered successfully
+2025-04-10 15:24:11,208 - root - INFO - Trading blueprint registered successfully
+2025-04-10 15:24:11,211 - root - INFO - API Keys blueprint registered successfully
+2025-04-10 15:24:11,218 - python_flask_service - INFO - Environment: production
+2025-04-10 15:24:11,218 - python_flask_service - INFO - Debug mode: False
+2025-04-10 15:24:11,218 - python_flask_service - INFO - Using direct Binance SDK integration
+2025-04-10 15:24:11,218 - python_flask_service - INFO - Binance test mode: False
+2025-04-10 15:24:11,218 - python_flask_service - INFO - API key available: True
+2025-04-10 15:24:11,237 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://172.31.128.98:5001
+2025-04-10 15:24:11,237 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-10 15:24:11,525 - werkzeug - INFO - 172.31.128.98 - - [10/Apr/2025 15:24:11] "[33mGET /api/my-agent/direct-read-file HTTP/1.1[0m" 404 -
+2025-04-10 15:24:11,675 - werkzeug - INFO - 172.31.128.98 - - [10/Apr/2025 15:24:11] "GET / HTTP/1.1" 200 -
+2025-04-10 15:24:13,243 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:24:13] "GET /api/status HTTP/1.1" 200 -
+2025-04-10 15:24:35,618 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:24:35] "GET /api/status HTTP/1.1" 200 -
+2025-04-10 15:24:35,996 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:24:35] "[33mGET /api/models/list HTTP/1.1[0m" 404 -
+2025-04-10 15:24:40,904 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:24:40] "GET /api/status HTTP/1.1" 200 -
+2025-04-10 15:25:26,027 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:25:26] "GET /api/status HTTP/1.1" 200 -
+2025-04-10 15:29:36,026 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:29:36] "GET /api/status HTTP/1.1" 200 -
+2025-04-10 15:34:03,067 - binance_market - WARNING - Direct connection test failed: (451, 0, "Service unavailable from a restricted location according to 'b. Eligibility' in https://www.binance.com/en/terms. Please contact customer service if you believe you received this message in error.", {'Server': 'CloudFront', 'Date': 'Thu, 10 Apr 2025 15:34:03 GMT', 'Content-Length': '224', 'Connection': 'keep-alive', 'Content-Type': 'application/json', 'X-Cache': 'Error from cloudfront', 'Via': '1.1 598c23554dacca801924330b5488d0de.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'ORD56-P2', 'X-Amz-Cf-Id': '-xJJ4yNifGVRE49h0UpJI0U5J61A4wcYK634fviU3-CLZXowil3kBQ=='}, None)
+2025-04-10 15:34:03,067 - binance_market - WARNING - Returning unconfigured client anyway - operations may fail
+2025-04-10 15:34:03,067 - binance_market - INFO - Binance Market Service initialized in PRODUCTION mode
+2025-04-10 15:34:03,070 - binance_trading - INFO - Binance Trading Service initialized in PRODUCTION mode with PAPER TRADING
+2025-04-10 15:34:03,078 - trade_queue - INFO - Trade Execution Queue initialized
+2025-04-10 15:34:03,079 - telegram_notifier - WARNING - Telegram library not available - notifications will be disabled
+2025-04-10 15:34:03,080 - binance_service_manager - INFO - Initializing Binance services
+2025-04-10 15:34:03,080 - binance_service_manager - INFO - Binance Market Service initialized
+2025-04-10 15:34:03,080 - binance_service_manager - INFO - Binance Trading Service initialized
+2025-04-10 15:34:03,080 - trade_queue - INFO - Trade execution queue callbacks configured
+2025-04-10 15:34:03,081 - trade_queue - INFO - Trade queue processor thread started
+2025-04-10 15:34:03,081 - trade_queue - INFO - Trade execution queue processor started
+2025-04-10 15:34:03,082 - binance_trade_queue - INFO - Binance Trade Queue Service initialized
+2025-04-10 15:34:03,082 - binance_service_manager - INFO - Binance Trade Queue Service initialized and connected to Trading Service
+2025-04-10 15:34:03,350 - root - INFO - Configuring Binance SDK - Base URL: production
+2025-04-10 15:34:03,350 - root - INFO - API Key available: True
+2025-04-10 15:34:03,351 - root - INFO - Direct SDK integration enabled
+2025-04-10 15:34:03,852 - root - INFO - Initializing XGBoost predictor with model directory: /home/runner/workspace/python_app/models
+2025-04-10 15:34:03,853 - root - INFO - Initializing XGBoost predictor with model directory: /home/runner/workspace/python_app/models
+2025-04-10 15:34:04,373 - root - WARNING - Could not import Strategy Simulation blueprint. Strategy simulation will not be available.
+2025-04-10 15:34:04,374 - trade_logs_routes - ERROR - Failed to import trade logger - trade log routes will not function correctly
+2025-04-10 15:34:04,375 - root - INFO - Logging initialized successfully with both console and file handlers
+2025-04-10 15:34:04,388 - root - INFO - Direct Binance Prices blueprint registered successfully
+2025-04-10 15:34:04,394 - root - INFO - ML Optimization blueprint registered successfully
+2025-04-10 15:34:04,397 - root - INFO - Trade Logs blueprint registered successfully
+2025-04-10 15:34:04,397 - root - INFO - AI Signals blueprint registered successfully
+2025-04-10 15:34:04,405 - python_app.services.api_key_service - INFO - Successfully initialized encryption for API key storage with hardcoded key
+2025-04-10 15:34:04,405 - python_app.services.api_key_service - INFO - API Key Service initialized with 0 user keys
+2025-04-10 15:34:04,407 - root - INFO - Trading blueprint registered successfully
+2025-04-10 15:34:04,409 - root - INFO - API Keys blueprint registered successfully
+2025-04-10 15:34:04,415 - root - INFO - Using immediate initialization. Server will be ready after full initialization.
+2025-04-10 15:34:04,416 - bot_synchronizer - INFO - Bot Synchronizer initialized
+2025-04-10 15:34:04,416 - root - INFO - Bot Synchronizer initialized successfully
+2025-04-10 15:34:04,416 - queue_bot_integration - INFO - Successfully integrated trade queue with bot synchronization
+2025-04-10 15:34:04,416 - root - INFO - Trade Queue-Bot Integration initialized successfully
+2025-04-10 15:34:04,417 - python_flask_service - INFO - Starting Flask service on port 5001 in production mode
+2025-04-10 15:34:04,417 - python_flask_service - INFO - Debug mode: False
+2025-04-10 15:34:04,427 - root - INFO - Direct Binance Prices blueprint registered successfully
+2025-04-10 15:34:04,433 - root - INFO - ML Optimization blueprint registered successfully
+2025-04-10 15:34:04,436 - root - INFO - Trade Logs blueprint registered successfully
+2025-04-10 15:34:04,437 - root - INFO - AI Signals blueprint registered successfully
+2025-04-10 15:34:04,438 - root - INFO - Trading blueprint registered successfully
+2025-04-10 15:34:04,440 - root - INFO - API Keys blueprint registered successfully
+2025-04-10 15:34:04,445 - python_flask_service - INFO - Environment: production
+2025-04-10 15:34:04,445 - python_flask_service - INFO - Debug mode: False
+2025-04-10 15:34:04,445 - python_flask_service - INFO - Using direct Binance SDK integration
+2025-04-10 15:34:04,445 - python_flask_service - INFO - Binance test mode: False
+2025-04-10 15:34:04,446 - python_flask_service - INFO - API key available: True
+2025-04-10 15:34:04,458 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://172.31.128.98:5001
+2025-04-10 15:34:04,458 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-10 15:34:04,916 - werkzeug - INFO - 172.31.128.98 - - [10/Apr/2025 15:34:04] "GET / HTTP/1.1" 200 -
+2025-04-10 15:34:06,973 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:34:06] "GET /api/status HTTP/1.1" 200 -
+2025-04-10 15:34:22,327 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:34:22] "GET /api/status HTTP/1.1" 200 -
+2025-04-10 15:34:22,411 - werkzeug - INFO - 127.0.0.1 - - [10/Apr/2025 15:34:22] "[33mGET /api/models/list HTTP/1.1[0m" 404 -

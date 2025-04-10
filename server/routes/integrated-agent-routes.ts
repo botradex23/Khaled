@@ -349,4 +349,10 @@ router.get('/api/direct-list-files', async (req, res) => {
   }
 });
 
+// Added POST route for code analysis
+router.post('/api/analyze-code', async (req, res) => {
+  const { filePath, task } = req.body;
+  res.json({ success: true, message: `Received task '${task}' for file '${filePath}'` });
+});
+
 export default router;
