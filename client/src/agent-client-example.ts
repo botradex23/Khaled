@@ -1,15 +1,15 @@
 /**
- * Agent Client Usage Example (CommonJS)
+ * Agent Client Usage Example
  * 
- * This script demonstrates how to use the agent client from CommonJS code.
+ * This example demonstrates how to use the agent client to interact with
+ * the OpenAI-powered agent functionality directly from code, bypassing
+ * the Express routes and Vite middleware.
  */
 
-// Import the agent client using CommonJS require
-const { agentClient } = require('./agent-client.cjs');
+import { agentClient } from './agent-client';
 
 /**
  * Example 1: Get agent status
- * This shows you the current state of the agent, including API key validity
  */
 async function demoGetStatus() {
   console.log('=== Demo: Get Agent Status ===');
@@ -20,7 +20,6 @@ async function demoGetStatus() {
 
 /**
  * Example 2: Verify OpenAI API key
- * This checks if the configured OpenAI API key is valid
  */
 async function demoVerifyApiKey() {
   console.log('=== Demo: Verify OpenAI API Key ===');
@@ -31,7 +30,6 @@ async function demoVerifyApiKey() {
 
 /**
  * Example 3: Get a chat response
- * This demonstrates getting a natural language response from the agent
  */
 async function demoChatResponse() {
   console.log('=== Demo: Get Chat Response ===');
@@ -40,18 +38,17 @@ async function demoChatResponse() {
   
   const response = await agentClient.getChatResponse(prompt);
   
+  console.log('Chat Response:');
   if (response.success) {
-    console.log('Chat Response:');
     console.log(response.response);
   } else {
-    console.log('Error getting chat response:', response.message);
+    console.log('Error:', response.message);
   }
   console.log('\n');
 }
 
 /**
  * Example 4: Smart Analyze and Edit
- * This demonstrates the agent's ability to analyze the codebase and provide insights
  */
 async function demoSmartAnalyzeAndEdit() {
   console.log('=== Demo: Smart Analyze and Edit ===');
@@ -60,18 +57,17 @@ async function demoSmartAnalyzeAndEdit() {
   
   const result = await agentClient.smartAnalyzeAndEdit(task);
   
+  console.log('Analysis Result:');
   if (result.success) {
-    console.log('Analysis Result:');
     console.log(JSON.stringify(result.result, null, 2));
   } else {
-    console.log('Error performing analysis:', result.message);
+    console.log('Error:', result.message);
   }
   console.log('\n');
 }
 
 /**
  * Example 5: File Operation
- * This demonstrates how to use the agent to list files in a directory
  */
 async function demoFileOperation() {
   console.log('=== Demo: File Operation (List Files) ===');
@@ -79,20 +75,20 @@ async function demoFileOperation() {
     directory: './src/services' 
   });
   
+  console.log('Files in src/services:');
   if (result.success) {
-    console.log('Files in src/services:');
     console.log(result.files);
   } else {
-    console.log('Error listing files:', result.message);
+    console.log('Error:', result.message);
   }
   console.log('\n');
 }
 
 /**
- * Run all demos
+ * Main function to run all demos
  */
 async function runAllDemos() {
-  console.log('=== AGENT CLIENT USAGE EXAMPLES (CommonJS) ===\n');
+  console.log('=== AGENT CLIENT USAGE EXAMPLES ===\n');
   
   try {
     await demoGetStatus();
@@ -102,10 +98,21 @@ async function runAllDemos() {
     await demoFileOperation();
     
     console.log('=== ALL DEMOS COMPLETED SUCCESSFULLY ===');
-  } catch (error) {
-    console.error('Error running demos:', error);
+  } catch (error: any) {
+    console.error('Error running demos:', error.message);
   }
 }
 
-// Run the demos
+// To run this example: npx tsx src/agent-client-example.ts
+// In ESM, we don't have access to require.main, so we'll run automatically
 runAllDemos();
+
+// Export functions for potential use in other modules
+export {
+  demoGetStatus,
+  demoVerifyApiKey,
+  demoChatResponse,
+  demoSmartAnalyzeAndEdit,
+  demoFileOperation,
+  runAllDemos
+};

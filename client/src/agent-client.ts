@@ -1,10 +1,11 @@
 /**
  * Agent Client
  * 
- * This module provides a direct client for accessing the agent API functionalities
- * without going through the Express routes that are affected by Vite middleware.
+ * This module provides direct access to agent controller functionality,
+ * bypassing Express routes and Vite middleware that might interfere with JSON responses.
  * 
- * This is the ES module version for use with import in TypeScript/ES modules.
+ * IMPORTANT: This is the preferred way to interact with the agent from code 
+ * rather than making HTTP requests to the API endpoints.
  */
 
 import { agent } from './controllers';

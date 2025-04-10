@@ -9,26 +9,16 @@ This directory contains the refactored source code for the Tradeliy platform, or
 - **services/**: Service modules for core functionality (OpenAI, file handling, database, etc.)
 - **utils/**: Utility functions and helper modules
 
-## Agent API Integration
+## Agent Integration
 
-The project integrates an OpenAI-powered agent for smart analysis, code assistance, and natural language processing. There are two ways to access the agent functionality:
+The project integrates an OpenAI-powered agent for smart analysis, code assistance, and natural language processing. The recommended way to access this functionality is:
 
-### 1. Via Express Routes (may be intercepted by Vite)
+### Direct Client Access
 
-The agent is accessible via API endpoints at:
-- `/api/agent/*` - Main agent endpoints
-- `/api/my-agent/*` - Alternative agent endpoints
-
-**Note**: Due to Vite middleware, some of these routes may return HTML instead of JSON when accessed via HTTP. The `/api/agent/status` endpoint should work reliably.
-
-### 2. Direct Client Access (recommended)
-
-#### For TypeScript/ES Module usage:
-
-Use the `agentClient` from `src/agent-client.ts`:
+For programmatic access to agent functionality, use the `agentClient` from `src/agent-client.ts`. This bypasses any middleware that could interfere with API responses:
 
 ```typescript
-import { agentClient } from './src/agent-client';
+import { agentClient } from './agent-client';
 
 // Get agent status
 const status = agentClient.getStatus();
@@ -41,19 +31,15 @@ const response = await agentClient.getChatResponse("Hello, how can you help me?"
 
 // Smart analyze and edit
 const analysis = await agentClient.smartAnalyzeAndEdit("What files handle user authentication?");
+
+// File operations
+const files = await agentClient.executeFileOperation('listFiles', { directory: './src/services' });
 ```
 
-#### For CommonJS usage:
+A complete usage example is available in `src/agent-client-example.ts`. To run the example:
 
-For scripts using CommonJS (require instead of import), use the `agent-client.cjs` file at the root:
-
-```javascript
-const { agentClient } = require('./agent-client.cjs');
-
-// Get agent status
-const status = agentClient.getStatus();
-
-// Further examples in agent-example.cjs
+```bash
+npx tsx src/agent-client-example.ts
 ```
 
 ## OpenAI Integration
@@ -78,4 +64,4 @@ The application is started via the workflow defined in the root directory. All A
 
 ## Troubleshooting
 
-If you're having issues with API routes returning HTML instead of JSON, use the direct API client approach described above.
+If you're having issues with API routes returning HTML instead of JSON, use the direct API client approach described above. This bypasses the Vite middleware that may intercept and transform API responses.

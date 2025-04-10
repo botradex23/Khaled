@@ -15,7 +15,7 @@ export default defineConfig(async () => {
     themePlugin(),
   ];
 
-  // תוספת של פלאגין cartographer רק בסביבת dev
+  // פלאגין cartographer בסביבת dev בלבד
   if (process.env.NODE_ENV !== "production" && process.env.REPL_ID !== undefined) {
     const { cartographer } = await import("@replit/vite-plugin-cartographer");
     plugins.push(cartographer());
@@ -36,10 +36,19 @@ export default defineConfig(async () => {
       emptyOutDir: true,
     },
     server: {
+      port: 3000, // אפשר לשנות לפי הצורך
       proxy: {
-        "/api/my-agent": "http://localhost:5002",
-        "/api/direct-agent": "http://localhost:5002",
-        "/health": "http://localhost:5002",
+        // כל בקשות ה־API ינותבו לשרת הבקאנד שלך
+        "/api": {
+          target: "http://localhost:5002",
+          changeOrigin: true,
+          secure: false,
+        },
+        "/health": {
+          target: "http://localhost:5002",
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
   };
