@@ -351,8 +351,139 @@ router.get('/api/direct-list-files', async (req, res) => {
 
 // Added POST route for code analysis
 router.post('/api/analyze-code', async (req, res) => {
-  const { filePath, task } = req.body;
-  res.json({ success: true, message: `Received task '${task}' for file '${filePath}'` });
+  try {
+    const { filePath, task } = req.body;
+    
+    if (!task) {
+      return res.status(400).json({
+        success: false,
+        message: 'Task parameter is required'
+      });
+    }
+    
+    log(`Analyzing code with task: ${task}`);
+    const result = await agentController.analyzeCode(filePath || null, task);
+    res.json(result);
+  } catch (error: any) {
+    log(`Error analyzing code: ${error.message}`, 'ERROR');
+    res.status(500).json({
+      success: false,
+      message: `Error: ${error.message}`
+    });
+  }
+});
+
+// Route for executing autonomous tasks
+router.post('/api/autonomous-task', async (req, res) => {
+  try {
+    const { task } = req.body;
+    
+    if (!task) {
+      return res.status(400).json({
+        success: false,
+        message: 'Task parameter is required'
+      });
+    }
+    
+    log(`Executing autonomous task: ${task}`);
+    const result = await agentController.executeAutonomousTask(task);
+    res.json(result);
+  } catch (error: any) {
+    log(`Error executing autonomous task: ${error.message}`, 'ERROR');
+    res.status(500).json({
+      success: false,
+      message: `Error: ${error.message}`
+    });
+  }
+});
+
+// Route for getting task execution history
+router.get('/api/task-history', async (req, res) => {
+  try {
+    const taskId = req.query.taskId as string;
+    
+    log(`Getting task history${taskId ? ` for task: ${taskId}` : ''}`);
+    const result = await agentController.executeFileOperation('getTaskExecutionHistory', { taskId });
+    res.json(result);
+  } catch (error: any) {
+    log(`Error getting task history: ${error.message}`, 'ERROR');
+    res.status(500).json({
+      success: false,
+      message: `Error: ${error.message}`
+    });
+  }
+});
+
+// Route for finding relevant files for a task
+router.post('/api/find-relevant-files', async (req, res) => {
+  try {
+    const { task } = req.body;
+    
+    if (!task) {
+      return res.status(400).json({
+        success: false,
+        message: 'Task parameter is required'
+      });
+    }
+    
+    log(`Finding relevant files for task: ${task}`);
+    const result = await agentController.executeFileOperation('findRelevantFile', { task });
+    res.json(result);
+  } catch (error: any) {
+    log(`Error finding relevant files: ${error.message}`, 'ERROR');
+    res.status(500).json({
+      success: false,
+      message: `Error: ${error.message}`
+    });
+  }
+});
+
+// Route for modifying a file based on a task
+router.post('/api/modify-file', async (req, res) => {
+  try {
+    const { path, task } = req.body;
+    
+    if (!path || !task) {
+      return res.status(400).json({
+        success: false,
+        message: 'Path and task parameters are required'
+      });
+    }
+    
+    log(`Modifying file ${path} with task: ${task}`);
+    const result = await agentController.executeFileOperation('modifyFile', { path, task });
+    res.json(result);
+  } catch (error: any) {
+    log(`Error modifying file: ${error.message}`, 'ERROR');
+    res.status(500).json({
+      success: false,
+      message: `Error: ${error.message}`
+    });
+  }
+});
+
+// Route for creating a file based on a task
+router.post('/api/create-file', async (req, res) => {
+  try {
+    const { path, task } = req.body;
+    
+    if (!path || !task) {
+      return res.status(400).json({
+        success: false,
+        message: 'Path and task parameters are required'
+      });
+    }
+    
+    log(`Creating file ${path} with task: ${task}`);
+    const result = await agentController.executeFileOperation('createFile', { path, task });
+    res.json(result);
+  } catch (error: any) {
+    log(`Error creating file: ${error.message}`, 'ERROR');
+    res.status(500).json({
+      success: false,
+      message: `Error: ${error.message}`
+    });
+  }
 });
 
 export default router;
