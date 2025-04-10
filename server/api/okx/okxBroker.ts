@@ -9,10 +9,8 @@ import { BrokerType, IBroker, BrokerTickerPrice, Broker24hrTicker,
   BrokerBalance, BrokerExchangeInfo, BrokerSymbolInfo, 
   BrokerOrderResult, BrokerOrderBook, BrokerLivePriceUpdate,
   BrokerApiStatus, BrokerCandle } from '../brokers/interfaces';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
+import { config } from '../../config';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export class OkxBroker implements IBroker {
   private client: any;
@@ -21,14 +19,15 @@ export class OkxBroker implements IBroker {
   private isWsConnected: boolean;
 
   constructor(testnet: boolean = false) {
-    // Get API credentials
-    const apiKey = process.env.OKX_API_KEY || '';
-    const apiSecret = process.env.OKX_API_SECRET || '';
-    const passphrase = process.env.OKX_PASSPHRASE || '';
+    // Get API credentials from centralized config
+    const apiKey = config.exchanges.okx.apiKey;
+    const apiSecret = config.exchanges.okx.apiSecret;
+    const passphrase = config.exchanges.okx.passphrase;
+    const useTestnet = testnet || config.exchanges.okx.useTestnet;
 
     // Initialize OKX client with credentials and sandbox setting
     const options: any = {
-      sandbox: testnet
+      sandbox: useTestnet
     };
     
     try {
@@ -37,6 +36,37 @@ export class OkxBroker implements IBroker {
       options.apiKey = apiKey;
       options.apiSecret = apiSecret;
       options.apiPassphrase = passphrase;
+
+      // Add proxy support if enabled
+      if (config.proxy.enabled && config.proxy.ip && config.proxy.port) {
+        console.log(`Using proxy connection to OKX API via ${config.proxy.ip}:${config.proxy.port}`);
+        const proxyUrl = `${config.proxy.protocol}://`;
+        
+        // Add auth if provided
+        if (config.proxy.username && config.proxy.password) {
+          // Use the configured encoding method for the authentication
+          let encodedUsername = config.proxy.username;
+          let encodedPassword = config.proxy.password;
+          
+          if (config.proxy.encodingMethod === 'none') {
+            // No encoding
+          } else if (config.proxy.encodingMethod === 'quote') {
+            encodedUsername = encodeURIComponent(config.proxy.username);
+            encodedPassword = encodeURIComponent(config.proxy.password);
+          } else { // Default to quote_plus
+            encodedUsername = encodeURIComponent(config.proxy.username).replace(/%20/g, '+');
+            encodedPassword = encodeURIComponent(config.proxy.password).replace(/%20/g, '+');
+          }
+          
+          const proxyUrlWithAuth = `${proxyUrl}${encodedUsername}:${encodedPassword}@${config.proxy.ip}:${config.proxy.port}`;
+          options.httpAgent = new HttpsProxyAgent(proxyUrlWithAuth);
+          options.httpsAgent = new HttpsProxyAgent(proxyUrlWithAuth);
+        } else {
+          const proxyUrlNoAuth = `${proxyUrl}${config.proxy.ip}:${config.proxy.port}`;
+          options.httpAgent = new HttpsProxyAgent(proxyUrlNoAuth);
+          options.httpsAgent = new HttpsProxyAgent(proxyUrlNoAuth);
+        }
+      }
       
       // Initialize client
       this.client = new okx.RestClient(options);
@@ -76,16 +106,16 @@ export class OkxBroker implements IBroker {
   }
 
   isConfigured(): boolean {
-    const apiKey = process.env.OKX_API_KEY;
-    const apiSecret = process.env.OKX_API_SECRET;
-    const passphrase = process.env.OKX_PASSPHRASE;
+    const apiKey = config.exchanges.okx.apiKey;
+    const apiSecret = config.exchanges.okx.apiSecret;
+    const passphrase = config.exchanges.okx.passphrase;
     return !!(apiKey && apiSecret && passphrase);
   }
 
   async getApiStatus(): Promise<BrokerApiStatus> {
     return {
-      hasApiKey: !!process.env.OKX_API_KEY,
-      hasSecretKey: !!process.env.OKX_API_SECRET,
+      hasApiKey: !!config.exchanges.okx.apiKey,
+      hasSecretKey: !!config.exchanges.okx.apiSecret,
       testnet: this.isTestnet(),
       name: BrokerType.OKX
     };
@@ -512,9 +542,9 @@ export class OkxBroker implements IBroker {
   }
 
   private initializeWebSocket(): void {
-    const apiKey = process.env.OKX_API_KEY || '';
-    const apiSecret = process.env.OKX_API_SECRET || '';
-    const passphrase = process.env.OKX_PASSPHRASE || '';
+    const apiKey = config.exchanges.okx.apiKey;
+    const apiSecret = config.exchanges.okx.apiSecret;
+    const passphrase = config.exchanges.okx.passphrase;
     
     // Initialize WebSocket client with all options at once
     const options: any = {
@@ -527,6 +557,23 @@ export class OkxBroker implements IBroker {
         options.apiKey = apiKey;
         options.apiSecret = apiSecret;
         options.apiPassphrase = passphrase;
+      }
+      
+      // Add proxy support if enabled (for WebSocket connections)
+      if (config.proxy.enabled && config.proxy.ip && config.proxy.port) {
+        console.log(`Using proxy connection for OKX WebSocket via ${config.proxy.ip}:${config.proxy.port}`);
+        options.proxy = {
+          host: config.proxy.ip,
+          port: config.proxy.port
+        };
+        
+        // Add auth if provided
+        if (config.proxy.username && config.proxy.password) {
+          options.proxy.auth = {
+            username: config.proxy.username,
+            password: config.proxy.password
+          };
+        }
       }
       
       // Create WebSocket client regardless of credentials

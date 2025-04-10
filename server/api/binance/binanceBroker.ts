@@ -11,13 +11,10 @@ import { BrokerType, IBroker, BrokerTickerPrice, Broker24hrTicker,
   BrokerBalance, BrokerExchangeInfo, BrokerSymbolInfo, 
   BrokerOrderResult, BrokerOrderBook, BrokerLivePriceUpdate,
   BrokerApiStatus, BrokerCandle } from '../brokers/interfaces';
-import dotenv from 'dotenv';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { URL } from 'url';
-
-// Load environment variables
-dotenv.config();
+import { config } from '../../config';
 
 /**
  * Binance Broker class that implements the IBroker interface
@@ -42,7 +39,7 @@ export class BinanceBroker implements IBroker {
    * Check if this broker is configured with API keys
    */
   isConfigured(): boolean {
-    return !!process.env.BINANCE_API_KEY && !!process.env.BINANCE_API_SECRET;
+    return !!config.exchanges.binance.apiKey && !!config.exchanges.binance.secretKey;
   }
   
   /**
@@ -50,26 +47,39 @@ export class BinanceBroker implements IBroker {
    */
   private initializeClient(): void {
     // Check if proxy is needed
-    const useProxy = process.env.USE_PROXY === 'true';
+    const useProxy = config.proxy.enabled;
     const options: any = {
-      apiKey: process.env.BINANCE_API_KEY,
-      apiSecret: process.env.BINANCE_API_SECRET,
+      apiKey: config.exchanges.binance.apiKey,
+      apiSecret: config.exchanges.binance.secretKey,
       // Use testnet if specified
-      httpBase: this.isTestnet() ? 'https://testnet.binance.vision' : undefined
+      httpBase: this.isTestnet() || config.exchanges.binance.useTestnet ? 'https://testnet.binance.vision' : undefined
     };
     
     // Configure proxy if needed
     if (useProxy) {
-      const proxyUsername = process.env.PROXY_USERNAME;
-      const proxyPassword = process.env.PROXY_PASSWORD;
-      const proxyIP = process.env.PROXY_IP;
-      const proxyPort = process.env.PROXY_PORT;
+      const proxyUsername = config.proxy.username;
+      const proxyPassword = config.proxy.password;
+      const proxyIP = config.proxy.ip;
+      const proxyPort = config.proxy.port;
       
-      // Construct proxy URL
+      // Construct proxy URL with appropriate encoding
+      let encodedUsername = proxyUsername;
+      let encodedPassword = proxyPassword;
+      
+      if (config.proxy.encodingMethod === 'none') {
+        // No encoding
+      } else if (config.proxy.encodingMethod === 'quote') {
+        encodedUsername = encodeURIComponent(proxyUsername);
+        encodedPassword = encodeURIComponent(proxyPassword);
+      } else { // Default to quote_plus
+        encodedUsername = encodeURIComponent(proxyUsername).replace(/%20/g, '+');
+        encodedPassword = encodeURIComponent(proxyPassword).replace(/%20/g, '+');
+      }
+      
       const proxyAuth = proxyUsername && proxyPassword 
-        ? `${encodeURIComponent(proxyUsername)}:${encodeURIComponent(proxyPassword)}@` 
+        ? `${encodedUsername}:${encodedPassword}@` 
         : '';
-      const proxyUrl = `http://${proxyAuth}${proxyIP}:${proxyPort}`;
+      const proxyUrl = `${config.proxy.protocol}://${proxyAuth}${proxyIP}:${proxyPort}`;
       
       // Create proxy agent
       options.httpAgent = new HttpsProxyAgent(proxyUrl);
@@ -107,16 +117,16 @@ export class BinanceBroker implements IBroker {
       }
       
       return { 
-        hasApiKey: !!process.env.BINANCE_API_KEY,
-        hasSecretKey: !!process.env.BINANCE_API_SECRET,
+        hasApiKey: !!config.exchanges.binance.apiKey,
+        hasSecretKey: !!config.exchanges.binance.secretKey,
         testnet: this.isTestnet(),
         name: BrokerType.BINANCE,
         active: true
       };
     } catch (error: any) {
       return {
-        hasApiKey: !!process.env.BINANCE_API_KEY,
-        hasSecretKey: !!process.env.BINANCE_API_SECRET,
+        hasApiKey: !!config.exchanges.binance.apiKey,
+        hasSecretKey: !!config.exchanges.binance.secretKey,
         testnet: this.isTestnet(),
         name: BrokerType.BINANCE,
         active: false
