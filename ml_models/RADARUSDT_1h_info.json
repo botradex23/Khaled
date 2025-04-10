@@ -2,8 +2,8 @@
   "id": "RADARUSDT_1h",
   "symbol": "RADARUSDT",
   "timeframe": "1h",
-  "lastTrainingTime": 1744113032916,
-  "accuracy": 0.6732735001826265,
+  "lastTrainingTime": 1744295241022,
+  "accuracy": 0.6656873145914004,
   "features": [
     "price",
     "volume",

@@ -2,8 +2,8 @@
   "id": "ETHUSD_4h",
   "symbol": "ETHUSD",
   "timeframe": "4h",
-  "lastTrainingTime": 1744112622302,
-  "accuracy": 0.7602637121035889,
+  "lastTrainingTime": 1744294624971,
+  "accuracy": 0.6015080622940377,
   "features": [
     "price",
     "volume",

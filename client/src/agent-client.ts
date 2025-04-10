@@ -1,124 +1,196 @@
 /**
- * Agent Client
+ * Agent API Client (TypeScript Implementation)
  * 
- * This module provides direct access to agent controller functionality,
- * bypassing Express routes and Vite middleware that might interfere with JSON responses.
- * 
- * IMPORTANT: This is the preferred way to interact with the agent from code 
- * rather than making HTTP requests to the API endpoints.
+ * This client provides methods for interacting with the integrated agent API
+ * without requiring a standalone server. It uses direct API endpoints in Express.
  */
 
-import { agent } from './controllers';
-import { logInfo, logError } from './utils/logger';
+import axios from 'axios';
+
+// Determine if we're running in a browser or Node.js
+const isBrowser = typeof window !== 'undefined';
+
+// Default API base URL for direct operations
+// In browser: relative path, in Node.js: full URL
+const API_BASE_URL = isBrowser 
+  ? '/api/agent' 
+  : 'http://localhost:5000/api/agent';
 
 /**
- * Class that provides direct access to agent controller functions
+ * Agent API Client for direct operations
  */
 export class AgentClient {
+  private apiBaseUrl: string;
+  
   /**
-   * Get the current status of the agent
-   * @returns The agent status object with timestamp
+   * Create a new AgentClient instance
+   * @param baseUrl Optional base URL (defaults to '/api/agent')
    */
-  getStatus() {
+  constructor(baseUrl: string = API_BASE_URL) {
+    this.apiBaseUrl = baseUrl;
+  }
+
+  /**
+   * Make a request to the agent API
+   * @param endpoint API endpoint path
+   * @param method HTTP method (GET, POST, etc.)
+   * @param data Optional request data
+   * @returns Promise with the response data
+   */
+  private async makeRequest(endpoint: string, method: string = 'GET', data: any = null): Promise<any> {
     try {
-      return agent.getAgentStatus();
-    } catch (error: any) {
-      logError('AgentClient', `Error getting status: ${error.message}`);
-      return {
-        status: 'error',
-        message: error.message,
-        timestamp: new Date().toISOString()
+      const url = `${this.apiBaseUrl}${endpoint}`;
+      const options: any = {
+        method,
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        }
       };
+      
+      if (data) {
+        options.data = data;
+      }
+      
+      console.log(`[AgentClient] Making ${method} request to ${url}`);
+      const response = await axios(options);
+      return response.data;
+    } catch (error: any) {
+      console.error('[AgentClient] API request error:', error.message);
+      if (error.response) {
+        console.error('[AgentClient] Response status:', error.response.status);
+        console.error('[AgentClient] Response data:', error.response.data);
+      }
+      throw error;
     }
   }
 
   /**
-   * Verify the OpenAI API key
-   * @returns Promise resolving to the verification result
+   * Get the status of the agent API
+   * @returns Promise with the status information
    */
-  async verifyOpenAIKey() {
-    try {
-      return await agent.verifyOpenAIKey();
-    } catch (error: any) {
-      logError('AgentClient', `Error verifying OpenAI key: ${error.message}`);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
+  async getStatus(): Promise<any> {
+    return this.makeRequest('/status');
   }
 
   /**
-   * Get a chat response from the agent
-   * @param prompt The user prompt
+   * Verify if the OpenAI API key is valid
+   * @returns Promise with the verification result
+   */
+  async verifyOpenAIKey(): Promise<any> {
+    return this.makeRequest('/verify-openai-key');
+  }
+
+  /**
+   * Read a file from the filesystem
+   * @param filePath Path to the file to read
+   * @returns Promise with the file content
+   */
+  async readFile(filePath: string): Promise<any> {
+    return this.makeRequest(`/api/direct-read-file?path=${encodeURIComponent(filePath)}`);
+  }
+
+  /**
+   * Write content to a file
+   * @param filePath Path to the file to write
+   * @param content Content to write to the file
+   * @returns Promise with the result
+   */
+  async writeFile(filePath: string, content: string): Promise<any> {
+    return this.makeRequest('/api/direct-write-file', 'POST', {
+      path: filePath,
+      content
+    });
+  }
+
+  /**
+   * List files in a directory
+   * @param directory Directory path to list (defaults to '.')
+   * @returns Promise with the file listing
+   */
+  async listFiles(directory: string = '.'): Promise<any> {
+    return this.makeRequest(`/api/direct-list-files?directory=${encodeURIComponent(directory)}`);
+  }
+
+  /**
+   * Execute a chat completion with the agent
+   * @param prompt User prompt
    * @param systemPrompt Optional system prompt
-   * @returns Promise resolving to the chat response
+   * @returns Promise with the chat response
    */
-  async getChatResponse(prompt: string, systemPrompt?: string) {
-    try {
-      return await agent.getAgentChatResponse(prompt, systemPrompt);
-    } catch (error: any) {
-      logError('AgentClient', `Error getting chat response: ${error.message}`);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
+  async chat(prompt: string, systemPrompt?: string): Promise<any> {
+    return this.makeRequest('/chat', 'POST', {
+      prompt,
+      systemPrompt
+    });
   }
 
   /**
    * Execute a task with the agent
-   * @param prompt The task prompt
+   * @param prompt Task description
    * @param systemPrompt Optional system prompt
-   * @returns Promise resolving to the task result
+   * @returns Promise with the task result
    */
-  async executeTask(prompt: string, systemPrompt?: string) {
-    try {
-      return await agent.executeAgentTask(prompt, systemPrompt);
-    } catch (error: any) {
-      logError('AgentClient', `Error executing task: ${error.message}`);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
+  async executeTask(prompt: string, systemPrompt?: string): Promise<any> {
+    return this.makeRequest('/task', 'POST', {
+      prompt,
+      systemPrompt
+    });
   }
 
   /**
    * Execute a file operation
    * @param operation Operation name
    * @param params Operation parameters
-   * @returns Promise resolving to the operation result
+   * @returns Promise with the operation result
    */
-  async executeFileOperation(operation: string, params: any) {
-    try {
-      return await agent.executeFileOperation(operation, params);
-    } catch (error: any) {
-      logError('AgentClient', `Error executing file operation: ${error.message}`);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
+  async executeFileOperation(operation: string, params: any): Promise<any> {
+    return this.makeRequest('/file-op', 'POST', {
+      operation,
+      params
+    });
   }
 
   /**
-   * Smart analyze and edit functionality
-   * @param task The editing task description
-   * @returns Promise resolving to the smart edit result
+   * Search for files in the project
+   * @param directory Base directory for search
+   * @param options Search options
+   * @returns Promise with the search results
    */
-  async smartAnalyzeAndEdit(task: string) {
-    try {
-      return await agent.smartAnalyzeAndEdit(task);
-    } catch (error: any) {
-      logError('AgentClient', `Error with smart analyze and edit: ${error.message}`);
-      return {
-        success: false,
-        message: error.message
-      };
-    }
+  async searchFiles(directory: string, options?: any): Promise<any> {
+    return this.makeRequest('/search-files', 'POST', {
+      directory,
+      options
+    });
+  }
+
+  /**
+   * Search for content in files
+   * @param text Text to search for
+   * @param options Search options
+   * @returns Promise with the search results
+   */
+  async searchContent(text: string, options?: any): Promise<any> {
+    return this.makeRequest('/search-content', 'POST', {
+      text,
+      options
+    });
+  }
+
+  /**
+   * Analyze the entire project
+   * @param task Analysis task description
+   * @returns Promise with the analysis results
+   */
+  async analyzeProject(task: string): Promise<any> {
+    return this.makeRequest('/analyze-project', 'POST', {
+      task
+    });
   }
 }
 
-// Create and export singleton instance
+// Export a singleton instance for convenience
 export const agentClient = new AgentClient();
+
+// Export default for ES module compatibility
+export default agentClient;

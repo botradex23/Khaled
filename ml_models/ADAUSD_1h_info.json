@@ -2,8 +2,8 @@
   "id": "ADAUSD_1h",
   "symbol": "ADAUSD",
   "timeframe": "1h",
-  "lastTrainingTime": 1744113467801,
-  "accuracy": 0.7818314738472367,
+  "lastTrainingTime": 1744294424789,
+  "accuracy": 0.6091446617070657,
   "features": [
     "price",
     "volume",

@@ -1,139 +1,226 @@
 /**
- * Agent API Integration
+ * Agent Integration for Tradeliy
  * 
- * This module sets up the OpenAI Agent integration with the main application.
- * It provides a bridge between the Express server and the agent functionality.
+ * This module integrates the AgentApiClient directly into the server code
+ * for file operations without requiring an HTTP server on port 3099.
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import express from 'express';
-import fetch from 'node-fetch';
-import { spawn } from 'child_process';
+const fs = require('fs');
+const path = require('path');
 
-// Setup module path
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Agent server info
-const AGENT_SERVER_URL = 'http://localhost:3021';
-const AGENT_SERVER_SCRIPT = path.join(__dirname, 'standalone-agent-server.js');
-const AGENT_LOG_FILE = path.join(process.cwd(), 'agent.log');
-const AGENT_PID_FILE = path.join(process.cwd(), 'agent-server.pid');
-
-// Logging utility
-function log(message, type = 'INFO') {
-  const timestamp = new Date().toISOString();
-  const logMessage = `[${timestamp}] [AGENT] [${type}] ${message}`;
-  console.log(logMessage);
-  
-  // Append to log file
-  try {
-    fs.appendFileSync(AGENT_LOG_FILE, logMessage + '\n', 'utf8');
-  } catch (error) {
-    console.error(`Error writing to agent log file: ${error.message}`);
-  }
-}
-
-/**
- * Check if the agent server is running
- * @returns {Promise<boolean>} True if the server is running
- */
-async function isAgentServerRunning() {
-  try {
-    const response = await fetch(`${AGENT_SERVER_URL}/agent-api/health`, {
-      method: 'GET',
-      timeout: 1000
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      log(`Agent server is running with PID ${data.pid}`);
-      return true;
-    }
-  } catch (error) {
-    log(`Agent server is not running: ${error.message}`, 'WARN');
+// Custom AgentApiClient implementation in CommonJS format
+class AgentApiClient {
+  constructor() {
+    // No OpenAI integration needed for server-side file operations
   }
   
-  return false;
-}
-
-/**
- * Start the agent server as a standalone process
- * @returns {Promise<boolean>} True if the server was started
- */
-async function startAgentServer() {
-  try {
-    log('Starting agent server...');
-    
-    // Create log file stream
-    const logStream = fs.createWriteStream(AGENT_LOG_FILE, { flags: 'a' });
-    
-    // Start server as a detached process
-    const server = spawn('node', [AGENT_SERVER_SCRIPT], {
-      detached: true,
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-    
-    // Pipe output to our log file
-    if (server.stdout) server.stdout.pipe(logStream);
-    if (server.stderr) server.stderr.pipe(logStream);
-    
-    // Detach the child process
-    server.unref();
-    
-    log(`Agent server started with PID ${server.pid}`);
-    
-    // Wait for server to start
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    return await isAgentServerRunning();
-  } catch (error) {
-    log(`Failed to start agent server: ${error.message}`, 'ERROR');
-    return false;
+  /**
+   * Read a file directly from the filesystem
+   * @param {string} filePath - Path to the file (relative to project root)
+   * @returns {Promise<Object>} - Response with file content or error
+   */
+  async readFile(filePath) {
+    try {
+      // Safely resolve path relative to project root
+      const fullPath = path.resolve(process.cwd(), filePath);
+      
+      // Security check
+      if (!fullPath.startsWith(process.cwd())) {
+        return {
+          success: false,
+          message: 'Access denied. Path is outside project root.'
+        };
+      }
+      
+      // Check if file exists
+      if (!fs.existsSync(fullPath)) {
+        return {
+          success: false,
+          message: `File not found: ${filePath}`
+        };
+      }
+      
+      // Check if it's a directory
+      if (fs.statSync(fullPath).isDirectory()) {
+        return {
+          success: false,
+          message: 'Path is a directory, not a file'
+        };
+      }
+      
+      // Read file content
+      const content = fs.readFileSync(fullPath, 'utf8');
+      
+      return {
+        success: true,
+        content
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return {
+        success: false,
+        message: `Error reading file: ${errorMessage}`
+      };
+    }
   }
-}
-
-/**
- * Initialize the agent integration
- * @param {express.Express} app - The Express application
- */
-export async function initializeAgentIntegration(app) {
-  try {
-    log('Initializing Agent Integration...');
-    
-    // Check if the agent server is already running
-    let serverRunning = await isAgentServerRunning();
-    
-    // Start the server if it's not running
-    if (!serverRunning) {
-      serverRunning = await startAgentServer();
+  
+  /**
+   * Write content to a file
+   * @param {string} filePath - Path to the file (relative to project root)
+   * @param {string} content - Content to write
+   * @returns {Promise<Object>} - Response with success status or error
+   */
+  async writeFile(filePath, content) {
+    try {
+      // Safely resolve path relative to project root
+      const fullPath = path.resolve(process.cwd(), filePath);
+      
+      // Security check
+      if (!fullPath.startsWith(process.cwd())) {
+        return {
+          success: false,
+          message: 'Access denied. Path is outside project root.'
+        };
+      }
+      
+      // Create directory if it doesn't exist
+      const directory = path.dirname(fullPath);
+      if (!fs.existsSync(directory)) {
+        fs.mkdirSync(directory, { recursive: true });
+      }
+      
+      // Write to file
+      fs.writeFileSync(fullPath, content, 'utf8');
+      
+      return {
+        success: true
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return {
+        success: false,
+        message: `Error writing file: ${errorMessage}`
+      };
     }
-    
-    if (serverRunning) {
-      log('Agent server is running. Integration complete.');
-    } else {
-      log('Failed to start agent server. Integration may be incomplete.', 'WARN');
-    }
-    
-    // Proxy health endpoint (doesn't rely on the agent server)
-    app.get('/api/agent-legacy-status', (req, res) => {
-      res.json({
-        status: 'ok',
-        message: 'Agent integration is active',
-        serverRunning,
-        timestamp: new Date().toISOString()
+  }
+  
+  /**
+   * List files in a directory
+   * @param {string} directory - Directory path (relative to project root)
+   * @returns {Promise<Object>} - Response with list of files or error
+   */
+  async listFiles(directory) {
+    try {
+      // Safely resolve path relative to project root
+      const fullPath = path.resolve(process.cwd(), directory);
+      
+      // Security check
+      if (!fullPath.startsWith(process.cwd())) {
+        return {
+          success: false,
+          message: 'Access denied. Path is outside project root.'
+        };
+      }
+      
+      // Check if directory exists
+      if (!fs.existsSync(fullPath)) {
+        return {
+          success: false,
+          message: `Directory not found: ${directory}`
+        };
+      }
+      
+      // Check if it's a directory
+      if (!fs.statSync(fullPath).isDirectory()) {
+        return {
+          success: false,
+          message: 'Path is a file, not a directory'
+        };
+      }
+      
+      // Read directory
+      const items = fs.readdirSync(fullPath);
+      
+      // Get file information for each item
+      const files = items.map(item => {
+        const itemPath = path.join(fullPath, item);
+        const stats = fs.statSync(itemPath);
+        
+        return {
+          name: item,
+          path: path.relative(process.cwd(), itemPath),
+          isDirectory: stats.isDirectory(),
+          size: stats.size,
+          modified: stats.mtime.toISOString()
+        };
       });
-    });
-    
-    log('Agent Integration initialized successfully');
-    return true;
-  } catch (error) {
-    log(`Agent Integration failed: ${error.message}`, 'ERROR');
-    return false;
+      
+      return {
+        success: true,
+        files
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return {
+        success: false,
+        message: `Error listing files: ${errorMessage}`
+      };
+    }
   }
 }
 
-// Default export
-export default { initializeAgentIntegration };
+// Create an instance of the client for server-side use
+const agentClient = new AgentApiClient();
+
+// Export the agent client for other modules to use
+module.exports = {
+  agentClient,
+  
+  // Add Express route handlers for backward compatibility with existing API routes
+  setupAgentRoutes(app) {
+    // Setup agent routes for backward compatibility with existing code
+    app.get('/api/my-agent/direct-read-file', async (req, res) => {
+      const filePath = req.query.path;
+      
+      if (!filePath) {
+        return res.status(400).json({
+          success: false,
+          message: 'Path parameter is required'
+        });
+      }
+      
+      const result = await agentClient.readFile(filePath);
+      res.json(result);
+    });
+    
+    app.post('/api/my-agent/direct-write-file', async (req, res) => {
+      const { path: filePath, content } = req.body;
+      
+      if (!filePath) {
+        return res.status(400).json({
+          success: false,
+          message: 'Path parameter is required'
+        });
+      }
+      
+      if (content === undefined) {
+        return res.status(400).json({
+          success: false,
+          message: 'Content parameter is required'
+        });
+      }
+      
+      const result = await agentClient.writeFile(filePath, content);
+      res.json(result);
+    });
+    
+    app.get('/api/my-agent/direct-list-files', async (req, res) => {
+      const directory = req.query.directory || '.';
+      
+      const result = await agentClient.listFiles(directory);
+      res.json(result);
+    });
+    
+    console.log('Agent API routes initialized with direct file access (no standalone server needed)');
+  }
+};

@@ -2,8 +2,8 @@
   "id": "ETHFIUSDC_1d",
   "symbol": "ETHFIUSDC",
   "timeframe": "1d",
-  "lastTrainingTime": 1744113462543,
-  "accuracy": 0.6452491705707929,
+  "lastTrainingTime": 1744294540691,
+  "accuracy": 0.6676806297288207,
   "features": [
     "price",
     "volume",

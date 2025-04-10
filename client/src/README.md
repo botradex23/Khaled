@@ -1,67 +1,115 @@
-# Tradeliy Source Code
+# Tradeliy Agent API 
 
-This directory contains the refactored source code for the Tradeliy platform, organized in a clean, modular structure.
+## Overview
 
-## Directory Structure
+This directory contains the refactored agent code with a new direct file operation API client. This implementation provides a solution to bypass the Vite middleware that was causing API endpoints to return HTML instead of JSON.
 
-- **controllers/**: Contains controller components for handling business logic
-- **routes/**: API route definitions and handlers
-- **services/**: Service modules for core functionality (OpenAI, file handling, database, etc.)
-- **utils/**: Utility functions and helper modules
+## Key Components
 
-## Agent Integration
+### Agent Client (`agent-client.ts`)
 
-The project integrates an OpenAI-powered agent for smart analysis, code assistance, and natural language processing. The recommended way to access this functionality is:
+The `AgentApiClient` class provides direct file system operations and OpenAI API access without going through Express or Vite middleware:
 
-### Direct Client Access
+- **Direct file operations**: Read, write, and list files directly
+- **OpenAI integration**: Make OpenAI API calls directly with the API key
+- **Error handling**: Comprehensive error handling for all operations
+- **TypeScript**: Fully typed responses with proper interfaces
 
-For programmatic access to agent functionality, use the `agentClient` from `src/agent-client.ts`. This bypasses any middleware that could interfere with API responses:
+### Example Usage (`agent-client-example.ts`)
+
+This file demonstrates how to use the agent client with examples for:
+
+1. Reading files
+2. Listing directory contents
+3. Writing files
+4. Getting chat completions from OpenAI
+
+## Problem Solved
+
+The original implementation suffered from the following issues:
+
+1. **Vite Middleware Interference**: API endpoints that were supposed to return JSON were returning HTML
+2. **Express Router Limitations**: Routes in server/routes were being intercepted by Vite
+3. **Cross-Origin Restrictions**: CORS issues when trying to access the API from different origins
+
+## Solution Approach
+
+Our solution takes three different approaches:
+
+### 1. Direct Client Library
+
+The `AgentApiClient` class in `agent-client.ts` provides direct access to:
+- File system operations
+- OpenAI API
+
+This bypasses all middleware and routing issues by operating directly on the file system and making external API requests.
+
+### 2. Standalone API Server
+
+The `standalone-api-server.mjs` file creates a completely independent Express server that:
+- Runs on a different port (3099)
+- Has its own routing and middleware
+- Is not affected by Vite middleware
+- Provides pure JSON responses
+
+### 3. Route Modification
+
+The updated routes in `server/routes/my-agent.ts` include:
+- Explicit Content-Type headers
+- Modified routing to avoid Vite interference
+- Direct file operation endpoints
+
+## Usage Examples
+
+### Using the Agent Client
 
 ```typescript
-import { agentClient } from './agent-client';
+import { AgentApiClient } from './agent-client';
 
-// Get agent status
-const status = agentClient.getStatus();
+// Create client with API key
+const client = new AgentApiClient(process.env.OPENAI_API_KEY);
 
-// Verify OpenAI API key
-const keyStatus = await agentClient.verifyOpenAIKey();
+// Read a file
+const result = await client.readFile('path/to/file.txt');
+if (result.success) {
+  console.log(result.content);
+}
 
-// Get chat response
-const response = await agentClient.getChatResponse("Hello, how can you help me?");
+// List files in directory
+const files = await client.listFiles('src');
+if (files.success) {
+  console.log(files.files);
+}
 
-// Smart analyze and edit
-const analysis = await agentClient.smartAnalyzeAndEdit("What files handle user authentication?");
-
-// File operations
-const files = await agentClient.executeFileOperation('listFiles', { directory: './src/services' });
+// Get OpenAI completion
+const completion = await client.getChatCompletion('Hello, AI!');
+if (completion.success) {
+  console.log(completion.completion);
+}
 ```
 
-A complete usage example is available in `src/agent-client-example.ts`. To run the example:
+### Using the Standalone API Server
 
+Start the server:
 ```bash
-npx tsx src/agent-client-example.ts
+node standalone-api-server.mjs
 ```
 
-## OpenAI Integration
+Make requests:
+```bash
+# Get status
+curl http://localhost:3099/status
 
-The OpenAI service is configured in `src/services/openai-service.ts` and provides capabilities for:
+# Read a file (with authentication header)
+curl -H "X-Test-Admin: true" http://localhost:3099/read-file?path=README.md
 
-- Chat completion generation
-- Smart code and project analysis
-- File content generation
+# List files in a directory
+curl -H "X-Test-Admin: true" http://localhost:3099/list-files?directory=src
+```
 
-## Main Services
+## Future Improvements
 
-- **Config Service**: Application configuration management
-- **Database Service**: Database connections and operations
-- **File Service**: File system operations
-- **Market Data Service**: Real-time market data access
-- **OpenAI Service**: AI assistant capabilities
-
-## Running the Application
-
-The application is started via the workflow defined in the root directory. All API endpoints are available on port 5000.
-
-## Troubleshooting
-
-If you're having issues with API routes returning HTML instead of JSON, use the direct API client approach described above. This bypasses the Vite middleware that may intercept and transform API responses.
+1. Add more file operations (delete, move, etc.)
+2. Add authentication to the direct client
+3. Expand OpenAI capabilities with streaming responses
+4. Add WebSocket support for real-time updates

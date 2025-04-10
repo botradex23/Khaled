@@ -2,8 +2,8 @@
   "id": "BETHUSDT_1h",
   "symbol": "BETHUSDT",
   "timeframe": "1h",
-  "lastTrainingTime": 1744113048802,
-  "accuracy": 0.6085368615286916,
+  "lastTrainingTime": 1744294435298,
+  "accuracy": 0.6700658279356287,
   "features": [
     "price",
     "volume",

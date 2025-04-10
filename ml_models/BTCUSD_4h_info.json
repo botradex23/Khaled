@@ -2,8 +2,8 @@
   "id": "BTCUSD_4h",
   "symbol": "BTCUSD",
   "timeframe": "4h",
-  "lastTrainingTime": 1744112606471,
-  "accuracy": 0.725552222622216,
+  "lastTrainingTime": 1744294503806,
+  "accuracy": 0.6637698541178734,
   "features": [
     "price",
     "volume",

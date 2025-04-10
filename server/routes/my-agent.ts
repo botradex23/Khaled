@@ -177,7 +177,7 @@ router.post('/files', ensureTestAdminAuthenticated, async (req: Request, res: Re
   }
 });
 
-// Read a file
+// Read a file - POST version (body params)
 router.post('/read-file', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
   console.log('AI Agent read-file request received');
   console.log('X-Test-Admin header present:', !!req.headers['x-test-admin']);
@@ -207,6 +207,46 @@ router.post('/read-file', ensureTestAdminAuthenticated, async (req: Request, res
     res.json({ success: true, content });
   } catch (error) {
     console.error('Error in read-file endpoint:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error instanceof Error ? error.message : 'Unknown error' 
+    });
+  }
+});
+
+// Direct read file - GET with path param to avoid Vite intercept
+router.get('/direct-read-file', ensureTestAdminAuthenticated, async (req: Request, res: Response) => {
+  console.log('AI Agent direct-read-file request received');
+  console.log('X-Test-Admin header present:', !!req.headers['x-test-admin']);
+  console.log('Request query:', req.query);
+  try {
+    const filePath = req.query.path as string;
+    
+    if (!filePath) {
+      return res.status(400).json({ success: false, message: 'File path is required as a query parameter' });
+    }
+    
+    // Ensure the path is within the project
+    const normalizedPath = path.normalize(filePath);
+    if (normalizedPath.startsWith('..') || path.isAbsolute(normalizedPath)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Invalid file path. Must be relative to project root.' 
+      });
+    }
+    
+    // Add a Content-Type header to ensure browsers recognize this as JSON
+    res.setHeader('Content-Type', 'application/json');
+    
+    const content = await readFile(path.resolve(process.cwd(), normalizedPath));
+    
+    if (content === null) {
+      return res.status(404).json({ success: false, message: 'File not found or could not be read' });
+    }
+    
+    res.json({ success: true, content });
+  } catch (error) {
+    console.error('Error in direct-read-file endpoint:', error);
     res.status(500).json({ 
       success: false, 
       message: error instanceof Error ? error.message : 'Unknown error' 

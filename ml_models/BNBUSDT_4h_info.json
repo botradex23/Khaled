@@ -2,8 +2,8 @@
   "id": "BNBUSDT_4h",
   "symbol": "BNBUSDT",
   "timeframe": "4h",
-  "lastTrainingTime": 1744113425614,
-  "accuracy": 0.6912556853762002,
+  "lastTrainingTime": 1744294456303,
+  "accuracy": 0.7399194288255817,
   "features": [
     "price",
     "volume",

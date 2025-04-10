@@ -1,118 +1,97 @@
 /**
- * Agent Client Usage Example
+ * Agent Client Example
  * 
- * This example demonstrates how to use the agent client to interact with
- * the OpenAI-powered agent functionality directly from code, bypassing
- * the Express routes and Vite middleware.
+ * This example demonstrates how to use the AgentApiClient to perform
+ * file operations and OpenAI interactions directly without HTTP.
+ * This bypasses any Vite middleware issues completely.
  */
 
-import { agentClient } from './agent-client';
+import { AgentApiClient } from './agent-client';
+import { config } from 'dotenv';
+import * as path from 'path';
 
-/**
- * Example 1: Get agent status
- */
-async function demoGetStatus() {
-  console.log('=== Demo: Get Agent Status ===');
-  const status = agentClient.getStatus();
-  console.log('Agent Status:', status);
-  console.log('\n');
-}
+// Load environment variables (for OPENAI_API_KEY)
+config();
 
-/**
- * Example 2: Verify OpenAI API key
- */
-async function demoVerifyApiKey() {
-  console.log('=== Demo: Verify OpenAI API Key ===');
-  const keyResult = await agentClient.verifyOpenAIKey();
-  console.log('API Key Verification Result:', keyResult);
-  console.log('\n');
-}
-
-/**
- * Example 3: Get a chat response
- */
-async function demoChatResponse() {
-  console.log('=== Demo: Get Chat Response ===');
-  const prompt = 'What features does the Tradeliy platform offer?';
-  console.log(`Asking: "${prompt}"`);
+async function runExample() {
+  console.log('===== Agent Client Example =====');
+  console.log('Demonstrating direct file operations without HTTP\n');
   
-  const response = await agentClient.getChatResponse(prompt);
-  
-  console.log('Chat Response:');
-  if (response.success) {
-    console.log(response.response);
-  } else {
-    console.log('Error:', response.message);
+  // Initialize the client
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    console.error('Error: OPENAI_API_KEY environment variable is not set');
+    process.exit(1);
   }
-  console.log('\n');
-}
-
-/**
- * Example 4: Smart Analyze and Edit
- */
-async function demoSmartAnalyzeAndEdit() {
-  console.log('=== Demo: Smart Analyze and Edit ===');
-  const task = 'Find all files related to market data collection and explain how they work together';
-  console.log(`Task: "${task}"`);
   
-  const result = await agentClient.smartAnalyzeAndEdit(task);
+  const client = new AgentApiClient(apiKey);
+  console.log('✅ AgentApiClient initialized with OpenAI API key');
   
-  console.log('Analysis Result:');
-  if (result.success) {
-    console.log(JSON.stringify(result.result, null, 2));
+  // Example 1: Read a file
+  console.log('\n--- Example 1: Reading a file ---');
+  const readResult = await client.readFile('README.md');
+  
+  if (readResult.success) {
+    const previewLength = 150;
+    const contentPreview = readResult.content?.substring(0, previewLength) + '...';
+    console.log(`✅ Successfully read README.md (${readResult.content?.length} bytes)`);
+    console.log(`Content preview: ${contentPreview}`);
   } else {
-    console.log('Error:', result.message);
+    console.error(`❌ Failed to read file: ${readResult.message}`);
   }
-  console.log('\n');
-}
-
-/**
- * Example 5: File Operation
- */
-async function demoFileOperation() {
-  console.log('=== Demo: File Operation (List Files) ===');
-  const result = await agentClient.executeFileOperation('listFiles', { 
-    directory: './src/services' 
-  });
   
-  console.log('Files in src/services:');
-  if (result.success) {
-    console.log(result.files);
-  } else {
-    console.log('Error:', result.message);
-  }
-  console.log('\n');
-}
-
-/**
- * Main function to run all demos
- */
-async function runAllDemos() {
-  console.log('=== AGENT CLIENT USAGE EXAMPLES ===\n');
+  // Example 2: Write a file
+  console.log('\n--- Example 2: Writing a file ---');
+  const testOutputPath = 'test-output.txt';
+  const testContent = `This is a test file created by AgentApiClient
+Date: ${new Date().toISOString()}
+This demonstrates writing files directly without using HTTP requests.`;
   
-  try {
-    await demoGetStatus();
-    await demoVerifyApiKey();
-    await demoChatResponse();
-    await demoSmartAnalyzeAndEdit();
-    await demoFileOperation();
+  const writeResult = await client.writeFile(testOutputPath, testContent);
+  
+  if (writeResult.success) {
+    console.log(`✅ Successfully wrote to ${testOutputPath}`);
     
-    console.log('=== ALL DEMOS COMPLETED SUCCESSFULLY ===');
-  } catch (error: any) {
-    console.error('Error running demos:', error.message);
+    // Verify by reading it back
+    const verifyResult = await client.readFile(testOutputPath);
+    if (verifyResult.success) {
+      console.log(`✅ Verified content (${verifyResult.content?.length} bytes)`);
+    }
+  } else {
+    console.error(`❌ Failed to write file: ${writeResult.message}`);
   }
+  
+  // Example 3: List files in a directory
+  console.log('\n--- Example 3: Listing files in a directory ---');
+  const listResult = await client.listFiles('src');
+  
+  if (listResult.success && listResult.files) {
+    console.log(`✅ Found ${listResult.files.length} files in src directory`);
+    console.log('First 5 files:');
+    listResult.files.slice(0, 5).forEach(file => {
+      console.log(`- ${file.name} (${file.isDirectory ? 'Directory' : 'File'})`);
+    });
+  } else {
+    console.error(`❌ Failed to list files: ${listResult.message}`);
+  }
+  
+  // Example 4: Using OpenAI
+  console.log('\n--- Example 4: Using OpenAI API ---');
+  const openaiResult = await client.getChatCompletion(
+    'Explain the concept of middleware in web applications in one paragraph.'
+  );
+  
+  if (openaiResult.success) {
+    console.log('✅ OpenAI API response:');
+    console.log(openaiResult.completion);
+  } else {
+    console.error(`❌ Failed to get OpenAI completion: ${openaiResult.message}`);
+  }
+  
+  console.log('\n===== All examples completed successfully =====');
 }
 
-// To run this example: npx tsx src/agent-client-example.ts
-// In ESM, we don't have access to require.main, so we'll run automatically
-runAllDemos();
-
-// Export functions for potential use in other modules
-export {
-  demoGetStatus,
-  demoVerifyApiKey,
-  demoChatResponse,
-  demoSmartAnalyzeAndEdit,
-  demoFileOperation,
-  runAllDemos
-};
+// Execute the example
+runExample().catch(error => {
+  console.error('Error running example:', error);
+});

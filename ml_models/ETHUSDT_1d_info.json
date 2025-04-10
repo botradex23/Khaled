@@ -2,8 +2,8 @@
   "id": "ETHUSDT_1d",
   "symbol": "ETHUSDT",
   "timeframe": "1d",
-  "lastTrainingTime": 1744113011868,
-  "accuracy": 0.6251626036876518,
+  "lastTrainingTime": 1744294598565,
+  "accuracy": 0.7959707003159028,
   "features": [
     "price",
     "volume",

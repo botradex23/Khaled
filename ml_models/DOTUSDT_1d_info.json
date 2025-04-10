@@ -2,8 +2,8 @@
   "id": "DOTUSDT_1d",
   "symbol": "DOTUSDT",
   "timeframe": "1d",
-  "lastTrainingTime": 1744112516535,
-  "accuracy": 0.6845543349824911,
+  "lastTrainingTime": 1744294524878,
+  "accuracy": 0.6698851390608217,
   "features": [
     "price",
     "volume",

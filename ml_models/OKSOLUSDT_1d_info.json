@@ -2,8 +2,8 @@
   "id": "OKSOLUSDT_1d",
   "symbol": "OKSOLUSDT",
   "timeframe": "1d",
-  "lastTrainingTime": 1744113557384,
-  "accuracy": 0.7380334724986967,
+  "lastTrainingTime": 1744295219979,
+  "accuracy": 0.6571227488173562,
   "features": [
     "price",
     "volume",

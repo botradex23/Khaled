@@ -2,8 +2,8 @@
   "id": "BTCUSDT_4h",
   "symbol": "BTCUSDT",
   "timeframe": "4h",
-  "lastTrainingTime": 1744112558777,
-  "accuracy": 0.7755580284283877,
+  "lastTrainingTime": 1744294488008,
+  "accuracy": 0.7993260043451258,
   "features": [
     "price",
     "volume",

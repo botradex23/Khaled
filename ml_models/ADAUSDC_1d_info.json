@@ -2,8 +2,8 @@
   "id": "ADAUSDC_1d",
   "symbol": "ADAUSDC",
   "timeframe": "1d",
-  "lastTrainingTime": 1744112580002,
-  "accuracy": 0.7743417470661657,
+  "lastTrainingTime": 1744294393251,
+  "accuracy": 0.674390239629772,
   "features": [
     "price",
     "volume",

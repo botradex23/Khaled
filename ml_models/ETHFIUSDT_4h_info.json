@@ -2,8 +2,8 @@
   "id": "ETHFIUSDT_4h",
   "symbol": "ETHFIUSDT",
   "timeframe": "4h",
-  "lastTrainingTime": 1744113441467,
-  "accuracy": 0.7755176406901303,
+  "lastTrainingTime": 1744294566995,
+  "accuracy": 0.7330990815244807,
   "features": [
     "price",
     "volume",

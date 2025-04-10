@@ -2,8 +2,8 @@
   "id": "ETHWUSDT_4h",
   "symbol": "ETHWUSDT",
   "timeframe": "4h",
-  "lastTrainingTime": 1744113536260,
-  "accuracy": 0.6081858635556492,
+  "lastTrainingTime": 1744295209454,
+  "accuracy": 0.6201687696120922,
   "features": [
     "price",
     "volume",

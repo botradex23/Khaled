@@ -1,0 +1,12 @@
+{
+  "name": "agent-client-example",
+  "version": "1.0.0",
+  "description": "Example configuration file",
+  "settings": {
+    "debugMode": true,
+    "logLevel": "info",
+    "maxRetries": 3,
+    "timeoutMs": 5000
+  },
+  "created": "2025-04-10T14:30:35.939Z"
+}

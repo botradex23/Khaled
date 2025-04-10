@@ -2,8 +2,8 @@
   "id": "ETHUSDC_1h",
   "symbol": "ETHUSDC",
   "timeframe": "1h",
-  "lastTrainingTime": 1744113064655,
-  "accuracy": 0.7377609406748991,
+  "lastTrainingTime": 1744294588032,
+  "accuracy": 0.7495839669619837,
   "features": [
     "price",
     "volume",
