@@ -1,0 +1,21 @@
+```
+### Change Log for Binance Integrations
+
+#### Release 1.0.1 - Date: 2023-10-10
+- **Feature Addition**: Integrated new endpoint for fetching historical trades from Binance API. This allows users to query trade history based on time intervals.
+- **Update**: Updated the dependency version for `binance-api-node` to v1.9.3, which includes critical bug fixes and performance improvements.
+- **Optimization**: Improved error handling for network requests to ensure robust failover mechanisms in cases of connectivity loss or API timeout issues.
+- **Bug Fix**: Resolved the race condition in the order book update logic. The issue was causing incorrect data displays during high-frequency trading sessions.
+
+#### Release 1.0.0 - Date: 2023-09-25
+- **Initial Integration**: Added basic support for connecting to Binance WebSocket feeds for live ticker updates, order book depth, and real-time trading data.
+- **Feature Addition**: Setup REST API capability to handle Binance's market data queries, including current prices, market trends, and asset details.
+- **Documentation**: Created documentation for setting up Binance API keys and connecting to the service using secure, best-practice methods.
+- **Testing**: Implemented unit tests for all Binance integration modules ensuring 90% code coverage, focusing on both successful and failure scenarios.
+
+#### Upcoming Changes
+- We plan to integrate futures trading capabilities using the Binance Futures API in the next major update.
+- Implement more detailed analytics and trading strategy patterns using real-time data feeds.
+
+*Note: All changes are thoroughly tested and reviewed to meet production-level security and efficiency standards.*
+```

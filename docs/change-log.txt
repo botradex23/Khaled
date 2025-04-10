@@ -1,0 +1,42 @@
+```
+# Change Log
+
+## Version 1.0.1 - 2023-10-18
+
+### Summary
+This document details recent modifications made to enhance our project, focusing on feature additions, bug fixes, and overall improvements.
+
+### Changes
+
+#### 1. src/index.ts
+- **Change Type:** Feature Addition
+- **Modification:** Introduced a new function `initializeApp()` to handle application startup logic and improve modularity.
+
+#### 2. src/utils/helpers.ts
+- **Change Type:** Enhancement
+- **Modification:** Optimized the `calculateSum()` utility function for better performance by reducing unnecessary iterations.
+
+#### 3. src/components/Header.tsx
+- **Change Type:** Bug Fix
+- **Modification:** Fixed a rendering bug in the `Header` component where the title was not being updated dynamically, ensuring the component now correctly reflects title changes.
+
+#### 4. src/styles/global.css
+- **Change Type:** Style Update
+- **Modification:** Adjusted the global font style to enhance readability and implemented new color variables to maintain consistency across the application.
+
+#### 5. tests/app.test.ts
+- **Change Type:** Testing Improvement
+- **Modification:** Added comprehensive unit tests for the `initializeApp()` function, increasing test coverage and reliability.
+
+#### 6. package.json
+- **Change Type:** Dependency Update
+- **Modification:** Updated `typescript` to version 4.9.0 to ensure compatibility with the latest TypeScript features and enhancements.
+
+### Notes
+- All changes have been reviewed and approved by the development team.
+- Documentation has been updated to reflect these changes where applicable.
+
+### Future Considerations
+- Regular monitoring for any new issues arising due to recent updates.
+- Plan to refactor older components to align with the new modular design seen in `initializeApp()`.
+```

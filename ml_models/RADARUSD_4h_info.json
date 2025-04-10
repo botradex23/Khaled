@@ -2,8 +2,8 @@
   "id": "RADARUSD_4h",
   "symbol": "RADARUSD",
   "timeframe": "4h",
-  "lastTrainingTime": 1744113022368,
-  "accuracy": 0.7727395091794856,
+  "lastTrainingTime": 1744315408880,
+  "accuracy": 0.7348432663396778,
   "features": [
     "price",
     "volume",

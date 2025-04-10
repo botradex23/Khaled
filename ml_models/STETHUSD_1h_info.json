@@ -2,8 +2,8 @@
   "id": "STETHUSD_1h",
   "symbol": "STETHUSD",
   "timeframe": "1h",
-  "lastTrainingTime": 1744112426056,
-  "accuracy": 0.6688491209809654,
+  "lastTrainingTime": 1744315939862,
+  "accuracy": 0.7627411736971419,
   "features": [
     "price",
     "volume",

@@ -1,0 +1,41 @@
+```python
+from typing import Dict
+
+def detect_model_version(response_metadata: Dict) -> str:
+    """
+    Detects the OpenAI model version based on response metadata.
+
+    Args:
+    - response_metadata (Dict): The metadata dictionary containing model information.
+
+    Returns:
+    - str: The name of the detected model.
+    """
+    model_name = response_metadata.get('model_name', None)
+    if not model_name:
+        raise ValueError("Model name not found in the response metadata.")
+    
+    # Assuming model name follows a specific pattern here, like 'gpt-3.5-turbo' or 'gpt-4'
+    if "gpt-3.5-turbo" in model_name:
+        return "gpt-3.5-turbo"
+    elif "gpt-4" in model_name:
+        return "gpt-4"
+    else:
+        raise ValueError(f"Unknown model name detected: {model_name}")
+
+# Example of usage:
+def example_usage() -> None:
+    # Mocked response metadata example
+    response_metadata = {
+        "model_name": "gpt-4"
+    }
+    
+    try:
+        model_version = detect_model_version(response_metadata)
+        print(f"The detected model version is: {model_version}")
+    except ValueError as e:
+        print(e)
+
+if __name__ == "__main__":
+    example_usage()
+```

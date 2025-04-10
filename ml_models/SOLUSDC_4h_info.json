@@ -2,8 +2,8 @@
   "id": "SOLUSDC_4h",
   "symbol": "SOLUSDC",
   "timeframe": "4h",
-  "lastTrainingTime": 1744113409833,
-  "accuracy": 0.6950854546346733,
+  "lastTrainingTime": 1744315887104,
+  "accuracy": 0.6579080932727034,
   "features": [
     "price",
     "volume",

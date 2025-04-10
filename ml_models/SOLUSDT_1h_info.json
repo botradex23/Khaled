@@ -2,8 +2,8 @@
   "id": "SOLUSDT_1h",
   "symbol": "SOLUSDT",
   "timeframe": "1h",
-  "lastTrainingTime": 1744113112292,
-  "accuracy": 0.6568502791002594,
+  "lastTrainingTime": 1744315897623,
+  "accuracy": 0.6512653034710315,
   "features": [
     "price",
     "volume",

@@ -1,0 +1,51 @@
+```typescript
+import fs from 'fs';
+import axios from 'axios';
+
+// Example function with a try-catch block for error handling
+async function fetchData(url: string): Promise<any> {
+    try {
+        const response = await axios.get(url);
+        return response.data;
+    } catch (error) {
+        handleError(error);
+    }
+}
+
+// Centralized error handling function
+function handleError(error: any): void {
+    // Log the error to the console with a clear and informative message
+    console.error('An unexpected error occurred while fetching data:', error.message);
+
+    // Log the error details to a file for further review
+    fs.appendFile('error.log', `${new Date().toISOString()} - Error: ${error.message}\nStack trace: ${error.stack}\n\n`, (err) => {
+        if (err) {
+            console.error('Failed to write error details to log file:', err);
+        }
+    });
+
+    // Option to send error details to an external monitoring service
+    // Your monitoring service integration here, for example:
+    // sendToMonitoringService(error);
+
+    // Re-throw the error if further action is needed after logging
+    throw error;
+}
+
+// Mock function to simulate sending error info to a monitoring service
+function sendToMonitoringService(error: any): void {
+    // Replace with your actual implementation for sending errors
+    console.log('Sending error details to monitoring service:', error.message);
+}
+
+// Example usage of fetchData function
+(async () => {
+    try {
+        const data = await fetchData('https://api.example.com/data');
+        console.log('Data successfully received:', data);
+    } catch (error) {
+        // Handle additional logic after an unrecoverable error has occurred
+        console.error('A non-recoverable error propagated:', error.message);
+    }
+})();
+```

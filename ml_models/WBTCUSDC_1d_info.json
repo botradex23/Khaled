@@ -2,8 +2,8 @@
   "id": "WBTCUSDC_1d",
   "symbol": "WBTCUSDC",
   "timeframe": "1d",
-  "lastTrainingTime": 1744112484504,
-  "accuracy": 0.6631681118044995,
+  "lastTrainingTime": 1744315950447,
+  "accuracy": 0.7055518563510508,
   "features": [
     "price",
     "volume",

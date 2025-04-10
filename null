@@ -1,0 +1,40 @@
+```typescript
+import axios from 'axios';
+
+// Replace with your actual OpenAI API Key
+const OPENAI_API_KEY = 'your-openai-api-key';
+
+// Define the endpoint and headers
+const OPENAI_ENDPOINT = 'https://api.openai.com/v1/engines/davinci-codex/completions';
+const headers = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${OPENAI_API_KEY}`
+};
+
+// Define the payload for the request
+const payload = {
+  prompt: 'Say hello!',
+  max_tokens: 5
+};
+
+// Function to test the connection to OpenAI API
+async function testOpenAIConnection() {
+  try {
+    console.log('Testing OpenAI API connectivity...');
+    const response = await axios.post(OPENAI_ENDPOINT, payload, { headers });
+    if (response.status === 200) {
+      console.log('Successfully connected to OpenAI API.');
+      console.log('Response:', response.data.choices[0].text.trim());
+    } else {
+      console.log('Failed to connect to OpenAI API. Status:', response.status);
+    }
+  } catch (error) {
+    console.error('Error connecting to OpenAI API:', error.message);
+  }
+}
+
+// Execute the test function
+testOpenAIConnection();
+```
+
+Make sure to replace `'your-openai-api-key'` with your actual OpenAI API key before running this script. Ensure you have `axios` installed in your project using `npm install axios`.

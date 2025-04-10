@@ -1,0 +1,48 @@
+```
+Change Log - Hebrew to English Text Replacement
+
+Date: 2023-10-23
+------------------------------------------------------------
+File Path: src/components/Header.tsx
+Original Hebrew: "ברוך הבא"
+Replaced with English: "Welcome"
+------------------------------------------------------------
+
+Date: 2023-10-23
+------------------------------------------------------------
+File Path: src/components/Footer.tsx
+Original Hebrew: "שלח את דעתך"
+Replaced with English: "Send Your Feedback"
+------------------------------------------------------------
+
+Date: 2023-10-24
+------------------------------------------------------------
+File Path: src/pages/HomePage.tsx
+Original Hebrew: "מוצרים מומלצים"
+Replaced with English: "Featured Products"
+------------------------------------------------------------
+
+Date: 2023-10-24
+------------------------------------------------------------
+File Path: src/components/AboutUs.tsx
+Original Hebrew: "אודותינו"
+Replaced with English: "About Us"
+------------------------------------------------------------
+
+Date: 2023-10-25
+------------------------------------------------------------
+File Path: src/modules/User.ts
+Original Hebrew: "שם משתמש"
+Replaced with English: "Username"
+------------------------------------------------------------
+
+Date: 2023-10-25
+------------------------------------------------------------
+File Path: src/modules/Contact.ts
+Original Hebrew: "צור קשר"
+Replaced with English: "Contact Us"
+------------------------------------------------------------
+
+Note: 
+Ensure to update all relevant components and documentation following these changes for consistency across the application.
+```

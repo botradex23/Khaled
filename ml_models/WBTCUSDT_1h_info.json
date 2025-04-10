@@ -2,8 +2,8 @@
   "id": "WBTCUSDT_1h",
   "symbol": "WBTCUSDT",
   "timeframe": "1h",
-  "lastTrainingTime": 1744112489581,
-  "accuracy": 0.6064634355151534,
+  "lastTrainingTime": 1744317142102,
+  "accuracy": 0.6799082554907789,
   "features": [
     "price",
     "volume",

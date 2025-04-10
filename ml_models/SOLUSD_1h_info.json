@@ -2,8 +2,8 @@
   "id": "SOLUSD_1h",
   "symbol": "SOLUSD",
   "timeframe": "1h",
-  "lastTrainingTime": 1744113515206,
-  "accuracy": 0.6680344884362872,
+  "lastTrainingTime": 1744315913533,
+  "accuracy": 0.6456398943701239,
   "features": [
     "price",
     "volume",

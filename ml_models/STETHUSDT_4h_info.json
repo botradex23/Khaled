@@ -2,8 +2,8 @@
   "id": "STETHUSDT_4h",
   "symbol": "STETHUSDT",
   "timeframe": "4h",
-  "lastTrainingTime": 1744113488845,
-  "accuracy": 0.7978264509120742,
+  "lastTrainingTime": 1744315934599,
+  "accuracy": 0.614045873395855,
   "features": [
     "price",
     "volume",

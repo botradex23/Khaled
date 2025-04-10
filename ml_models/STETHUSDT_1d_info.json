@@ -2,8 +2,8 @@
   "id": "STETHUSDT_1d",
   "symbol": "STETHUSDT",
   "timeframe": "1d",
-  "lastTrainingTime": 1744113494115,
-  "accuracy": 0.7279962052634761,
+  "lastTrainingTime": 1744315924057,
+  "accuracy": 0.7997290895081159,
   "features": [
     "price",
     "volume",
