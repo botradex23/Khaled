@@ -1,6 +1,6 @@
 # Tradeliy Deployment Guide
 
-This guide will help you deploy the Tradeliy platform to a VPS or dedicated server.
+This guide will help you deploy the Tradeliy platform to a VPS or dedicated server, specifically focused on Hetzner Cloud VPS.
 
 ## Preparing for Deployment
 
@@ -158,3 +158,173 @@ Establish a maintenance routine:
 2. Monitor server performance
 3. Check for updates to dependencies
 4. Review application logs for potential issues
+
+## Hetzner Cloud VPS Specific Instructions
+
+### Server Selection
+
+For optimal performance of Tradeliy with ML capabilities, we recommend:
+
+- CPX31 or higher (4 vCPU, 8 GB RAM minimum)
+- 80 GB SSD or more
+- Ubuntu 22.04 LTS as the operating system
+
+### Initial Server Setup
+
+1. Create a new Hetzner Cloud server through their console
+2. Add your SSH key during server creation for secure access
+3. Connect to your server via SSH:
+
+```bash
+ssh root@your-server-ip
+```
+
+4. Update system packages:
+
+```bash
+apt update && apt upgrade -y
+```
+
+5. Create a new non-root user for security:
+
+```bash
+adduser tradeliy
+usermod -aG sudo tradeliy
+```
+
+6. Set up firewall with UFW:
+
+```bash
+ufw allow OpenSSH
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw enable
+```
+
+### Installing Dependencies
+
+Install all required dependencies:
+
+```bash
+# Node.js 18.x
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Python 3.10 and pip
+sudo apt-get install -y python3 python3-pip python3-venv
+
+# MongoDB (optional if using MongoDB Atlas)
+wget -qO - https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add -
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
+sudo apt-get update
+sudo apt-get install -y mongodb-org
+sudo systemctl start mongod
+sudo systemctl enable mongod
+
+# PostgreSQL
+sudo apt-get install -y postgresql postgresql-contrib
+```
+
+### Set Up PostgreSQL
+
+Configure PostgreSQL for Tradeliy:
+
+```bash
+sudo -i -u postgres
+createuser --interactive
+# Enter "tradeliy" as the name and "y" for superuser
+createdb tradeliy
+psql
+\password tradeliy
+# Enter a secure password
+\q
+exit
+```
+
+### Deploying with deploy-config.js
+
+Use our included configuration utility to set up your production environment:
+
+```bash
+cd ~/tradeliy
+node deploy-config.js
+```
+
+Follow the prompts to configure your production environment, including:
+- Server ports (default: 5000 for main server, 5001 for ML API)
+- Domain information (if you have a domain)
+- Database connection details
+- API keys and proxy settings
+
+### Setting Up as a Service
+
+Create a systemd service for automatic startup and management:
+
+```bash
+sudo nano /etc/systemd/system/tradeliy.service
+```
+
+Add the following configuration:
+
+```
+[Unit]
+Description=Tradeliy Trading Platform
+After=network.target mongodb.service postgresql.service
+
+[Service]
+Type=simple
+User=tradeliy
+WorkingDirectory=/home/tradeliy/app
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then enable and start the service:
+
+```bash
+sudo systemctl enable tradeliy.service
+sudo systemctl start tradeliy.service
+```
+
+### Domain and SSL Setup
+
+If you have a domain, set up Nginx and SSL:
+
+```bash
+sudo apt install -y nginx certbot python3-certbot-nginx
+
+# Configure Nginx
+sudo nano /etc/nginx/sites-available/tradeliy
+```
+
+Add this configuration (modify as needed):
+
+```
+server {
+    listen 80;
+    server_name your-domain.com www.your-domain.com;
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+Enable the site and get SSL certificates:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/tradeliy /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+```

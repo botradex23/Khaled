@@ -90,9 +90,14 @@ export async function checkMlApiRunning(): Promise<boolean> {
  */
 export async function startMlApi(): Promise<boolean> {
   // Check if ML API is already running
-  const isRunning = await checkMlApiRunning();
-  if (isRunning) {
-    return true;
+  try {
+    const isRunning = await checkMlApiRunning();
+    if (isRunning) {
+      return true;
+    }
+  } catch (error) {
+    console.log(`Error checking ML API status: ${error.message}`);
+    console.log('Will attempt to start the ML API anyway');
   }
 
   console.log('🚀 Starting ML API service...');
@@ -101,9 +106,15 @@ export async function startMlApi(): Promise<boolean> {
     // Try to kill any existing Python ML processes
     try {
       console.log('Killing any existing ML API processes...');
-      spawn('pkill', ['-f', 'python.*run_flask_service.py']);
+      // Check if we're on Windows
+      const isWindows = process.platform === 'win32';
+      if (isWindows) {
+        spawn('taskkill', ['/f', '/im', 'python.exe', '/fi', 'CommandLine like %run_flask_service.py%']);
+      } else {
+        spawn('pkill', ['-f', 'python.*run_flask_service.py']);
+      }
     } catch (err) {
-      // Ignore errors from pkill
+      // Ignore errors from pkill/taskkill
     }
 
     // Make sure python_app has a copy of .env
@@ -126,24 +137,51 @@ export async function startMlApi(): Promise<boolean> {
       FALLBACK_TO_DIRECT: 'true'
     };
 
-    // Start the process with nohup
+    // Determine the Python executable to use
+    const pythonCommand = process.env.PYTHON_CMD || 'python3';
+
+    // Get script path
     const scriptPath = path.join(__dirname, '..', 'python_app', 'run_flask_service.py');
     console.log(`Starting ML API with script: ${scriptPath}`);
+    console.log(`Using Python command: ${pythonCommand}`);
     
-    const pythonProcess = spawn(
-      'nohup',
-      ['python', scriptPath],
-      {
-        detached: true,
-        stdio: [
-          'ignore',
-          fs.openSync(path.join(LOG_DIR, 'ml-api-output.log'), 'a'),
-          fs.openSync(path.join(LOG_DIR, 'ml-api-error.log'), 'a')
-        ],
-        env,
-        cwd: path.join(__dirname, '..')
-      }
-    );
+    // Check if we're on Windows
+    const isWindows = process.platform === 'win32';
+    let pythonProcess;
+    
+    if (isWindows) {
+      // On Windows, don't use nohup
+      pythonProcess = spawn(
+        pythonCommand,
+        [scriptPath],
+        {
+          detached: true,
+          stdio: [
+            'ignore',
+            fs.openSync(path.join(LOG_DIR, 'ml-api-output.log'), 'a'),
+            fs.openSync(path.join(LOG_DIR, 'ml-api-error.log'), 'a')
+          ],
+          env,
+          cwd: path.join(__dirname, '..')
+        }
+      );
+    } else {
+      // On Unix, use nohup
+      pythonProcess = spawn(
+        'nohup',
+        [pythonCommand, scriptPath],
+        {
+          detached: true,
+          stdio: [
+            'ignore',
+            fs.openSync(path.join(LOG_DIR, 'ml-api-output.log'), 'a'),
+            fs.openSync(path.join(LOG_DIR, 'ml-api-error.log'), 'a')
+          ],
+          env,
+          cwd: path.join(__dirname, '..')
+        }
+      );
+    }
     
     // Save PID for future reference
     if (pythonProcess.pid) {

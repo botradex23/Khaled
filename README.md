@@ -121,7 +121,27 @@ The application uses a hybrid architecture:
 
 ## Deployment
 
-### Option 1: Render
+### Option 1: Hetzner Cloud VPS (Recommended)
+
+For optimal performance and control, we recommend deploying to a Hetzner Cloud VPS:
+
+1. Set up a Hetzner Cloud VPS (CPX31 or higher recommended)
+2. Install Node.js, Python, and other dependencies
+3. Clone the repository and run the deployment script:
+   ```bash
+   ./deploy.sh
+   ```
+4. Set up the systemd service for automatic startup:
+   ```bash
+   sudo cp tradeliy.service.template /etc/systemd/system/tradeliy.service
+   sudo systemctl enable tradeliy.service
+   sudo systemctl start tradeliy.service
+   ```
+5. Configure Nginx as a reverse proxy (optional but recommended)
+
+For detailed instructions, see our [Hetzner Deployment Guide](./DEPLOYMENT_GUIDE.md).
+
+### Option 2: Render
 
 1. Create a new Web Service in Render dashboard
 2. Connect your repository
@@ -129,14 +149,14 @@ The application uses a hybrid architecture:
 4. Set the start command: `npm start`
 5. Add all environment variables from your `.env` file
 
-### Option 2: Railway
+### Option 3: Railway
 
 1. Create a new project in Railway
 2. Connect your repository
 3. Add environment variables
 4. Railway will automatically detect and deploy your application
 
-### Option 3: Self-hosted
+### Option 4: Generic Self-hosted
 
 1. Set up a server with Node.js and Python installed
 2. Clone the repository
@@ -144,7 +164,7 @@ The application uses a hybrid architecture:
 4. Use PM2 or a similar process manager to keep the application running:
    ```bash
    npm install -g pm2
-   pm2 start npm --name "crypto-trade" -- start
+   pm2 start npm --name "tradeliy" -- start
    ```
 
 ## API Documentation

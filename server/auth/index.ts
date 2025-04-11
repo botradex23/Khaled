@@ -220,21 +220,21 @@ function registerAuthRoutes(app: Express) {
       next();
     },
     (req: Request, res: Response, next: NextFunction) => {
-      // Always use the exact callback URL registered in Google API Console
-      const fixedCallbackUrl = 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback';
+      // Use the dynamic callback URL function
+      const dynamicCallbackUrl = getCallbackUrl(req);
       
-      // Options for the passport authenticate call with fixed URL
+      // Options for the passport authenticate call
       const authOptions = {
         failureRedirect: '/login?error=google_auth_failed',
         session: true,
-        callbackURL: fixedCallbackUrl
+        callbackURL: dynamicCallbackUrl
       };
       
-      console.log('Using exact callback URL for verification:', authOptions.callbackURL);
+      console.log('Using dynamic callback URL for verification:', authOptions.callbackURL);
       
       // Store the callback URL in session for consistency
       if (req.session) {
-        req.session.googleCallbackUrl = fixedCallbackUrl;
+        req.session.googleCallbackUrl = dynamicCallbackUrl;
       }
       
       // Use custom callback for passport authenticate for better error handling

@@ -27,33 +27,50 @@ interface GoogleProfile extends Profile {
   };
 }
 
-// Helper function to provide the exact Google OAuth callback URL
+// Helper function to provide a flexible Google OAuth callback URL
+// that works in both development and production environments
 const getCallbackUrl = (req?: Request): string => {
-  // Use the exact URL registered in Google API credentials
-  const fixedCallbackUrl = 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback';
+  // Check if we have a PUBLIC_URL in the environment (for production)
+  const publicUrl = process.env.PUBLIC_URL || '';
+  const domain = process.env.DOMAIN || '';
   
-  console.log('Using exact Google OAuth registered callback URL:', fixedCallbackUrl);
+  // First check if we have an explicitly configured callback URL
+  if (process.env.GOOGLE_CALLBACK_URL) {
+    console.log('Using explicitly configured Google callback URL:', process.env.GOOGLE_CALLBACK_URL);
+    return process.env.GOOGLE_CALLBACK_URL;
+  }
   
-  // Override environment variable with our dynamic callback URL
-  process.env.GOOGLE_CALLBACK_URL = fixedCallbackUrl;
+  // In production with configured domain, use the PUBLIC_URL or build from domain
+  if (process.env.NODE_ENV === 'production' && (publicUrl || domain)) {
+    const productionCallback = publicUrl 
+      ? `${publicUrl}/api/auth/google/callback`
+      : `https://${domain}/api/auth/google/callback`;
+      
+    console.log('Using production callback URL:', productionCallback);
+    return productionCallback;
+  }
   
-  // Generate a list of possible callback URLs based on Replit domains (for debugging only)
-  const possibleCallbackUrls: string[] = [];
+  // Detect if running in Replit environment
+  const isReplit = Boolean(process.env.REPL_ID || process.env.REPLIT_ID || process.env.REPLIT);
   
-  // Get hostname from various sources with fallbacks
-  const defaultHost = process.env.REPLIT_HOSTNAME || process.env.REPL_SLUG || '19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev';
+  // If in Replit environment, use fixed Replit URL
+  if (isReplit) {
+    // Use the exact URL registered in Google API credentials for Replit
+    const replitCallbackUrl = 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback';
+    console.log('Using Replit callback URL:', replitCallbackUrl);
+    return replitCallbackUrl;
+  }
   
-  // First priority: Use the hostname from request headers if available
-  let host = defaultHost;
+  // Otherwise, determine the callback dynamically for development
+  let host = 'localhost:5000'; // Default fallback
   
-  // If we have a request object, try to extract host information with enhanced logic
+  // If we have a request object, extract host information
   if (req) {
-    // Try different header variations, some proxy setups use different headers
+    // Try different header variations for different environment setups
     const hostHeaders = [
       req.headers['host'],
       req.headers['x-forwarded-host'],
-      req.headers['x-replit-user-host'],
-      req.headers['x-replit-host']
+      req.headers['x-original-host']
     ];
     
     // Use the first valid header found
@@ -70,44 +87,14 @@ const getCallbackUrl = (req?: Request): string => {
     }
   }
   
-  // Generate additional possible Replit domains for debugging only
-  const replitId = process.env.REPLIT_ID || process.env.REPL_ID;
-  const replitSlug = process.env.REPL_SLUG;
-  const replitOwner = process.env.REPL_OWNER;
-  
-  // Add all possible domain variations to our list
-  if (replitSlug && replitOwner) {
-    possibleCallbackUrls.push(`https://${replitSlug}.${replitOwner}.repl.co/api/auth/google/callback`);
-  }
-  
-  if (replitId) {
-    possibleCallbackUrls.push(`https://${replitId}.id.repl.co/api/auth/google/callback`);
-  }
-  
-  if (replitSlug) {
-    possibleCallbackUrls.push(`https://${replitSlug}.replit.dev/api/auth/google/callback`);
-  }
-  
-  // Add current host callback URL
+  // Determine protocol based on host
   const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? 'http' : 'https';
-  const mainCallbackUrl = `${protocol}://${host}/api/auth/google/callback`;
   
-  // Add the main callback URL at the beginning of the list for prioritization
-  possibleCallbackUrls.unshift(mainCallbackUrl);
+  // Build the callback URL
+  const callbackUrl = `${protocol}://${host}/api/auth/google/callback`;
+  console.log('Using dynamic callback URL:', callbackUrl);
   
-  // Hard-coded fallbacks for cases where headers might not contain correct information
-  possibleCallbackUrls.push('https://tradeliy.replit.app/api/auth/google/callback');
-  possibleCallbackUrls.push('https://workspace.kbesan066.repl.co/api/auth/google/callback');
-  possibleCallbackUrls.push('https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback');
-  
-  // Log all possible callback URLs for debugging
-  console.log('All possible Google callback URLs:', possibleCallbackUrls);
-  console.log('Current host:', host);
-  console.log('Current protocol detected:', protocol);
-  console.log('IMPORTANT: Overriding with fixed callback URL:', fixedCallbackUrl);
-  
-  // Always return our fixed callback URL
-  return fixedCallbackUrl;
+  return callbackUrl;
 };
 
 // Initialize Google OAuth strategy
