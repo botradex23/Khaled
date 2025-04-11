@@ -3,6 +3,7 @@ import { Strategy as GoogleStrategy, Profile } from 'passport-google-oauth20';
 import { User } from '@shared/schema';
 import { storage } from '../storage';
 import { Request } from 'express';
+import config from '../config';
 
 // Extended GoogleStrategy options with proper typings
 interface ExtendedGoogleStrategyOptions {
@@ -26,14 +27,14 @@ interface GoogleProfile extends Profile {
   };
 }
 
-// Helper function to dynamically determine callback URL
+// Helper function to provide the exact Google OAuth callback URL
 const getCallbackUrl = (req?: Request): string => {
-  // Hard-coded callback URL specifically for our current Replit environment
+  // Use the exact URL registered in Google API credentials
   const fixedCallbackUrl = 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback';
   
-  console.log('Using fixed Replit domain callback URL:', fixedCallbackUrl);
+  console.log('Using exact Google OAuth registered callback URL:', fixedCallbackUrl);
   
-  // Override environment variable with our fixed callback URL
+  // Override environment variable with our dynamic callback URL
   process.env.GOOGLE_CALLBACK_URL = fixedCallbackUrl;
   
   // Generate a list of possible callback URLs based on Replit domains (for debugging only)

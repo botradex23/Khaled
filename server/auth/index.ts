@@ -116,15 +116,15 @@ function registerAuthRoutes(app: Express) {
       // Generate a unique state parameter to prevent CSRF
       const state = crypto.randomBytes(16).toString('hex');
       
-      // Use fixed callback URL for our current Replit environment
-      const fixedCallbackUrl = 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback';
+      // Use dynamic callback URL from the helper function
+      const fixedCallbackUrl = getCallbackUrl(req);
       
       // Log all headers for debugging
       console.log('Request headers:', req.headers);
       console.log('Request host:', req.get('host'));
       console.log('Request protocol:', req.protocol);
       console.log('Full request URL:', `${req.protocol}://${req.get('host')}${req.originalUrl}`);
-      console.log('IMPORTANT: Using fixed callback URL:', fixedCallbackUrl);
+      console.log('IMPORTANT: Using dynamic callback URL:', fixedCallbackUrl);
       
       // Store the returnTo path if provided in query
       if (req.query.returnTo && typeof req.query.returnTo === 'string') {
@@ -150,10 +150,10 @@ function registerAuthRoutes(app: Express) {
       next();
     },
     (req: Request, res: Response, next: NextFunction) => {
-      // Use fixed callback URL for our current Replit environment
-      const fixedCallbackUrl = 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback';
+      // Use dynamic callback URL from the helper function
+      const fixedCallbackUrl = getCallbackUrl(req);
       
-      // Configure the Google strategy with our fixed callback URL
+      // Configure the Google strategy with our dynamic callback URL
       const authOptions = {
         scope: ['profile', 'email'],
         prompt: 'select_account', // Force account selection even if already logged in
@@ -163,8 +163,8 @@ function registerAuthRoutes(app: Express) {
         includeGrantedScopes: true // Include any previously granted scopes
       };
       
-      // Use passport to initiate Google authentication with fixed callback
-      console.log('Starting Google authentication with FIXED callback URL:', authOptions.callbackURL);
+      // Use passport to initiate Google authentication with exact callback URL from Google API Console
+      console.log('Starting Google authentication with exact callback URL:', authOptions.callbackURL);
       console.log('Google authentication state:', authOptions.state);
       
       try {
@@ -220,7 +220,7 @@ function registerAuthRoutes(app: Express) {
       next();
     },
     (req: Request, res: Response, next: NextFunction) => {
-      // Use the fixed callback URL for our current Replit environment
+      // Always use the exact callback URL registered in Google API Console
       const fixedCallbackUrl = 'https://19672ae6-76ec-438b-bcbb-ffac6b7f8d7b-00-3hmbhopvnwpnm.picard.replit.dev/api/auth/google/callback';
       
       // Options for the passport authenticate call with fixed URL
@@ -230,7 +230,7 @@ function registerAuthRoutes(app: Express) {
         callbackURL: fixedCallbackUrl
       };
       
-      console.log('Using FIXED callback URL for verification:', authOptions.callbackURL);
+      console.log('Using exact callback URL for verification:', authOptions.callbackURL);
       
       // Store the callback URL in session for consistency
       if (req.session) {
