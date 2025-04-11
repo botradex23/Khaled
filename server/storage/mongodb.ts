@@ -23,13 +23,51 @@ function getEnvVar(name: string, defaultValue: string = ''): string {
   return process.env[name] || defaultValue;
 }
 
+// Process MongoDB URI to ensure it has the correct format
+function processMongoURI(uri: string): string {
+  // Check if the URI starts with mongodb:// or mongodb+srv://
+  if (uri.startsWith('mongodb://') || uri.startsWith('mongodb+srv://')) {
+    console.log('MongoDB URI has correct format');
+    return uri;
+  }
+  
+  // If it doesn't have the correct prefix, see if we can extract it from the URI
+  const mongoPrefix = 'mongodb+srv://';
+  const indexOfPrefix = uri.indexOf(mongoPrefix);
+  
+  if (indexOfPrefix >= 0) {
+    const extractedURI = uri.substring(indexOfPrefix);
+    console.log('Fixed MongoDB URI format in connect method');
+    return extractedURI;
+  }
+  
+  // If we can't extract it, assume it might be a mongodb+srv:// URI without the prefix
+  if (uri.includes('@') && uri.includes('.mongodb.net')) {
+    console.log('Adding mongodb+srv:// prefix to URI');
+    return `mongodb+srv://${uri}`;
+  }
+  
+  // Return the original URI as a fallback
+  return uri;
+}
+
 // Connect to MongoDB Atlas
 export const connectToMongoDB = async (): Promise<boolean> => {
   // Get the MongoDB URI from environment variables
-  uri = getEnvVar('MONGO_URI', '');
+  let rawUri = getEnvVar('MONGO_URI', '');
   
-  if (!uri) {
+  if (!rawUri) {
     console.error('⚠️ WARNING: MONGO_URI environment variable is not set. MongoDB connection will not be attempted.');
+    return false;
+  }
+  
+  // Process the URI to ensure it has the correct format
+  uri = processMongoURI(rawUri);
+  
+  console.log(`MongoDB URI: ${uri.substring(0, 20)}...`);
+  
+  if (!uri.startsWith('mongodb://') && !uri.startsWith('mongodb+srv://')) {
+    console.error('⚠️ WARNING: MONGO_URI does not have the correct format. Should start with mongodb:// or mongodb+srv://');
     return false;
   }
 
@@ -62,6 +100,16 @@ export const connectToMongoDB = async (): Promise<boolean> => {
     
     // Ping the database to confirm connection
     await mongoClient.db("admin").command({ ping: 1 });
+    
+    // List available databases
+    const adminDb = mongoClient.db("admin");
+    const dbList = await adminDb.admin().listDatabases();
+    console.log("Available databases:", dbList.databases.map((db: any) => db.name));
+    
+    // Use the Saas database explicitly
+    const saasDb = mongoClient.db("Saas");
+    console.log("Using database:", saasDb.databaseName);
+    
     console.log("MongoDB connection verified - server is responsive");
     return true;
   } catch (error) {
@@ -78,14 +126,26 @@ export const connectToMongoDB = async (): Promise<boolean> => {
 export const testMongoDBConnection = async () => {
   try {
     // Get the MongoDB URI from environment variables
-    uri = getEnvVar('MONGO_URI', '');
+    let rawUri = getEnvVar('MONGO_URI', '');
     
-    if (!uri) {
+    if (!rawUri) {
       return {
         connected: false,
         isSimulated: true,
         description: 'MONGO_URI environment variable is not set',
         error: 'Missing MONGO_URI configuration'
+      };
+    }
+    
+    // Process the URI to ensure it has the correct format
+    uri = processMongoURI(rawUri);
+    
+    if (!uri.startsWith('mongodb://') && !uri.startsWith('mongodb+srv://')) {
+      return {
+        connected: false,
+        isSimulated: true,
+        description: 'MONGO_URI does not have the correct format',
+        error: 'Invalid MongoDB URI format'
       };
     }
 
@@ -155,7 +215,8 @@ export const saveBinanceApiKeysToMongoDB = async (userId: number, apiKey: string
     const encryptedApiKey = encrypt(apiKey);
     const encryptedSecretKey = encrypt(secretKey);
     
-    const db = mongoClient.db();
+    const db = mongoClient.db('Saas');
+    console.log('Using database:', db.databaseName);
     const users = db.collection('users');
     
     // Create update document
@@ -207,7 +268,8 @@ export const getBinanceApiKeysFromMongoDB = async (userId: number) => {
   }
 
   try {
-    const db = mongoClient.db();
+    const db = mongoClient.db('Saas');
+    console.log('Using database:', db.databaseName);
     const users = db.collection('users');
     
     const user = await users.findOne({ userId: userId });
@@ -261,7 +323,8 @@ export const deleteBinanceApiKeysFromMongoDB = async (userId: number) => {
   }
 
   try {
-    const db = mongoClient.db();
+    const db = mongoClient.db('Saas');
+    console.log('Using database:', db.databaseName);
     const users = db.collection('users');
     
     const result = await users.updateOne(

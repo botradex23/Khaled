@@ -21,6 +21,7 @@ import testAuthRoutes from './routes/test-auth';
 import legacyAgentRoutes from './routes/agent-routes';
 import integratedAgentRoutes from './routes/integrated-agent-routes';
 import pythonApiRouter from './routes/python-api-proxy';
+import adminUtilsRouter from './routes/admin-utils';
 import { setupAuth } from './auth';
 import http from 'http';
 import { startServices } from './start-services';
@@ -95,6 +96,9 @@ app.use('/api/agent', integratedAgentRoutes);
 
 // Python API proxy routes
 app.use('/api/python', pythonApiRouter);
+
+// Admin utility routes
+app.use('/api/admin-utils', adminUtilsRouter);
 
 // Initialize Vite after server is created
 const startViteServer = async () => {
