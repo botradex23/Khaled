@@ -1,3 +1,4 @@
+```ts
 /**
  * Server Entry Point
  * 
@@ -7,17 +8,15 @@
  * To prevent startup timeout, heavy initialization is delayed until after server is running.
  */
 
-// Load environment variables first, before any other imports
-import { config } from 'dotenv';
+// Load dotenv configuration first, before any other imports
+const dotenv = require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Setup __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Load .env file from the project root
-config({ path: path.resolve(__dirname, '..', '.env') });
 
 // Import configuration 
 import appConfig from './config';
@@ -273,3 +272,4 @@ startServer().catch(err => {
 
 // Export app for potential use elsewhere
 export { app };
+```
